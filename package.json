@@ -15,27 +15,27 @@
     "db:migrate": "wrangler d1 execute DB --local --file=src/server/migrations/0001_init.sql"
   },
   "dependencies": {
-    "@orpc/client": "latest",
-    "@orpc/openapi": "latest",
-    "@orpc/server": "latest",
-    "@tanstack/react-query": "^5",
-    "react": "^19",
-    "react-dom": "^19",
-    "zod": "latest"
+    "@orpc/client": "^1.13.6",
+    "@orpc/openapi": "^1.13.6",
+    "@orpc/server": "^1.13.6",
+    "@tanstack/react-query": "^5.90.21",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@cloudflare/vite-plugin": "latest",
-    "@cloudflare/workers-types": "latest",
-    "@playwright/test": "^1",
-    "@tailwindcss/vite": "^4",
+    "@cloudflare/vite-plugin": "^1.25.6",
+    "@cloudflare/workers-types": "^4.20260301.1",
+    "@playwright/test": "^1.58.2",
+    "@tailwindcss/vite": "^4.2.1",
     "@types/node": "^25.3.3",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
-    "@vitejs/plugin-react": "^5",
-    "oxfmt": "latest",
-    "tailwindcss": "^4",
-    "typescript": "^5",
-    "vite": "^7",
-    "wrangler": "latest"
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^5.1.4",
+    "oxfmt": "^0.36.0",
+    "tailwindcss": "^4.2.1",
+    "typescript": "^5.9.3",
+    "vite": "^7.3.1",
+    "wrangler": "^4.69.0"
   }
 }

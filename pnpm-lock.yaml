@@ -9,65 +9,65 @@ importers:
   .:
     dependencies:
       '@orpc/client':
-        specifier: latest
+        specifier: ^1.13.6
         version: 1.13.6
       '@orpc/openapi':
-        specifier: latest
+        specifier: ^1.13.6
         version: 1.13.6
       '@orpc/server':
-        specifier: latest
+        specifier: ^1.13.6
         version: 1.13.6
       '@tanstack/react-query':
-        specifier: ^5
+        specifier: ^5.90.21
         version: 5.90.21(react@19.2.4)
       react:
-        specifier: ^19
+        specifier: ^19.2.4
         version: 19.2.4
       react-dom:
-        specifier: ^19
+        specifier: ^19.2.4
         version: 19.2.4(react@19.2.4)
       zod:
-        specifier: latest
+        specifier: ^4.3.6
         version: 4.3.6
     devDependencies:
       '@cloudflare/vite-plugin':
-        specifier: latest
+        specifier: ^1.25.6
         version: 1.25.6(vite@7.3.1(@types/node@25.3.3)(jiti@2.6.1)(lightningcss@1.31.1))(workerd@1.20260305.0)(wrangler@4.69.0(@cloudflare/workers-types@4.20260301.1))
       '@cloudflare/workers-types':
-        specifier: latest
+        specifier: ^4.20260301.1
         version: 4.20260301.1
       '@playwright/test':
-        specifier: ^1
+        specifier: ^1.58.2
         version: 1.58.2
       '@tailwindcss/vite':
-        specifier: ^4
+        specifier: ^4.2.1
         version: 4.2.1(vite@7.3.1(@types/node@25.3.3)(jiti@2.6.1)(lightningcss@1.31.1))
       '@types/node':
         specifier: ^25.3.3
         version: 25.3.3
       '@types/react':
-        specifier: ^19
+        specifier: ^19.2.14
         version: 19.2.14
       '@types/react-dom':
-        specifier: ^19
+        specifier: ^19.2.3
         version: 19.2.3(@types/react@19.2.14)
       '@vitejs/plugin-react':
-        specifier: ^5
+        specifier: ^5.1.4
         version: 5.1.4(vite@7.3.1(@types/node@25.3.3)(jiti@2.6.1)(lightningcss@1.31.1))
       oxfmt:
-        specifier: latest
+        specifier: ^0.36.0
         version: 0.36.0
       tailwindcss:
-        specifier: ^4
+        specifier: ^4.2.1
         version: 4.2.1
       typescript:
-        specifier: ^5
+        specifier: ^5.9.3
         version: 5.9.3
       vite:
-        specifier: ^7
+        specifier: ^7.3.1
         version: 7.3.1(@types/node@25.3.3)(jiti@2.6.1)(lightningcss@1.31.1)
       wrangler:
-        specifier: latest
+        specifier: ^4.69.0
         version: 4.69.0(@cloudflare/workers-types@4.20260301.1)
 
 packages:
