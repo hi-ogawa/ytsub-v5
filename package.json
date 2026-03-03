@@ -1,0 +1,37 @@
+{
+  "name": "ytsub-v5",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite dev",
+    "build": "vite build",
+    "preview": "vite preview",
+    "tsc": "tsc -b",
+    "lint": "oxfmt",
+    "deploy": "wrangler deploy",
+    "db:migrate": "wrangler d1 execute DB --local --file=src/server/migrations/0001_init.sql"
+  },
+  "dependencies": {
+    "@orpc/client": "latest",
+    "@orpc/openapi": "latest",
+    "@orpc/server": "latest",
+    "@tanstack/react-query": "^5",
+    "react": "^19",
+    "react-dom": "^19",
+    "zod": "latest"
+  },
+  "devDependencies": {
+    "@cloudflare/vite-plugin": "latest",
+    "@cloudflare/workers-types": "latest",
+    "@tailwindcss/vite": "^4",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "@vitejs/plugin-react": "^5",
+    "oxfmt": "latest",
+    "tailwindcss": "^4",
+    "typescript": "^5",
+    "vite": "^7",
+    "wrangler": "latest"
+  }
+}
