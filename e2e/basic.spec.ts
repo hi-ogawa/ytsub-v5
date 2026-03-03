@@ -13,5 +13,5 @@ test("health endpoint returns ok", async ({ request }) => {
   });
   expect(res.ok()).toBe(true);
   const body = await res.json();
-  expect(body).toEqual({ ok: true });
+  expect(body).toEqual({ json: { ok: true } });
 });
