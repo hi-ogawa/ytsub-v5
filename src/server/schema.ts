@@ -1,4 +1,11 @@
-import { index, int, real, sqliteTable, text, unique } from "drizzle-orm/sqlite-core";
+import {
+  index,
+  int,
+  real,
+  sqliteTable,
+  text,
+  unique,
+} from "drizzle-orm/sqlite-core";
 
 export const videos = sqliteTable("videos", {
   id: int().primaryKey({ autoIncrement: true }),
@@ -38,7 +45,9 @@ export const bookmarks = sqliteTable(
     videoId: int("video_id")
       .notNull()
       .references(() => videos.id, { onDelete: "cascade" }),
-    captionId: int("caption_id").references(() => captions.id, { onDelete: "set null" }),
+    captionId: int("caption_id").references(() => captions.id, {
+      onDelete: "set null",
+    }),
     text: text().notNull(),
     side: int().notNull().default(0),
     offset: int().notNull().default(0),
@@ -49,5 +58,8 @@ export const bookmarks = sqliteTable(
     status: text().notNull().default("pending"),
     createdAt: text("created_at").notNull().default("(datetime('now'))"),
   },
-  (t) => [index("idx_bookmarks_video").on(t.videoId), index("idx_bookmarks_status").on(t.status)],
+  (t) => [
+    index("idx_bookmarks_video").on(t.videoId),
+    index("idx_bookmarks_status").on(t.status),
+  ],
 );
