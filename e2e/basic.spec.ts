@@ -3,7 +3,7 @@ import { expect, test } from "@playwright/test";
 test("app loads and connects to server", async ({ page }) => {
   await page.goto("/");
   await expect(page.locator("h1")).toHaveText("ytsub");
-  await expect(page.getByText("connected")).toBeVisible({ timeout: 15000 });
+  await expect(page.getByText("connected")).toBeVisible({ timeout: 10000 });
 });
 
 test("health endpoint returns ok", async ({ request }) => {

@@ -1,3 +1,3 @@
-export interface Env {
-  DB: D1Database;
-}
+import { env } from "cloudflare:workers";
+
+export const db = env.DB;

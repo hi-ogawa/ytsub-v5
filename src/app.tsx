@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { orpc } from "./rpc.ts";
 
 export function App() {
-  const health = useQuery(orpc.health.queryOptions({}));
+  const health = useQuery(orpc.health.queryOptions());
 
   return (
     <div className="mx-auto max-w-4xl p-8">
