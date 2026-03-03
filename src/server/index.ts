@@ -1,5 +1,3 @@
-/// <reference types="@cloudflare/workers-types" />
-
 import { OpenAPIHandler } from "@orpc/openapi/fetch";
 import { RPCHandler } from "@orpc/server/fetch";
 import { router } from "./rpc.ts";
