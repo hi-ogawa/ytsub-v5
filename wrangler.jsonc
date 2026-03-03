@@ -1,0 +1,18 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "ytsub-v5",
+  "compatibility_date": "2026-03-03",
+  "main": "./src/server/index.ts",
+  "assets": {
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/api/*"],
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "ytsub-v5",
+      "database_id": "local",
+      "migrations_dir": "src/server/migrations",
+    },
+  ],
+}
