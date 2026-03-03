@@ -4,12 +4,14 @@
 
 Setting up ytsub-v5 — a Vite + React SPA with Cloudflare Workers backend, oRPC for API, and D1 for storage. Following the same patterns as toy-midi and anki-tools (React 19, Tailwind 4, shadcn, oxfmt, Playwright).
 
-PRD: `~/code/personal/journal-private/2026-03-03-ytsub-redesign/notes/prd.md`
+PRD: `docs/prd.md`
 
 ## Scaffold
 
 ```
 ytsub-v5/
+  CLAUDE.md                     # → @AGENTS.md
+  AGENTS.md                     # agent guide (quick ref, conventions, workflow)
   index.html
   package.json
   vite.config.ts              # react + tailwind + @cloudflare/vite-plugin
@@ -19,6 +21,12 @@ ytsub-v5/
   wrangler.jsonc              # CF Workers + D1 binding
   components.json             # shadcn config
   .gitignore
+  docs/
+    prd.md                    # product requirements
+    brainstorm.md             # design decisions
+    skill-integration.md      # agent skill notes
+    references/               # research (prior repos, similar projects)
+    tasks/                    # task docs (YYYY-MM-DD-topic.md)
   src/
     index.tsx                 # React entry point
     styles.css                # Tailwind + shadcn theme (from anki-tools)
@@ -65,15 +73,16 @@ ytsub-v5/
 
 ## Steps
 
-1. Write package.json with all deps
-2. Write config files (vite, tsconfig x3, wrangler, components.json, .gitignore)
-3. Write index.html
-4. Write src/ files (index.tsx, styles.css, app.tsx, lib/utils.ts)
-5. Write worker/ files (index.ts, router.ts, procedures/videos.ts)
-6. Write D1 migration (0001_init.sql)
-7. `pnpm install`
-8. `pnpm tsc` to verify types
-9. `pnpm build` to verify build
+1. Write CLAUDE.md + AGENTS.md
+2. Write package.json with all deps
+3. Write config files (vite, tsconfig x3, wrangler, components.json, .gitignore)
+4. Write index.html
+5. Write src/ files (index.tsx, styles.css, app.tsx, lib/utils.ts)
+6. Write worker/ files (index.ts, router.ts, procedures/videos.ts)
+7. Write D1 migration (0001_init.sql)
+8. `pnpm install`
+9. `pnpm tsc` to verify types
+10. `pnpm build` to verify build
 
 ## Verification
 
