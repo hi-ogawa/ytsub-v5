@@ -23,7 +23,7 @@ export function VideoList({ onSelectVideo }: Props) {
                 className="h-20 w-36 shrink-0 rounded object-cover"
               />
               <div className="min-w-0 flex-1">
-                <p className="font-medium text-gray-900 leading-snug">
+                <p className="font-medium leading-snug text-gray-900">
                   {video.title}
                 </p>
                 <p className="mt-1 text-sm text-gray-500">

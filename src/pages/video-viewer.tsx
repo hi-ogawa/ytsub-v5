@@ -48,8 +48,7 @@ function useYouTubePlayer(
     const initPlayer = () => {
       if (!containerRef.current || !window.YT) return;
       const el = document.createElement("div");
-      containerRef.current.innerHTML = "";
-      containerRef.current.appendChild(el);
+      containerRef.current.replaceChildren(el);
       playerRef.current = new window.YT.Player(el, {
         videoId,
         playerVars: { rel: 0, modestbranding: 1 },
