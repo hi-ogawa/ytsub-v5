@@ -9,6 +9,8 @@
     "preview": "vite preview",
     "tsc": "tsc -b",
     "lint": "oxfmt",
+    "lint-check": "oxfmt --check",
+    "test-e2e": "playwright test",
     "deploy": "wrangler deploy",
     "db:migrate": "wrangler d1 execute DB --local --file=src/server/migrations/0001_init.sql"
   },
@@ -24,7 +26,9 @@
   "devDependencies": {
     "@cloudflare/vite-plugin": "latest",
     "@cloudflare/workers-types": "latest",
+    "@playwright/test": "^1",
     "@tailwindcss/vite": "^4",
+    "@types/node": "^25.3.3",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@vitejs/plugin-react": "^5",
