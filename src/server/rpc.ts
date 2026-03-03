@@ -9,5 +9,3 @@ export const router = os.router({
     return { ok: true, videos: row.count };
   }),
 });
-
-export type Router = typeof router;
