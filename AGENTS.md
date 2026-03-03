@@ -14,8 +14,6 @@
 | File                         | Purpose                            |
 | ---------------------------- | ---------------------------------- |
 | `docs/prd.md`                | Requirements, data model, features |
-| `docs/brainstorm.md`         | Design decisions and architecture  |
-| `docs/skill-integration.md`  | Agent skill design (LLM + app)     |
 | `docs/tasks/YYYY-MM-DD-*.md` | Task-specific planning/notes       |
 
 Read `docs/prd.md` before implementing features.
