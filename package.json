@@ -11,7 +11,8 @@
     "lint": "oxfmt && knip --fix",
     "lint-check": "oxfmt --check && knip",
     "test-e2e": "playwright test",
-    "deploy": "wrangler deploy",
+    "release": "wrangler deploy",
+    "types": "wrangler types --no-include-runtime",
     "db:migrate": "wrangler d1 migrations apply DB --local"
   },
   "dependencies": {

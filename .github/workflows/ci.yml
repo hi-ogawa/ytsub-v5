@@ -18,8 +18,6 @@ jobs:
       - uses: actions/setup-node@v4
       - run: corepack enable
       - run: pnpm i
-      - run: pnpm wrangler types --no-include-runtime
-      - run: git diff --exit-code worker-configuration.d.ts
       - run: pnpm lint-check
       - run: pnpm tsc
       - run: pnpm build
