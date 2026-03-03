@@ -17,9 +17,6 @@ importers:
       '@orpc/tanstack-query':
         specifier: ^1.13.6
         version: 1.13.6(@orpc/client@1.13.6)(@tanstack/query-core@5.90.20)
-      '@orpc/zod':
-        specifier: ^1.13.6
-        version: 1.13.6(@orpc/contract@1.13.6)(@orpc/server@1.13.6)(zod@4.3.6)
       '@tanstack/react-query':
         specifier: ^5.90.21
         version: 5.90.21(react@19.2.4)
@@ -41,9 +38,6 @@ importers:
       react-router-dom:
         specifier: ^7.13.1
         version: 7.13.1(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
-      zod:
-        specifier: ^4.3.6
-        version: 4.3.6
     devDependencies:
       '@cloudflare/vite-plugin':
         specifier: ^1.25.6
@@ -590,15 +584,6 @@ packages:
   '@orpc/interop@1.13.6':
     resolution: {integrity: sha512-m28QpydaYIAkP9lRfwX8lRCxbdsqn734F/bSiS0yuakSCv+PP10SXBUkt4w+OkvZxdxRpj0pOJFJP8F5O0nAoA==}
 
-  '@orpc/json-schema@1.13.6':
-    resolution: {integrity: sha512-kvih/ZN9FzUq18zLpAaU/tngg/OOQW6lQtqX7xza+gq1th8Js3mrI/E+6H+C4Exdx4sWdMpVna2PdA2T8igplw==}
-
-  '@orpc/openapi-client@1.13.6':
-    resolution: {integrity: sha512-d1bAWpJSoK1HdVBPRmMlYCuqkR2nbdF3kztd7Xz2EsRdl5TRhNLqUJ+5CIfBZHuueicrpdBlwrOuLMmSlcGrew==}
-
-  '@orpc/openapi@1.13.6':
-    resolution: {integrity: sha512-biqyRD9nZL+YOZ74k0Dbw6BIoa6liTk/tsGgIt2rfjztyElFwPnHeZ0OMrgaHnUGVYUTRSKL5dQlRmfp5LTeGg==}
-
   '@orpc/server@1.13.6':
     resolution: {integrity: sha512-58NaUE8sppxxpKDyEYtkR65jOSK9ycwP9TMqkvdHEg33wR17FDHIDws9iNDAo17l4bYGWgPKZtMn6ruRpJjTKQ==}
     peerDependencies:
@@ -646,13 +631,6 @@ packages:
     peerDependencies:
       '@orpc/client': 1.13.6
       '@tanstack/query-core': '>=5.80.2'
-
-  '@orpc/zod@1.13.6':
-    resolution: {integrity: sha512-Sj3KQbtV1Zuy2QnSs3NrFBnuZfttmWnXb39gLarD3rEKaxE4Mugv2yXIZ7vnBOj5cL24V+ysgharU/Dl7Ro0yA==}
-    peerDependencies:
-      '@orpc/contract': 1.13.6
-      '@orpc/server': 1.13.6
-      zod: '>=3.25.0'
 
   '@oxc-resolver/binding-android-arm-eabi@11.19.1':
     resolution: {integrity: sha512-aUs47y+xyXHUKlbhqHUjBABjvycq6YSD7bpxSW7vplUmdzAlJ93yXY6ZR0c1o1x5A/QKbENCvs3+NlY8IpIVzg==}
@@ -1352,10 +1330,6 @@ packages:
     resolution: {integrity: sha512-WUj2qlxaQtO4g6Pq5c29GTcWGDyd8itL8zTlipgECz3JesAiiOKotd8JU6otB3PACgG6xkJUyVhboMS+bje/jA==}
     engines: {node: '>=6'}
 
-  escape-string-regexp@5.0.0:
-    resolution: {integrity: sha512-/veY75JbMK4j1yjvuUxuVsiS/hr/4iHs9FTT6cgTexxdE0Ly/glccBAkloH/DofkjRbZU3bnoj38mOmhkZ0lHw==}
-    engines: {node: '>=12'}
-
   fast-glob@3.3.3:
     resolution: {integrity: sha512-7MptL8U0cqcFdzIzwOTHoilX9x5BrNqye7Z/LuC7kCMRio1EMSyqRK3BEAUD7sXRq4iT4AzTVuZdhgQ2TCvYLg==}
     engines: {node: '>=8.6.0'}
@@ -1432,9 +1406,6 @@ packages:
     resolution: {integrity: sha512-/sM3dO2FOzXjKQhJuo0Q173wf2KOo8t4I8vHy6lF9poUp7bKT0/NHE8fPX23PwfhnykfqnC2xRxOnVw5XuGIaA==}
     engines: {node: '>=6'}
     hasBin: true
-
-  json-schema-typed@8.0.2:
-    resolution: {integrity: sha512-fQhoXdcvc3V28x7C7BMs4P5+kNlgUURe2jmUT1T//oBRMDrqy1QPelJimwZGo7Hg9VPV3EQV5Bnq4hbFy2vetA==}
 
   json5@2.2.3:
     resolution: {integrity: sha512-XmOWe7eyHYH14cLdVPoyg+GOH3rYX++KpzrylJwSW98t3Nk+U8XOl8FWKOgwtzdb8lXGf6zYwDUzeHMWfxasyg==}
@@ -1653,9 +1624,6 @@ packages:
     engines: {node: '>=18.0.0', npm: '>=8.0.0'}
     hasBin: true
 
-  rou3@0.7.12:
-    resolution: {integrity: sha512-iFE4hLDuloSWcD7mjdCDhx2bKcIsYbtOTpfH5MHHLSKMOUyjqQXTeZVa289uuwEGEKFoE/BAPbhaU4B774nceg==}
-
   run-parallel@1.2.0:
     resolution: {integrity: sha512-5l4VyZR86LZ/lDxZTR6jqL8AFE2S0IFLMP26AbjsLVADxHdhB/c0GUsH+y39UfCi3dzz8OlQuPmnaJOMoDHQBA==}
 
@@ -1788,9 +1756,6 @@ packages:
   walk-up-path@4.0.0:
     resolution: {integrity: sha512-3hu+tD8YzSLGuFYtPRb48vdhKMi0KQV5sn+uWr8+7dMEq/2G/dtLrdDinkLjqq5TIbIBjYJ4Ax/n3YiaW7QM8A==}
     engines: {node: 20 || >=22}
-
-  wildcard-match@5.1.4:
-    resolution: {integrity: sha512-wldeCaczs8XXq7hj+5d/F38JE2r7EXgb6WQDM84RVwxy81T/sxB5e9+uZLK9Q9oNz1mlvjut+QtvgaOQFPVq/g==}
 
   workerd@1.20260305.0:
     resolution: {integrity: sha512-JkhfCLU+w+KbQmZ9k49IcDYc78GBo7eG8Mir8E2+KVjR7otQAmpcLlsous09YLh8WQ3Bt3Mi6/WMStvMAPukeA==}
@@ -2240,46 +2205,6 @@ snapshots:
 
   '@orpc/interop@1.13.6': {}
 
-  '@orpc/json-schema@1.13.6':
-    dependencies:
-      '@orpc/contract': 1.13.6
-      '@orpc/interop': 1.13.6
-      '@orpc/openapi': 1.13.6
-      '@orpc/server': 1.13.6
-      '@orpc/shared': 1.13.6
-      json-schema-typed: 8.0.2
-    transitivePeerDependencies:
-      - '@opentelemetry/api'
-      - crossws
-      - fastify
-      - ws
-
-  '@orpc/openapi-client@1.13.6':
-    dependencies:
-      '@orpc/client': 1.13.6
-      '@orpc/contract': 1.13.6
-      '@orpc/shared': 1.13.6
-      '@orpc/standard-server': 1.13.6
-    transitivePeerDependencies:
-      - '@opentelemetry/api'
-
-  '@orpc/openapi@1.13.6':
-    dependencies:
-      '@orpc/client': 1.13.6
-      '@orpc/contract': 1.13.6
-      '@orpc/interop': 1.13.6
-      '@orpc/openapi-client': 1.13.6
-      '@orpc/server': 1.13.6
-      '@orpc/shared': 1.13.6
-      '@orpc/standard-server': 1.13.6
-      json-schema-typed: 8.0.2
-      rou3: 0.7.12
-    transitivePeerDependencies:
-      - '@opentelemetry/api'
-      - crossws
-      - fastify
-      - ws
-
   '@orpc/server@1.13.6':
     dependencies:
       '@orpc/client': 1.13.6
@@ -2354,22 +2279,6 @@ snapshots:
       '@tanstack/query-core': 5.90.20
     transitivePeerDependencies:
       - '@opentelemetry/api'
-
-  '@orpc/zod@1.13.6(@orpc/contract@1.13.6)(@orpc/server@1.13.6)(zod@4.3.6)':
-    dependencies:
-      '@orpc/contract': 1.13.6
-      '@orpc/json-schema': 1.13.6
-      '@orpc/openapi': 1.13.6
-      '@orpc/server': 1.13.6
-      '@orpc/shared': 1.13.6
-      escape-string-regexp: 5.0.0
-      wildcard-match: 5.1.4
-      zod: 4.3.6
-    transitivePeerDependencies:
-      - '@opentelemetry/api'
-      - crossws
-      - fastify
-      - ws
 
   '@oxc-resolver/binding-android-arm-eabi@11.19.1':
     optional: true
@@ -2800,8 +2709,6 @@ snapshots:
 
   escalade@3.2.0: {}
 
-  escape-string-regexp@5.0.0: {}
-
   fast-glob@3.3.3:
     dependencies:
       '@nodelib/fs.stat': 2.0.5
@@ -2861,8 +2768,6 @@ snapshots:
       argparse: 2.0.1
 
   jsesc@3.1.0: {}
-
-  json-schema-typed@8.0.2: {}
 
   json5@2.2.3: {}
 
@@ -3106,8 +3011,6 @@ snapshots:
       '@rollup/rollup-win32-x64-msvc': 4.59.0
       fsevents: 2.3.3
 
-  rou3@0.7.12: {}
-
   run-parallel@1.2.0:
     dependencies:
       queue-microtask: 1.2.3
@@ -3214,8 +3117,6 @@ snapshots:
       lightningcss: 1.31.1
 
   walk-up-path@4.0.0: {}
-
-  wildcard-match@5.1.4: {}
 
   workerd@1.20260305.0:
     optionalDependencies:
