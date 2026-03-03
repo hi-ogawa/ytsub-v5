@@ -8,20 +8,18 @@
     "build": "vite build",
     "preview": "vite preview",
     "tsc": "tsc -b",
-    "lint": "oxfmt",
-    "lint-check": "oxfmt --check",
+    "lint": "oxfmt && knip --fix",
+    "lint-check": "oxfmt --check && knip",
     "test-e2e": "playwright test",
     "deploy": "wrangler deploy",
     "db:migrate": "wrangler d1 execute DB --local --file=src/server/migrations/0001_init.sql"
   },
   "dependencies": {
-    "@orpc/client": "^1.13.6",
     "@orpc/openapi": "^1.13.6",
     "@orpc/server": "^1.13.6",
     "@tanstack/react-query": "^5.90.21",
     "react": "^19.2.4",
-    "react-dom": "^19.2.4",
-    "zod": "^4.3.6"
+    "react-dom": "^19.2.4"
   },
   "devDependencies": {
     "@cloudflare/vite-plugin": "^1.25.6",
@@ -32,6 +30,7 @@
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^5.1.4",
+    "knip": "^5.85.0",
     "oxfmt": "^0.36.0",
     "tailwindcss": "^4.2.1",
     "typescript": "^5.9.3",
