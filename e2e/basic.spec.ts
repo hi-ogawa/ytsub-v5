@@ -7,7 +7,7 @@ test("app loads and connects to server", async ({ page }) => {
 });
 
 test("health endpoint returns ok with videos count", async ({ request }) => {
-  const res = await request.post("/rpc/health", {
+  const res = await request.post("/api/health", {
     headers: { "Content-Type": "application/json" },
     data: {},
   });
