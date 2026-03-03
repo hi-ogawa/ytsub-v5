@@ -12,7 +12,7 @@
     "lint-check": "oxfmt --check && knip",
     "test-e2e": "playwright test",
     "deploy": "wrangler deploy",
-    "db:migrate": "wrangler d1 execute DB --local --file=src/server/migrations/0001_init.sql"
+    "db:migrate": "wrangler d1 migrations apply DB --local"
   },
   "dependencies": {
     "@orpc/client": "^1.13.6",
