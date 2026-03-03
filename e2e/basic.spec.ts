@@ -15,3 +15,15 @@ test("health endpoint returns ok", async ({ request }) => {
   const body = await res.json();
   expect(body).toEqual({ json: { ok: true } });
 });
+
+test("database has expected tables", async ({ request }) => {
+  const res = await request.post("/rpc/dbHealth", {
+    headers: { "Content-Type": "application/json" },
+    data: {},
+  });
+  expect(res.ok()).toBe(true);
+  const body = await res.json();
+  expect(body.json.tables).toContain("videos");
+  expect(body.json.tables).toContain("captions");
+  expect(body.json.tables).toContain("bookmarks");
+});

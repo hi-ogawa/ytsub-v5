@@ -12,6 +12,7 @@
       "binding": "DB",
       "database_name": "ytsub-v5",
       "database_id": "local",
+      "migrations_dir": "src/server/migrations",
     },
   ],
 }
