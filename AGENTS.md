@@ -11,12 +11,13 @@
 
 ## Key Docs
 
-| File                         | Purpose                            |
-| ---------------------------- | ---------------------------------- |
-| `docs/prd.md`                | Requirements, data model, features |
-| `docs/tasks/YYYY-MM-DD-*.md` | Task-specific planning/notes       |
+| File                              | Purpose                              |
+| --------------------------------- | ------------------------------------ |
+| `docs/prd.md`                     | Task list (features & priorities)    |
+| `docs/background/architecture.md` | Architecture, data model, tech stack |
+| `docs/tasks/YYYY-MM-DD-*.md`      | Task-specific planning/notes         |
 
-Read `docs/prd.md` before implementing features.
+Read `docs/prd.md` for the task list and `docs/background/architecture.md` for architecture context before implementing features.
 
 ## Task Documents
 
