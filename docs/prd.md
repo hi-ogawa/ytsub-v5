@@ -43,4 +43,3 @@ Key LLM capabilities:
 - Typing practice (v3/v4 had this)
 - Extension as data source (content script fetches subs from YouTube same-origin, POSTs to app API — replaces yt-dlp step)
 - Mobile-friendly layout
-
