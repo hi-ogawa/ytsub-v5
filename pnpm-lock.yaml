@@ -8,12 +8,18 @@ importers:
 
   .:
     dependencies:
+      '@orpc/client':
+        specifier: ^1.13.6
+        version: 1.13.6
       '@orpc/openapi':
         specifier: ^1.13.6
         version: 1.13.6
       '@orpc/server':
         specifier: ^1.13.6
         version: 1.13.6
+      '@orpc/tanstack-query':
+        specifier: ^1.13.6
+        version: 1.13.6(@orpc/client@1.13.6)(@tanstack/query-core@5.90.20)
       '@tanstack/react-query':
         specifier: ^5.90.21
         version: 5.90.21(react@19.2.4)
@@ -600,6 +606,12 @@ packages:
 
   '@orpc/standard-server@1.13.6':
     resolution: {integrity: sha512-GNYZXCWxYLVHsxBWR+bg5F12vDCsQghqxbqoFpMnA4goe58dugNWmuxM+aSDbI0D81YxkKDULSqft5S+GWi5ww==}
+
+  '@orpc/tanstack-query@1.13.6':
+    resolution: {integrity: sha512-OBseuArjkAobKtKLVdzpepiS0fhc0TzW0O0Jixt1gkhkCiWG1xK8z0gZ7daQ85UBXRIoI9SXzwXhl+HVP+j14w==}
+    peerDependencies:
+      '@orpc/client': 1.13.6
+      '@tanstack/query-core': '>=5.80.2'
 
   '@oxc-resolver/binding-android-arm-eabi@11.19.1':
     resolution: {integrity: sha512-aUs47y+xyXHUKlbhqHUjBABjvycq6YSD7bpxSW7vplUmdzAlJ93yXY6ZR0c1o1x5A/QKbENCvs3+NlY8IpIVzg==}
@@ -2107,6 +2119,14 @@ snapshots:
   '@orpc/standard-server@1.13.6':
     dependencies:
       '@orpc/shared': 1.13.6
+    transitivePeerDependencies:
+      - '@opentelemetry/api'
+
+  '@orpc/tanstack-query@1.13.6(@orpc/client@1.13.6)(@tanstack/query-core@5.90.20)':
+    dependencies:
+      '@orpc/client': 1.13.6
+      '@orpc/shared': 1.13.6
+      '@tanstack/query-core': 5.90.20
     transitivePeerDependencies:
       - '@opentelemetry/api'
 
