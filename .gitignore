@@ -3,3 +3,4 @@ dist/
 *.tsbuildinfo
 .wrangler/
 test-results/
+e2e/.auth.json

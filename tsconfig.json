@@ -1,6 +1,7 @@
 {
   "include": ["src", "e2e", "*.ts"],
   "compilerOptions": {
+    "verbatimModuleSyntax": true,
     "target": "esnext",
     "lib": ["DOM", "DOM.Iterable", "ESNext"],
     "module": "ESNext",
