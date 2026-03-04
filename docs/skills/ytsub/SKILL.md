@@ -114,7 +114,7 @@ Each cue becomes:
 }
 ```
 
-- `idx`: 0-based sequential index (per language)
+- `idx`: 0-based sequential index (per cue pair)
 - `begin`/`end`: float seconds
 - `text`: subtitle text (`<br />` → space, entities decoded, tags stripped)
 
@@ -210,18 +210,18 @@ POST /api/createCaptions
   "videoId": 1,
   "captions": [
     {
-      "language": "ko",
       "idx": 0,
       "begin": 83.456,
       "end": 87.89,
-      "text": "안녕하세요 여러분"
+      "text1": "안녕하세요 여러분",
+      "text2": "Hello everyone"
     },
     {
-      "language": "ko",
       "idx": 1,
       "begin": 88.0,
       "end": 92.5,
-      "text": "오늘은 명동에 왔습니다"
+      "text1": "오늘은 명동에 왔습니다",
+      "text2": "Today we came to Myeongdong"
     }
   ]
 }
@@ -229,15 +229,15 @@ POST /api/createCaptions
 
 - `videoId` (integer, required) — from createVideo response
 - `captions` (array, required):
-  - `language` (string) — "ko", "en", etc.
-  - `idx` (integer) — 0-based index per language
+  - `idx` (integer) — 0-based index per cue pair
   - `begin` (number) — start time in seconds
   - `end` (number) — end time in seconds
-  - `text` (string) — subtitle text
+  - `text1` (string) — primary language subtitle (e.g. Korean)
+  - `text2` (string) — secondary language subtitle (e.g. English)
 
 Returns `{ inserted: number }`.
 
-Push Korean and English captions as separate calls (or combine in one array).
+Push paired captions (both languages per row). Align cues by timestamp before pushing — use language1 timing as base.
 
 ---
 
@@ -344,10 +344,10 @@ Returns `{ inserted: number }`.
 | Endpoint          | Key fields                                                         |
 | ----------------- | ------------------------------------------------------------------ |
 | `createVideo`     | youtubeId, title, channelName, channelId, duration, language1/2    |
-| `createCaptions`  | videoId, captions[]{language, idx, begin, end, text}               |
+| `createCaptions`  | videoId, captions[]{idx, begin, end, text1, text2}                 |
 | `createBookmarks` | bookmarks[]{videoId, text, translation, context, timestamp, notes} |
 | `listVideos`      | limit, offset → {items, total}                                     |
-| `getVideo`        | id → video + captionCounts                                         |
+| `getVideo`        | id → video + captionCount                                          |
 | `listBookmarks`   | videoId, status, limit, offset → {items, total}                    |
 | `deleteVideo`     | id                                                                 |
 | `deleteBookmark`  | id                                                                 |

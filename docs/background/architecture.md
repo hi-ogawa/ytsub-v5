@@ -33,5 +33,5 @@ v4 went extension because content scripts can hit YouTube APIs from same origin 
 
 See `src/server/schema.ts` for the schema. Key design decisions vs v3:
 
-- **captions**: one row per cue per language (v3 crammed both into `text1`/`text2`). Cleaner when languages have different timing/cue counts.
+- **captions**: one row per cue with `text1`/`text2` (same as v3). Alignment/merging happens at import time, not display time.
 - **bookmarks**: enriched with `translation`, `context`, `notes`, `status`. Kept `side`/`offset` for inline highlighting via `partitionRanges`. `caption_id` nullable since bookmark might not map to a single cue cleanly.

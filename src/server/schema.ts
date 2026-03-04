@@ -26,15 +26,15 @@ export const captions = sqliteTable(
     videoId: int("video_id")
       .notNull()
       .references(() => videos.id, { onDelete: "cascade" }),
-    language: text().notNull(),
     idx: int().notNull(),
     begin: real().notNull(),
     end: real().notNull(),
-    text: text().notNull(),
+    text1: text().notNull().default(""),
+    text2: text().notNull().default(""),
   },
   (t) => [
-    unique().on(t.videoId, t.language, t.idx),
-    index("idx_captions_video").on(t.videoId, t.language),
+    unique().on(t.videoId, t.idx),
+    index("idx_captions_video").on(t.videoId),
   ],
 );
 
