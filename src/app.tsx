@@ -1,9 +1,14 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import {
+  QueryClient,
+  QueryClientProvider,
+  useQuery,
+} from "@tanstack/react-query";
+import { useState } from "react";
 import { createBrowserRouter, RouterProvider } from "react-router";
 import { Login } from "./components/login.tsx";
 import { VideoListPage } from "./routes/video-list.tsx";
 import { VideoViewerPage } from "./routes/video-viewer.tsx";
+import { orpc } from "./rpc.ts";
 
 const queryClient = new QueryClient();
 
@@ -12,39 +17,23 @@ const router = createBrowserRouter([
   { path: "/videos/:id", Component: VideoViewerPage },
 ]);
 
-function useAuthCheck() {
-  const [state, setState] = useState<"loading" | "authenticated" | "login">(
-    "loading",
-  );
+function AuthGate() {
+  const [authed, setAuthed] = useState(false);
+  const check = useQuery(orpc.auth.check.queryOptions({ input: {} }));
 
-  useEffect(() => {
-    fetch("/api/auth/check", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ json: {} }),
-    })
-      .then((r) => r.json())
-      .then((data: any) =>
-        setState(data.json?.authenticated ? "authenticated" : "login"),
-      )
-      .catch(() => setState("login"));
-  }, []);
+  if (check.isLoading) return null;
 
-  return { state, setState };
+  if (check.data?.authenticated || authed) {
+    return <RouterProvider router={router} />;
+  }
+
+  return <Login onSuccess={() => setAuthed(true)} />;
 }
 
 export function App() {
-  const auth = useAuthCheck();
-
-  if (auth.state === "loading") return null;
-
-  if (auth.state === "login") {
-    return <Login onSuccess={() => auth.setState("authenticated")} />;
-  }
-
   return (
     <QueryClientProvider client={queryClient}>
-      <RouterProvider router={router} />
+      <AuthGate />
     </QueryClientProvider>
   );
 }
