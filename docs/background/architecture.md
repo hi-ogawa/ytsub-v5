@@ -1,8 +1,4 @@
-# ytsub — Architecture & Background
-
-## Overview
-
-A single-user web app for language learning via YouTube subtitles. Watch videos with dual subtitle panel, bookmark notable words/phrases, and curate vocabulary.
+# ytsub — Background
 
 ## Problem
 
@@ -15,8 +11,6 @@ A single-user web app for language learning via YouTube subtitles. Watch videos 
 
 A web app that stores YouTube videos with their subtitles, provides a viewer with dual caption panel, and supports bookmarking words/phrases with rich metadata. External clients (agent, CLI) push video+subtitle data via API since YouTube no longer allows server-side fetching.
 
-## Architecture
-
 ```
 Clients (yt-dlp + agent, CLI, etc.)
   POST /api/videos    →  video + captions
@@ -28,72 +22,17 @@ Web UI (browser)
   Browse: list videos, filter bookmarks
 ```
 
-- Single-user, password auth
+- Single-user app
 - App is a viewer/curator — doesn't know about yt-dlp, LLM, or Anki
 - API is the boundary; any client can push data
 
-### Why not an extension?
+## Why not an extension?
 
-v4 went extension because content scripts can hit YouTube APIs from same origin (how Language Reactor works too). Trade-off: extension gives direct YouTube access but adds complexity (store review, Chrome API constraints, harder to build full UI). Web app + yt-dlp is cleaner architecturally. Can revisit if yt-dlp friction becomes a problem.
+v4 went extension because content scripts can hit YouTube APIs from same origin (how Language Reactor works too). Trade-off: extension gives direct YouTube access but adds complexity (store review, Chrome API constraints, harder to build full UI). Web app + yt-dlp is cleaner architecturally.
 
 ## Data model
 
-Based on ytsub-v3, redesigned. Dropped: SRS (Anki handles it), multi-user, email/password-reset flows.
+See `src/server/schema.ts` for the schema (Drizzle ORM). Key design decisions vs v3:
 
-### v3 schema (reference)
-
-```
-videos          — videoId, title, author, channelId, language1_id, language2_id
-captionEntries  — videoId (FK), index, begin, end, text1, text2
-bookmarkEntries — videoId (FK), captionEntryId (FK), text, side, offset
-decks           — (SRS)
-practiceEntries — (SRS)
-practiceActions — (SRS)
-users           — (multi-user)
-```
-
-### Proposed schema
-
-```
-videos
-  - id
-  - youtube_id        (e.g. "dQw4w9WgXcQ")
-  - title
-  - channel_name
-  - channel_id
-  - duration          (seconds)
-  - language1         (e.g. "ko")
-  - language2         (e.g. "en")
-  - created_at
-
-captions
-  - id
-  - video_id (FK)
-  - language          (e.g. "ko", "en")
-  - index             (sequential order)
-  - begin             (seconds, float)
-  - end               (seconds, float)
-  - text
-
-bookmarks
-  - id
-  - video_id (FK)
-  - caption_id (FK, nullable)
-  - text              (word/phrase in target language)
-  - side              (0 = language1, 1 = language2 — which column)
-  - offset            (character offset within caption text — for inline highlighting)
-  - translation       (meaning in known language)
-  - context           (subtitle line where it appears)
-  - timestamp         (begin time in video, seconds)
-  - notes             (etymology, hanja, usage notes, etc.)
-  - status            (pending | approved | rejected)
-  - created_at
-```
-
-### Design changes from v3
-
-**videos**: added `duration`. Simplified language fields. Dropped `userId`, cached counts.
-
-**captions** (was `captionEntries`): one row per cue per language (v3 crammed both into `text1`/`text2`). Cleaner when languages have different timing/cue counts.
-
-**bookmarks** (was `bookmarkEntries`): enriched with `translation`, `context`, `notes`, `status`. Timestamp directly on bookmark. Kept `side`/`offset` — needed for inline highlighting via `partitionRanges`. For agent-created bookmarks, `side`/`offset` can be computed by string-matching `text` against the caption. `caption_id` nullable since bookmark might not map to a single cue cleanly.
+- **captions**: one row per cue per language (v3 crammed both into `text1`/`text2`). Cleaner when languages have different timing/cue counts.
+- **bookmarks**: enriched with `translation`, `context`, `notes`, `status`. Kept `side`/`offset` for inline highlighting via `partitionRanges`. `caption_id` nullable since bookmark might not map to a single cue cleanly.

@@ -11,11 +11,11 @@
 
 ## Key Docs
 
-| File                              | Purpose                              |
-| --------------------------------- | ------------------------------------ |
-| `docs/prd.md`                     | Task list (features & priorities)    |
-| `docs/background/architecture.md` | Architecture, data model, tech stack |
-| `docs/tasks/YYYY-MM-DD-*.md`      | Task-specific planning/notes         |
+| File                              | Purpose                           |
+| --------------------------------- | --------------------------------- |
+| `docs/prd.md`                     | Task list (features & priorities) |
+| `docs/background/architecture.md` | Problem context, design decisions |
+| `docs/tasks/YYYY-MM-DD-*.md`      | Task-specific planning/notes      |
 
 Read `docs/prd.md` for the task list and `docs/background/architecture.md` for architecture context before implementing features.
 
@@ -50,14 +50,6 @@ To continue in fresh session: `Read docs/tasks/YYYY-MM-DD-<topic>.md and continu
 
 - File names: kebab-case
 - Minimize file splits (multiple components per file when related)
-
-## Architecture
-
-- **Frontend**: React 19 SPA (`src/`)
-- **Backend**: Cloudflare Workers (`worker/`)
-- **API**: oRPC (`/rpc/*` for frontend, `/api/*` OpenAPI for external clients)
-- **Database**: Cloudflare D1 (SQLite)
-- **Styling**: Tailwind CSS 4 + shadcn
 
 ## Agent Rules
 
