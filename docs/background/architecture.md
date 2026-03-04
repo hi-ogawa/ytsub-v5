@@ -13,8 +13,7 @@ A web app that stores YouTube videos with their subtitles, provides a viewer wit
 
 ```
 Clients (yt-dlp + agent, CLI, etc.)
-  POST /api/videos    →  video + captions
-  POST /api/bookmarks →  vocab entries (manual or LLM-extracted)
+  API  →  push video metadata, caption cues, vocab entries
 
 Web UI (browser)
   Video viewer: YouTube embed + dual caption panel
@@ -32,7 +31,7 @@ v4 went extension because content scripts can hit YouTube APIs from same origin 
 
 ## Data model
 
-See `src/server/schema.ts` for the schema (Drizzle ORM). Key design decisions vs v3:
+See `src/server/schema.ts` for the schema. Key design decisions vs v3:
 
 - **captions**: one row per cue per language (v3 crammed both into `text1`/`text2`). Cleaner when languages have different timing/cue counts.
 - **bookmarks**: enriched with `translation`, `context`, `notes`, `status`. Kept `side`/`offset` for inline highlighting via `partitionRanges`. `caption_id` nullable since bookmark might not map to a single cue cleanly.

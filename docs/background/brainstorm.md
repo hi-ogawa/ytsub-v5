@@ -143,10 +143,11 @@ The app is a standalone web service. The agent is NOT part of the app.
 
 ```
 Any client (agent, CLI, curl, etc.)
-  POST /api/videos  →  app stores video + subs + extracted vocab
+  oRPC POST /api/videos/createVideo + createCaptions  →  app stores video + subs
+  oRPC POST /api/bookmarks/createBookmarks            →  extracted vocab
 
 You (browser)
-  GET /             →  YouTube viewer + vocab panel + curation UI
+  /  →  YouTube viewer + vocab panel + curation UI (oRPC client)
 ```
 
 - Simple password auth (single user)

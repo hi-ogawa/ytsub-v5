@@ -35,8 +35,8 @@ Input: YouTube URL
   3. LLM: correct Korean if auto-generated (cross-ref with manual subs if available)
   4. LLM: generate English translation if no English sub
   5. LLM: extract notable vocab with timestamps
-  6. POST /api/videos: push video + corrected captions
-  7. POST /api/bookmarks: push extracted vocab (bulk)
+  6. oRPC videos/createVideo + videos/createCaptions: push video + corrected captions
+  7. oRPC bookmarks/createBookmarks: push extracted vocab (bulk)
 ```
 
 ## TODO

@@ -13,7 +13,8 @@
     "test-e2e": "playwright test",
     "release": "wrangler deploy",
     "types": "wrangler types --no-include-runtime",
-    "db:migrate": "wrangler d1 migrations apply DB --local"
+    "db:migrate": "wrangler d1 migrations apply DB --local",
+    "db:reset": "rm -rf .wrangler/state/v3/d1 && pnpm db:migrate"
   },
   "dependencies": {
     "@orpc/client": "^1.13.6",
@@ -22,7 +23,8 @@
     "@tanstack/react-query": "^5.90.21",
     "drizzle-orm": "^0.45.1",
     "react": "^19.2.4",
-    "react-dom": "^19.2.4"
+    "react-dom": "^19.2.4",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@cloudflare/vite-plugin": "^1.25.6",

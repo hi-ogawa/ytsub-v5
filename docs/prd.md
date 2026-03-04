@@ -14,19 +14,17 @@ A web app for language learning via YouTube subtitles. Watch videos with dual ca
 
 ## TODO
 
-### API — Import & bookmarks
+### ~~API — Import & bookmarks~~ ✓
 
-- [ ] feat: POST `/api/videos` — create video with metadata (youtube_id, title, channel, duration, languages)
-- [ ] feat: POST `/api/videos/:id/captions` — bulk insert caption cues for a video
-  - accept array of `{ language, index, begin, end, text }`
-  - validate video exists
-- [ ] feat: GET `/api/videos` — list videos (paginated, newest first)
-- [ ] feat: GET `/api/videos/:id` — get video with caption summary (cue counts per language)
-- [ ] feat: POST `/api/bookmarks` — bulk create bookmarks for a video
-  - accept array of `{ video_id, caption_id?, text, side, offset, translation, context, timestamp, notes }`
-  - default status = `pending`
-- [ ] feat: GET `/api/bookmarks` — list bookmarks (filterable by video_id, status)
-- [ ] feat: PATCH `/api/bookmarks/:id` — update bookmark (status, translation, notes)
+- [x] feat: `videos/createVideo` — upsert video with metadata (on youtube_id conflict)
+- [x] feat: `videos/createCaptions` — bulk insert caption cues for a video
+- [x] feat: `videos/listVideos` — paginated, newest first
+- [x] feat: `videos/getVideo` — with caption counts per language
+- [x] feat: `videos/deleteVideo` — cascade deletes captions
+- [x] feat: `bookmarks/createBookmarks` — bulk create (default status = `pending`)
+- [x] feat: `bookmarks/listBookmarks` — filterable by videoId, status
+- [x] feat: `bookmarks/updateBookmark` — partial update (status, translation, notes)
+- [x] feat: `bookmarks/deleteBookmark`
 
 ### Video list page
 
@@ -71,6 +69,13 @@ A web app for language learning via YouTube subtitles. Watch videos with dual ca
   - generate English translation from Korean-only subs
   - cross-reference with manual subs in other languages when available
   - see `background/skill-integration.md` for details
+
+## TODO: Chores
+
+- [ ] chore: unit-testable API layer — swap `cloudflare:workers` env + D1 drizzle adapter for local SQLite (e.g. `better-sqlite3`) so RPC handlers can be tested directly without spinning up wrangler/Playwright
+- [ ] chore: separate dev and E2E databases — use different D1 state paths (e.g. `--persist-to`) so `pnpm dev` and `pnpm test-e2e` don't share data
+- [ ] chore: E2E `db:reset` before test run — run db reset in Playwright `globalSetup` so each test suite starts with a clean DB
+- [ ] chore: dev DB seed script — populate dev DB with sample videos, captions, and bookmarks for manual testing
 
 ## TODO: Backlog
 
