@@ -4,5 +4,16 @@ import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 
 export default defineConfig({
-  plugins: [react(), tailwindcss(), cloudflare()],
+  plugins: [
+    react(),
+    tailwindcss(),
+    cloudflare({
+      inspectorPort: false,
+      persistState: process.env.APP_PERSIST_TO
+        ? {
+            path: process.env.APP_PERSIST_TO,
+          }
+        : undefined,
+    }),
+  ],
 });
