@@ -1,9 +1,10 @@
+import { useRef } from "react";
 import { Link, useParams } from "react-router";
 import { type CaptionEntry, CaptionPanel } from "../components/caption-panel";
+import { useYouTubePlayer } from "../components/use-youtube-player";
 import { VideoEmbed } from "../components/video-embed";
 
 const MOCK_YOUTUBE_ID = "dQw4w9WgXcQ";
-const MOCK_ACTIVE_INDEX = 2;
 
 const MOCK_CAPTIONS: CaptionEntry[] = [
   { idx: 0, begin: 1.0, end: 2.5, text1: "안녕하세요", text2: "Hello" },
@@ -80,8 +81,21 @@ const MOCK_CAPTIONS: CaptionEntry[] = [
   },
 ];
 
+function findActiveIndex(entries: CaptionEntry[], time: number): number {
+  for (let i = entries.length - 1; i >= 0; i--) {
+    if (time >= entries[i].begin) return entries[i].idx;
+  }
+  return -1;
+}
+
 export function VideoViewerPage() {
   const { id } = useParams<"id">();
+  const playerContainerRef = useRef<HTMLDivElement>(null);
+  const { currentTime, seekTo } = useYouTubePlayer(
+    playerContainerRef,
+    MOCK_YOUTUBE_ID,
+  );
+  const activeIndex = findActiveIndex(MOCK_CAPTIONS, currentTime);
 
   return (
     <div className="flex h-screen flex-col">
@@ -97,12 +111,13 @@ export function VideoViewerPage() {
 
       <div className="flex min-h-0 flex-1 flex-col lg:flex-row lg:gap-2 lg:p-2">
         <div className="flex-none lg:flex-1">
-          <VideoEmbed youtubeId={MOCK_YOUTUBE_ID} />
+          <VideoEmbed playerRef={playerContainerRef} />
         </div>
         <div className="min-h-0 flex-[1_0_0] lg:w-1/3 lg:flex-none">
           <CaptionPanel
             entries={MOCK_CAPTIONS}
-            activeIndex={MOCK_ACTIVE_INDEX}
+            activeIndex={activeIndex}
+            onSeek={seekTo}
           />
         </div>
       </div>

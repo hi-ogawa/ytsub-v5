@@ -15,9 +15,11 @@ function formatTime(seconds: number): string {
 function CaptionRow({
   entry,
   isActive,
+  onSeek,
 }: {
   entry: CaptionEntry;
   isActive: boolean;
+  onSeek?: (seconds: number) => void;
 }) {
   return (
     <div
@@ -31,7 +33,10 @@ function CaptionRow({
           {formatTime(entry.begin)} - {formatTime(entry.end)}
         </span>
       </div>
-      <div className="flex cursor-pointer">
+      <div
+        className="flex cursor-pointer"
+        onClick={() => onSeek?.(entry.begin)}
+      >
         <div className="flex-1 border-r border-gray-200 px-3 py-2 text-sm">
           {entry.text1}
         </div>
@@ -44,9 +49,11 @@ function CaptionRow({
 export function CaptionPanel({
   entries,
   activeIndex,
+  onSeek,
 }: {
   entries: CaptionEntry[];
   activeIndex: number;
+  onSeek?: (seconds: number) => void;
 }) {
   return (
     <div className="flex flex-col gap-1 overflow-y-auto p-2">
@@ -55,6 +62,7 @@ export function CaptionPanel({
           key={entry.idx}
           entry={entry}
           isActive={entry.idx === activeIndex}
+          onSeek={onSeek}
         />
       ))}
     </div>
