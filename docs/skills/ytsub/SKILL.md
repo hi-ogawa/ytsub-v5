@@ -7,30 +7,35 @@ Fetch Korean subtitles from YouTube, align translations, extract vocabulary, and
 ```
 YouTube URL
   │
-  ├─ 1. Fetch subs ─────────── raw TTML files + metadata
+  ├─ 1. Fetch subs ─────────── video.json, ko.ttml, en.ttml
   │
-  ├─ 2. Parse TTML ─────────── .ko.json, .en.json
+  ├─ 2. Parse TTML ─────────── ko.json, en.json
   │
-  ├─ 3. Merge captions ─────── .captions.json (paired ko/en)
+  ├─ 3. Merge captions ─────── captions.json (paired ko/en)
   │
-  ├─ 4. Push video + captions ─ createVideo → createCaptions
+  ├─ 4. Pick bookmarks ─────── bookmarks.json (user curates)
   │
-  ├─ 5. Pick bookmarks ─────── user curates vocab list
-  │
-  └─ 6. Push bookmarks ─────── createBookmarks
+  └─ 5. Import ────────────────  importVideo API
 ```
 
-Each step produces output that the user reviews before proceeding. All intermediate files live in `data/raw/`.
+Each step produces a file in `data/<id>/` that the user reviews before proceeding.
 
 ## File structure
 
 ```
 docs/skills/ytsub/
-├── SKILL.md          # this file
+├── SKILL.md              # this file
 ├── scripts/
-│   └── parse-ttml.ts # TTML → caption cues JSON
+│   └── parse-ttml.ts     # TTML → caption cues JSON
 └── data/
-    └── raw/          # yt-dlp output + intermediate JSON
+    └── <id>/             # per-video working directory
+        ├── video.json        # stage 1: metadata
+        ├── ko.ttml           # stage 1: raw Korean subs
+        ├── en.ttml           # stage 1: raw English subs
+        ├── ko.json           # stage 2: parsed Korean cues
+        ├── en.json           # stage 2: parsed English cues
+        ├── captions.json     # stage 3: merged bilingual captions
+        └── bookmarks.json    # stage 4: curated vocab
 ```
 
 ## Config
@@ -56,8 +61,8 @@ Review output to identify available subtitle languages and whether they are manu
 ### Download metadata + subtitles
 
 ```bash
-cd docs/skills/ytsub/data/raw
-yt-dlp --print '{"youtubeId":"%(id)s","title":"%(title)s","channelName":"%(channel)s","channelId":"%(channel_id)s","duration":%(duration)s}' --skip-download "<URL>" > <id>.video.json
+mkdir -p docs/skills/ytsub/data/<id> && cd docs/skills/ytsub/data/<id>
+yt-dlp --print '{"youtubeId":"%(id)s","title":"%(title)s","channelName":"%(channel)s","channelId":"%(channel_id)s","duration":%(duration)s}' --skip-download "<URL>" > video.json
 ```
 
 Prefer manual subs over auto-generated. Use TTML format.
@@ -65,15 +70,18 @@ Prefer manual subs over auto-generated. Use TTML format.
 ```bash
 # Manual subs (preferred)
 yt-dlp --write-sub --sub-lang ko --skip-download --sub-format ttml -o "%(id)s" "<URL>"
+mv <id>.ko.ttml ko.ttml
 yt-dlp --write-sub --sub-lang en --skip-download --sub-format ttml -o "%(id)s" "<URL>"
+mv <id>.en.ttml en.ttml
 
 # Auto-generated (fallback — may need correction)
 yt-dlp --write-auto-sub --sub-lang ko --skip-download --sub-format ttml -o "%(id)s" "<URL>"
+mv <id>.ko.ttml ko.ttml
 ```
 
 If manual subs aren't available for a language, skip it — pick a different video that has manual subs.
 
-**Output:** `<id>.video.json`, `<id>.ko.ttml`, `<id>.en.ttml`
+**Output:** `video.json`, `ko.ttml`, `en.ttml`
 
 **Review:** Check video.json fields. Open TTML files and verify the text is actual lyrics/dialogue.
 
@@ -93,11 +101,11 @@ If manual subs aren't available for a language, skip it — pick a different vid
 ## Stage 2: Parse TTML → JSON
 
 ```bash
-node docs/skills/ytsub/scripts/parse-ttml.ts <id>.ko.ttml > <id>.ko.json
-node docs/skills/ytsub/scripts/parse-ttml.ts <id>.en.ttml > <id>.en.json
+node docs/skills/ytsub/scripts/parse-ttml.ts ko.ttml > ko.json
+node docs/skills/ytsub/scripts/parse-ttml.ts en.ttml > en.json
 ```
 
-**Output:** `<id>.ko.json`, `<id>.en.json` — arrays of caption cues:
+**Output:** `ko.json`, `en.json` — arrays of caption cues:
 
 ```json
 {
@@ -117,7 +125,7 @@ node docs/skills/ytsub/scripts/parse-ttml.ts <id>.en.ttml > <id>.en.json
 
 Korean timestamps are the source of truth. For each Korean cue, find the English cue with the most timestamp overlap and pair them.
 
-Agent reads both JSON files and writes `<id>.captions.json`:
+Agent reads both JSON files and writes `captions.json`:
 
 ```json
 [
@@ -137,60 +145,9 @@ When multiple English cues overlap a single Korean cue, concatenate them with a 
 
 ---
 
-## Stage 4: Push video + captions
+## Stage 4: Pick bookmarks
 
-### 4a. Create video
-
-```
-POST /api/createVideo
-```
-
-```json
-{
-  "youtubeId": "dQw4w9WgXcQ",
-  "title": "Video Title",
-  "channelName": "Channel Name",
-  "channelId": "UCxxxxxx",
-  "duration": 245,
-  "language1": "ko",
-  "language2": "en"
-}
-```
-
-Returns the video row (includes `id` needed for subsequent calls). Upserts on `youtubeId` conflict.
-
-Use metadata from `<id>.video.json` (stage 1).
-
-### 4b. Create captions
-
-```
-POST /api/createCaptions
-```
-
-```json
-{
-  "videoId": 1,
-  "captions": [
-    {
-      "idx": 0,
-      "begin": 25.585,
-      "end": 29.489,
-      "text1": "꼬집어 봐 뜬 꿈인 것 같아",
-      "text2": "am I awake? or am I still dreaming"
-    }
-  ]
-}
-```
-
-Map from merged captions: `ko` → `text1`, `en` → `text2`.
-
-Returns `{ inserted: number }`.
-
----
-
-## Stage 5: Pick bookmarks
-
-Agent proposes bookmark candidates (interesting vocab from the Korean captions). User curates the list.
+Agent proposes bookmark candidates (interesting vocab from the Korean captions). User curates the list. Save as `bookmarks.json`.
 
 ### What is "notable" vocab
 
@@ -214,46 +171,59 @@ Aim for 5-15 words per video.
 | notes       | Optional notes                                       |
 | status      | "pending" or "learned"                               |
 
+**Review:** User reviews and curates the proposed list.
+
 ---
 
-## Stage 6: Push bookmarks
+## Stage 5: Import
+
+Push everything in one call via `importVideo`. The agent assembles the payload from `video.json`, `captions.json`, and `bookmarks.json`.
 
 ```
-POST /api/createBookmarks
+POST /api/importVideo
 ```
 
 ```json
 {
+  "video": {
+    "youtubeId": "...",
+    "title": "...",
+    "channelName": "...",
+    "channelId": "...",
+    "duration": 210,
+    "language1": "ko",
+    "language2": "en"
+  },
+  "captions": [
+    { "idx": 0, "begin": 25.585, "end": 29.489, "text1": "...", "text2": "..." }
+  ],
   "bookmarks": [
     {
-      "videoId": 1,
       "text": "헷갈리다",
       "translation": "to be confused",
-      "context": "아직 좀 헷갈리기는 해",
-      "timestamp": 39.954,
-      "notes": "",
-      "status": "pending"
+      "captionIdx": 4,
+      "side": 0,
+      "offset": 4,
+      "context": "아직 좀 헷갈리기는 해"
     }
   ]
 }
 ```
 
-Use `captionIdx` to look up timestamp from merged captions.
-
-Returns `{ inserted: number }`.
+- Map from merged captions: `ko` → `text1`, `en` → `text2`
+- `captionIdx` is resolved to `captionId` server-side
+- Returns `{ videoId, captions, bookmarks }` with counts
 
 ---
 
 ## API reference
 
-| Endpoint          | Key fields                                                         |
-| ----------------- | ------------------------------------------------------------------ |
-| `createVideo`     | youtubeId, title, channelName, channelId, duration, language1/2    |
-| `createCaptions`  | videoId, captions[]{idx, begin, end, text1, text2}                 |
-| `createBookmarks` | bookmarks[]{videoId, text, translation, context, timestamp, notes} |
-| `listVideos`      | limit, offset → {items, total}                                     |
-| `getVideo`        | id → video + captionCount                                          |
-| `listBookmarks`   | videoId, status, limit, offset → {items, total}                    |
-| `deleteVideo`     | id                                                                 |
-| `deleteBookmark`  | id                                                                 |
-| `updateBookmark`  | id, status?, translation?, notes?                                  |
+| Endpoint         | Key fields                                         |
+| ---------------- | -------------------------------------------------- |
+| `importVideo`    | video{}, captions[], bookmarks[] — one-shot import |
+| `listVideos`     | limit, offset → {items, total}                     |
+| `getVideo`       | id → video + captionCount                          |
+| `listBookmarks`  | videoId, status, limit, offset → {items, total}    |
+| `deleteVideo`    | id (cascades captions)                             |
+| `deleteBookmark` | id                                                 |
+| `updateBookmark` | id, status?, translation?, notes?                  |
