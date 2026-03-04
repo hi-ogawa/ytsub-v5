@@ -1,4 +1,12 @@
+import { exec } from "node:child_process";
+import { promisify } from "node:util";
 import { expect, test } from "@playwright/test";
+
+const execAsync = promisify(exec);
+
+test.beforeAll(async () => {
+  await execAsync("pnpm db:clear && pnpm db:seed");
+});
 
 test("health endpoint returns ok", async ({ request }) => {
   const res = await request.post("/api/health", {
