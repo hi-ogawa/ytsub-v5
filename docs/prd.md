@@ -70,8 +70,9 @@ A web app for language learning via YouTube subtitles. Watch videos with dual ca
   - cross-reference with manual subs in other languages when available
   - see `background/skill-integration.md` for details
 
-## TODO: Chores
+### Misc
 
+- [x] Authentication (single-user)
 - [ ] chore: unit-testable API layer — swap `cloudflare:workers` env + D1 drizzle adapter for local SQLite (e.g. `better-sqlite3`) so RPC handlers can be tested directly without spinning up wrangler/Playwright
 - [x] chore: separate dev and E2E databases — use different D1 state paths (e.g. `--persist-to`) so `pnpm dev` and `pnpm test-e2e` don't share data
 - [x] chore: E2E `db:reset` before test run — run db reset in Playwright `globalSetup` so each test suite starts with a clean DB
@@ -85,5 +86,5 @@ A web app for language learning via YouTube subtitles. Watch videos with dual ca
 - [ ] Bookmark curation shortcuts — approve/reject without mouse
 - [ ] Mobile-friendly layout
 - [ ] Browser extension as data source (content script fetches subs from YouTube same-origin)
-- [ ] Authentication (password auth, single-user)
+- [ ] Authentication (multi users)
 - [ ] Typing practice (v3/v4 had this)

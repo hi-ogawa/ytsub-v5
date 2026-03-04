@@ -14,13 +14,9 @@ export default defineConfig({
   },
   use: {
     baseURL: "http://localhost:5190",
+    ...devices["Desktop Chrome"],
   },
   forbidOnly: !!process.env.CI,
   reporter: process.env.CI ? [["list"], ["github"]] : "list",
-  projects: [
-    {
-      name: "chromium",
-      use: { ...devices["Desktop Chrome"] },
-    },
-  ],
+  testIgnore: ["setup.ts"],
 });

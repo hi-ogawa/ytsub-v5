@@ -7,6 +7,12 @@
     "not_found_handling": "single-page-application",
     "run_worker_first": ["/api/*"],
   },
+  "vars": {
+    // dev only — use `wrangler secret put` for production
+    // echo -n "dev" | openssl dgst -sha256 -hex
+    "AUTH_PASSWORD_HASH": "ef260e9aa3c673af240d17a2660480361a8e081d1ffeca2a5ed0e3219fc18567",
+    "AUTH_SECRET": "dev-secret-change-in-production",
+  },
   "d1_databases": [
     {
       "binding": "DB",
