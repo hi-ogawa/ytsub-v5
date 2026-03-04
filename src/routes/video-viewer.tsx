@@ -130,11 +130,71 @@ type Bookmark = {
   videoId: number;
   captionId: number | null;
   text: string;
+  side: number;
+  offset: number;
   translation: string;
   context: string;
   timestamp: number;
   status: string;
 };
+
+function highlightText(
+  text: string,
+  marks: { offset: number; length: number; bookmark: Bookmark }[],
+) {
+  if (marks.length === 0) return <>{text}</>;
+  const sorted = [...marks].sort((a, b) => a.offset - b.offset);
+  const parts: React.ReactNode[] = [];
+  let cursor = 0;
+  for (const m of sorted) {
+    if (m.offset > cursor) parts.push(text.slice(cursor, m.offset));
+    const end = m.offset + m.length;
+    parts.push(
+      <BookmarkWord key={m.bookmark.id} bookmark={m.bookmark}>
+        {text.slice(m.offset, end)}
+      </BookmarkWord>,
+    );
+    cursor = end;
+  }
+  if (cursor < text.length) parts.push(text.slice(cursor));
+  return <>{parts}</>;
+}
+
+function BookmarkWord({
+  bookmark,
+  children,
+}: {
+  bookmark: Bookmark;
+  children: React.ReactNode;
+}) {
+  const [open, setOpen] = useState(false);
+  return (
+    <span
+      className="relative inline-block"
+      onMouseEnter={() => setOpen(true)}
+      onMouseLeave={() => setOpen(false)}
+    >
+      <span className="border-b-2 border-amber-400 bg-amber-50">
+        {children}
+      </span>
+      {open && (
+        <span className="absolute bottom-full left-0 z-10 mb-1 w-48 rounded border bg-white p-2 shadow-lg">
+          <span className="block text-xs font-medium text-gray-800">
+            {bookmark.text}
+          </span>
+          <span className="block text-xs text-gray-500">
+            {bookmark.translation}
+          </span>
+          {bookmark.context && (
+            <span className="mt-1 block text-[10px] text-gray-400">
+              {bookmark.context}
+            </span>
+          )}
+        </span>
+      )}
+    </span>
+  );
+}
 
 function BookmarksList({
   bookmarks,
@@ -165,17 +225,7 @@ function BookmarksList({
               player.playVideo();
             }}
           >
-            <div className="flex items-center gap-2 text-xs text-gray-400">
-              <span
-                className={[
-                  "rounded px-1 py-0.5 text-[10px] font-medium",
-                  bm.status === "learned"
-                    ? "bg-green-100 text-green-700"
-                    : "bg-yellow-100 text-yellow-700",
-                ].join(" ")}
-              >
-                {bm.status}
-              </span>
+            <div className="flex items-center text-xs text-gray-400">
               <span className="ml-auto">{formatTimestamp(bm.timestamp)}</span>
             </div>
             <div className="text-sm font-medium">{bm.text}</div>
@@ -226,6 +276,17 @@ export function VideoViewerPage() {
       if (bm.captionId) set.add(bm.captionId);
     }
     return set;
+  }, [bookmarkItems]);
+
+  const bookmarksByCaptionId = useMemo(() => {
+    const map = new Map<number, Bookmark[]>();
+    for (const bm of bookmarkItems) {
+      if (!bm.captionId) continue;
+      const list = map.get(bm.captionId);
+      if (list) list.push(bm);
+      else map.set(bm.captionId, [bm]);
+    }
+    return map;
   }, [bookmarkItems]);
 
   const { ref: playerRef, player } = useYouTubePlayer(video?.youtubeId);
@@ -309,11 +370,10 @@ export function VideoViewerPage() {
     }
   }
 
-  // Bookmark navigation
+  // Bookmark navigation — read time directly from player to avoid stale ref
   function onPrevBookmark() {
     if (!player || sortedBookmarks.length === 0) return;
-    const time = currentTimeRef.current;
-    // Reverse scan for timestamp < currentTime - 1s
+    const time = player.getCurrentTime();
     for (let i = sortedBookmarks.length - 1; i >= 0; i--) {
       if (sortedBookmarks[i].timestamp < time - 1) {
         player.seekTo(sortedBookmarks[i].timestamp);
@@ -329,8 +389,7 @@ export function VideoViewerPage() {
 
   function onNextBookmark() {
     if (!player || sortedBookmarks.length === 0) return;
-    const time = currentTimeRef.current;
-    // Forward scan for timestamp > currentTime + 0.5s
+    const time = player.getCurrentTime();
     for (const bm of sortedBookmarks) {
       if (bm.timestamp > time + 0.5) {
         player.seekTo(bm.timestamp);
@@ -463,6 +522,21 @@ export function VideoViewerPage() {
                   const isCurrent = item.index === currentIndex;
                   const isEntryPlaying = isCurrent && isPlaying;
                   const hasBookmark = bookmarkedCaptionIds.has(entry.id);
+                  const entryBookmarks = bookmarksByCaptionId.get(entry.id);
+                  const text1Marks = entryBookmarks
+                    ?.filter((b) => b.side === 0)
+                    .map((b) => ({
+                      offset: b.offset,
+                      length: b.text.length,
+                      bookmark: b,
+                    }));
+                  const text2Marks = entryBookmarks
+                    ?.filter((b) => b.side === 1)
+                    .map((b) => ({
+                      offset: b.offset,
+                      length: b.text.length,
+                      bookmark: b,
+                    }));
 
                   return (
                     <div
@@ -493,9 +567,15 @@ export function VideoViewerPage() {
                         onClick={() => onClickEntry(item.index)}
                       >
                         <div className="flex-1 border-r pr-2">
-                          {entry.text1}
+                          {text1Marks?.length
+                            ? highlightText(entry.text1, text1Marks)
+                            : entry.text1}
                         </div>
-                        <div className="flex-1 pl-2">{entry.text2}</div>
+                        <div className="flex-1 pl-2">
+                          {text2Marks?.length
+                            ? highlightText(entry.text2, text2Marks)
+                            : entry.text2}
+                        </div>
                       </div>
                     </div>
                   );

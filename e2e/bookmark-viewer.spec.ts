@@ -41,8 +41,22 @@ test.describe("bookmark viewer", () => {
     // First bookmark by timestamp should be 꼬집어
     await expect(page.getByText("꼬집어").first()).toBeVisible();
     await expect(page.getByText("to pinch").first()).toBeVisible();
-    // Status badges should be visible
-    await expect(page.getByText("pending").first()).toBeVisible();
+  });
+
+  test("highlights bookmark words in caption text", async ({ page }) => {
+    // Caption at idx=0 has bookmark 꼬집어 — should be highlighted with amber underline
+    const firstRow = page.locator("[data-index='0']");
+    const highlight = firstRow.locator("span.border-amber-400");
+    await expect(highlight.first()).toBeVisible();
+    await expect(highlight.first()).toHaveText("꼬집어");
+  });
+
+  test("shows popover on bookmark word hover", async ({ page }) => {
+    const firstRow = page.locator("[data-index='0']");
+    const highlight = firstRow.locator("span.border-amber-400").first();
+    await highlight.hover();
+    // Popover should show translation
+    await expect(page.getByText("to pinch")).toBeVisible();
   });
 
   test("bookmark list shows caption context", async ({ page }) => {
