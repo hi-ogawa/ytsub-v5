@@ -48,7 +48,8 @@ test.describe("video list and navigation", () => {
   test("clicking a video card navigates to viewer", async ({ page }) => {
     await page.getByText("cloud palace").click();
     await expect(page).toHaveURL(/\/videos\/\d+/);
-    await expect(page.getByText("viewer coming soon")).toBeVisible();
+    // Viewer page should show caption rows from seed data
+    await expect(page.locator("[data-index='0']")).toBeVisible();
   });
 
   test("header logo navigates back to video list", async ({ page }) => {
