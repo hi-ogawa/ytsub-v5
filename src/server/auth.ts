@@ -12,20 +12,25 @@ interface AuthContext
 /** Public base — has request/response headers from plugins but no auth check */
 export const pub = os.$context<AuthContext>();
 
-/** Auth middleware — verifies session cookie or Bearer token */
+/** Auth middleware — verifies Bearer password or session cookie */
 const requireAuth = pub.middleware(async ({ context, next }) => {
-  const token =
-    context.reqHeaders?.get("Authorization")?.replace("Bearer ", "") ??
-    getCookie(context.reqHeaders, "session");
-
-  if (!token) throw new ORPCError("UNAUTHORIZED");
-
-  const exp = await unsign(token, env.AUTH_SECRET);
-  if (!exp || Number(exp) < Date.now() / 1000) {
+  // Bearer token = raw password
+  const bearer = context.reqHeaders
+    ?.get("Authorization")
+    ?.replace("Bearer ", "");
+  if (bearer) {
+    if (await verifyPassword(bearer)) return next({});
     throw new ORPCError("UNAUTHORIZED");
   }
 
-  return next({});
+  // Session cookie = signed HMAC token
+  const cookie = getCookie(context.reqHeaders, "session");
+  if (cookie) {
+    const exp = await unsign(cookie, env.AUTH_SECRET);
+    if (exp && Number(exp) >= Date.now() / 1000) return next({});
+  }
+
+  throw new ORPCError("UNAUTHORIZED");
 });
 
 /** Protected base — requires valid session */

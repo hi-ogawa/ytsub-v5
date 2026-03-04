@@ -67,21 +67,25 @@ test.describe("auth endpoints", () => {
     expect(setCookie).toContain("Max-Age=0");
   });
 
-  test("bearer token auth works", async ({ request }) => {
-    // Login to get token from cookie
-    const loginRes = await rpc(request, "auth/login", { password: "dev" });
-    const setCookie = loginRes.headers()["set-cookie"];
-    const token = setCookie.match(/session=([^;]+)/)?.[1];
-    expect(token).toBeTruthy();
-
-    // Use token as Bearer auth (fresh request context won't have cookies)
+  test("bearer password auth works", async ({ request }) => {
     const res = await request.post("/api/videos/listVideos", {
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
+        Authorization: "Bearer dev",
       },
       data: { json: {} },
     });
     expect(res.ok()).toBe(true);
+  });
+
+  test("bearer wrong password returns 401", async ({ request }) => {
+    const res = await request.post("/api/videos/listVideos", {
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: "Bearer wrong",
+      },
+      data: { json: {} },
+    });
+    expect(res.status()).toBe(401);
   });
 });
