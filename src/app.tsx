@@ -22,6 +22,12 @@ async function authLoader() {
   return { authenticated: data.json.authenticated };
 }
 
+function GuestLayout() {
+  const { authenticated } = useLoaderData<typeof authLoader>();
+  if (authenticated) return <Navigate to="/" replace />;
+  return <Outlet />;
+}
+
 function AuthLayout() {
   const { authenticated } = useLoaderData<typeof authLoader>();
   if (!authenticated) return <Navigate to="/login" replace />;
@@ -29,7 +35,11 @@ function AuthLayout() {
 }
 
 const router = createBrowserRouter([
-  { path: "/login", Component: LoginPage },
+  {
+    Component: GuestLayout,
+    loader: authLoader,
+    children: [{ path: "/login", Component: LoginPage }],
+  },
   {
     Component: AuthLayout,
     loader: authLoader,
