@@ -1,46 +1,40 @@
+import { ORPCError } from "@orpc/server";
 import {
-  clearSessionCookie,
-  parseAuthToken,
-  sessionCookie,
-  signToken,
-  verifyPassword,
-  verifyToken,
-} from "../auth.ts";
+  deleteCookie,
+  getCookie,
+  setCookie,
+  unsign,
+} from "@orpc/server/helpers";
+import { env } from "cloudflare:workers";
+import z from "zod";
+import { createSessionToken, pub, verifyPassword } from "../auth.ts";
 
-/** Handle POST /api/auth/login */
-export async function handleLogin(request: Request): Promise<Response> {
-  if (request.method !== "POST") {
-    return new Response("Method not allowed", { status: 405 });
-  }
-  const body = (await request.json()) as { password?: string };
-  if (!body.password) {
-    return Response.json({ error: "Password required" }, { status: 400 });
-  }
-  const valid = await verifyPassword(body.password);
-  if (!valid) {
-    return Response.json({ error: "Invalid password" }, { status: 401 });
-  }
-  const token = await signToken();
-  return Response.json(
-    { ok: true },
-    { headers: { "Set-Cookie": sessionCookie(token) } },
-  );
-}
+export const authRouter = pub.router({
+  login: pub
+    .input(z.object({ password: z.string() }))
+    .handler(async ({ input, context }) => {
+      const valid = await verifyPassword(input.password);
+      if (!valid) throw new ORPCError("UNAUTHORIZED");
 
-/** Handle POST /api/auth/logout */
-export async function handleLogout(): Promise<Response> {
-  return Response.json(
-    { ok: true },
-    { headers: { "Set-Cookie": clearSessionCookie() } },
-  );
-}
+      const token = await createSessionToken();
+      setCookie(context.resHeaders, "session", token, {
+        httpOnly: true,
+        sameSite: "lax",
+        maxAge: 30 * 86400,
+      });
+      return { ok: true };
+    }),
 
-/** Handle GET /api/auth/check */
-export async function handleAuthCheck(request: Request): Promise<Response> {
-  const token = parseAuthToken(request);
-  if (!token) {
-    return Response.json({ authenticated: false });
-  }
-  const valid = await verifyToken(token);
-  return Response.json({ authenticated: valid });
-}
+  logout: pub.handler(async ({ context }) => {
+    deleteCookie(context.resHeaders, "session");
+    return { ok: true };
+  }),
+
+  check: pub.handler(async ({ context }) => {
+    const token = getCookie(context.reqHeaders, "session");
+    if (!token) return { authenticated: false };
+    const exp = await unsign(token, env.AUTH_SECRET);
+    const valid = !!exp && Number(exp) >= Date.now() / 1000;
+    return { authenticated: valid };
+  }),
+});
