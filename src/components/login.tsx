@@ -1,5 +1,5 @@
 import { useMutation } from "@tanstack/react-query";
-import { type FormEvent, useRef } from "react";
+import { type SubmitEvent, useRef } from "react";
 import { orpc } from "../rpc.ts";
 
 export function Login({ onSuccess }: { onSuccess?: () => void }) {
@@ -11,7 +11,7 @@ export function Login({ onSuccess }: { onSuccess?: () => void }) {
     }),
   );
 
-  function handleSubmit(e: FormEvent<HTMLFormElement>) {
+  function handleSubmit(e: SubmitEvent<HTMLFormElement>) {
     e.preventDefault();
     const form = new FormData(e.currentTarget);
     login.mutate({ password: form.get("password") as string });
