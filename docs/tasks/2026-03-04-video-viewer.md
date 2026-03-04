@@ -137,4 +137,4 @@ Layout: flex-row on lg+ (player `grow`, captions `w-1/3`), stacked on mobile (sa
 
 ## Status
 
-- **Planning** — awaiting approval
+- **Done** — PR #17 (`feat/video-viewer`). All items implemented except repeat/loop mode (out of scope).

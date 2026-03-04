@@ -37,15 +37,15 @@ A web app for language learning via YouTube subtitles. Watch videos with dual ca
 
 ### Video viewer — layout & embed
 
-- [ ] feat: viewer page layout — YouTube embed (left) + caption panel (right)
-- [ ] feat: YouTube embed component — iframe player API integration
+- [x] feat: viewer page layout — YouTube embed (left) + caption panel (right)
+- [x] feat: YouTube embed component — iframe player API integration
   - play/pause, seek, current time events
-- [ ] feat: caption panel — dual column layout (language1 | language2)
+- [x] feat: caption panel — dual column layout (language1 | language2)
   - fetch captions for video, align by timestamp
-- [ ] feat: caption auto-scroll — sync scroll position with video playback time
-- [ ] feat: caption click-to-seek — click a caption row to seek video to that timestamp
-- [ ] feat: current caption highlight — visually indicate the active caption row
-- [ ] feat: virtualized caption list — TanStack Virtual for large subtitle files (1000+ cues)
+- [x] feat: caption auto-scroll — sync scroll position with video playback time
+- [x] feat: caption click-to-seek — click a caption row to seek video to that timestamp
+- [x] feat: current caption highlight — visually indicate the active caption row
+- [x] feat: virtualized caption list — TanStack Virtual for large subtitle files (1000+ cues)
 - [ ] feat: repeat/loop mode — loop a section between two caption timestamps
 
 ### Bookmark features
@@ -63,7 +63,7 @@ A web app for language learning via YouTube subtitles. Watch videos with dual ca
 
 ### Skill authoring
 
-- [ ] feat: agent skills
+- [x] feat: agent skills
   - yt-dlp fetch + LLM caption correction + translation + vocab extraction + POST to app
   - correct bad Korean auto-captions from context
   - generate English translation from Korean-only subs
