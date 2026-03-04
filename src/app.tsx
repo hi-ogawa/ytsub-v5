@@ -1,39 +1,49 @@
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
-  QueryClient,
-  QueryClientProvider,
-  useQuery,
-} from "@tanstack/react-query";
-import { useState } from "react";
-import { createBrowserRouter, RouterProvider } from "react-router";
-import { Login } from "./components/login.tsx";
+  createBrowserRouter,
+  Navigate,
+  Outlet,
+  RouterProvider,
+  useLoaderData,
+} from "react-router";
+import { LoginPage } from "./routes/login.tsx";
 import { VideoListPage } from "./routes/video-list.tsx";
 import { VideoViewerPage } from "./routes/video-viewer.tsx";
-import { orpc } from "./rpc.ts";
 
 const queryClient = new QueryClient();
 
-const router = createBrowserRouter([
-  { path: "/", Component: VideoListPage },
-  { path: "/videos/:id", Component: VideoViewerPage },
-]);
-
-function AuthGate() {
-  const [authed, setAuthed] = useState(false);
-  const check = useQuery(orpc.auth.check.queryOptions({ input: {} }));
-
-  if (check.isLoading) return null;
-
-  if (check.data?.authenticated || authed) {
-    return <RouterProvider router={router} />;
-  }
-
-  return <Login onSuccess={() => setAuthed(true)} />;
+async function authLoader() {
+  const res = await fetch("/api/auth/check", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ json: {} }),
+  });
+  const data = (await res.json()) as { json: { authenticated: boolean } };
+  return { authenticated: data.json.authenticated };
 }
+
+function AuthLayout() {
+  const { authenticated } = useLoaderData<typeof authLoader>();
+  if (!authenticated) return <Navigate to="/login" replace />;
+  return <Outlet />;
+}
+
+const router = createBrowserRouter([
+  { path: "/login", Component: LoginPage },
+  {
+    Component: AuthLayout,
+    loader: authLoader,
+    children: [
+      { path: "/", Component: VideoListPage },
+      { path: "/videos/:id", Component: VideoViewerPage },
+    ],
+  },
+]);
 
 export function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthGate />
+      <RouterProvider router={router} />
     </QueryClientProvider>
   );
 }

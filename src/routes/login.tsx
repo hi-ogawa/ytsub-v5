@@ -1,12 +1,14 @@
 import { useMutation } from "@tanstack/react-query";
 import { type SubmitEvent, useRef } from "react";
+import { useNavigate } from "react-router";
 import { orpc } from "../rpc.ts";
 
-export function Login({ onSuccess }: { onSuccess?: () => void }) {
+export function LoginPage() {
+  const navigate = useNavigate();
   const inputRef = useRef<HTMLInputElement>(null);
   const login = useMutation(
     orpc.auth.login.mutationOptions({
-      onSuccess,
+      onSuccess: () => navigate("/", { replace: true }),
       onError: () => inputRef.current?.focus(),
     }),
   );
