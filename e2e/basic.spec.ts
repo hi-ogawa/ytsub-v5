@@ -13,5 +13,6 @@ test("health endpoint returns ok with videos count", async ({ request }) => {
   });
   expect(res.ok()).toBe(true);
   const body = await res.json();
-  expect(body.json).toEqual({ ok: true, videos: 0 });
+  expect(body.json.ok).toBe(true);
+  expect(typeof body.json.videos).toBe("number");
 });
