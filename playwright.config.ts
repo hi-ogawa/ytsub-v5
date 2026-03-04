@@ -14,8 +14,22 @@ export default defineConfig({
   reporter: process.env.CI ? [["list"], ["github"]] : "list",
   projects: [
     {
-      name: "chromium",
+      name: "auth",
+      testMatch: "auth.spec.ts",
       use: { ...devices["Desktop Chrome"] },
+    },
+    {
+      name: "setup",
+      testMatch: "setup.ts",
+    },
+    {
+      name: "chromium",
+      use: {
+        ...devices["Desktop Chrome"],
+        storageState: "e2e/.auth.json",
+      },
+      dependencies: ["setup"],
+      testIgnore: ["auth.spec.ts", "setup.ts"],
     },
   ],
 });
