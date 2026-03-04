@@ -33,7 +33,7 @@ interface ImportData {
 }
 
 function esc(s: string): string {
-  return s.replace(/[''\u2018\u2019\u02BC]/g, "''");
+  return s.replace(/'/g, "''");
 }
 
 function toSql(data: ImportData): string {
