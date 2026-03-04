@@ -50,16 +50,9 @@ A web app for language learning via YouTube subtitles. Watch videos with dual ca
 
 ### Bookmark features
 
+- [ ] feat: "2nd tab" in caption panel to show bookmark as list
 - [ ] feat: bookmark indicators in caption panel — show which captions have bookmarks (icon/dot)
 - [ ] feat: bookmark navigation — prev/next bookmark buttons to skip through bookmarked captions
-- [ ] feat: bookmark approval flow — inline approve/reject buttons for `pending` bookmarks in viewer
-- [ ] feat: bookmark list page — browse/search all bookmarks across videos
-  - filter by status, video, search text
-- [ ] feat: manual bookmarking — text selection in caption panel to create bookmark
-  - DOM walk via `data-index`, `data-side`, `data-offset` attributes (v3 approach)
-  - `partitionRanges` to split caption text into highlighted/non-highlighted spans
-- [ ] feat: bookmark highlight rendering — show bookmarked words/phrases inline in caption text
-  - reusable for both manual and agent-created bookmarks
 
 ### Skill authoring
 
@@ -80,6 +73,13 @@ A web app for language learning via YouTube subtitles. Watch videos with dual ca
 
 ## TODO: Backlog
 
+- [ ] feat: bookmark highlight rendering — show bookmarked words/phrases inline in caption text
+- [ ] feat: bookmark approval flow — inline approve/reject buttons for `pending` bookmarks in viewer
+- [ ] feat: bookmark list page — browse/search all bookmarks across videos
+  - filter by status, video, search text
+- [ ] feat: manual bookmarking — text selection in caption panel to create bookmark
+  - DOM walk via `data-index`, `data-side`, `data-offset` attributes (v3 approach)
+  - `partitionRanges` to split caption text into highlighted/non-highlighted spans
 - [ ] Bookmark export — JSON export for Anki pipeline consumption
 - [ ] Full-text search — search across captions and bookmarks (D1 FTS or LIKE)
 - [ ] Keyboard shortcuts — space (play/pause), arrow keys (prev/next caption), etc.
