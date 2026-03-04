@@ -1,6 +1,6 @@
 # Seed data workflow
 
-Generate `scripts/db-seed.sql` from a real YouTube video. Each step produces a file that the user reviews before proceeding.
+Generate `scripts/seed/<id>.json` from a real YouTube video. Each step produces a file that the user reviews before proceeding.
 
 All intermediate files live in `docs/skills/ytsub/data/raw/`.
 
@@ -11,7 +11,7 @@ All intermediate files live in `docs/skills/ytsub/data/raw/`.
 2. Parse TTML              parse-ttml.ts → .ko.json, .en.json        (user reviews)
 3. Merge captions          agent aligns → .captions.json              (user reviews)
 4. Pick bookmarks          agent proposes, user curates                (user reviews)
-5. Generate seed SQL       gen-seed-sql.ts → db-seed.sql              (user verifies)
+5. Assemble seed JSON      combine into scripts/seed/<id>.json        (user verifies)
 ```
 
 ---
@@ -125,19 +125,46 @@ Agent proposes bookmark candidates (interesting vocab from the Korean captions).
 
 ---
 
-## Step 5: Generate seed SQL
+## Step 5: Assemble seed JSON
 
-```bash
-node scripts/gen-seed-sql.ts <id>.video.json <id>.captions.json [<id>.bookmarks.json] > scripts/db-seed.sql
+Combine video metadata, merged captions, and bookmarks into a single `scripts/seed/<id>.json`:
+
+```json
+{
+  "video": {
+    "youtubeId": "...",
+    "title": "...",
+    "channelName": "...",
+    "channelId": "...",
+    "duration": 210,
+    "language1": "ko",
+    "language2": "en"
+  },
+  "captions": [
+    { "idx": 0, "begin": 25.585, "end": 29.489, "ko": "...", "en": "..." }
+  ],
+  "bookmarks": [
+    {
+      "text": "...",
+      "translation": "...",
+      "captionIdx": 4,
+      "side": 0,
+      "offset": 4,
+      "context": "...",
+      "notes": "",
+      "status": "pending"
+    }
+  ]
+}
 ```
-
-Pure script — reads JSON files, emits SQL to stdout. No network calls.
 
 **Verify:**
 
 ```bash
 pnpm db:reset && pnpm db:seed
 ```
+
+`scripts/db-seed.ts` reads all `scripts/seed/*.json`, converts to SQL, and imports via wrangler.
 
 ---
 
@@ -156,6 +183,7 @@ docs/skills/ytsub/data/raw/
 └── 7GU_VQfgMT0.bookmarks.json # step 4
 
 scripts/
-├── gen-seed-sql.ts             # step 5 script
-└── db-seed.sql                 # step 5 output
+├── db-seed.ts                  # seed runner (JSON → SQL → wrangler)
+└── seed/
+    └── 7GU_VQfgMT0.json       # step 5 output
 ```
