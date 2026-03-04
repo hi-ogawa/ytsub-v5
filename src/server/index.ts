@@ -7,6 +7,16 @@ import { router } from "./rpc.ts";
 
 const handler = new RPCHandler(router, {
   plugins: [new RequestHeadersPlugin(), new ResponseHeadersPlugin()],
+  interceptors: [
+    async (options) => {
+      try {
+        return await options.next();
+      } catch (e) {
+        console.error(e);
+        throw e;
+      }
+    },
+  ],
 });
 
 export default {
