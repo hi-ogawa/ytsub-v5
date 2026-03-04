@@ -1,11 +1,11 @@
-import { os } from "@orpc/server";
 import { count, desc, eq } from "drizzle-orm";
 import z from "zod";
+import { authed } from "../auth.ts";
 import { db } from "../db.ts";
 import { captions, videos } from "../schema.ts";
 
-export const videosRouter = os.router({
-  createVideo: os
+export const videosRouter = authed.router({
+  createVideo: authed
     .input(
       z.object({
         youtubeId: z.string(),
@@ -36,7 +36,7 @@ export const videosRouter = os.router({
       return row;
     }),
 
-  createCaptions: os
+  createCaptions: authed
     .input(
       z.object({
         videoId: z.number().int(),
@@ -69,7 +69,7 @@ export const videosRouter = os.router({
       return { inserted: result.length };
     }),
 
-  listCaptions: os
+  listCaptions: authed
     .input(z.object({ videoId: z.number().int() }))
     .handler(async ({ input }) => {
       return db
@@ -79,7 +79,7 @@ export const videosRouter = os.router({
         .orderBy(captions.idx);
     }),
 
-  listVideos: os
+  listVideos: authed
     .input(
       z.object({
         limit: z.number().int().optional().default(20),
@@ -97,7 +97,7 @@ export const videosRouter = os.router({
       return { items, total: total.count };
     }),
 
-  getVideo: os
+  getVideo: authed
     .input(z.object({ id: z.number().int() }))
     .handler(async ({ input }) => {
       const video = await db
@@ -115,7 +115,7 @@ export const videosRouter = os.router({
       return { ...video, captionCount };
     }),
 
-  deleteVideo: os
+  deleteVideo: authed
     .input(z.object({ id: z.number().int() }))
     .handler(async ({ input }) => {
       const [row] = await db

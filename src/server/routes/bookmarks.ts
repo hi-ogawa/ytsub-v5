@@ -1,11 +1,11 @@
-import { os } from "@orpc/server";
 import { and, count, desc, eq } from "drizzle-orm";
 import z from "zod";
+import { authed } from "../auth.ts";
 import { db } from "../db.ts";
 import { bookmarks } from "../schema.ts";
 
-export const bookmarksRouter = os.router({
-  createBookmarks: os
+export const bookmarksRouter = authed.router({
+  createBookmarks: authed
     .input(
       z.object({
         bookmarks: z.array(
@@ -33,7 +33,7 @@ export const bookmarksRouter = os.router({
       return { inserted: result.length };
     }),
 
-  listBookmarks: os
+  listBookmarks: authed
     .input(
       z.object({
         videoId: z.number().int().optional(),
@@ -65,7 +65,7 @@ export const bookmarksRouter = os.router({
       return { items, total: total.count };
     }),
 
-  updateBookmark: os
+  updateBookmark: authed
     .input(
       z.object({
         id: z.number().int(),
@@ -95,7 +95,7 @@ export const bookmarksRouter = os.router({
       return row;
     }),
 
-  deleteBookmark: os
+  deleteBookmark: authed
     .input(z.object({ id: z.number().int() }))
     .handler(async ({ input }) => {
       const [row] = await db

@@ -7,7 +7,10 @@ test.beforeAll(async () => {
 
 const rpc = (request: any, path: string, data: any = {}) =>
   request.post(`/api/${path.replace(/\./g, "/")}`, {
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: "Bearer dev",
+    },
     data: { json: data },
   });
 
