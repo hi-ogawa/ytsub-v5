@@ -23,7 +23,7 @@ Each step produces a file in `data/<id>/` that the user reviews before proceedin
 ## File structure
 
 ```
-docs/skills/ytsub/
+./
 ├── SKILL.md              # this file
 ├── scripts/
 │   └── parse-ttml.ts     # TTML → caption cues JSON
@@ -61,7 +61,7 @@ Review output to identify available subtitle languages and whether they are manu
 ### Download metadata + subtitles
 
 ```bash
-mkdir -p docs/skills/ytsub/data/<id> && cd docs/skills/ytsub/data/<id>
+mkdir -p ./data/<id> && cd ./data/<id>
 yt-dlp --print '{"youtubeId":"%(id)s","title":"%(title)s","channelName":"%(channel)s","channelId":"%(channel_id)s","duration":%(duration)s}' --skip-download "<URL>" > video.json
 ```
 
@@ -101,8 +101,8 @@ If manual subs aren't available for a language, skip it — pick a different vid
 ## Stage 2: Parse TTML → JSON
 
 ```bash
-node docs/skills/ytsub/scripts/parse-ttml.ts ko.ttml > ko.json
-node docs/skills/ytsub/scripts/parse-ttml.ts en.ttml > en.json
+node ./scripts/parse-ttml.ts ko.ttml > ko.json
+node ./scripts/parse-ttml.ts en.ttml > en.json
 ```
 
 **Output:** `ko.json`, `en.json` — arrays of caption cues:
