@@ -1,4 +1,8 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import {
+  QueryClient,
+  QueryClientProvider,
+  useMutation,
+} from "@tanstack/react-query";
 import { useRef, useState } from "react";
 import {
   createBrowserRouter,
@@ -52,14 +56,17 @@ function HeaderMenu() {
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
-  async function handleLogout() {
-    await fetch("/api/auth/logout", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ json: {} }),
-    });
-    window.location.href = "/login";
-  }
+  const logoutMutation = useMutation({
+    mutationFn: () =>
+      fetch("/api/auth/logout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ json: {} }),
+      }),
+    onSuccess: () => {
+      window.location.href = "/login";
+    },
+  });
 
   return (
     <div className="relative">
@@ -91,7 +98,7 @@ function HeaderMenu() {
         >
           <button
             className="w-full px-3 py-1.5 text-left text-sm text-gray-700 hover:bg-gray-100"
-            onClick={handleLogout}
+            onClick={() => logoutMutation.mutate()}
           >
             Log out
           </button>
