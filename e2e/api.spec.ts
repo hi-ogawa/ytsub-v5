@@ -1,12 +1,17 @@
 import { expect, test } from "@playwright/test";
-import {
-  json,
-  rpc,
-  seedBookmarks,
-  seedCaptions,
-  seedVideo,
-  uid,
-} from "./fixtures.ts";
+
+const rpc = (request: any, path: string, data: any = {}) =>
+  request.post(`/api/${path.replace(/\./g, "/")}`, {
+    headers: { "Content-Type": "application/json" },
+    data: { json: data },
+  });
+
+const json = async (res: any) => {
+  const body = await res.json();
+  return body.json;
+};
+
+const uid = () => Math.random().toString(36).slice(2);
 
 test.describe("videos API", () => {
   test("create, list, and get video", async ({ request }) => {
@@ -56,26 +61,47 @@ test.describe("videos API", () => {
   });
 
   test("delete video cascades captions", async ({ request }) => {
-    const video = await seedVideo(request, { title: "To Delete" });
+    const youtubeId = `delete-${uid()}`;
+    const video = await json(
+      await rpc(request, "videos/createVideo", {
+        youtubeId,
+        title: "To Delete",
+      }),
+    );
 
-    await seedCaptions(request, video.id, "ko", ["test"]);
+    await rpc(request, "videos/createCaptions", {
+      videoId: video.id,
+      captions: [{ language: "ko", idx: 0, begin: 0, end: 1, text: "test" }],
+    });
 
-    // Delete
     const delRes = await rpc(request, "videos/deleteVideo", { id: video.id });
     expect(delRes.ok()).toBe(true);
 
-    // Verify gone
     const getRes = await rpc(request, "videos/getVideo", { id: video.id });
     expect(getRes.ok()).toBe(false);
   });
 
   test("create captions for a video", async ({ request }) => {
-    const video = await seedVideo(request, { title: "Caption Video" });
+    const youtubeId = `caption-${uid()}`;
+    const video = await json(
+      await rpc(request, "videos/createVideo", {
+        youtubeId,
+        title: "Caption Video",
+      }),
+    );
 
-    await seedCaptions(request, video.id, "ko", ["안녕하세요", "감사합니다"]);
-    await seedCaptions(request, video.id, "en", ["Hello"]);
+    const captionRes = await rpc(request, "videos/createCaptions", {
+      videoId: video.id,
+      captions: [
+        { language: "ko", idx: 0, begin: 0, end: 2.5, text: "안녕하세요" },
+        { language: "ko", idx: 1, begin: 2.5, end: 5, text: "감사합니다" },
+        { language: "en", idx: 0, begin: 0, end: 2.5, text: "Hello" },
+      ],
+    });
+    expect(captionRes.ok()).toBe(true);
+    const result = await json(captionRes);
+    expect(result.inserted).toBe(3);
 
-    // Verify caption counts in getVideo
     const getRes = await rpc(request, "videos/getVideo", { id: video.id });
     const got = await json(getRes);
     expect(got.captionCounts).toHaveLength(2);
@@ -86,11 +112,34 @@ test.describe("videos API", () => {
 
 test.describe("bookmarks API", () => {
   test("create, list, and update bookmarks", async ({ request }) => {
-    const video = await seedVideo(request, { title: "Bookmark Video" });
+    const youtubeId = `bookmark-${uid()}`;
+    const video = await json(
+      await rpc(request, "videos/createVideo", {
+        youtubeId,
+        title: "Bookmark Video",
+      }),
+    );
 
-    await seedBookmarks(request, video.id, ["안녕", "세계"]);
+    const createRes = await rpc(request, "bookmarks/createBookmarks", {
+      bookmarks: [
+        {
+          videoId: video.id,
+          text: "안녕",
+          translation: "hello",
+          timestamp: 1.5,
+        },
+        {
+          videoId: video.id,
+          text: "세계",
+          translation: "world",
+          timestamp: 3.0,
+        },
+      ],
+    });
+    expect(createRes.ok()).toBe(true);
+    const created = await json(createRes);
+    expect(created.inserted).toBe(2);
 
-    // List all bookmarks for video
     const listRes = await rpc(request, "bookmarks/listBookmarks", {
       videoId: video.id,
     });
@@ -99,7 +148,6 @@ test.describe("bookmarks API", () => {
     expect(list.total).toBe(2);
     expect(list.items[0].status).toBe("pending");
 
-    // Update a bookmark
     const bookmarkId = list.items[0].id;
     const updateRes = await rpc(request, "bookmarks/updateBookmark", {
       id: bookmarkId,
@@ -111,7 +159,6 @@ test.describe("bookmarks API", () => {
     expect(updated.status).toBe("approved");
     expect(updated.notes).toBe("Common greeting");
 
-    // List filtered by status
     const filteredRes = await rpc(request, "bookmarks/listBookmarks", {
       videoId: video.id,
       status: "approved",
@@ -121,9 +168,13 @@ test.describe("bookmarks API", () => {
   });
 
   test("delete bookmark", async ({ request }) => {
-    const video = await seedVideo(request, { title: "BM Del" });
-    await seedBookmarks(request, video.id, ["삭제"]);
-
+    const youtubeId = `del-bm-${uid()}`;
+    const video = await json(
+      await rpc(request, "videos/createVideo", { youtubeId, title: "BM Del" }),
+    );
+    await rpc(request, "bookmarks/createBookmarks", {
+      bookmarks: [{ videoId: video.id, text: "삭제", timestamp: 0 }],
+    });
     const list = await json(
       await rpc(request, "bookmarks/listBookmarks", { videoId: video.id }),
     );
