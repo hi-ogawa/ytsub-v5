@@ -163,7 +163,7 @@ Aim for 5-15 words per video.
 
 | Field       | Description                                          |
 | ----------- | ---------------------------------------------------- |
-| text        | Korean headword (dictionary form)                    |
+| text        | Korean word as it appears in the subtitle            |
 | translation | English meaning                                      |
 | captionIdx  | Index into merged captions (for timestamp/captionId) |
 | side        | 0 = primary (ko), 1 = secondary (en)                 |
