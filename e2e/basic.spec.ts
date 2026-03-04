@@ -40,7 +40,7 @@ test.describe("video list and navigation", () => {
       name: /cloud palace/,
     });
     await expect(card).toBeVisible();
-    await expect(card.getByText("Billlie")).toBeVisible();
+    await expect(card.locator("p", { hasText: "Billlie" })).toBeVisible();
     await expect(card.getByText("ko / en")).toBeVisible();
     await expect(card.getByText("3:30")).toBeVisible();
   });
