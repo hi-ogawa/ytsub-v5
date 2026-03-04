@@ -48,14 +48,23 @@ test.describe("video list and navigation", () => {
   test("clicking a video card navigates to viewer", async ({ page }) => {
     await page.getByText("cloud palace").click();
     await expect(page).toHaveURL(/\/videos\/\d+/);
-    await expect(page.locator("h1")).toContainText("Video");
+    await expect(page.getByText("viewer coming soon")).toBeVisible();
   });
 
-  test("viewer back link returns to video list", async ({ page }) => {
+  test("header logo navigates back to video list", async ({ page }) => {
     await page.getByText("cloud palace").click();
-    await expect(page.locator("h1")).toContainText("Video");
-    await page.getByText("← Back to videos").click();
+    await expect(page).toHaveURL(/\/videos\/\d+/);
+    await page.getByRole("link", { name: "ytsub" }).click();
     await expect(page).toHaveURL("/");
-    await expect(page.locator("h1")).toHaveText("Videos");
+  });
+
+  test("logout redirects to login", async ({ page }) => {
+    // Open header menu and click logout
+    await page.getByRole("banner").getByRole("button").click();
+    await page.getByText("Log out").click();
+    await expect(page).toHaveURL("/login");
+    // Verify session is cleared by navigating to /
+    await page.goto("/");
+    await expect(page).toHaveURL("/login");
   });
 });
