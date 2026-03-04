@@ -1,4 +1,9 @@
 import { expect, test } from "@playwright/test";
+import { setupDb } from "./helper.ts";
+
+test.beforeAll(async () => {
+  await setupDb();
+});
 
 const rpc = (request: any, path: string, data: any = {}) =>
   request.post(`/api/${path.replace(/\./g, "/")}`, {
@@ -69,28 +74,26 @@ test.describe("videos API", () => {
       }),
     );
 
-    // Add captions
     await rpc(request, "videos/createCaptions", {
       videoId: video.id,
       captions: [{ language: "ko", idx: 0, begin: 0, end: 1, text: "test" }],
     });
 
-    // Delete
     const delRes = await rpc(request, "videos/deleteVideo", { id: video.id });
     expect(delRes.ok()).toBe(true);
 
-    // Verify gone
     const getRes = await rpc(request, "videos/getVideo", { id: video.id });
     expect(getRes.ok()).toBe(false);
   });
 
   test("create captions for a video", async ({ request }) => {
     const youtubeId = `caption-${uid()}`;
-    const videoRes = await rpc(request, "videos/createVideo", {
-      youtubeId,
-      title: "Caption Video",
-    });
-    const video = await json(videoRes);
+    const video = await json(
+      await rpc(request, "videos/createVideo", {
+        youtubeId,
+        title: "Caption Video",
+      }),
+    );
 
     const captionRes = await rpc(request, "videos/createCaptions", {
       videoId: video.id,
@@ -104,7 +107,6 @@ test.describe("videos API", () => {
     const result = await json(captionRes);
     expect(result.inserted).toBe(3);
 
-    // Verify caption counts in getVideo
     const getRes = await rpc(request, "videos/getVideo", { id: video.id });
     const got = await json(getRes);
     expect(got.captionCounts).toHaveLength(2);
@@ -116,13 +118,13 @@ test.describe("videos API", () => {
 test.describe("bookmarks API", () => {
   test("create, list, and update bookmarks", async ({ request }) => {
     const youtubeId = `bookmark-${uid()}`;
-    const videoRes = await rpc(request, "videos/createVideo", {
-      youtubeId,
-      title: "Bookmark Video",
-    });
-    const video = await json(videoRes);
+    const video = await json(
+      await rpc(request, "videos/createVideo", {
+        youtubeId,
+        title: "Bookmark Video",
+      }),
+    );
 
-    // Create bookmarks
     const createRes = await rpc(request, "bookmarks/createBookmarks", {
       bookmarks: [
         {
@@ -143,7 +145,6 @@ test.describe("bookmarks API", () => {
     const created = await json(createRes);
     expect(created.inserted).toBe(2);
 
-    // List all bookmarks for video
     const listRes = await rpc(request, "bookmarks/listBookmarks", {
       videoId: video.id,
     });
@@ -152,7 +153,6 @@ test.describe("bookmarks API", () => {
     expect(list.total).toBe(2);
     expect(list.items[0].status).toBe("pending");
 
-    // Update a bookmark
     const bookmarkId = list.items[0].id;
     const updateRes = await rpc(request, "bookmarks/updateBookmark", {
       id: bookmarkId,
@@ -164,7 +164,6 @@ test.describe("bookmarks API", () => {
     expect(updated.status).toBe("approved");
     expect(updated.notes).toBe("Common greeting");
 
-    // List filtered by status
     const filteredRes = await rpc(request, "bookmarks/listBookmarks", {
       videoId: video.id,
       status: "approved",

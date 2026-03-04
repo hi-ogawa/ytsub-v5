@@ -13,8 +13,10 @@
     "test-e2e": "playwright test",
     "release": "wrangler deploy",
     "types": "wrangler types --no-include-runtime",
-    "db:migrate": "wrangler d1 migrations apply DB --local",
-    "db:reset": "rm -rf .wrangler/state/v3/d1 && pnpm db:migrate"
+    "db:migrate": "CI=true wrangler d1 migrations apply DB --local",
+    "db:reset": "rm -rf .wrangler/state/v3/d1 && pnpm db:migrate",
+    "db:clear": "wrangler d1 execute DB --local --file scripts/db-clear.sql -y",
+    "db:seed": "wrangler d1 execute DB --local --file scripts/db-seed.sql -y"
   },
   "dependencies": {
     "@orpc/client": "^1.13.6",
