@@ -45,7 +45,7 @@ test.describe("videos API", () => {
     expect(getRes.ok()).toBe(true);
     const got = await json(getRes);
     expect(got.title).toBe("Test Video");
-    expect(got.captionCounts).toEqual([]);
+    expect(got.captionCount).toBe(0);
   });
 
   test("upsert video on youtube_id conflict", async ({ request }) => {
@@ -76,7 +76,7 @@ test.describe("videos API", () => {
 
     await rpc(request, "videos/createCaptions", {
       videoId: video.id,
-      captions: [{ language: "ko", idx: 0, begin: 0, end: 1, text: "test" }],
+      captions: [{ idx: 0, begin: 0, end: 1, text1: "테스트", text2: "test" }],
     });
 
     const delRes = await rpc(request, "videos/deleteVideo", { id: video.id });
@@ -98,20 +98,17 @@ test.describe("videos API", () => {
     const captionRes = await rpc(request, "videos/createCaptions", {
       videoId: video.id,
       captions: [
-        { language: "ko", idx: 0, begin: 0, end: 2.5, text: "안녕하세요" },
-        { language: "ko", idx: 1, begin: 2.5, end: 5, text: "감사합니다" },
-        { language: "en", idx: 0, begin: 0, end: 2.5, text: "Hello" },
+        { idx: 0, begin: 0, end: 2.5, text1: "안녕하세요", text2: "Hello" },
+        { idx: 1, begin: 2.5, end: 5, text1: "감사합니다", text2: "Thank you" },
       ],
     });
     expect(captionRes.ok()).toBe(true);
     const result = await json(captionRes);
-    expect(result.inserted).toBe(3);
+    expect(result.inserted).toBe(2);
 
     const getRes = await rpc(request, "videos/getVideo", { id: video.id });
     const got = await json(getRes);
-    expect(got.captionCounts).toHaveLength(2);
-    const koCounts = got.captionCounts.find((c: any) => c.language === "ko");
-    expect(koCounts.count).toBe(2);
+    expect(got.captionCount).toBe(2);
   });
 });
 

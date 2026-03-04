@@ -1,5 +1,5 @@
 import { os } from "@orpc/server";
-import { count, desc, eq, sql } from "drizzle-orm";
+import { count, desc, eq } from "drizzle-orm";
 import z from "zod";
 import { db } from "../db.ts";
 import { captions, videos } from "../schema.ts";
@@ -42,11 +42,11 @@ export const videosRouter = os.router({
         videoId: z.number().int(),
         captions: z.array(
           z.object({
-            language: z.string(),
             idx: z.number().int(),
             begin: z.number(),
             end: z.number(),
-            text: z.string(),
+            text1: z.string().optional().default(""),
+            text2: z.string().optional().default(""),
           }),
         ),
       }),
@@ -67,6 +67,16 @@ export const videosRouter = os.router({
       if (rows.length === 0) return { inserted: 0 };
       const result = await db.insert(captions).values(rows).returning();
       return { inserted: result.length };
+    }),
+
+  listCaptions: os
+    .input(z.object({ videoId: z.number().int() }))
+    .handler(async ({ input }) => {
+      return db
+        .select()
+        .from(captions)
+        .where(eq(captions.videoId, input.videoId))
+        .orderBy(captions.idx);
     }),
 
   listVideos: os
@@ -98,15 +108,11 @@ export const videosRouter = os.router({
       if (!video) {
         throw new Error(`Video ${input.id} not found`);
       }
-      const captionCounts = await db
-        .select({
-          language: captions.language,
-          count: sql<number>`count(*)`.as("count"),
-        })
+      const [{ captionCount }] = await db
+        .select({ captionCount: count() })
         .from(captions)
-        .where(eq(captions.videoId, input.id))
-        .groupBy(captions.language);
-      return { ...video, captionCounts };
+        .where(eq(captions.videoId, input.id));
+      return { ...video, captionCount };
     }),
 
   deleteVideo: os
