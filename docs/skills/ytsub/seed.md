@@ -127,7 +127,11 @@ Agent proposes bookmark candidates (interesting vocab from the Korean captions).
 
 ## Step 5: Assemble seed JSON
 
-Combine video metadata, merged captions, and bookmarks into a single `scripts/seed/<id>.json`:
+```bash
+node scripts/gen-seed-json.ts <id>.video.json <id>.captions.json [<id>.bookmarks.json] > scripts/seed/<id>.json
+```
+
+Combines video metadata, merged captions, and bookmarks into a single `scripts/seed/<id>.json`:
 
 ```json
 {
@@ -184,6 +188,7 @@ docs/skills/ytsub/data/raw/
 
 scripts/
 ├── db-seed.ts                  # seed runner (JSON → SQL → wrangler)
+├── gen-seed-json.ts            # step 5 script
 └── seed/
     └── 7GU_VQfgMT0.json       # step 5 output
 ```
