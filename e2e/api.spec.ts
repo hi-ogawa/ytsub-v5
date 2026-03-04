@@ -1,4 +1,9 @@
 import { expect, test } from "@playwright/test";
+import { dbReset } from "./helper.ts";
+
+test.beforeAll(async () => {
+  await dbReset();
+});
 
 const rpc = (request: any, path: string, data: any = {}) =>
   request.post(`/api/${path.replace(/\./g, "/")}`, {

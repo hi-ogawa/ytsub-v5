@@ -1,11 +1,8 @@
-import { exec } from "node:child_process";
-import { promisify } from "node:util";
 import { expect, test } from "@playwright/test";
-
-const execAsync = promisify(exec);
+import { dbReset } from "./helper.ts";
 
 test.beforeAll(async () => {
-  await execAsync("pnpm db:clear && pnpm db:seed");
+  await dbReset({ seed: true });
 });
 
 test("health endpoint returns ok", async ({ request }) => {
