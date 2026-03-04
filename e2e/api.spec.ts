@@ -1,8 +1,8 @@
 import { expect, test } from "@playwright/test";
-import { dbReset } from "./helper.ts";
+import { setupDb } from "./helper.ts";
 
 test.beforeAll(async () => {
-  await dbReset();
+  await setupDb();
 });
 
 const rpc = (request: any, path: string, data: any = {}) =>

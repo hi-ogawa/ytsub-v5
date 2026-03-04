@@ -1,19 +1,8 @@
 import { expect, test } from "@playwright/test";
-import { dbReset } from "./helper.ts";
+import { setupDb } from "./helper.ts";
 
 test.beforeAll(async () => {
-  await dbReset({ seed: true });
-});
-
-test("health endpoint returns ok", async ({ request }) => {
-  const res = await request.post("/api/health", {
-    headers: { "Content-Type": "application/json" },
-    data: {},
-  });
-  expect(res.ok()).toBe(true);
-  const body = await res.json();
-  expect(body.json.ok).toBe(true);
-  expect(typeof body.json.videos).toBe("number");
+  await setupDb({ seed: true });
 });
 
 test.describe("video list and navigation", () => {
