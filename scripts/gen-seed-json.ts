@@ -1,5 +1,5 @@
-// Assemble seed JSON from intermediate files (step 5).
-// Usage: node scripts/gen-seed-json.ts <id>.video.json <id>.captions.json [<id>.bookmarks.json]
+// Assemble seed JSON from ytsub skill intermediate files.
+// Usage: node scripts/gen-seed-json.ts <video.json> <captions.json> [bookmarks.json]
 // Outputs unified seed JSON to stdout. Pipe to scripts/seed/<id>.json.
 
 import { readFileSync } from "fs";

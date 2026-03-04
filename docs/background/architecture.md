@@ -29,6 +29,14 @@ Web UI (browser)
 
 v4 went extension because content scripts can hit YouTube APIs from same origin (how Language Reactor works too). Trade-off: extension gives direct YouTube access but adds complexity (store review, Chrome API constraints, harder to build full UI). Web app + yt-dlp is cleaner architecturally.
 
+## Agent skill as data pipeline
+
+The key insight of this project: a local AI agent (ytsub skill) is the primary data pipeline. The agent runs yt-dlp, parses TTML subtitles, aligns bilingual captions by timestamp, and extracts curated vocabulary — tasks that are tedious manually but natural for an agent with tool access.
+
+The skill (`docs/skills/ytsub/`) is self-contained and portable. Its pipeline: fetch subs → parse TTML → merge bilingual captions → extract vocab → push to app via API. The app doesn't know how data arrives — the API is the boundary.
+
+For local development, the project reuses the skill's intermediate output (the merged JSON with video + captions + bookmarks) as seed data. `scripts/db-seed.ts` reads these JSON files and imports them directly into the local D1 database, bypassing the API. This is a project-level convenience, not part of the skill itself.
+
 ## Data model
 
 See `src/server/schema.ts` for the schema. Key design decisions vs v3:

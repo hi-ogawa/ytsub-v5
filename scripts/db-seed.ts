@@ -1,4 +1,4 @@
-// Convert seed/*.json to SQL and import to local D1.
+// Convert seed JSON files to SQL and import to local D1.
 // Usage: node scripts/db-seed.ts [--persist-to <path>]
 // Reads all JSON files from scripts/seed/, generates SQL, and executes via wrangler.
 
