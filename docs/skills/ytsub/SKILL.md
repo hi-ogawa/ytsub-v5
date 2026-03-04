@@ -7,9 +7,9 @@ Fetch Korean subtitles from YouTube, align translations, extract vocabulary, and
 ```
 YouTube URL
   │
-  ├─ 1. Fetch subs ─────────── video.json, ko.ttml, en.ttml
+  ├─ 1. Fetch subs ─────────── video.json, ko.json3, en.json3
   │
-  ├─ 2. Parse TTML ─────────── ko.json, en.json
+  ├─ 2. Parse subs ─────────── ko.json, en.json
   │
   ├─ 3. Merge captions ─────── captions.json (paired ko/en)
   │
@@ -26,12 +26,13 @@ Each step produces a file in `data/<id>/` that the user reviews before proceedin
 ./
 ├── SKILL.md              # this file
 ├── scripts/
-│   └── parse-ttml.ts     # TTML → caption cues JSON
+│   ├── parse-json3.ts    # json3 → caption cues JSON
+│   └── merge-captions.ts # ko.json + en.json → captions.json
 └── data/
     └── <id>/             # per-video working directory
         ├── video.json        # stage 1: metadata
-        ├── ko.ttml           # stage 1: raw Korean subs
-        ├── en.ttml           # stage 1: raw English subs
+        ├── ko.json3          # stage 1: raw Korean subs
+        ├── en.json3          # stage 1: raw English subs
         ├── ko.json           # stage 2: parsed Korean cues
         ├── en.json           # stage 2: parsed English cues
         ├── captions.json     # stage 3: merged bilingual captions
@@ -54,10 +55,10 @@ All API calls use `${APP_BASE_URL}/api/<procedure>`.
 ### List available tracks
 
 ```bash
-yt-dlp --list-subs --skip-download "<URL>" 2>&1
+yt-dlp --list-subs --skip-download "<URL>" 2>&1 | grep -E "^\[info\]|^Language|^ko |^en "
 ```
 
-Review output to identify available subtitle languages and whether they are manual or auto-generated.
+The full `--list-subs` output is ~800 lines (hundreds of auto-translated languages). The grep filter shows only section headers and ko/en rows. Look for the `Available subtitles` section (manual) vs `Available automatic captions` (auto-generated).
 
 ### Download metadata + subtitles
 
@@ -66,44 +67,52 @@ mkdir -p ./data/<id> && cd ./data/<id>
 yt-dlp --print '{"youtubeId":"%(id)s","title":"%(title)s","channelName":"%(channel)s","channelId":"%(channel_id)s","duration":%(duration)s}' --skip-download "<URL>" > video.json
 ```
 
-Prefer manual subs over auto-generated. Use TTML format.
+Prefer manual subs over auto-generated. Use json3 format.
 
 ```bash
 # Manual subs (preferred)
-yt-dlp --write-sub --sub-lang ko --skip-download --sub-format ttml -o "%(id)s" "<URL>"
-mv <id>.ko.ttml ko.ttml
-yt-dlp --write-sub --sub-lang en --skip-download --sub-format ttml -o "%(id)s" "<URL>"
-mv <id>.en.ttml en.ttml
+yt-dlp --write-sub --sub-lang ko --skip-download --sub-format json3 -o "%(id)s" "<URL>"
+mv <id>.ko.json3 ko.json3
+yt-dlp --write-sub --sub-lang en --skip-download --sub-format json3 -o "%(id)s" "<URL>"
+mv <id>.en.json3 en.json3
 
 # Auto-generated (fallback — may need correction)
-yt-dlp --write-auto-sub --sub-lang ko --skip-download --sub-format ttml -o "%(id)s" "<URL>"
-mv <id>.ko.ttml ko.ttml
+yt-dlp --write-auto-sub --sub-lang ko --skip-download --sub-format json3 -o "%(id)s" "<URL>"
+mv <id>.ko.json3 ko.json3
 ```
 
 If manual subs aren't available for a language, skip it — pick a different video that has manual subs.
 
-**Output:** `video.json`, `ko.ttml`, `en.ttml`
+**Output:** `video.json`, `ko.json3`, `en.json3`
 
-**Review:** Check video.json fields. Open TTML files and verify the text is actual lyrics/dialogue.
+**Review:** Check video.json fields. Spot-check json3 events have text content.
 
-### TTML format reference
+### json3 format reference
 
-```xml
-<p begin="00:01:23.456" end="00:01:27.890" style="s2">안녕하세요 여러분</p>
+```json
+{
+  "events": [
+    {
+      "tStartMs": 25585,
+      "dDurationMs": 3904,
+      "segs": [{ "utf8": "꼬집어 봐 뜬 꿈인 것 같아" }]
+    }
+  ]
+}
 ```
 
-- `<p>` elements inside `<div>` inside `<body>`
-- Timestamps: `HH:MM:SS.mmm` (dot separator)
-- Text may contain `&gt;&gt;` (speaker indicators), `<br />` (line breaks)
-- HTML entities need decoding
+- `tStartMs` — start time in milliseconds
+- `dDurationMs` — duration in milliseconds
+- `segs[].utf8` — text segments (join them)
+- Events without `segs` or `dDurationMs` are metadata — skip them
 
 ---
 
-## Stage 2: Parse TTML → JSON
+## Stage 2: Parse subs → JSON
 
 ```bash
-node ./scripts/parse-ttml.ts ko.ttml > ko.json
-node ./scripts/parse-ttml.ts en.ttml > en.json
+node ../../scripts/parse-json3.ts ko.json3 ko > ko.json
+node ../../scripts/parse-json3.ts en.json3 en > en.json
 ```
 
 **Output:** `ko.json`, `en.json` — arrays of caption cues:
@@ -124,9 +133,13 @@ node ./scripts/parse-ttml.ts en.ttml > en.json
 
 ## Stage 3: Merge captions
 
-Korean timestamps are the source of truth. For each Korean cue, find the English cue with the most timestamp overlap and pair them.
+```bash
+node ../../scripts/merge-captions.ts ko.json en.json > captions.json
+```
 
-Agent reads both JSON files and writes `captions.json`:
+Korean timestamps are the source of truth. For each Korean cue, the script finds the English cue with the most timestamp overlap and pairs them. When no English cue overlaps, `en` is set to `""`.
+
+**Output:** `captions.json`:
 
 ```json
 [
@@ -139,8 +152,6 @@ Agent reads both JSON files and writes `captions.json`:
   }
 ]
 ```
-
-When multiple English cues overlap a single Korean cue, concatenate them with a space. When no English cue overlaps, set `"en": ""`.
 
 **Review:** Check alignment — do ko/en pairs make sense together? Flag any misaligned rows for the agent to fix.
 
@@ -157,7 +168,7 @@ Agent proposes bookmark candidates (interesting vocab from the Korean captions).
 - Hanja-based words where etymology aids memorization
 - Konglish or loanwords with interesting usage
 
-Aim for 5-15 words per video.
+Aim for 10-20 words per video.
 
 ### Bookmark fields
 
