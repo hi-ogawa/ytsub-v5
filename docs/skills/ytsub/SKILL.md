@@ -35,7 +35,8 @@ Each step produces a file in `data/<id>/` that the user reviews before proceedin
         ├── ko.json           # stage 2: parsed Korean cues
         ├── en.json           # stage 2: parsed English cues
         ├── captions.json     # stage 3: merged bilingual captions
-        └── bookmarks.json    # stage 4: curated vocab
+        ├── bookmarks.json    # stage 4: curated vocab
+        └── import.json       # stage 5: assembled payload
 ```
 
 ## Config
@@ -177,7 +178,14 @@ Aim for 5-15 words per video.
 
 ## Stage 5: Import
 
-Push everything in one call via `importVideo`. The agent assembles the payload from `video.json`, `captions.json`, and `bookmarks.json`.
+Assemble the import payload from intermediate files, then push via `importVideo`.
+
+```bash
+cd ./data/<id>
+jq -n --slurpfile c captions.json --slurpfile b bookmarks.json \
+  '{video: (input + {language1:"ko",language2:"en"}), captions: [$c[][] | {idx,begin,end,text1:.ko,text2:.en}], bookmarks: $b[]}' \
+  video.json > import.json
+```
 
 ```
 POST /api/importVideo
