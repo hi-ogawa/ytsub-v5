@@ -71,6 +71,9 @@ A web app for language learning via YouTube subtitles. Watch videos with dual ca
 ## TODO: Chores
 
 - [ ] chore: unit-testable API layer — swap `cloudflare:workers` env + D1 drizzle adapter for local SQLite (e.g. `better-sqlite3`) so RPC handlers can be tested directly without spinning up wrangler/Playwright
+- [ ] chore: separate dev and E2E databases — use different D1 state paths (e.g. `--persist-to`) so `pnpm dev` and `pnpm test-e2e` don't share data
+- [ ] chore: E2E `db:reset` before test run — run db reset in Playwright `globalSetup` so each test suite starts with a clean DB
+- [ ] chore: dev DB seed script — populate dev DB with sample videos, captions, and bookmarks for manual testing
 
 ## TODO: Backlog
 

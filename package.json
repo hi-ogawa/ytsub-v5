@@ -13,7 +13,8 @@
     "test-e2e": "playwright test",
     "release": "wrangler deploy",
     "types": "wrangler types --no-include-runtime",
-    "db:migrate": "wrangler d1 migrations apply DB --local"
+    "db:migrate": "wrangler d1 migrations apply DB --local",
+    "db:reset": "rm -rf .wrangler/state/v3/d1 && pnpm db:migrate"
   },
   "dependencies": {
     "@orpc/client": "^1.13.6",
