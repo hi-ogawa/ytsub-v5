@@ -2,7 +2,7 @@ import { count, desc, eq } from "drizzle-orm";
 import z from "zod";
 import { authed } from "../auth.ts";
 import { db } from "../db.ts";
-import { captions, videos } from "../schema.ts";
+import { bookmarks, captions, videos } from "../schema.ts";
 
 export const videosRouter = authed.router({
   createVideo: authed
@@ -113,6 +113,101 @@ export const videosRouter = authed.router({
         .from(captions)
         .where(eq(captions.videoId, input.id));
       return { ...video, captionCount };
+    }),
+
+  importVideo: authed
+    .input(
+      z.object({
+        video: z.object({
+          youtubeId: z.string(),
+          title: z.string(),
+          channelName: z.string().optional().default(""),
+          channelId: z.string().optional().default(""),
+          duration: z.number().int().optional().default(0),
+          language1: z.string().optional().default("ko"),
+          language2: z.string().optional().default("en"),
+        }),
+        captions: z.array(
+          z.object({
+            idx: z.number().int(),
+            begin: z.number(),
+            end: z.number(),
+            text1: z.string().optional().default(""),
+            text2: z.string().optional().default(""),
+          }),
+        ),
+        bookmarks: z
+          .array(
+            z.object({
+              text: z.string(),
+              translation: z.string().optional().default(""),
+              captionIdx: z.number().int(),
+              side: z.number().int().optional().default(0),
+              offset: z.number().int().optional().default(0),
+              context: z.string().optional().default(""),
+              notes: z.string().optional().default(""),
+              status: z.string().optional().default("pending"),
+            }),
+          )
+          .optional()
+          .default([]),
+      }),
+    )
+    .handler(async ({ input }) => {
+      // Upsert video
+      const [video] = await db
+        .insert(videos)
+        .values(input.video)
+        .onConflictDoUpdate({
+          target: videos.youtubeId,
+          set: {
+            title: input.video.title,
+            channelName: input.video.channelName,
+            channelId: input.video.channelId,
+            duration: input.video.duration,
+            language1: input.video.language1,
+            language2: input.video.language2,
+          },
+        })
+        .returning();
+
+      // Delete existing captions (cascade deletes bookmark caption refs)
+      await db.delete(captions).where(eq(captions.videoId, video.id));
+
+      // Insert captions
+      let insertedCaptions = 0;
+      if (input.captions.length > 0) {
+        const rows = input.captions.map((c) => ({ ...c, videoId: video.id }));
+        const result = await db.insert(captions).values(rows).returning();
+        insertedCaptions = result.length;
+
+        // Insert bookmarks (resolve captionIdx → captionId)
+        if (input.bookmarks.length > 0) {
+          // Build idx → captionId map
+          const captionMap = new Map(result.map((c) => [c.idx, c.id]));
+          const bookmarkRows = input.bookmarks.map((b) => ({
+            videoId: video.id,
+            captionId: captionMap.get(b.captionIdx) ?? null,
+            text: b.text,
+            side: b.side,
+            offset: b.offset,
+            translation: b.translation,
+            context: b.context,
+            timestamp: input.captions[b.captionIdx]?.begin ?? 0,
+            notes: b.notes,
+            status: b.status,
+          }));
+          // Delete existing bookmarks for this video first
+          await db.delete(bookmarks).where(eq(bookmarks.videoId, video.id));
+          await db.insert(bookmarks).values(bookmarkRows);
+        }
+      }
+
+      return {
+        videoId: video.id,
+        captions: insertedCaptions,
+        bookmarks: input.bookmarks.length,
+      };
     }),
 
   deleteVideo: authed
