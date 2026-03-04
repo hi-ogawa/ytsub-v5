@@ -1,8 +1,11 @@
 import { expect, test } from "@playwright/test";
-import { setupDb } from "./helper.ts";
+import { setupAuth, setupDb } from "./helper.ts";
+
+test.use({ storageState: "e2e/.auth.json" });
 
 test.beforeAll(async () => {
   await setupDb();
+  await setupAuth();
 });
 
 const rpc = (request: any, path: string, data: any = {}) =>

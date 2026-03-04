@@ -14,11 +14,10 @@ export function Login({ onSuccess }: { onSuccess?: () => void }) {
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password }),
+        body: JSON.stringify({ json: { password } }),
       });
       if (!res.ok) {
-        const data = (await res.json()) as { error?: string };
-        setError(data.error || "Login failed");
+        setError("Invalid password");
         return;
       }
       onSuccess?.();

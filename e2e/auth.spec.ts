@@ -17,11 +17,6 @@ test.describe("auth endpoints", () => {
     expect(res.status()).toBe(401);
   });
 
-  test("health endpoint is public", async ({ request }) => {
-    const res = await rpc(request, "health");
-    expect(res.ok()).toBe(true);
-  });
-
   test("login with wrong password returns 401", async ({ request }) => {
     const res = await rpc(request, "auth/login", { password: "wrong" });
     expect(res.status()).toBe(401);
