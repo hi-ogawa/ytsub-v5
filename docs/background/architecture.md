@@ -97,30 +97,3 @@ bookmarks
 **captions** (was `captionEntries`): one row per cue per language (v3 crammed both into `text1`/`text2`). Cleaner when languages have different timing/cue counts.
 
 **bookmarks** (was `bookmarkEntries`): enriched with `translation`, `context`, `notes`, `status`. Timestamp directly on bookmark. Kept `side`/`offset` — needed for inline highlighting via `partitionRanges`. For agent-created bookmarks, `side`/`offset` can be computed by string-matching `text` against the caption. `caption_id` nullable since bookmark might not map to a single cue cleanly.
-
-## Tech stack
-
-### Frontend
-
-- **React 19 + TypeScript** — same as toy-midi / anki-tools
-- **Vite 7** — build & dev
-- **Tailwind CSS 4** — styling
-- **Radix UI + shadcn** — components (lucide icons, cva, clsx, tailwind-merge)
-- **@tanstack/react-query** — data fetching
-- **oxfmt** — lint/format
-- **Playwright** — E2E tests
-- **pnpm** — package manager
-
-### Backend / API
-
-- **oRPC** — type-safe RPC (trpc-style), with OpenAPI adapter for REST-ish access by external clients (agent, CLI)
-  - https://orpc.dev/docs/openapi/getting-started
-- **@cloudflare/vite-plugin** — unified Vite + Workers dev experience
-
-### Platform
-
-- **Cloudflare Workers** — runtime
-- **Cloudflare D1** — storage (SQLite)
-- **Wrangler** — local dev + deploy
-
-All-in on Cloudflare. D1 for local dev and production. Single platform.
