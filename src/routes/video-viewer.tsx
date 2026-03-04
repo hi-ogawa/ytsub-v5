@@ -10,6 +10,29 @@ import {
 import { useParams } from "react-router";
 import { orpc } from "../rpc.ts";
 
+// --- YouTube IFrame API types ---
+
+declare let YT: {
+  Player: new (
+    el: HTMLElement | string,
+    options: {
+      videoId: string;
+      events?: {
+        onReady?: () => void;
+      };
+    },
+  ) => YTPlayer;
+};
+
+interface YTPlayer {
+  playVideo(): void;
+  pauseVideo(): void;
+  seekTo(seconds: number, allowSeekAhead?: boolean): void;
+  getCurrentTime(): number;
+  getPlayerState(): number;
+  destroy(): void;
+}
+
 // --- YouTube IFrame API loader (singleton) ---
 
 let iframeApiPromise: Promise<void> | null = null;
@@ -32,9 +55,9 @@ function loadYoutubeIframeApi(): Promise<void> {
 async function createYoutubePlayer(
   el: HTMLElement,
   videoId: string,
-): Promise<YT.Player> {
+): Promise<YTPlayer> {
   await loadYoutubeIframeApi();
-  return new Promise<YT.Player>((resolve) => {
+  return new Promise<YTPlayer>((resolve) => {
     const player = new YT.Player(el, {
       videoId,
       events: { onReady: () => resolve(player) },
@@ -45,8 +68,8 @@ async function createYoutubePlayer(
 // --- useYouTubePlayer hook ---
 
 function useYouTubePlayer(youtubeId: string | undefined) {
-  const [player, setPlayer] = useState<YT.Player | null>(null);
-  const playerRef = useRef<YT.Player | null>(null);
+  const [player, setPlayer] = useState<YTPlayer | null>(null);
+  const playerRef = useRef<YTPlayer | null>(null);
 
   const ref: RefCallback<HTMLDivElement> = useCallback(
     (el) => {
