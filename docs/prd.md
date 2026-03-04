@@ -16,13 +16,15 @@ A web app for language learning via YouTube subtitles. Watch videos with dual ca
 
 ### ~~API — Import & bookmarks~~ ✓
 
-- [x] feat: POST `/api/videos` — create video with metadata (upsert on youtube_id)
-- [x] feat: POST `/api/videos/:id/captions` — bulk insert caption cues for a video
-- [x] feat: GET `/api/videos` — list videos (paginated, newest first)
-- [x] feat: GET `/api/videos/:id` — get video with caption summary (cue counts per language)
-- [x] feat: POST `/api/bookmarks` — bulk create bookmarks (default status = `pending`)
-- [x] feat: GET `/api/bookmarks` — list bookmarks (filterable by video_id, status)
-- [x] feat: PATCH `/api/bookmarks/:id` — update bookmark (status, translation, notes)
+- [x] feat: `videos/createVideo` — upsert video with metadata (on youtube_id conflict)
+- [x] feat: `videos/createCaptions` — bulk insert caption cues for a video
+- [x] feat: `videos/listVideos` — paginated, newest first
+- [x] feat: `videos/getVideo` — with caption counts per language
+- [x] feat: `videos/deleteVideo` — cascade deletes captions
+- [x] feat: `bookmarks/createBookmarks` — bulk create (default status = `pending`)
+- [x] feat: `bookmarks/listBookmarks` — filterable by videoId, status
+- [x] feat: `bookmarks/updateBookmark` — partial update (status, translation, notes)
+- [x] feat: `bookmarks/deleteBookmark`
 
 ### Video list page
 

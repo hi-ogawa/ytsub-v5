@@ -108,4 +108,17 @@ export const videosRouter = os.router({
         .groupBy(captions.language);
       return { ...video, captionCounts };
     }),
+
+  deleteVideo: os
+    .input(z.object({ id: z.number().int() }))
+    .handler(async ({ input }) => {
+      const [row] = await db
+        .delete(videos)
+        .where(eq(videos.id, input.id))
+        .returning();
+      if (!row) {
+        throw new Error(`Video ${input.id} not found`);
+      }
+      return row;
+    }),
 });

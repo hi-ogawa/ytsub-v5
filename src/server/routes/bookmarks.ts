@@ -94,4 +94,17 @@ export const bookmarksRouter = os.router({
       }
       return row;
     }),
+
+  deleteBookmark: os
+    .input(z.object({ id: z.number().int() }))
+    .handler(async ({ input }) => {
+      const [row] = await db
+        .delete(bookmarks)
+        .where(eq(bookmarks.id, input.id))
+        .returning();
+      if (!row) {
+        throw new Error(`Bookmark ${input.id} not found`);
+      }
+      return row;
+    }),
 });

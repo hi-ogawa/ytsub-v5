@@ -60,6 +60,30 @@ test.describe("videos API", () => {
     expect(video.title).toBe("Updated");
   });
 
+  test("delete video cascades captions", async ({ request }) => {
+    const youtubeId = `delete-${uid()}`;
+    const video = await json(
+      await rpc(request, "videos/createVideo", {
+        youtubeId,
+        title: "To Delete",
+      }),
+    );
+
+    // Add captions
+    await rpc(request, "videos/createCaptions", {
+      videoId: video.id,
+      captions: [{ language: "ko", idx: 0, begin: 0, end: 1, text: "test" }],
+    });
+
+    // Delete
+    const delRes = await rpc(request, "videos/deleteVideo", { id: video.id });
+    expect(delRes.ok()).toBe(true);
+
+    // Verify gone
+    const getRes = await rpc(request, "videos/getVideo", { id: video.id });
+    expect(getRes.ok()).toBe(false);
+  });
+
   test("create captions for a video", async ({ request }) => {
     const youtubeId = `caption-${uid()}`;
     const videoRes = await rpc(request, "videos/createVideo", {
@@ -147,5 +171,27 @@ test.describe("bookmarks API", () => {
     });
     const filtered = await json(filteredRes);
     expect(filtered.total).toBe(1);
+  });
+
+  test("delete bookmark", async ({ request }) => {
+    const youtubeId = `del-bm-${uid()}`;
+    const video = await json(
+      await rpc(request, "videos/createVideo", { youtubeId, title: "BM Del" }),
+    );
+    await rpc(request, "bookmarks/createBookmarks", {
+      bookmarks: [{ videoId: video.id, text: "삭제", timestamp: 0 }],
+    });
+    const list = await json(
+      await rpc(request, "bookmarks/listBookmarks", { videoId: video.id }),
+    );
+    const delRes = await rpc(request, "bookmarks/deleteBookmark", {
+      id: list.items[0].id,
+    });
+    expect(delRes.ok()).toBe(true);
+
+    const after = await json(
+      await rpc(request, "bookmarks/listBookmarks", { videoId: video.id }),
+    );
+    expect(after.total).toBe(0);
   });
 });

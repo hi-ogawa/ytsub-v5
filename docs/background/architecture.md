@@ -13,10 +13,12 @@ A web app that stores YouTube videos with their subtitles, provides a viewer wit
 
 ```
 Clients (yt-dlp + agent, CLI, etc.)
-  POST /api/videos    →  video + captions
-  POST /api/bookmarks →  vocab entries (manual or LLM-extracted)
+  oRPC POST /api/videos/createVideo     →  video metadata
+  oRPC POST /api/videos/createCaptions  →  caption cues
+  oRPC POST /api/bookmarks/createBookmarks →  vocab entries (manual or LLM-extracted)
 
 Web UI (browser)
+  oRPC client with TanStack Query
   Video viewer: YouTube embed + dual caption panel
   Bookmarking: select word/phrase → add translation, notes
   Browse: list videos, filter bookmarks
