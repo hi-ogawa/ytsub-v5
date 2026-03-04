@@ -34,11 +34,18 @@ This applies `0001_init.sql` and `0002_captions_text1_text2.sql` to the remote d
 ### 3. Set production secrets
 
 ```sh
-wrangler secret put AUTH_PASSWORD_HASH
-wrangler secret put AUTH_SECRET
+# Generate a random secret for session signing
+openssl rand -hex 32 | wrangler secret put AUTH_SECRET
+
+# Hash your password and set it
+echo -n "your-password" | openssl dgst -sha256 -hex | wrangler secret put AUTH_PASSWORD_HASH
+
+# Or create .dev.vars.production (or any key value pair file) and run
+pnpm wrangler secret bulk .dev.vars.production
 ```
 
 The `vars` in `wrangler.jsonc` are dev-only defaults. Secrets override vars in production.
+Make sure it's saved as "secret" and not "plain text".
 
 ### 4. Deploy manually first
 
@@ -46,7 +53,7 @@ The `vars` in `wrangler.jsonc` are dev-only defaults. Secrets override vars in p
 pnpm build && pnpm release
 ```
 
-Verify the app loads, auth works, API responds at `/api/health`.
+Verify the app loads, auth works, and API responds.
 
 ### 5. Add CD to GitHub Actions (optional)
 
