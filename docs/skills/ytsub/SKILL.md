@@ -279,12 +279,12 @@ POST /api/videos/importVideo
 
 All endpoints use `POST /api/<router>/<procedure>`.
 
-| Endpoint                    | Key fields                                         |
-| --------------------------- | -------------------------------------------------- |
-| `videos/importVideo`        | video{}, captions[], bookmarks[] — one-shot import |
-| `videos/listVideos`         | limit, offset → {items, total}                     |
-| `videos/getVideo`           | id → video + captionCount                          |
-| `videos/deleteVideo`        | id (cascades captions)                             |
-| `bookmarks/listBookmarks`   | videoId, status, limit, offset → {items, total}    |
-| `bookmarks/updateBookmark`  | id, status?, translation?, notes?                  |
-| `bookmarks/deleteBookmark`  | id                                                 |
+| Endpoint                   | Key fields                                         |
+| -------------------------- | -------------------------------------------------- |
+| `videos/importVideo`       | video{}, captions[], bookmarks[] — one-shot import |
+| `videos/listVideos`        | limit, offset → {items, total}                     |
+| `videos/getVideo`          | id → video + captionCount                          |
+| `videos/deleteVideo`       | id (cascades captions)                             |
+| `bookmarks/listBookmarks`  | videoId, status, limit, offset → {items, total}    |
+| `bookmarks/updateBookmark` | id, status?, translation?, notes?                  |
+| `bookmarks/deleteBookmark` | id                                                 |
