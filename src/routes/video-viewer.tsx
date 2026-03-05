@@ -236,7 +236,13 @@ function BookmarkWord({
       onMouseEnter={() => setOpen(true)}
       onMouseLeave={() => setOpen(false)}
     >
-      <span className="border-b-2 border-amber-400 bg-amber-50">
+      <span
+        className={
+          bookmark.status === "manual"
+            ? "border-b-2 border-sky-400 bg-sky-50"
+            : "border-b-2 border-amber-400 bg-amber-50"
+        }
+      >
         {children}
       </span>
       {open && (
@@ -332,14 +338,6 @@ export function VideoViewerPage() {
     [bookmarkItems],
   );
 
-  const bookmarkedCaptionIds = useMemo(() => {
-    const set = new Set<number>();
-    for (const bm of bookmarkItems) {
-      if (bm.captionId) set.add(bm.captionId);
-    }
-    return set;
-  }, [bookmarkItems]);
-
   const bookmarksByCaptionId = useMemo(() => {
     const map = new Map<number, Bookmark[]>();
     for (const bm of bookmarkItems) {
@@ -399,6 +397,7 @@ export function VideoViewerPage() {
           side: bookmarkSelection.side,
           offset: bookmarkSelection.offset,
           timestamp: entry.begin,
+          status: "manual",
         },
       ],
     });
@@ -687,7 +686,6 @@ export function VideoViewerPage() {
                   const entry = captions[item.index];
                   const isCurrent = item.index === currentIndex;
                   const isEntryPlaying = isCurrent && isPlaying;
-                  const hasBookmark = bookmarkedCaptionIds.has(entry.id);
                   const entryBookmarks = bookmarksByCaptionId.get(entry.id);
                   const text1Marks = entryBookmarks
                     ?.filter((b) => b.side === 0)
@@ -720,9 +718,6 @@ export function VideoViewerPage() {
                         .join(" ")}
                     >
                       <div className="flex items-center text-xs text-gray-400">
-                        {hasBookmark && (
-                          <span className="h-2 w-2 rounded-full bg-amber-400" />
-                        )}
                         <span className="ml-auto">
                           {formatTimestamp(entry.begin)} –{" "}
                           {formatTimestamp(entry.end)}
