@@ -24,11 +24,11 @@ test.describe("bookmark viewer", () => {
   });
 
   test("shows bookmark indicators on caption rows", async ({ page }) => {
-    // Caption at idx=0 has a bookmark (꼬집어) — check for amber dot
+    // Caption at idx=0 has a bookmark (꼬집어) — check for highlighted text
     const firstRow = page.locator("[data-index='0']");
-    await expect(
-      firstRow.locator("span.bg-amber-400.rounded-full"),
-    ).toBeVisible();
+    const highlight = firstRow.locator("span.border-amber-400");
+    await expect(highlight.first()).toBeVisible();
+    await expect(highlight.first()).toHaveText("꼬집어");
   });
 
   test("switches to bookmarks tab and shows bookmark list", async ({
@@ -51,8 +51,8 @@ test.describe("bookmark viewer", () => {
   test("shows popover on bookmark word hover", async ({ page }) => {
     const firstRow = page.locator("[data-index='0']");
     const highlight = firstRow.locator("span.border-amber-400").first();
-    await highlight.hover();
-    // Popover should show translation
+    await highlight.hover({ force: true });
+    // Popover should show translation (popover overflows row, so check page-level)
     await expect(page.getByText("to pinch")).toBeVisible();
   });
 
@@ -84,5 +84,113 @@ test.describe("bookmark viewer", () => {
     await expect(
       page.getByRole("button", { name: "Next bookmark" }),
     ).toBeVisible();
+  });
+
+  test("manual bookmarking via text selection", async ({ page }) => {
+    // Select text in caption at idx=2 (text1: '널 향한 short cut', no existing bookmarks)
+    const row = page.locator("[data-index='2']");
+    await expect(row).toBeVisible();
+
+    // Programmatically select "향한" within data-side="0" span
+    await page.evaluate(() => {
+      const sideEl = document
+        .querySelector("[data-index='2']")!
+        .querySelector("[data-side='0']")!;
+      const textSpan = sideEl.querySelector("[data-offset]")!;
+      const textNode = textSpan.firstChild!;
+      const range = document.createRange();
+      // Select "향한" (chars 2-4 in '널 향한 short cut')
+      range.setStart(textNode, 2);
+      range.setEnd(textNode, 4);
+      const selection = document.getSelection()!;
+      selection.removeAllRanges();
+      selection.addRange(range);
+    });
+
+    // FAB should appear
+    await expect(
+      page.getByRole("button", { name: "Create bookmark" }),
+    ).toBeVisible();
+    await expect(page.getByRole("button", { name: "Cancel" })).toBeVisible();
+
+    // Click bookmark button
+    await page.getByRole("button", { name: "Create bookmark" }).click();
+
+    // FAB should disappear
+    await expect(
+      page.getByRole("button", { name: "Create bookmark" }),
+    ).not.toBeVisible();
+
+    // New manual bookmark highlight should appear on the caption row (sky color)
+    const highlight = row.locator("span.border-sky-400");
+    await expect(highlight.first()).toBeVisible();
+    await expect(highlight.first()).toHaveText("향한");
+
+    // Bookmark should appear in the bookmarks tab
+    await page.getByRole("button", { name: /Bookmarks/ }).click();
+    await expect(page.getByText("향한").first()).toBeVisible();
+  });
+
+  test("caption go-to-bookmark link in popover switches to bookmarks tab", async ({
+    page,
+  }) => {
+    // Hover on highlighted bookmark word in caption at idx=0
+    const row = page.locator("[data-index='0']");
+    const highlight = row.locator("span.border-amber-400").first();
+    await highlight.hover({ force: true });
+    // Click "Go to bookmark" link in popover
+    const goBtn = page.getByRole("button", { name: "Go to bookmark" });
+    await expect(goBtn).toBeVisible();
+    await goBtn.dispatchEvent("mousedown");
+    // Should switch to bookmarks tab and show the bookmark
+    await expect(page.getByRole("button", { name: /Bookmarks/ })).toHaveClass(
+      /font-medium/,
+    );
+    await expect(page.getByText("꼬집어").first()).toBeVisible();
+  });
+
+  test("bookmark go-to-caption button switches to captions tab", async ({
+    page,
+  }) => {
+    // Switch to bookmarks tab
+    await page.getByRole("button", { name: /Bookmarks/ }).click();
+    // Click "Go to caption" on the first bookmark
+    const goBtn = page.getByRole("button", { name: "Go to caption" }).first();
+    await expect(goBtn).toBeVisible();
+    await goBtn.click();
+    // Should switch back to captions tab
+    await expect(page.getByRole("button", { name: "Captions" })).toHaveClass(
+      /font-medium/,
+    );
+    await expect(page.locator("[data-index='0']")).toBeVisible();
+  });
+
+  test("cancel text selection hides FAB", async ({ page }) => {
+    // Select text in caption at idx=3
+    await page.evaluate(() => {
+      const sideEl = document
+        .querySelector("[data-index='3']")!
+        .querySelector("[data-side='0']")!;
+      const textSpan = sideEl.querySelector("[data-offset]")!;
+      const textNode = textSpan.firstChild!;
+      const range = document.createRange();
+      range.setStart(textNode, 0);
+      range.setEnd(textNode, 3);
+      const selection = document.getSelection()!;
+      selection.removeAllRanges();
+      selection.addRange(range);
+    });
+
+    await expect(
+      page.getByRole("button", { name: "Create bookmark" }),
+    ).toBeVisible();
+
+    // Click cancel
+    await page.getByRole("button", { name: "Cancel" }).click();
+
+    // FAB should disappear
+    await expect(
+      page.getByRole("button", { name: "Create bookmark" }),
+    ).not.toBeVisible();
   });
 });
