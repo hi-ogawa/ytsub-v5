@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router";
 import { orpc } from "../rpc.ts";
 
@@ -21,8 +21,17 @@ function formatDate(iso: string): string {
 }
 
 export function VideoListPage() {
+  const queryClient = useQueryClient();
   const { data, isLoading, isError } = useQuery(
     orpc.videos.listVideos.queryOptions({ input: {} }),
+  );
+  const deleteMutation = useMutation(
+    orpc.videos.deleteVideo.mutationOptions({
+      onSuccess: () =>
+        queryClient.invalidateQueries({
+          queryKey: orpc.videos.listVideos.queryOptions({ input: {} }).queryKey,
+        }),
+    }),
   );
 
   return (
@@ -59,6 +68,22 @@ export function VideoListPage() {
                     <span className="ml-auto">
                       {formatDate(video.createdAt)}
                     </span>
+                    <button
+                      className="ml-1 rounded p-0.5 text-gray-300 hover:bg-red-50 hover:text-red-500"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        if (
+                          window.confirm(
+                            `Delete "${video.title}"? This will also delete its captions and bookmarks.`,
+                          )
+                        ) {
+                          deleteMutation.mutate({ id: video.id });
+                        }
+                      }}
+                    >
+                      ✕
+                    </button>
                   </div>
                 </Link>
               ))}

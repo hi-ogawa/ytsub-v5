@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import {
   useCallback,
@@ -200,11 +200,25 @@ function BookmarksList({
   bookmarks,
   captions,
   player,
+  videoId,
 }: {
   bookmarks: Bookmark[];
   captions: Caption[];
   player: YTPlayer | null;
+  videoId: number;
 }) {
+  const queryClient = useQueryClient();
+  const deleteMutation = useMutation(
+    orpc.bookmarks.deleteBookmark.mutationOptions({
+      onSuccess: () =>
+        queryClient.invalidateQueries({
+          queryKey: orpc.bookmarks.listBookmarks.queryOptions({
+            input: { videoId, limit: 500 },
+          }).queryKey,
+        }),
+    }),
+  );
+
   const captionById = useMemo(() => {
     const map = new Map<number, Caption>();
     for (const c of captions) map.set(c.id, c);
@@ -226,6 +240,17 @@ function BookmarksList({
             }}
           >
             <div className="flex items-center text-xs text-gray-400">
+              <button
+                className="rounded p-0.5 text-gray-300 hover:bg-red-50 hover:text-red-500"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (window.confirm(`Delete bookmark "${bm.text}"?`)) {
+                    deleteMutation.mutate({ id: bm.id });
+                  }
+                }}
+              >
+                ✕
+              </button>
               <span className="ml-auto">{formatTimestamp(bm.timestamp)}</span>
             </div>
             <div className="text-sm font-medium">{bm.text}</div>
@@ -651,6 +676,7 @@ export function VideoViewerPage() {
                 bookmarks={sortedBookmarks}
                 captions={captions}
                 player={player}
+                videoId={videoId}
               />
             )}
           </div>
