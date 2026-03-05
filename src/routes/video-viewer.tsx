@@ -294,6 +294,11 @@ function BookmarksList({
             }}
           >
             <div className="flex items-center text-xs text-gray-400">
+              {bm.status === "manual" && (
+                <span className="rounded bg-sky-100 px-1 text-sky-600">
+                  manual
+                </span>
+              )}
               <span className="ml-auto">{formatTimestamp(bm.timestamp)}</span>
             </div>
             <div className="text-sm font-medium">{bm.text}</div>
