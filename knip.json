@@ -1,5 +1,5 @@
 {
   "entry": ["src/server/index.ts"],
-  "project": ["src/**/*.{ts,tsx}"],
+  "project": ["src/**/*.{ts,tsx}", "e2e/**/*.ts"],
   "ignoreDependencies": ["tailwindcss", "cloudflare"]
 }
