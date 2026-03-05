@@ -12,8 +12,12 @@ export default defineConfig({
       APP_PERSIST_TO: ".wrangler/state/e2e",
     },
   },
+  expect: {
+    timeout: 2000,
+  },
   use: {
     baseURL: "http://localhost:5190",
+    actionTimeout: 2000,
     ...devices["Desktop Chrome"],
   },
   forbidOnly: !!process.env.CI,

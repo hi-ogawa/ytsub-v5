@@ -27,11 +27,11 @@ test.describe("bookmark viewer", () => {
   });
 
   test("shows bookmark indicators on caption rows", async ({ page }) => {
-    // Caption at idx=0 has a bookmark (꼬집어) — check for amber dot
+    // Caption at idx=0 has a bookmark (꼬집어) — check for highlighted text
     const firstRow = page.locator("[data-index='0']");
-    await expect(
-      firstRow.locator("span.bg-amber-400.rounded-full"),
-    ).toBeVisible();
+    const highlight = firstRow.locator("span.border-amber-400");
+    await expect(highlight.first()).toBeVisible();
+    await expect(highlight.first()).toHaveText("꼬집어");
   });
 
   test("switches to bookmarks tab and shows bookmark list", async ({
@@ -54,8 +54,8 @@ test.describe("bookmark viewer", () => {
   test("shows popover on bookmark word hover", async ({ page }) => {
     const firstRow = page.locator("[data-index='0']");
     const highlight = firstRow.locator("span.border-amber-400").first();
-    await highlight.hover();
-    // Popover should show translation
+    await highlight.hover({ force: true });
+    // Popover should show translation (popover overflows row, so check page-level)
     await expect(page.getByText("to pinch")).toBeVisible();
   });
 
@@ -124,8 +124,8 @@ test.describe("bookmark viewer", () => {
       page.getByRole("button", { name: "Create bookmark" }),
     ).not.toBeVisible();
 
-    // New bookmark highlight should appear on the caption row
-    const highlight = row.locator("span.border-amber-400");
+    // New manual bookmark highlight should appear on the caption row (sky color)
+    const highlight = row.locator("span.border-sky-400");
     await expect(highlight.first()).toBeVisible();
     await expect(highlight.first()).toHaveText("향한");
 
