@@ -88,4 +88,78 @@ test.describe("bookmark viewer", () => {
       page.getByRole("button", { name: "Next bookmark" }),
     ).toBeVisible();
   });
+
+  test("manual bookmarking via text selection", async ({ page }) => {
+    // Select text in caption at idx=2 (text1: '널 향한 short cut', no existing bookmarks)
+    const row = page.locator("[data-index='2']");
+    await expect(row).toBeVisible();
+
+    // Programmatically select "향한" within data-side="0" span
+    await page.evaluate(() => {
+      const sideEl = document
+        .querySelector("[data-index='2']")!
+        .querySelector("[data-side='0']")!;
+      const textSpan = sideEl.querySelector("[data-offset]")!;
+      const textNode = textSpan.firstChild!;
+      const range = document.createRange();
+      // Select "향한" (chars 2-4 in '널 향한 short cut')
+      range.setStart(textNode, 2);
+      range.setEnd(textNode, 4);
+      const selection = document.getSelection()!;
+      selection.removeAllRanges();
+      selection.addRange(range);
+    });
+
+    // FAB should appear
+    await expect(
+      page.getByRole("button", { name: "Create bookmark" }),
+    ).toBeVisible();
+    await expect(page.getByRole("button", { name: "Cancel" })).toBeVisible();
+
+    // Click bookmark button
+    await page.getByRole("button", { name: "Create bookmark" }).click();
+
+    // FAB should disappear
+    await expect(
+      page.getByRole("button", { name: "Create bookmark" }),
+    ).not.toBeVisible();
+
+    // New bookmark highlight should appear on the caption row
+    const highlight = row.locator("span.border-amber-400");
+    await expect(highlight.first()).toBeVisible();
+    await expect(highlight.first()).toHaveText("향한");
+
+    // Bookmark should appear in the bookmarks tab
+    await page.getByRole("button", { name: /Bookmarks/ }).click();
+    await expect(page.getByText("향한").first()).toBeVisible();
+  });
+
+  test("cancel text selection hides FAB", async ({ page }) => {
+    // Select text in caption at idx=3
+    await page.evaluate(() => {
+      const sideEl = document
+        .querySelector("[data-index='3']")!
+        .querySelector("[data-side='0']")!;
+      const textSpan = sideEl.querySelector("[data-offset]")!;
+      const textNode = textSpan.firstChild!;
+      const range = document.createRange();
+      range.setStart(textNode, 0);
+      range.setEnd(textNode, 3);
+      const selection = document.getSelection()!;
+      selection.removeAllRanges();
+      selection.addRange(range);
+    });
+
+    await expect(
+      page.getByRole("button", { name: "Create bookmark" }),
+    ).toBeVisible();
+
+    // Click cancel
+    await page.getByRole("button", { name: "Cancel" }).click();
+
+    // FAB should disappear
+    await expect(
+      page.getByRole("button", { name: "Create bookmark" }),
+    ).not.toBeVisible();
+  });
 });
