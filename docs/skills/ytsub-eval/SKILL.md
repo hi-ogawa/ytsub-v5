@@ -60,6 +60,14 @@ TODO: add videos for scenario C (ko manual only) and D (ko auto only).
 Record results here. Append new entries at the top.
 
 ```
+2026-03-05 | DtK-CkwNHSY | Scenario B (ko auto + en-US manual) | no review
+  Captions: 40 pairs, Bookmarks: 15, offsets validated (8 fixed)
+  Cost: 38k tokens, 18 tool calls, ~3 min
+
+2026-03-05 | 7GU_VQfgMT0 | Scenario A (both manual) | no review
+  Captions: 52 pairs, Bookmarks: 15, offsets validated (4 fixed)
+  Cost: 35k tokens, 18 tool calls, ~3 min
+
 2026-03-05 | E8KM2qWSUS0 | Scenario B (ko auto + en manual) | 11/11 PASS
   Captions: 286 pairs, Korean text natural, alignment good
   Bookmarks: 15 (target 10-20), offsets valid, relevance good
