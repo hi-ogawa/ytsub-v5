@@ -74,6 +74,7 @@ A web app for language learning via YouTube subtitles. Watch videos with dual ca
 ### Bugs
 
 - [ ] fix: `importVideo` caption insert hits D1 SQL variable limit on large videos (~300+ captions) — need to batch the insert
+- [ ] refactor: use `sql` template for `createdAt` schema defaults instead of string literal — avoids Drizzle binding `(datetime('now'))` as a param, reducing bind count per row and allowing larger batch sizes
 
 ### Skill evaluation
 

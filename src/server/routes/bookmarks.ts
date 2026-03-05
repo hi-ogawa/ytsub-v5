@@ -4,6 +4,9 @@ import { authed } from "../auth.ts";
 import { db } from "../db.ts";
 import { bookmarks } from "../schema.ts";
 
+// D1 has a 100 SQL variable limit per query; each bookmark row uses 11 bind params
+const BOOKMARK_BATCH_SIZE = 9;
+
 export const bookmarksRouter = authed.router({
   createBookmarks: authed
     .input(
@@ -26,11 +29,13 @@ export const bookmarksRouter = authed.router({
     )
     .handler(async ({ input }) => {
       if (input.bookmarks.length === 0) return { inserted: 0 };
-      const result = await db
-        .insert(bookmarks)
-        .values(input.bookmarks)
-        .returning();
-      return { inserted: result.length };
+      let inserted = 0;
+      for (let i = 0; i < input.bookmarks.length; i += BOOKMARK_BATCH_SIZE) {
+        const batch = input.bookmarks.slice(i, i + BOOKMARK_BATCH_SIZE);
+        const result = await db.insert(bookmarks).values(batch).returning();
+        inserted += result.length;
+      }
+      return { inserted };
     }),
 
   listBookmarks: authed

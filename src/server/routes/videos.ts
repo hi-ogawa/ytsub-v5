@@ -4,6 +4,10 @@ import { authed } from "../auth.ts";
 import { db } from "../db.ts";
 import { bookmarks, captions, videos } from "../schema.ts";
 
+// D1 has a 100 SQL variable limit per query
+const CAPTION_BATCH_SIZE = 16; // 6 bind params per row
+const BOOKMARK_BATCH_SIZE = 9; // 11 bind params per row
+
 export const videosRouter = authed.router({
   createVideo: authed
     .input(
@@ -65,8 +69,13 @@ export const videosRouter = authed.router({
         videoId: input.videoId,
       }));
       if (rows.length === 0) return { inserted: 0 };
-      const result = await db.insert(captions).values(rows).returning();
-      return { inserted: result.length };
+      let inserted = 0;
+      for (let i = 0; i < rows.length; i += CAPTION_BATCH_SIZE) {
+        const batch = rows.slice(i, i + CAPTION_BATCH_SIZE);
+        const result = await db.insert(captions).values(batch).returning();
+        inserted += result.length;
+      }
+      return { inserted };
     }),
 
   listCaptions: authed
@@ -174,17 +183,22 @@ export const videosRouter = authed.router({
       // Delete existing captions (cascade deletes bookmark caption refs)
       await db.delete(captions).where(eq(captions.videoId, video.id));
 
-      // Insert captions
+      // Insert captions in batches to avoid D1 SQL variable limit
       let insertedCaptions = 0;
       if (input.captions.length > 0) {
         const rows = input.captions.map((c) => ({ ...c, videoId: video.id }));
-        const result = await db.insert(captions).values(rows).returning();
-        insertedCaptions = result.length;
+        let allInserted: { idx: number; id: number }[] = [];
+        for (let i = 0; i < rows.length; i += CAPTION_BATCH_SIZE) {
+          const batch = rows.slice(i, i + CAPTION_BATCH_SIZE);
+          const result = await db.insert(captions).values(batch).returning();
+          allInserted = allInserted.concat(result);
+        }
+        insertedCaptions = allInserted.length;
 
         // Insert bookmarks (resolve captionIdx → captionId)
         if (input.bookmarks.length > 0) {
           // Build idx → captionId map
-          const captionMap = new Map(result.map((c) => [c.idx, c.id]));
+          const captionMap = new Map(allInserted.map((c) => [c.idx, c.id]));
           const bookmarkRows = input.bookmarks.map((b) => ({
             videoId: video.id,
             captionId: captionMap.get(b.captionIdx) ?? null,
@@ -199,7 +213,10 @@ export const videosRouter = authed.router({
           }));
           // Delete existing bookmarks for this video first
           await db.delete(bookmarks).where(eq(bookmarks.videoId, video.id));
-          await db.insert(bookmarks).values(bookmarkRows);
+          for (let i = 0; i < bookmarkRows.length; i += BOOKMARK_BATCH_SIZE) {
+            const batch = bookmarkRows.slice(i, i + BOOKMARK_BATCH_SIZE);
+            await db.insert(bookmarks).values(batch);
+          }
         }
       }
 

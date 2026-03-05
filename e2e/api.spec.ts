@@ -167,6 +167,71 @@ test.describe("importVideo API", () => {
     expect(bms.items[0].timestamp).toBe(0);
   });
 
+  test("imports large caption set (300+) without hitting SQL variable limit", async ({
+    request,
+  }) => {
+    const youtubeId = `large-${uid()}`;
+    const captionCount = 350;
+    const caps = Array.from({ length: captionCount }, (_, i) => ({
+      idx: i,
+      begin: i * 2,
+      end: i * 2 + 2,
+      text1: `자막${i}`,
+      text2: `caption${i}`,
+    }));
+    const res = await rpc(request, "videos/importVideo", {
+      video: { youtubeId, title: "Large Video" },
+      captions: caps,
+    });
+    expect(res.ok()).toBe(true);
+    const result = await json(res);
+    expect(result.captions).toBe(captionCount);
+
+    const video = await json(
+      await rpc(request, "videos/getVideo", { id: result.videoId }),
+    );
+    expect(video.captionCount).toBe(captionCount);
+  });
+
+  test("imports large bookmark set (50+) without hitting SQL variable limit", async ({
+    request,
+  }) => {
+    const youtubeId = `large-bm-${uid()}`;
+    const bookmarkCount = 50;
+    const caps = Array.from({ length: bookmarkCount }, (_, i) => ({
+      idx: i,
+      begin: i * 2,
+      end: i * 2 + 2,
+      text1: `자막${i}`,
+      text2: `caption${i}`,
+    }));
+    const bms = Array.from({ length: bookmarkCount }, (_, i) => ({
+      text: `단어${i}`,
+      translation: `word${i}`,
+      captionIdx: i,
+      side: 0,
+      offset: 0,
+      context: `자막${i}`,
+    }));
+    const res = await rpc(request, "videos/importVideo", {
+      video: { youtubeId, title: "Large Bookmark Video" },
+      captions: caps,
+      bookmarks: bms,
+    });
+    expect(res.ok()).toBe(true);
+    const result = await json(res);
+    expect(result.captions).toBe(bookmarkCount);
+    expect(result.bookmarks).toBe(bookmarkCount);
+
+    const bmList = await json(
+      await rpc(request, "bookmarks/listBookmarks", {
+        videoId: result.videoId,
+        limit: 100,
+      }),
+    );
+    expect(bmList.total).toBe(bookmarkCount);
+  });
+
   test("re-import replaces captions and bookmarks", async ({ request }) => {
     const youtubeId = `reimport-${uid()}`;
     // First import
