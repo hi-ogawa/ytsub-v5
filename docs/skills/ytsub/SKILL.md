@@ -47,7 +47,15 @@ Each step produces a file in `data/<id>/` that the user reviews before proceedin
 APP_BASE_URL = http://localhost:5173   # ytsub app (API at /api)
 ```
 
-All API calls use `${APP_BASE_URL}/api/<procedure>`.
+All API calls use `POST ${APP_BASE_URL}/api/<router>/<procedure>` with oRPC envelope:
+
+```bash
+curl -X POST "${APP_BASE_URL}/api/videos/importVideo" \
+  -H "Content-Type: application/json" \
+  -d '{"json": <payload>}'
+```
+
+Response is also wrapped: `{"json": <result>}`.
 
 ---
 
@@ -56,10 +64,10 @@ All API calls use `${APP_BASE_URL}/api/<procedure>`.
 ### List available tracks
 
 ```bash
-yt-dlp --list-subs --skip-download "<URL>" 2>&1 | grep -E "^\[info\]|^Language|^ko |^en "
+yt-dlp --list-subs --skip-download "<URL>" 2>&1 | grep -E "^\[info\]|^Language|^ko |^en |^en-US"
 ```
 
-The full `--list-subs` output is ~800 lines (hundreds of auto-translated languages). The grep filter shows only section headers and ko/en rows. Look for the `Available subtitles` section (manual) vs `Available automatic captions` (auto-generated).
+The full output is ~1000 lines (hundreds of auto-translated languages). The grep filter shows section headers and ko/en rows from both sections. Check which section each row falls under: `Available subtitles` (manual) vs `Available automatic captions` (auto-generated). Adjust the grep pattern if targeting other languages (e.g. `^ja|^zh`).
 
 ### Download metadata + subtitles
 
@@ -231,7 +239,7 @@ jq -n --slurpfile c captions.json --slurpfile b bookmarks.json \
 ```
 
 ```
-POST /api/importVideo
+POST /api/videos/importVideo
 ```
 
 ```json
@@ -269,12 +277,14 @@ POST /api/importVideo
 
 ## API reference
 
-| Endpoint         | Key fields                                         |
-| ---------------- | -------------------------------------------------- |
-| `importVideo`    | video{}, captions[], bookmarks[] — one-shot import |
-| `listVideos`     | limit, offset → {items, total}                     |
-| `getVideo`       | id → video + captionCount                          |
-| `listBookmarks`  | videoId, status, limit, offset → {items, total}    |
-| `deleteVideo`    | id (cascades captions)                             |
-| `deleteBookmark` | id                                                 |
-| `updateBookmark` | id, status?, translation?, notes?                  |
+All endpoints use `POST /api/<router>/<procedure>`.
+
+| Endpoint                    | Key fields                                         |
+| --------------------------- | -------------------------------------------------- |
+| `videos/importVideo`        | video{}, captions[], bookmarks[] — one-shot import |
+| `videos/listVideos`         | limit, offset → {items, total}                     |
+| `videos/getVideo`           | id → video + captionCount                          |
+| `videos/deleteVideo`        | id (cascades captions)                             |
+| `bookmarks/listBookmarks`   | videoId, status, limit, offset → {items, total}    |
+| `bookmarks/updateBookmark`  | id, status?, translation?, notes?                  |
+| `bookmarks/deleteBookmark`  | id                                                 |
