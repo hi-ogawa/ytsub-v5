@@ -268,10 +268,14 @@ function BookmarksList({
   bookmarks,
   captions,
   player,
+  scrollToBookmarkId,
+  onGoToCaption,
 }: {
   bookmarks: Bookmark[];
   captions: Caption[];
   player: YTPlayer | null;
+  scrollToBookmarkId: number | null;
+  onGoToCaption: (captionId: number) => void;
 }) {
   const captionById = useMemo(() => {
     const map = new Map<number, Caption>();
@@ -279,27 +283,69 @@ function BookmarksList({
     return map;
   }, [captions]);
 
+  const scrollRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (scrollToBookmarkId === null || !scrollRef.current) return;
+    const el = scrollRef.current.querySelector(
+      `[data-bookmark-id="${scrollToBookmarkId}"]`,
+    );
+    el?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [scrollToBookmarkId]);
+
   return (
-    <div className="flex flex-col gap-1.5 p-1.5">
+    <div ref={scrollRef} className="flex flex-col gap-1.5 p-1.5">
       {bookmarks.map((bm) => {
         const caption = bm.captionId ? captionById.get(bm.captionId) : null;
         return (
           <div
             key={bm.id}
-            className="flex cursor-pointer flex-col gap-1 border border-gray-200 p-2 hover:bg-gray-50"
+            data-bookmark-id={bm.id}
+            className={[
+              "flex cursor-pointer flex-col gap-1 border p-2 hover:bg-gray-50",
+              scrollToBookmarkId === bm.id
+                ? "border-blue-400 bg-blue-50"
+                : "border-gray-200",
+            ].join(" ")}
             onClick={() => {
               if (!player) return;
               player.seekTo(bm.timestamp);
               player.playVideo();
             }}
           >
-            <div className="flex items-center text-xs text-gray-400">
+            <div className="flex items-center gap-1 text-xs text-gray-400">
               {bm.status === "manual" && (
                 <span className="rounded bg-sky-100 px-1 text-sky-600">
                   manual
                 </span>
               )}
               <span className="ml-auto">{formatTimestamp(bm.timestamp)}</span>
+              {bm.captionId && (
+                <button
+                  className="rounded p-0.5 text-gray-400 hover:bg-gray-200 hover:text-gray-600"
+                  title="Go to caption"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onGoToCaption(bm.captionId!);
+                  }}
+                >
+                  <svg
+                    className="h-3.5 w-3.5"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M4.25 5.5a.75.75 0 00-.75.75v8.5c0 .414.336.75.75.75h8.5a.75.75 0 00.75-.75v-4a.75.75 0 011.5 0v4A2.25 2.25 0 0112.75 17h-8.5A2.25 2.25 0 012 14.75v-8.5A2.25 2.25 0 014.25 4h5a.75.75 0 010 1.5h-5z"
+                      clipRule="evenodd"
+                    />
+                    <path
+                      fillRule="evenodd"
+                      d="M6.194 12.753a.75.75 0 001.06.053L16.5 4.44v2.81a.75.75 0 001.5 0v-4.5a.75.75 0 00-.75-.75h-4.5a.75.75 0 000 1.5h2.553l-9.056 8.194a.75.75 0 00-.053 1.06z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                </button>
+              )}
             </div>
             <div className="text-sm font-medium">{bm.text}</div>
             {bm.translation && (
@@ -364,6 +410,9 @@ export function VideoViewerPage() {
   const currentTimeRef = useRef(0);
   const [bookmarkSelection, setBookmarkSelection] =
     useState<BookmarkSelection>();
+  const [scrollToBookmarkId, setScrollToBookmarkId] = useState<number | null>(
+    null,
+  );
 
   const queryClient = useQueryClient();
   const createBookmarkMutation = useMutation(
@@ -449,6 +498,28 @@ export function VideoViewerPage() {
     estimateSize: () => 100,
     overscan: 5,
   });
+
+  const captionIndexById = useMemo(() => {
+    const map = new Map<number, number>();
+    for (let i = 0; i < captions.length; i++) map.set(captions[i].id, i);
+    return map;
+  }, [captions]);
+
+  function onGoToCaption(captionId: number) {
+    const index = captionIndexById.get(captionId);
+    if (index === undefined) return;
+    setActiveTab("captions");
+    isManualScrollRef.current = true;
+    // Delay scroll to let the tab switch render
+    requestAnimationFrame(() => {
+      virtualizer.scrollToIndex(index, { align: "center", behavior: "smooth" });
+    });
+  }
+
+  function onGoToBookmark(bookmarkId: number) {
+    setScrollToBookmarkId(bookmarkId);
+    setActiveTab("bookmarks");
+  }
 
   // RAF loop — poll player time, update current entry, auto-scroll
   useEffect(() => {
@@ -723,6 +794,28 @@ export function VideoViewerPage() {
                         .join(" ")}
                     >
                       <div className="flex items-center text-xs text-gray-400">
+                        {entryBookmarks && (
+                          <button
+                            className="rounded p-0.5 text-gray-400 hover:bg-gray-200 hover:text-gray-600"
+                            title="Go to bookmark"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onGoToBookmark(entryBookmarks[0].id);
+                            }}
+                          >
+                            <svg
+                              className="h-3.5 w-3.5"
+                              viewBox="0 0 20 20"
+                              fill="currentColor"
+                            >
+                              <path
+                                fillRule="evenodd"
+                                d="M5 4a2 2 0 012-2h6a2 2 0 012 2v14l-5-2.5L5 18V4z"
+                                clipRule="evenodd"
+                              />
+                            </svg>
+                          </button>
+                        )}
                         <span className="ml-auto">
                           {formatTimestamp(entry.begin)} –{" "}
                           {formatTimestamp(entry.end)}
@@ -759,6 +852,8 @@ export function VideoViewerPage() {
                 bookmarks={sortedBookmarks}
                 captions={captions}
                 player={player}
+                scrollToBookmarkId={scrollToBookmarkId}
+                onGoToCaption={onGoToCaption}
               />
             )}
           </div>
