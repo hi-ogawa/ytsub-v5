@@ -134,6 +134,37 @@ test.describe("bookmark viewer", () => {
     await expect(page.getByText("향한").first()).toBeVisible();
   });
 
+  test("caption go-to-bookmark button switches to bookmarks tab", async ({
+    page,
+  }) => {
+    // Caption at idx=0 has a bookmark — should show "Go to bookmark" button
+    const row = page.locator("[data-index='0']");
+    const goBtn = row.getByRole("button", { name: "Go to bookmark" });
+    await expect(goBtn).toBeVisible();
+    await goBtn.click();
+    // Should switch to bookmarks tab and show the bookmark
+    await expect(page.getByRole("button", { name: /Bookmarks/ })).toHaveClass(
+      /font-medium/,
+    );
+    await expect(page.getByText("꼬집어").first()).toBeVisible();
+  });
+
+  test("bookmark go-to-caption button switches to captions tab", async ({
+    page,
+  }) => {
+    // Switch to bookmarks tab
+    await page.getByRole("button", { name: /Bookmarks/ }).click();
+    // Click "Go to caption" on the first bookmark
+    const goBtn = page.getByRole("button", { name: "Go to caption" }).first();
+    await expect(goBtn).toBeVisible();
+    await goBtn.click();
+    // Should switch back to captions tab
+    await expect(page.getByRole("button", { name: "Captions" })).toHaveClass(
+      /font-medium/,
+    );
+    await expect(page.locator("[data-index='0']")).toBeVisible();
+  });
+
   test("cancel text selection hides FAB", async ({ page }) => {
     // Select text in caption at idx=3
     await page.evaluate(() => {
