@@ -1,13 +1,8 @@
 import { count, desc, eq, sql } from "drizzle-orm";
 import z from "zod";
 import { authed } from "../auth.ts";
-import { db } from "../db.ts";
+import { BOOKMARK_BATCH_SIZE, CAPTION_BATCH_SIZE, db } from "../db.ts";
 import { bookmarks, captions, videos } from "../schema.ts";
-
-// D1 has a 100 SQL variable limit per query.
-// Use sql.raw() for number literals to reduce bind param count.
-const CAPTION_BATCH_SIZE = 50; // 2 bind params per row (text1, text2)
-const BOOKMARK_BATCH_SIZE = 16; // 6 bind params per row (text, translation, context, notes, status, createdAt)
 
 export const videosRouter = authed.router({
   createVideo: authed
