@@ -1,5 +1,5 @@
 // Generate seed SQL from import.json files.
-// Usage: node scripts/db-seed-gen.ts docs/skills/ytsub/data/*/import.json > scripts/db-seed.sql
+// Usage: node scripts/db-seed-gen.ts scripts/db-seed-json/*/import.json > scripts/db-seed.sql
 
 import { readFileSync } from "fs";
 
