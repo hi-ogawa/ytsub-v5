@@ -82,11 +82,15 @@ yt-dlp --write-auto-sub --sub-lang ko --skip-download --sub-format json3 -o "%(i
 mv <id>.ko.json3 ko.json3
 ```
 
-If manual subs aren't available for a language, skip it — pick a different video that has manual subs.
+When manual subs aren't available, inform the user and fall back to auto-generated subs:
+
+- **Variety/vlog content:** Auto-generated subs are usually workable. After parsing (stage 2), spot-check cues and correct errors before proceeding.
+- **Song lyrics:** Auto-generated subs are often unusable (misheard words, broken timing). Flag this to the user — they may want to pick a different video.
+- If auto-generated quality looks too poor to salvage, stop and ask the user how to proceed.
 
 **Output:** `video.json`, `ko.json3`, `en.json3`
 
-**Review:** Check video.json fields. Spot-check json3 events have text content.
+**Review:** Check video.json fields. Spot-check json3 events have text content. For auto-generated subs, read through parsed cues in stage 2 and fix errors before merging.
 
 ### json3 format reference
 
