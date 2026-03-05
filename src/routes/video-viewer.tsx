@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import {
   useCallback,
@@ -123,6 +123,55 @@ function formatTimestamp(seconds: number): string {
   return `${m}:${String(s).padStart(2, "0")}`;
 }
 
+// --- Text selection for bookmarking ---
+
+interface BookmarkSelection {
+  captionEntryIndex: number;
+  side: number;
+  offset: number;
+  text: string;
+}
+
+function extractBookmarkSelection(
+  selection: Selection,
+): BookmarkSelection | undefined {
+  const text = selection.toString();
+  if (!text.trim()) return;
+  if (selection.rangeCount === 0) return;
+
+  const range = selection.getRangeAt(0);
+  if (range.collapsed) return;
+
+  const { startContainer, startOffset, endContainer } = range;
+  if (
+    startContainer.nodeType !== Node.TEXT_NODE ||
+    endContainer.nodeType !== Node.TEXT_NODE
+  )
+    return;
+
+  // Walk up: text node → span[data-offset] → div[data-side] → div(flex) → div[data-index]
+  const startEl = startContainer.parentElement;
+  const endEl = endContainer.parentElement;
+  const dataOffset = startEl?.getAttribute("data-offset");
+  if (!startEl || !endEl || !dataOffset) return;
+
+  const sideEl = startEl.parentElement;
+  const dataSide = sideEl?.getAttribute("data-side");
+  if (!sideEl || !dataSide || startEl.parentElement !== endEl.parentElement)
+    return;
+
+  const indexEl = sideEl.parentElement?.parentElement;
+  const dataIndex = indexEl?.getAttribute("data-index");
+  if (!indexEl || !dataIndex) return;
+
+  return {
+    captionEntryIndex: Number(dataIndex),
+    side: Number(dataSide),
+    offset: Number(dataOffset) + startOffset,
+    text,
+  };
+}
+
 // --- Components ---
 
 type Bookmark = {
@@ -142,35 +191,48 @@ function highlightText(
   text: string,
   marks: { offset: number; length: number; bookmark: Bookmark }[],
 ) {
-  if (marks.length === 0) return <>{text}</>;
+  if (marks.length === 0) return <span data-offset={0}>{text}</span>;
   const sorted = [...marks].sort((a, b) => a.offset - b.offset);
   const parts: React.ReactNode[] = [];
   let cursor = 0;
   for (const m of sorted) {
-    if (m.offset > cursor) parts.push(text.slice(cursor, m.offset));
+    if (m.offset > cursor)
+      parts.push(
+        <span key={`t${cursor}`} data-offset={cursor}>
+          {text.slice(cursor, m.offset)}
+        </span>,
+      );
     const end = m.offset + m.length;
     parts.push(
-      <BookmarkWord key={m.bookmark.id} bookmark={m.bookmark}>
+      <BookmarkWord key={m.bookmark.id} bookmark={m.bookmark} offset={m.offset}>
         {text.slice(m.offset, end)}
       </BookmarkWord>,
     );
     cursor = end;
   }
-  if (cursor < text.length) parts.push(text.slice(cursor));
+  if (cursor < text.length)
+    parts.push(
+      <span key={`t${cursor}`} data-offset={cursor}>
+        {text.slice(cursor)}
+      </span>,
+    );
   return <>{parts}</>;
 }
 
 function BookmarkWord({
   bookmark,
+  offset,
   children,
 }: {
   bookmark: Bookmark;
+  offset: number;
   children: React.ReactNode;
 }) {
   const [open, setOpen] = useState(false);
   return (
     <span
       className="relative inline-block"
+      data-offset={offset}
       onMouseEnter={() => setOpen(true)}
       onMouseLeave={() => setOpen(false)}
     >
@@ -297,6 +359,56 @@ export function VideoViewerPage() {
     "captions",
   );
   const currentTimeRef = useRef(0);
+  const [bookmarkSelection, setBookmarkSelection] =
+    useState<BookmarkSelection>();
+
+  const queryClient = useQueryClient();
+  const createBookmarkMutation = useMutation(
+    orpc.bookmarks.createBookmarks.mutationOptions({
+      onSuccess: () => {
+        queryClient.invalidateQueries({
+          queryKey: orpc.bookmarks.listBookmarks.queryOptions({
+            input: { videoId, limit: 500 },
+          }).queryKey,
+        });
+        setBookmarkSelection(undefined);
+      },
+    }),
+  );
+
+  // Selection change listener
+  useEffect(() => {
+    const handler = () => {
+      const sel = document.getSelection() ?? undefined;
+      setBookmarkSelection(sel ? extractBookmarkSelection(sel) : undefined);
+    };
+    document.addEventListener("selectionchange", handler);
+    return () => document.removeEventListener("selectionchange", handler);
+  }, []);
+
+  function onClickBookmark() {
+    if (!bookmarkSelection) return;
+    const entry = captions[bookmarkSelection.captionEntryIndex];
+    if (!entry) return;
+    createBookmarkMutation.mutate({
+      bookmarks: [
+        {
+          videoId,
+          captionId: entry.id,
+          text: bookmarkSelection.text,
+          side: bookmarkSelection.side,
+          offset: bookmarkSelection.offset,
+          timestamp: entry.begin,
+        },
+      ],
+    });
+    document.getSelection()?.removeAllRanges();
+  }
+
+  function onCancelBookmark() {
+    document.getSelection()?.removeAllRanges();
+    setBookmarkSelection(undefined);
+  }
 
   // Virtualizer
   const scrollElementRef = useRef<HTMLDivElement>(null);
@@ -434,7 +546,7 @@ export function VideoViewerPage() {
       </div>
 
       {/* Caption panel */}
-      <div className="flex min-h-0 flex-[1_0_0] flex-col border-t lg:w-1/3 lg:flex-none lg:border lg:rounded">
+      <div className="relative flex min-h-0 flex-[1_0_0] flex-col border-t lg:w-1/3 lg:flex-none lg:border lg:rounded">
         {/* Tab bar */}
         <div className="flex flex-none items-center gap-1 border-b px-2 py-1">
           <button
@@ -566,15 +678,11 @@ export function VideoViewerPage() {
                         className="flex cursor-pointer text-sm"
                         onClick={() => onClickEntry(item.index)}
                       >
-                        <div className="flex-1 border-r pr-2">
-                          {text1Marks?.length
-                            ? highlightText(entry.text1, text1Marks)
-                            : entry.text1}
+                        <div className="flex-1 border-r pr-2" data-side="0">
+                          {highlightText(entry.text1, text1Marks ?? [])}
                         </div>
-                        <div className="flex-1 pl-2">
-                          {text2Marks?.length
-                            ? highlightText(entry.text2, text2Marks)
-                            : entry.text2}
+                        <div className="flex-1 pl-2" data-side="1">
+                          {highlightText(entry.text2, text2Marks ?? [])}
                         </div>
                       </div>
                     </div>
@@ -599,6 +707,61 @@ export function VideoViewerPage() {
                 player={player}
               />
             )}
+          </div>
+        )}
+
+        {/* Floating bookmark action buttons */}
+        {(bookmarkSelection || createBookmarkMutation.isPending) && (
+          <div className="absolute bottom-2 right-2 flex gap-2">
+            <button
+              className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-200 shadow hover:bg-gray-300"
+              onClick={onCancelBookmark}
+              title="Cancel"
+            >
+              <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z" />
+              </svg>
+            </button>
+            <button
+              className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-500 text-white shadow hover:bg-blue-600"
+              onClick={onClickBookmark}
+              disabled={createBookmarkMutation.isPending}
+              title="Create bookmark"
+            >
+              {createBookmarkMutation.isPending ? (
+                <svg
+                  className="h-5 w-5 animate-spin"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  />
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                  />
+                </svg>
+              ) : (
+                <svg
+                  className="h-5 w-5"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M5 4a2 2 0 012-2h6a2 2 0 012 2v14l-5-2.5L5 18V4z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+              )}
+            </button>
           </div>
         )}
       </div>
