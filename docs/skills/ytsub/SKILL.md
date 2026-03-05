@@ -1,24 +1,17 @@
 # ytsub skill
 
-Fetch Korean subtitles from YouTube, align translations, extract vocabulary, and push everything to ytsub via API.
+Given a YouTube URL, produce clean bilingual captions (ko/en) and curated vocab bookmarks, then import to ytsub via API.
 
-## Pipeline overview
+## Target artifacts
 
-```
-YouTube URL
-  │
-  ├─ 1. Fetch subs ─────────── video.json, ko.json3, en.json3
-  │
-  ├─ 2. Parse subs ─────────── ko.json, en.json
-  │
-  ├─ 3. Merge captions ─────── captions.json (paired ko/en)
-  │
-  ├─ 4. Pick bookmarks ─────── bookmarks.json (user curates)
-  │
-  └─ 5. Import ────────────────  importVideo API
-```
+Each step produces a file in `data/<id>/` for user review before proceeding.
 
-Each step produces a file in `data/<id>/` that the user reviews before proceeding.
+| File             | Quality bar                                                     |
+| ---------------- | --------------------------------------------------------------- |
+| `video.json`     | Correct metadata (title, channel, duration)                     |
+| `captions.json`  | Clean, well-segmented ko/en pairs where translations correspond |
+| `bookmarks.json` | 10-20 notable vocab items with correct offsets                  |
+| `import.json`    | Valid API payload assembled from above                          |
 
 ## File structure
 
@@ -27,18 +20,17 @@ Each step produces a file in `data/<id>/` that the user reviews before proceedin
 ├── SKILL.md              # this file
 ├── scripts/
 │   ├── parse-json3.ts         # json3 → caption cues JSON
-│   ├── merge-captions.ts      # ko.json + en.json → captions.json
 │   └── validate-bookmarks.ts  # auto-correct bookmark offsets
 └── data/
     └── <id>/             # per-video working directory
-        ├── video.json        # stage 1: metadata
-        ├── ko.json3          # stage 1: raw Korean subs
-        ├── en.json3          # stage 1: raw English subs
-        ├── ko.json           # stage 2: parsed Korean cues
-        ├── en.json           # stage 2: parsed English cues
-        ├── captions.json     # stage 3: merged bilingual captions
-        ├── bookmarks.json    # stage 4: curated vocab
-        └── import.json       # stage 5: assembled payload
+        ├── video.json        # metadata
+        ├── ko.json3          # raw Korean subs
+        ├── en.json3          # raw English subs
+        ├── ko.json           # parsed Korean cues
+        ├── en.json           # parsed English cues
+        ├── captions.json     # merged bilingual captions
+        ├── bookmarks.json    # curated vocab
+        └── import.json       # assembled payload
 ```
 
 ## Config
@@ -57,24 +49,34 @@ curl -X POST "${APP_BASE_URL}/api/videos/importVideo" \
 
 Response is also wrapped: `{"json": <result>}`.
 
+## Error handling
+
+When external tools fail (yt-dlp errors, YouTube API 429s, network issues):
+
+1. Report the exact error to the user
+2. Do NOT retry automatically — these are often rate limits or auth issues
+3. Wait for user instructions (e.g. retry later, provide cookies, try different video)
+
 ---
 
-## Stage 1: Fetch subs
+## Step 1: Fetch & assess
 
-### List available tracks
-
-```bash
-yt-dlp --list-subs --skip-download "<URL>" 2>&1 | grep -E "^\[info\]|^Language|^ko |^en |^en-US"
-```
-
-The full output is ~1000 lines (hundreds of auto-translated languages). The grep filter shows section headers and ko/en rows from both sections. Check which section each row falls under: `Available subtitles` (manual) vs `Available automatic captions` (auto-generated). Adjust the grep pattern if targeting other languages (e.g. `^ja|^zh`).
-
-### Download metadata + subtitles
+### Download metadata
 
 ```bash
 mkdir -p ./data/<id> && cd ./data/<id>
 yt-dlp --print '{"youtubeId":"%(id)s","title":"%(title)s","channelName":"%(channel)s","channelId":"%(channel_id)s","duration":%(duration)s}' --skip-download "<URL>" > video.json
 ```
+
+### List available subtitle tracks
+
+```bash
+yt-dlp --list-subs --skip-download "<URL>" 2>&1 | grep -E "^\[info\]|^Language|^ko |^en |^en-US"
+```
+
+The full output is ~1000 lines (hundreds of auto-translated languages). The grep filter shows section headers and ko/en rows. Check which section each row falls under: `Available subtitles` (manual) vs `Available automatic captions` (auto-generated). Adjust the grep pattern if targeting other languages (e.g. `^ja|^zh`).
+
+### Download subtitles
 
 Prefer manual subs over auto-generated. Use json3 format.
 
@@ -85,50 +87,19 @@ mv <id>.ko.json3 ko.json3
 yt-dlp --write-sub --sub-lang en --skip-download --sub-format json3 -o "%(id)s" "<URL>"
 mv <id>.en.json3 en.json3
 
-# Auto-generated (fallback — may need correction)
+# Auto-generated (fallback)
 yt-dlp --write-auto-sub --sub-lang ko --skip-download --sub-format json3 -o "%(id)s" "<URL>"
 mv <id>.ko.json3 ko.json3
 ```
 
-When manual subs aren't available, inform the user and fall back to auto-generated subs:
-
-- **Variety/vlog content:** Auto-generated subs are usually workable. After parsing (stage 2), spot-check cues and correct errors before proceeding.
-- **Song lyrics:** Auto-generated subs are often unusable (misheard words, broken timing). Flag this to the user — they may want to pick a different video.
-- If auto-generated quality looks too poor to salvage, stop and ask the user how to proceed.
-
-**Output:** `video.json`, `ko.json3`, `en.json3`
-
-**Review:** Check video.json fields. Spot-check json3 events have text content. For auto-generated subs, read through parsed cues in stage 2 and fix errors before merging.
-
-### json3 format reference
-
-```json
-{
-  "events": [
-    {
-      "tStartMs": 25585,
-      "dDurationMs": 3904,
-      "segs": [{ "utf8": "꼬집어 봐 뜬 꿈인 것 같아" }]
-    }
-  ]
-}
-```
-
-- `tStartMs` — start time in milliseconds
-- `dDurationMs` — duration in milliseconds
-- `segs[].utf8` — text segments (join them)
-- Events without `segs` or `dDurationMs` are metadata — skip them
-
----
-
-## Stage 2: Parse subs → JSON
+### Parse to JSON
 
 ```bash
-node ../../scripts/parse-json3.ts ko.json3 ko > ko.json
-node ../../scripts/parse-json3.ts en.json3 en > en.json
+npx tsx ../../scripts/parse-json3.ts ko.json3 ko > ko.json
+npx tsx ../../scripts/parse-json3.ts en.json3 en > en.json
 ```
 
-**Output:** `ko.json`, `en.json` — arrays of caption cues:
+Output format — arrays of caption cues:
 
 ```json
 {
@@ -140,19 +111,45 @@ node ../../scripts/parse-json3.ts en.json3 en > en.json
 }
 ```
 
-**Review:** Spot-check cue count, timestamps, text content.
+### Assess source quality
+
+After fetching and parsing, determine which scenario applies:
+
+| Scenario        | Ko source | En source | Approach                                           |
+| --------------- | --------- | --------- | -------------------------------------------------- |
+| A: Both manual  | manual    | manual    | Merge with script — done                           |
+| B: Ko auto + En | auto      | manual    | Fix ko text using en as context, re-segment, merge |
+| C: Ko manual    | manual    | —         | LLM translates ko → en                             |
+| D: Ko auto only | auto      | —         | Fix ko text, then LLM translate                    |
+| E: Neither      | —         | —         | Stop, ask user                                     |
+
+**Inform the user** which scenario was detected and which subs are manual vs auto-generated before proceeding. If auto-generated quality looks unsalvageable (common with song lyrics), flag this — the user may want a different video.
 
 ---
 
-## Stage 3: Merge captions
+## Step 2: Produce captions.json
 
-```bash
-node ../../scripts/merge-captions.ts ko.json en.json > captions.json
-```
+The goal is clean, well-segmented ko/en pairs where translations correspond. Use the parsed cues (`ko.json`, `en.json`) as reference material and produce `captions.json` directly.
 
-Korean timestamps are the source of truth. For each Korean cue, the script finds the English cue with the most timestamp overlap and pairs them. When no English cue overlaps, `en` is set to `""`.
+This is a **translation auditing task**. For each caption, produce correct Korean text and a corresponding English translation. Use whichever sources are available:
 
-**Output:** `captions.json`:
+| Scenario        | Ko source | En source | What to do                                          |
+| --------------- | --------- | --------- | --------------------------------------------------- |
+| A: Both manual  | manual    | manual    | Audit en translations against ko, fix misalignments |
+| B: Ko auto + En | auto      | manual    | Fix ko text using en as context, align to en timing |
+| C: Ko manual    | manual    | —         | Translate ko → en                                   |
+| D: Ko auto only | auto      | —         | Fix ko text, then translate to en                   |
+
+Use Korean timestamps as the basis for segmentation, except in scenario B where English timing is more reliable.
+
+When fixing auto-generated Korean, watch for:
+
+- Misheard syllables (e.g. "두정" → "두바이 쿠키", "악몽꽃" → "악몽 꿨어")
+- Missing/wrong spacing
+- `>>` speaker markers — remove these
+- Truncated words at cue boundaries
+
+### Output format
 
 ```json
 [
@@ -166,11 +163,11 @@ Korean timestamps are the source of truth. For each Korean cue, the script finds
 ]
 ```
 
-**Review:** Check alignment — do ko/en pairs make sense together? Flag any misaligned rows for the agent to fix.
+**Review:** Check alignment — do ko/en pairs make sense together? Flag any misaligned rows.
 
 ---
 
-## Stage 4: Pick bookmarks
+## Step 3: Pick bookmarks
 
 Agent proposes bookmark candidates (interesting vocab from the Korean captions). User curates the list. Save as `bookmarks.json`.
 
@@ -227,7 +224,7 @@ The script auto-corrects offsets via `indexOf`, fixes context mismatches, and er
 
 ---
 
-## Stage 5: Import
+## Step 4: Import
 
 Assemble the import payload from intermediate files, then push via `importVideo`.
 
