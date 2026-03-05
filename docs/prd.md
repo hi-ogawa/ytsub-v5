@@ -11,11 +11,6 @@ A web app for language learning via YouTube subtitles. Watch videos with dual ca
 - [x] chore: database schema and migration (videos, captions, bookmarks)
 - [x] chore: Playwright E2E setup with basic health check
 - [x] chore: lint/format tooling (oxfmt, knip)
-
-## TODO
-
-### ~~API — Import & bookmarks~~ ✓
-
 - [x] feat: `videos/createVideo` — upsert video with metadata (on youtube_id conflict)
 - [x] feat: `videos/createCaptions` — bulk insert caption cues for a video
 - [x] feat: `videos/listVideos` — paginated, newest first
@@ -25,18 +20,12 @@ A web app for language learning via YouTube subtitles. Watch videos with dual ca
 - [x] feat: `bookmarks/listBookmarks` — filterable by videoId, status
 - [x] feat: `bookmarks/updateBookmark` — partial update (status, translation, notes)
 - [x] feat: `bookmarks/deleteBookmark`
-
-### Video list page
-
 - [x] feat: video list page — fetch and display videos as cards
   - show title, channel, duration, language pair, created date
   - link to viewer page
 - [x] feat: client-side routing (TanStack Router or similar)
   - `/` → video list
   - `/videos/:id` → viewer
-
-### Video viewer — layout & embed
-
 - [x] feat: viewer page layout — YouTube embed (left) + caption panel (right)
 - [x] feat: YouTube embed component — iframe player API integration
   - play/pause, seek, current time events
@@ -46,53 +35,33 @@ A web app for language learning via YouTube subtitles. Watch videos with dual ca
 - [x] feat: caption click-to-seek — click a caption row to seek video to that timestamp
 - [x] feat: current caption highlight — visually indicate the active caption row
 - [x] feat: virtualized caption list — TanStack Virtual for large subtitle files (1000+ cues)
-- [ ] feat: repeat/loop mode — loop a section between two caption timestamps
-
-### Bookmark features
-
-- [ ] feat: "2nd tab" in caption panel to show bookmark as list
-- [ ] feat: bookmark indicators in caption panel — show which captions have bookmarks (icon/dot)
-- [ ] feat: bookmark navigation — prev/next bookmark buttons to skip through bookmarked captions
-
-### Skill authoring
-
+- [x] feat: "2nd tab" in caption panel to show bookmark as list
+- [x] feat: bookmark indicators in caption panel — show which captions have bookmarks (icon/dot)
+- [x] feat: bookmark navigation — prev/next bookmark buttons to skip through bookmarked captions
 - [x] feat: agent skills
-  - yt-dlp fetch + LLM caption correction + translation + vocab extraction + POST to app
-  - correct bad Korean auto-captions from context
-  - generate English translation from Korean-only subs
-  - cross-reference with manual subs in other languages when available
-  - see `background/skill-integration.md` for details
-
-### Misc
-
 - [x] Authentication (single-user)
-- [ ] chore: unit-testable API layer — swap `cloudflare:workers` env + D1 drizzle adapter for local SQLite (e.g. `better-sqlite3`) so RPC handlers can be tested directly without spinning up wrangler/Playwright
 - [x] chore: separate dev and E2E databases — use different D1 state paths (e.g. `--persist-to`) so `pnpm dev` and `pnpm test-e2e` don't share data
 - [x] chore: E2E `db:reset` before test run — run db reset in Playwright `globalSetup` so each test suite starts with a clean DB
 - [x] chore: dev DB seed script — populate dev DB with sample videos, captions, and bookmarks for manual testing
+- [x] fix: `importVideo` caption insert hits D1 SQL variable limit on large videos (~300+ captions) — need to batch the insert
+- [x] feat: bookmark highlight rendering — show bookmarked words/phrases inline in caption text
 
-### Bugs
+## TODO
 
-- [ ] fix: `importVideo` caption insert hits D1 SQL variable limit on large videos (~300+ captions) — need to batch the insert
+- [ ] feat: manual bookmarking — text selection in caption panel to create bookmark
+  - DOM walk via `data-index`, `data-side`, `data-offset` attributes (v3 approach)
+- [ ] feat: repeat/loop mode — loop a section between two caption timestamps
+- [ ] chore: unit-testable API layer — swap `cloudflare:workers` env + D1 drizzle adapter for local SQLite (e.g. `better-sqlite3`) so RPC handlers can be tested directly without spinning up wrangler/Playwright
 - [ ] refactor: use `sql` template for `createdAt` schema defaults instead of string literal — avoids Drizzle binding `(datetime('now'))` as a param, reducing bind count per row and allowing larger batch sizes
-
-### Skill evaluation
-
 - [ ] feat: repeatable eval process for ytsub agent skill — run skill against sample videos, check for common failure modes (wrong offsets, API errors, subtitle quality issues, payload format), track success rate across runs
+- [ ] Bookmark export — JSON export for Anki pipeline consumption
 
 ## TODO: Backlog
 
-- [ ] feat: bookmark highlight rendering — show bookmarked words/phrases inline in caption text
 - [ ] feat: bookmark approval flow — inline approve/reject buttons for `pending` bookmarks in viewer
 - [ ] feat: bookmark list page — browse/search all bookmarks across videos
-  - filter by status, video, search text
-- [ ] feat: manual bookmarking — text selection in caption panel to create bookmark
-  - DOM walk via `data-index`, `data-side`, `data-offset` attributes (v3 approach)
-  - `partitionRanges` to split caption text into highlighted/non-highlighted spans
-- [ ] Bookmark export — JSON export for Anki pipeline consumption
 - [ ] Full-text search — search across captions and bookmarks (D1 FTS or LIKE)
 - [ ] Keyboard shortcuts — space (play/pause), arrow keys (prev/next caption), etc.
-- [ ] Bookmark curation shortcuts — approve/reject without mouse
 - [ ] Mobile-friendly layout
 - [ ] Browser extension as data source (content script fetches subs from YouTube same-origin)
 - [ ] Authentication (multi users)
