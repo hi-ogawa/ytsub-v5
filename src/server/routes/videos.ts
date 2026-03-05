@@ -1,7 +1,7 @@
-import { count, desc, eq } from "drizzle-orm";
+import { count, desc, eq, sql } from "drizzle-orm";
 import z from "zod";
 import { authed } from "../auth.ts";
-import { db } from "../db.ts";
+import { BOOKMARK_BATCH_SIZE, CAPTION_BATCH_SIZE, db } from "../db.ts";
 import { bookmarks, captions, videos } from "../schema.ts";
 
 export const videosRouter = authed.router({
@@ -60,13 +60,22 @@ export const videosRouter = authed.router({
       if (!video) {
         throw new Error(`Video ${input.videoId} not found`);
       }
+      if (input.captions.length === 0) return { inserted: 0 };
       const rows = input.captions.map((c) => ({
-        ...c,
-        videoId: input.videoId,
+        videoId: sql.raw(`${input.videoId}`),
+        idx: sql.raw(`${c.idx}`),
+        begin: sql.raw(`${c.begin}`),
+        end: sql.raw(`${c.end}`),
+        text1: c.text1,
+        text2: c.text2,
       }));
-      if (rows.length === 0) return { inserted: 0 };
-      const result = await db.insert(captions).values(rows).returning();
-      return { inserted: result.length };
+      let inserted = 0;
+      for (let i = 0; i < rows.length; i += CAPTION_BATCH_SIZE) {
+        const batch = rows.slice(i, i + CAPTION_BATCH_SIZE);
+        const result = await db.insert(captions).values(batch).returning();
+        inserted += result.length;
+      }
+      return { inserted };
     }),
 
   listCaptions: authed
@@ -174,32 +183,47 @@ export const videosRouter = authed.router({
       // Delete existing captions (cascade deletes bookmark caption refs)
       await db.delete(captions).where(eq(captions.videoId, video.id));
 
-      // Insert captions
+      // Insert captions in batches to avoid D1 SQL variable limit
       let insertedCaptions = 0;
       if (input.captions.length > 0) {
-        const rows = input.captions.map((c) => ({ ...c, videoId: video.id }));
-        const result = await db.insert(captions).values(rows).returning();
-        insertedCaptions = result.length;
+        const rows = input.captions.map((c) => ({
+          videoId: sql.raw(`${video.id}`),
+          idx: sql.raw(`${c.idx}`),
+          begin: sql.raw(`${c.begin}`),
+          end: sql.raw(`${c.end}`),
+          text1: c.text1,
+          text2: c.text2,
+        }));
+        let allInserted: { idx: number; id: number }[] = [];
+        for (let i = 0; i < rows.length; i += CAPTION_BATCH_SIZE) {
+          const batch = rows.slice(i, i + CAPTION_BATCH_SIZE);
+          const result = await db.insert(captions).values(batch).returning();
+          allInserted = allInserted.concat(result);
+        }
+        insertedCaptions = allInserted.length;
 
         // Insert bookmarks (resolve captionIdx → captionId)
         if (input.bookmarks.length > 0) {
           // Build idx → captionId map
-          const captionMap = new Map(result.map((c) => [c.idx, c.id]));
+          const captionMap = new Map(allInserted.map((c) => [c.idx, c.id]));
           const bookmarkRows = input.bookmarks.map((b) => ({
-            videoId: video.id,
-            captionId: captionMap.get(b.captionIdx) ?? null,
+            videoId: sql.raw(`${video.id}`),
+            captionId: sql.raw(`${captionMap.get(b.captionIdx) ?? "null"}`),
             text: b.text,
-            side: b.side,
-            offset: b.offset,
+            side: sql.raw(`${b.side}`),
+            offset: sql.raw(`${b.offset}`),
             translation: b.translation,
             context: b.context,
-            timestamp: input.captions[b.captionIdx]?.begin ?? 0,
+            timestamp: sql.raw(`${input.captions[b.captionIdx]?.begin ?? 0}`),
             notes: b.notes,
             status: b.status,
           }));
           // Delete existing bookmarks for this video first
           await db.delete(bookmarks).where(eq(bookmarks.videoId, video.id));
-          await db.insert(bookmarks).values(bookmarkRows);
+          for (let i = 0; i < bookmarkRows.length; i += BOOKMARK_BATCH_SIZE) {
+            const batch = bookmarkRows.slice(i, i + BOOKMARK_BATCH_SIZE);
+            await db.insert(bookmarks).values(batch);
+          }
         }
       }
 

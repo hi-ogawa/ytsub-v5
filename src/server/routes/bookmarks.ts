@@ -1,7 +1,7 @@
-import { and, count, desc, eq } from "drizzle-orm";
+import { and, count, desc, eq, sql } from "drizzle-orm";
 import z from "zod";
 import { authed } from "../auth.ts";
-import { db } from "../db.ts";
+import { BOOKMARK_BATCH_SIZE, db } from "../db.ts";
 import { bookmarks } from "../schema.ts";
 
 export const bookmarksRouter = authed.router({
@@ -26,11 +26,26 @@ export const bookmarksRouter = authed.router({
     )
     .handler(async ({ input }) => {
       if (input.bookmarks.length === 0) return { inserted: 0 };
-      const result = await db
-        .insert(bookmarks)
-        .values(input.bookmarks)
-        .returning();
-      return { inserted: result.length };
+      const rows = input.bookmarks.map((b) => ({
+        videoId: sql.raw(`${b.videoId}`),
+        captionId:
+          b.captionId !== undefined ? sql.raw(`${b.captionId}`) : undefined,
+        text: b.text,
+        side: sql.raw(`${b.side}`),
+        offset: sql.raw(`${b.offset}`),
+        translation: b.translation,
+        context: b.context,
+        timestamp: sql.raw(`${b.timestamp}`),
+        notes: b.notes,
+        status: b.status,
+      }));
+      let inserted = 0;
+      for (let i = 0; i < rows.length; i += BOOKMARK_BATCH_SIZE) {
+        const batch = rows.slice(i, i + BOOKMARK_BATCH_SIZE);
+        const result = await db.insert(bookmarks).values(batch).returning();
+        inserted += result.length;
+      }
+      return { inserted };
     }),
 
   listBookmarks: authed
