@@ -134,14 +134,17 @@ test.describe("bookmark viewer", () => {
     await expect(page.getByText("향한").first()).toBeVisible();
   });
 
-  test("caption go-to-bookmark button switches to bookmarks tab", async ({
+  test("caption go-to-bookmark link in popover switches to bookmarks tab", async ({
     page,
   }) => {
-    // Caption at idx=0 has a bookmark — should show "Go to bookmark" button
+    // Hover on highlighted bookmark word in caption at idx=0
     const row = page.locator("[data-index='0']");
-    const goBtn = row.getByRole("button", { name: "Go to bookmark" });
+    const highlight = row.locator("span.border-amber-400").first();
+    await highlight.hover({ force: true });
+    // Click "Go to bookmark" link in popover
+    const goBtn = page.getByRole("button", { name: "Go to bookmark" });
     await expect(goBtn).toBeVisible();
-    await goBtn.click();
+    await goBtn.dispatchEvent("mousedown");
     // Should switch to bookmarks tab and show the bookmark
     await expect(page.getByRole("button", { name: /Bookmarks/ })).toHaveClass(
       /font-medium/,
