@@ -53,7 +53,7 @@ test.describe("delete bookmark", () => {
     await expect(bookmarkRow).toBeVisible();
 
     page.on("dialog", (dialog) => dialog.dismiss());
-    await bookmarkRow.getByRole("button").click();
+    await bookmarkRow.getByRole("button", { name: "✕" }).click();
 
     await expect(bookmarkRow).toBeVisible();
   });
@@ -66,7 +66,7 @@ test.describe("delete bookmark", () => {
     await expect(bookmarkRow).toBeVisible();
 
     page.on("dialog", (dialog) => dialog.accept());
-    await bookmarkRow.getByRole("button").click();
+    await bookmarkRow.getByRole("button", { name: "✕" }).click();
 
     await expect(bookmarkRow).not.toBeVisible();
   });
