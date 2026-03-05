@@ -1,12 +1,13 @@
-import { count, desc, eq } from "drizzle-orm";
+import { count, desc, eq, sql } from "drizzle-orm";
 import z from "zod";
 import { authed } from "../auth.ts";
 import { db } from "../db.ts";
 import { bookmarks, captions, videos } from "../schema.ts";
 
-// D1 has a 100 SQL variable limit per query
-const CAPTION_BATCH_SIZE = 16; // 6 bind params per row
-const BOOKMARK_BATCH_SIZE = 9; // 11 bind params per row
+// D1 has a 100 SQL variable limit per query.
+// Use sql.raw() for number literals to reduce bind param count.
+const CAPTION_BATCH_SIZE = 50; // 2 bind params per row (text1, text2)
+const BOOKMARK_BATCH_SIZE = 16; // 6 bind params per row (text, translation, context, notes, status, createdAt)
 
 export const videosRouter = authed.router({
   createVideo: authed
@@ -64,11 +65,15 @@ export const videosRouter = authed.router({
       if (!video) {
         throw new Error(`Video ${input.videoId} not found`);
       }
+      if (input.captions.length === 0) return { inserted: 0 };
       const rows = input.captions.map((c) => ({
-        ...c,
-        videoId: input.videoId,
+        videoId: sql.raw(`${input.videoId}`),
+        idx: sql.raw(`${c.idx}`),
+        begin: sql.raw(`${c.begin}`),
+        end: sql.raw(`${c.end}`),
+        text1: c.text1,
+        text2: c.text2,
       }));
-      if (rows.length === 0) return { inserted: 0 };
       let inserted = 0;
       for (let i = 0; i < rows.length; i += CAPTION_BATCH_SIZE) {
         const batch = rows.slice(i, i + CAPTION_BATCH_SIZE);
@@ -186,7 +191,14 @@ export const videosRouter = authed.router({
       // Insert captions in batches to avoid D1 SQL variable limit
       let insertedCaptions = 0;
       if (input.captions.length > 0) {
-        const rows = input.captions.map((c) => ({ ...c, videoId: video.id }));
+        const rows = input.captions.map((c) => ({
+          videoId: sql.raw(`${video.id}`),
+          idx: sql.raw(`${c.idx}`),
+          begin: sql.raw(`${c.begin}`),
+          end: sql.raw(`${c.end}`),
+          text1: c.text1,
+          text2: c.text2,
+        }));
         let allInserted: { idx: number; id: number }[] = [];
         for (let i = 0; i < rows.length; i += CAPTION_BATCH_SIZE) {
           const batch = rows.slice(i, i + CAPTION_BATCH_SIZE);
@@ -200,14 +212,14 @@ export const videosRouter = authed.router({
           // Build idx → captionId map
           const captionMap = new Map(allInserted.map((c) => [c.idx, c.id]));
           const bookmarkRows = input.bookmarks.map((b) => ({
-            videoId: video.id,
-            captionId: captionMap.get(b.captionIdx) ?? null,
+            videoId: sql.raw(`${video.id}`),
+            captionId: sql.raw(`${captionMap.get(b.captionIdx) ?? "null"}`),
             text: b.text,
-            side: b.side,
-            offset: b.offset,
+            side: sql.raw(`${b.side}`),
+            offset: sql.raw(`${b.offset}`),
             translation: b.translation,
             context: b.context,
-            timestamp: input.captions[b.captionIdx]?.begin ?? 0,
+            timestamp: sql.raw(`${input.captions[b.captionIdx]?.begin ?? 0}`),
             notes: b.notes,
             status: b.status,
           }));

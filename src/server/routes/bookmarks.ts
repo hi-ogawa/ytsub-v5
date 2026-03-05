@@ -1,11 +1,12 @@
-import { and, count, desc, eq } from "drizzle-orm";
+import { and, count, desc, eq, sql } from "drizzle-orm";
 import z from "zod";
 import { authed } from "../auth.ts";
 import { db } from "../db.ts";
 import { bookmarks } from "../schema.ts";
 
-// D1 has a 100 SQL variable limit per query; each bookmark row uses 11 bind params
-const BOOKMARK_BATCH_SIZE = 9;
+// D1 has a 100 SQL variable limit per query
+// Use sql.raw() for number literals to reduce bind param count
+const BOOKMARK_BATCH_SIZE = 16; // 6 bind params per row
 
 export const bookmarksRouter = authed.router({
   createBookmarks: authed
@@ -29,9 +30,22 @@ export const bookmarksRouter = authed.router({
     )
     .handler(async ({ input }) => {
       if (input.bookmarks.length === 0) return { inserted: 0 };
+      const rows = input.bookmarks.map((b) => ({
+        videoId: sql.raw(`${b.videoId}`),
+        captionId:
+          b.captionId !== undefined ? sql.raw(`${b.captionId}`) : undefined,
+        text: b.text,
+        side: sql.raw(`${b.side}`),
+        offset: sql.raw(`${b.offset}`),
+        translation: b.translation,
+        context: b.context,
+        timestamp: sql.raw(`${b.timestamp}`),
+        notes: b.notes,
+        status: b.status,
+      }));
       let inserted = 0;
-      for (let i = 0; i < input.bookmarks.length; i += BOOKMARK_BATCH_SIZE) {
-        const batch = input.bookmarks.slice(i, i + BOOKMARK_BATCH_SIZE);
+      for (let i = 0; i < rows.length; i += BOOKMARK_BATCH_SIZE) {
+        const batch = rows.slice(i, i + BOOKMARK_BATCH_SIZE);
         const result = await db.insert(bookmarks).values(batch).returning();
         inserted += result.length;
       }
