@@ -16,6 +16,7 @@
     "db:migrate": "CI=true wrangler d1 migrations apply DB --local",
     "db:reset": "rm -rf .wrangler/state/v3/d1 && pnpm db:migrate",
     "db:clear": "wrangler d1 execute DB --local --file scripts/db-clear.sql -y",
+    "db:seed-gen": "node scripts/db-seed-gen.ts scripts/db-seed-json/*/import.json > scripts/db-seed.sql",
     "db:seed": "wrangler d1 execute DB --local --file scripts/db-seed.sql -y"
   },
   "dependencies": {
