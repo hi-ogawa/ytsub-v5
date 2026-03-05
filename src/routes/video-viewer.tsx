@@ -410,6 +410,33 @@ export function VideoViewerPage() {
     setBookmarkSelection(undefined);
   }
 
+  // Auto-scroll toggle (persisted)
+  const [autoScroll, setAutoScroll] = useState(() => {
+    try {
+      const stored = localStorage.getItem("ytsub:auto-scroll");
+      return stored !== null ? (JSON.parse(stored) as boolean) : true;
+    } catch {
+      return true;
+    }
+  });
+  function toggleAutoScroll() {
+    setAutoScroll((prev) => {
+      const next = !prev;
+      localStorage.setItem("ytsub:auto-scroll", JSON.stringify(next));
+      return next;
+    });
+  }
+
+  // Pause auto-scroll during manual interaction
+  const isManualScrollRef = useRef(false);
+  const setDebouncedTimeout = useDebouncedTimeout();
+  function onManualScroll() {
+    isManualScrollRef.current = true;
+    setDebouncedTimeout(() => {
+      isManualScrollRef.current = false;
+    }, 2000);
+  }
+
   // Virtualizer
   const scrollElementRef = useRef<HTMLDivElement>(null);
   const virtualizer = useVirtualizer({
@@ -434,8 +461,12 @@ export function VideoViewerPage() {
         const nextIndex = findCurrentEntry(captions, time);
 
         setCurrentIndex((prev) => {
-          if (nextIndex !== prev && nextIndex !== undefined) {
-            // Auto-scroll when entry changes
+          if (
+            nextIndex !== prev &&
+            nextIndex !== undefined &&
+            autoScroll &&
+            !isManualScrollRef.current
+          ) {
             const scrollEl = scrollElementRef.current;
             if (scrollEl) {
               const { scrollTop, clientHeight } = scrollEl;
@@ -446,7 +477,7 @@ export function VideoViewerPage() {
               if (!item || Math.abs(item.start - currentCenter) > threshold) {
                 virtualizer.scrollToIndex(nextIndex, {
                   align: "center",
-                  behavior: "auto",
+                  behavior: "smooth",
                 });
               }
             }
@@ -460,13 +491,14 @@ export function VideoViewerPage() {
 
     rafId = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(rafId);
-  }, [player, captions, virtualizer]);
+  }, [player, captions, virtualizer, autoScroll]);
 
   // Click-to-seek
   function onClickEntry(index: number) {
     if (!player) return;
     // Don't seek if user is selecting text
     if (document.getSelection()?.toString()) return;
+    isManualScrollRef.current = false;
 
     const entry = captions[index];
     if (index === currentIndex) {
@@ -572,44 +604,64 @@ export function VideoViewerPage() {
             Bookmarks
             {sortedBookmarks.length > 0 && ` (${sortedBookmarks.length})`}
           </button>
-          {sortedBookmarks.length > 0 && (
-            <div className="ml-auto flex gap-0.5">
-              <button
-                className="rounded p-0.5 text-gray-500 hover:bg-gray-100"
-                onClick={onPrevBookmark}
-                title="Previous bookmark"
-              >
-                <svg
-                  className="h-4 w-4"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
+          <div className="ml-auto flex items-center gap-0.5">
+            <button
+              className={[
+                "rounded p-0.5",
+                autoScroll
+                  ? "text-blue-500 hover:bg-blue-50"
+                  : "text-gray-300 hover:bg-gray-100",
+              ].join(" ")}
+              onClick={toggleAutoScroll}
+              title={autoScroll ? "Auto-scroll on" : "Auto-scroll off"}
+            >
+              <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                <path
+                  fillRule="evenodd"
+                  d="M10 3a.75.75 0 01.75.75v10.638l3.96-4.158a.75.75 0 111.08 1.04l-5.25 5.5a.75.75 0 01-1.08 0l-5.25-5.5a.75.75 0 111.08-1.04l3.96 4.158V3.75A.75.75 0 0110 3z"
+                  clipRule="evenodd"
+                />
+              </svg>
+            </button>
+            {sortedBookmarks.length > 0 && (
+              <div className="flex gap-0.5">
+                <button
+                  className="rounded p-0.5 text-gray-500 hover:bg-gray-100"
+                  onClick={onPrevBookmark}
+                  title="Previous bookmark"
                 >
-                  <path
-                    fillRule="evenodd"
-                    d="M12.79 5.23a.75.75 0 01-.02 1.06L8.832 10l3.938 3.71a.75.75 0 11-1.04 1.08l-4.5-4.25a.75.75 0 010-1.08l4.5-4.25a.75.75 0 011.06.02z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-              </button>
-              <button
-                className="rounded p-0.5 text-gray-500 hover:bg-gray-100"
-                onClick={onNextBookmark}
-                title="Next bookmark"
-              >
-                <svg
-                  className="h-4 w-4"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
+                  <svg
+                    className="h-4 w-4"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M12.79 5.23a.75.75 0 01-.02 1.06L8.832 10l3.938 3.71a.75.75 0 11-1.04 1.08l-4.5-4.25a.75.75 0 010-1.08l4.5-4.25a.75.75 0 011.06.02z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                </button>
+                <button
+                  className="rounded p-0.5 text-gray-500 hover:bg-gray-100"
+                  onClick={onNextBookmark}
+                  title="Next bookmark"
                 >
-                  <path
-                    fillRule="evenodd"
-                    d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-              </button>
-            </div>
-          )}
+                  <svg
+                    className="h-4 w-4"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                </button>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Captions scroll area — hidden (not unmounted) to preserve virtualizer */}
@@ -617,6 +669,8 @@ export function VideoViewerPage() {
           className="h-full flex-[1_0_0] overflow-y-auto"
           ref={scrollElementRef}
           style={{ display: activeTab === "captions" ? undefined : "none" }}
+          onWheel={onManualScroll}
+          onTouchStart={onManualScroll}
         >
           {captions.length > 0 && virtualItems.length > 0 && (
             <div
@@ -767,4 +821,17 @@ export function VideoViewerPage() {
       </div>
     </div>
   );
+}
+
+function useDebouncedTimeout() {
+  const ref = useRef<ReturnType<typeof setTimeout> | null>(null);
+  return (callback: () => void, timeoutMs: number) => {
+    if (ref.current !== null) {
+      clearTimeout(ref.current);
+    }
+    ref.current = setTimeout(() => {
+      callback();
+      ref.current = null;
+    }, timeoutMs);
+  };
 }

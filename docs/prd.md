@@ -48,6 +48,10 @@ A web app for language learning via YouTube subtitles. Watch videos with dual ca
 
 ## TODO
 
+- [ ] fix: tweak captions view auto scroll
+  - smooth
+  - no auto scroll during interaction
+  - ability to disable
 - [ ] feat: manual bookmarking — text selection in caption panel to create bookmark
   - DOM walk via `data-index`, `data-side`, `data-offset` attributes (v3 approach)
 - [ ] feat: repeat/loop mode — loop a section between two caption timestamps
@@ -55,6 +59,7 @@ A web app for language learning via YouTube subtitles. Watch videos with dual ca
 - [ ] refactor: use `sql` template for `createdAt` schema defaults instead of string literal — avoids Drizzle binding `(datetime('now'))` as a param, reducing bind count per row and allowing larger batch sizes
 - [ ] feat: repeatable eval process for ytsub agent skill — run skill against sample videos, check for common failure modes (wrong offsets, API errors, subtitle quality issues, payload format), track success rate across runs
 - [ ] Bookmark export — JSON export for Anki pipeline consumption
+- [ ] refactor: adopt component library
 
 ## TODO: Backlog
 
