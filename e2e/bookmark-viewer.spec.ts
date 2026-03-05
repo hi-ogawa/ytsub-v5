@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { setupDb } from "./helper.ts";
+import { login, setupDb } from "./helper.ts";
 
 test.beforeAll(async () => {
   await setupDb({ seed: true });
@@ -7,10 +7,7 @@ test.beforeAll(async () => {
 
 test.describe("bookmark viewer", () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto("/login");
-    await page.getByPlaceholder("Password").fill("dev");
-    await page.getByRole("button", { name: "Login" }).click();
-    await expect(page).toHaveURL("/");
+    await login(page);
     await page.getByText("cloud palace").click();
     await expect(page).toHaveURL(/\/videos\/\d+/);
     // Wait for captions to load

@@ -296,15 +296,29 @@ function BookmarksList({
   bookmarks,
   captions,
   player,
+  videoId,
   flashBookmarkId,
   onGoToCaption,
 }: {
   bookmarks: Bookmark[];
   captions: Caption[];
   player: YTPlayer | null;
+  videoId: number;
   flashBookmarkId: number | null;
   onGoToCaption: (captionId: number) => void;
 }) {
+  const queryClient = useQueryClient();
+  const deleteMutation = useMutation(
+    orpc.bookmarks.deleteBookmark.mutationOptions({
+      onSuccess: () =>
+        queryClient.invalidateQueries({
+          queryKey: orpc.bookmarks.listBookmarks.queryOptions({
+            input: { videoId, limit: 500 },
+          }).queryKey,
+        }),
+    }),
+  );
+
   const captionById = useMemo(() => {
     const map = new Map<number, Caption>();
     for (const c of captions) map.set(c.id, c);
@@ -341,6 +355,17 @@ function BookmarksList({
             }}
           >
             <div className="flex items-center gap-1 text-xs text-gray-400">
+              <button
+                className="rounded p-0.5 text-gray-300 hover:bg-red-50 hover:text-red-500"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (window.confirm(`Delete bookmark "${bm.text}"?`)) {
+                    deleteMutation.mutate({ id: bm.id });
+                  }
+                }}
+              >
+                ✕
+              </button>
               {bm.status === "manual" && (
                 <span className="rounded bg-sky-100 px-1 text-sky-600">
                   manual
@@ -879,6 +904,7 @@ export function VideoViewerPage() {
                 bookmarks={sortedBookmarks}
                 captions={captions}
                 player={player}
+                videoId={videoId}
                 flashBookmarkId={flashBookmarkId}
                 onGoToCaption={onGoToCaption}
               />
