@@ -26,8 +26,9 @@ Each step produces a file in `data/<id>/` that the user reviews before proceedin
 ./
 ├── SKILL.md              # this file
 ├── scripts/
-│   ├── parse-json3.ts    # json3 → caption cues JSON
-│   └── merge-captions.ts # ko.json + en.json → captions.json
+│   ├── parse-json3.ts         # json3 → caption cues JSON
+│   ├── merge-captions.ts      # ko.json + en.json → captions.json
+│   └── validate-bookmarks.ts  # auto-correct bookmark offsets
 └── data/
     └── <id>/             # per-video working directory
         ├── video.json        # stage 1: metadata
@@ -183,6 +184,33 @@ Aim for 10-20 words per video.
 | notes       | Optional notes                                       |
 | status      | "pending" or "learned"                               |
 
+**Output:** `bookmarks.json`:
+
+```json
+[
+  {
+    "text": "헷갈리다",
+    "translation": "to be confused",
+    "captionIdx": 4,
+    "side": 0,
+    "offset": 5,
+    "context": "아직 좀 헷갈리기는 해",
+    "notes": "",
+    "status": "pending"
+  }
+]
+```
+
+### Validate offsets
+
+LLMs are unreliable at counting character offsets. Always run validation after producing bookmarks:
+
+```bash
+npx tsx ../../scripts/validate-bookmarks.ts bookmarks.json captions.json > bookmarks-fixed.json && mv bookmarks-fixed.json bookmarks.json
+```
+
+The script auto-corrects offsets via `indexOf`, fixes context mismatches, and errors on bookmarks where `text` isn't found in the caption at all.
+
 **Review:** User reviews and curates the proposed list.
 
 ---
@@ -222,7 +250,7 @@ POST /api/importVideo
       "translation": "to be confused",
       "captionIdx": 4,
       "side": 0,
-      "offset": 4,
+      "offset": 5,
       "context": "아직 좀 헷갈리기는 해"
     }
   ]
