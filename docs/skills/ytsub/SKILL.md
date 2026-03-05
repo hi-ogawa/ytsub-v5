@@ -115,13 +115,13 @@ Output format — arrays of caption cues:
 
 After fetching and parsing, determine which scenario applies:
 
-| Scenario        | Ko source | En source | Approach                                           |
-| --------------- | --------- | --------- | -------------------------------------------------- |
-| A: Both manual  | manual    | manual    | Merge with script — done                           |
-| B: Ko auto + En | auto      | manual    | Fix ko text using en as context, re-segment, merge |
-| C: Ko manual    | manual    | —         | LLM translates ko → en                             |
-| D: Ko auto only | auto      | —         | Fix ko text, then LLM translate                    |
-| E: Neither      | —         | —         | Stop, ask user                                     |
+| Scenario        | Ko source | En source | Approach                                            |
+| --------------- | --------- | --------- | --------------------------------------------------- |
+| A: Both manual  | manual    | manual    | Audit en translations against ko, fix misalignments |
+| B: Ko auto + En | auto      | manual    | Fix ko text using en as context, align to en timing |
+| C: Ko manual    | manual    | —         | LLM translates ko → en                              |
+| D: Ko auto only | auto      | —         | Fix ko text, then LLM translate                     |
+| E: Neither      | —         | —         | Stop, ask user                                      |
 
 **Inform the user** which scenario was detected and which subs are manual vs auto-generated before proceeding. If auto-generated quality looks unsalvageable (common with song lyrics), flag this — the user may want a different video.
 
