@@ -1,18 +1,9 @@
 import { expect, test } from "@playwright/test";
-import { setupDb } from "./helper.ts";
+import { login, setupDb } from "./helper.ts";
 
 test.beforeAll(async () => {
   await setupDb({ seed: true });
 });
-
-function login(page: any) {
-  return (async () => {
-    await page.goto("/login");
-    await page.getByPlaceholder("Password").fill("dev");
-    await page.getByRole("button", { name: "Login" }).click();
-    await expect(page).toHaveURL("/");
-  })();
-}
 
 test.describe("delete video", () => {
   test.beforeEach(async ({ page }) => {

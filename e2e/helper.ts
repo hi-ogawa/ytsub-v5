@@ -1,6 +1,7 @@
 import { exec } from "node:child_process";
 import { writeFileSync } from "node:fs";
 import { promisify } from "node:util";
+import { expect, type Page } from "@playwright/test";
 
 export const execAsync = promisify(exec);
 
@@ -12,6 +13,13 @@ export async function setupDb(options: { seed?: boolean } = {}) {
 }
 
 const BASE_URL = "http://localhost:5190";
+
+export async function login(page: Page) {
+  await page.goto("/login");
+  await page.getByPlaceholder("Password").fill("dev");
+  await page.getByRole("button", { name: "Login" }).click();
+  await expect(page).toHaveURL("/");
+}
 
 /** Login via API and save storageState for use with test.use({ storageState }) */
 export async function setupAuth() {
