@@ -272,16 +272,99 @@ POST /api/videos/importVideo
 
 ---
 
+## Step 5: Export to Anki
+
+After the user has reviewed bookmarks in ytsub (approved/rejected, edited translations), export and push to Anki via the `korean-vocab` skill's `anki-import.py`.
+
+### 5a. Export bookmarks from ytsub
+
+```bash
+curl -X POST "${APP_BASE_URL}/api/bookmarks/exportBookmarks" \
+  -H "Content-Type: application/json" \
+  -d '{"json": {"videoId": <ID>}}'
+```
+
+Optional `status` filter (e.g. export only pending): `{"videoId": <ID>, "status": "pending"}`.
+
+Response:
+
+```json
+{
+  "json": {
+    "video": {
+      "youtubeId": "7GU_VQfgMT0",
+      "title": "...",
+      "channelName": "...",
+      "language1": "ko",
+      "language2": "en"
+    },
+    "bookmarks": [
+      {
+        "text": "꼬집어",
+        "translation": "to pinch",
+        "context": "꼬집어 봐 뜬 꿈인 것 같아",
+        "notes": "...",
+        "timestamp": 25.585,
+        "status": "pending"
+      }
+    ]
+  }
+}
+```
+
+### 5b. Enrich and transform to anki-import format
+
+For each bookmark, produce the JSON that `anki-import.py` expects:
+
+| Export field  | anki-import field | Transform                          |
+| ------------- | ----------------- | ---------------------------------- |
+| `text`        | `korean`          | direct                             |
+| `translation` | `english`         | direct                             |
+| `context`     | `example_ko`      | direct                             |
+| --            | `example_en`      | LLM translate `context` to English |
+| --            | `etymology`       | LLM generate (hanja if applicable) |
+| `notes`       | `notes`           | direct                             |
+
+Output:
+
+```json
+[
+  {
+    "korean": "꼬집어",
+    "english": "to pinch",
+    "example_ko": "꼬집어 봐 뜬 꿈인 것 같아",
+    "example_en": "Pinch me, I think I'm dreaming",
+    "etymology": "",
+    "notes": "꼬집어 보다 = pinch oneself to check if dreaming"
+  }
+]
+```
+
+Save to `korean-vocab/data/YYYY-MM-DD-<title>-<id>.json`.
+
+### 5c. Import to Anki
+
+```bash
+cd <korean-vocab skill dir>
+python3 scripts/anki-import.py data/YYYY-MM-DD-<title>-<id>.json          # dry-run
+python3 scripts/anki-import.py data/YYYY-MM-DD-<title>-<id>.json --apply  # apply
+```
+
+The script handles `number` generation, audio (edge-tts), `addNote`, and `sync`.
+
+---
+
 ## API reference
 
 All endpoints use `POST /api/<router>/<procedure>`.
 
-| Endpoint                   | Key fields                                         |
-| -------------------------- | -------------------------------------------------- |
-| `videos/importVideo`       | video{}, captions[], bookmarks[] — one-shot import |
-| `videos/listVideos`        | limit, offset → {items, total}                     |
-| `videos/getVideo`          | id → video + captionCount                          |
-| `videos/deleteVideo`       | id (cascades captions)                             |
-| `bookmarks/listBookmarks`  | videoId, status, limit, offset → {items, total}    |
-| `bookmarks/updateBookmark` | id, status?, translation?, notes?                  |
-| `bookmarks/deleteBookmark` | id                                                 |
+| Endpoint                    | Key fields                                         |
+| --------------------------- | -------------------------------------------------- |
+| `videos/importVideo`        | video{}, captions[], bookmarks[] — one-shot import |
+| `videos/listVideos`         | limit, offset → {items, total}                     |
+| `videos/getVideo`           | id → video + captionCount                          |
+| `videos/deleteVideo`        | id (cascades captions)                             |
+| `bookmarks/listBookmarks`   | videoId, status, limit, offset → {items, total}    |
+| `bookmarks/updateBookmark`  | id, status?, translation?, notes?                  |
+| `bookmarks/exportBookmarks` | videoId, status? → {video, bookmarks[]}            |
+| `bookmarks/deleteBookmark`  | id                                                 |

@@ -2,7 +2,7 @@ import { and, count, desc, eq, sql } from "drizzle-orm";
 import z from "zod";
 import { authed } from "../auth.ts";
 import { BOOKMARK_BATCH_SIZE, db } from "../db.ts";
-import { bookmarks } from "../schema.ts";
+import { bookmarks, videos } from "../schema.ts";
 
 export const bookmarksRouter = authed.router({
   createBookmarks: authed
@@ -121,5 +121,45 @@ export const bookmarksRouter = authed.router({
         throw new Error(`Bookmark ${input.id} not found`);
       }
       return row;
+    }),
+
+  exportBookmarks: authed
+    .input(
+      z.object({
+        videoId: z.number().int(),
+        status: z.string().optional(),
+      }),
+    )
+    .handler(async ({ input }) => {
+      const [video] = await db
+        .select({
+          youtubeId: videos.youtubeId,
+          title: videos.title,
+          channelName: videos.channelName,
+          language1: videos.language1,
+          language2: videos.language2,
+        })
+        .from(videos)
+        .where(eq(videos.id, input.videoId));
+      if (!video) {
+        throw new Error(`Video ${input.videoId} not found`);
+      }
+      const conditions = [eq(bookmarks.videoId, input.videoId)];
+      if (input.status !== undefined) {
+        conditions.push(eq(bookmarks.status, input.status));
+      }
+      const items = await db
+        .select({
+          text: bookmarks.text,
+          translation: bookmarks.translation,
+          context: bookmarks.context,
+          notes: bookmarks.notes,
+          timestamp: bookmarks.timestamp,
+          status: bookmarks.status,
+        })
+        .from(bookmarks)
+        .where(and(...conditions))
+        .orderBy(bookmarks.timestamp);
+      return { video, bookmarks: items };
     }),
 });
