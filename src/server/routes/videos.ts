@@ -8,13 +8,13 @@ export const videosRouter = authed.router({
   createVideo: authed
     .input(
       z.object({
-        youtubeId: z.string(),
-        title: z.string(),
-        channelName: z.string().optional().default(""),
-        channelId: z.string().optional().default(""),
+        youtubeId: z.string().max(20),
+        title: z.string().max(500),
+        channelName: z.string().max(200).optional().default(""),
+        channelId: z.string().max(100).optional().default(""),
         duration: z.number().int().optional().default(0),
-        language1: z.string().optional().default("ko"),
-        language2: z.string().optional().default("en"),
+        language1: z.string().max(10).optional().default("ko"),
+        language2: z.string().max(10).optional().default("en"),
       }),
     )
     .handler(async ({ input }) => {
@@ -45,8 +45,8 @@ export const videosRouter = authed.router({
             idx: z.number().int(),
             begin: z.number(),
             end: z.number(),
-            text1: z.string().optional().default(""),
-            text2: z.string().optional().default(""),
+            text1: z.string().max(10000).optional().default(""),
+            text2: z.string().max(10000).optional().default(""),
           }),
         ),
       }),
@@ -91,8 +91,8 @@ export const videosRouter = authed.router({
   listVideos: authed
     .input(
       z.object({
-        limit: z.number().int().optional().default(20),
-        offset: z.number().int().optional().default(0),
+        limit: z.number().int().min(1).max(100).optional().default(20),
+        offset: z.number().int().min(0).optional().default(0),
       }),
     )
     .handler(async ({ input }) => {
@@ -128,34 +128,37 @@ export const videosRouter = authed.router({
     .input(
       z.object({
         video: z.object({
-          youtubeId: z.string(),
-          title: z.string(),
-          channelName: z.string().optional().default(""),
-          channelId: z.string().optional().default(""),
+          youtubeId: z.string().max(20),
+          title: z.string().max(500),
+          channelName: z.string().max(200).optional().default(""),
+          channelId: z.string().max(100).optional().default(""),
           duration: z.number().int().optional().default(0),
-          language1: z.string().optional().default("ko"),
-          language2: z.string().optional().default("en"),
+          language1: z.string().max(10).optional().default("ko"),
+          language2: z.string().max(10).optional().default("en"),
         }),
         captions: z.array(
           z.object({
             idx: z.number().int(),
             begin: z.number(),
             end: z.number(),
-            text1: z.string().optional().default(""),
-            text2: z.string().optional().default(""),
+            text1: z.string().max(10000).optional().default(""),
+            text2: z.string().max(10000).optional().default(""),
           }),
         ),
         bookmarks: z
           .array(
             z.object({
-              text: z.string(),
-              translation: z.string().optional().default(""),
+              text: z.string().max(10000),
+              translation: z.string().max(10000).optional().default(""),
               captionIdx: z.number().int(),
               side: z.number().int().optional().default(0),
               offset: z.number().int().optional().default(0),
-              context: z.string().optional().default(""),
-              notes: z.string().optional().default(""),
-              status: z.string().optional().default("pending"),
+              context: z.string().max(10000).optional().default(""),
+              notes: z.string().max(50000).optional().default(""),
+              status: z
+                .enum(["pending", "approved", "manual"])
+                .optional()
+                .default("pending"),
             }),
           )
           .optional()

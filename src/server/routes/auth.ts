@@ -19,6 +19,7 @@ export const authRouter = pub.router({
       const token = await createSessionToken();
       setCookie(context.resHeaders, "session", token, {
         httpOnly: true,
+        secure: true,
         sameSite: "lax",
         maxAge: 30 * 86400,
       });

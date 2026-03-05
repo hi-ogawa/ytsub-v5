@@ -12,14 +12,17 @@ export const bookmarksRouter = authed.router({
           z.object({
             videoId: z.number().int(),
             captionId: z.number().int().optional(),
-            text: z.string(),
+            text: z.string().max(10000),
             side: z.number().int().optional().default(0),
             offset: z.number().int().optional().default(0),
-            translation: z.string().optional().default(""),
-            context: z.string().optional().default(""),
+            translation: z.string().max(10000).optional().default(""),
+            context: z.string().max(10000).optional().default(""),
             timestamp: z.number().optional().default(0),
-            notes: z.string().optional().default(""),
-            status: z.string().optional().default("pending"),
+            notes: z.string().max(50000).optional().default(""),
+            status: z
+              .enum(["pending", "approved", "manual"])
+              .optional()
+              .default("pending"),
           }),
         ),
       }),
@@ -52,9 +55,9 @@ export const bookmarksRouter = authed.router({
     .input(
       z.object({
         videoId: z.number().int().optional(),
-        status: z.string().optional(),
-        limit: z.number().int().optional().default(20),
-        offset: z.number().int().optional().default(0),
+        status: z.enum(["pending", "approved", "manual"]).optional(),
+        limit: z.number().int().min(1).max(100).optional().default(20),
+        offset: z.number().int().min(0).optional().default(0),
       }),
     )
     .handler(async ({ input }) => {
@@ -84,9 +87,9 @@ export const bookmarksRouter = authed.router({
     .input(
       z.object({
         id: z.number().int(),
-        status: z.string().optional(),
-        translation: z.string().optional(),
-        notes: z.string().optional(),
+        status: z.enum(["pending", "approved", "manual"]).optional(),
+        translation: z.string().max(10000).optional(),
+        notes: z.string().max(50000).optional(),
       }),
     )
     .handler(async ({ input }) => {
