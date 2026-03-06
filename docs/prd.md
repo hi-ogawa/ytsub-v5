@@ -61,6 +61,7 @@ A web app for language learning via YouTube subtitles. Watch videos with dual ca
 - [ ] refactor: use `sql` template for `createdAt` schema defaults instead of string literal — avoids Drizzle binding `(datetime('now'))` as a param, reducing bind count per row and allowing larger batch sizes
 - [ ] feat: repeatable eval process for ytsub agent skill — run skill against sample videos, check for common failure modes (wrong offsets, API errors, subtitle quality issues, payload format), track success rate across runs
 - [ ] Bookmark export — JSON export for Anki pipeline consumption
+- [ ] chore: consolidate E2E tests — merge related tests that share setup into single test blocks to reduce repeated login/navigation overhead
 - [ ] refactor: adopt component library
 
 ## TODO: Backlog

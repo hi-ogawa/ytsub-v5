@@ -15,37 +15,34 @@ test.describe("import file upload", () => {
     await login(page);
   });
 
-  test("import dialog opens and shows file picker", async ({ page }) => {
+  test("import flow: dialog, preview, import, and video list", async ({
+    page,
+  }) => {
+    // Dialog opens with file picker
     await page.getByRole("button", { name: "Import" }).click();
     await expect(page.getByText("Import Video")).toBeVisible();
     await expect(page.getByTestId("file-input")).toBeAttached();
-  });
 
-  test("uploading import.json shows preview and imports successfully", async ({
-    page,
-  }) => {
-    await page.getByRole("button", { name: "Import" }).click();
+    // Upload shows preview
     await page.getByTestId("file-input").setInputFiles(fixturePath);
-
-    // Verify preview
     await expect(page.getByText("cloud palace")).toBeVisible();
     await expect(page.getByText(/\d+ captions/)).toBeVisible();
     await expect(page.getByText(/\d+ bookmarks/)).toBeVisible();
 
-    // Confirm import
+    // Confirm import navigates to viewer
     await page
       .locator("[role=dialog], .fixed")
       .getByRole("button", { name: "Import" })
       .click();
-
-    // Should navigate to video viewer
     await expect(page).toHaveURL(/\/videos\/\d+/);
     await expect(page.locator("[data-index='0']")).toBeVisible();
-  });
 
-  test("imported video appears in video list", async ({ page }) => {
-    await expect(
-      page.getByRole("link", { name: /cloud palace/ }),
-    ).toBeVisible();
+    // Imported video appears in list with valid date
+    await page.getByRole("link", { name: "ytsub" }).click();
+    await expect(page).toHaveURL("/");
+    const card = page.getByRole("link", { name: /cloud palace/ });
+    await expect(card).toBeVisible();
+    await expect(card).not.toContainText("Invalid date");
+    await expect(card.getByText(/\w{3} \d{1,2}, \d{4}/)).toBeVisible();
   });
 });
