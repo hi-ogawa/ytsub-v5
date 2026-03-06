@@ -3,6 +3,7 @@ import { useVirtualizer } from "@tanstack/react-virtual";
 import {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -258,7 +259,7 @@ function BookmarkWord({
   const spanRef = useRef<HTMLSpanElement>(null);
   const [popoverBelow, setPopoverBelow] = useState(false);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!isOpen || !spanRef.current) {
       setPopoverBelow(false);
       return;
