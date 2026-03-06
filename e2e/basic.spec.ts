@@ -12,15 +12,12 @@ test("redirects to /login when not authenticated", async ({ page }) => {
   await expect(page.getByPlaceholder("Password")).toBeVisible();
 });
 
-test("login with wrong password shows error", async ({ page }) => {
+test("login with wrong then correct password", async ({ page }) => {
   await page.goto("/login");
   await page.getByPlaceholder("Password").fill("wrong");
   await page.getByRole("button", { name: "Login" }).click();
   await expect(page.getByText("Invalid password")).toBeVisible();
-});
 
-test("login with correct password redirects to /", async ({ page }) => {
-  await page.goto("/login");
   await page.getByPlaceholder("Password").fill("dev");
   await page.getByRole("button", { name: "Login" }).click();
   await expect(page).toHaveURL("/");
@@ -32,7 +29,9 @@ test.describe("video list and navigation", () => {
     await login(page);
   });
 
-  test("video list page shows video cards", async ({ page }) => {
+  test("video list shows cards and clicking navigates to viewer", async ({
+    page,
+  }) => {
     const card = page.getByRole("link", {
       name: /cloud palace/,
     });
@@ -40,12 +39,9 @@ test.describe("video list and navigation", () => {
     await expect(card.locator("p", { hasText: "Billlie" })).toBeVisible();
     await expect(card.getByText("ko / en")).toBeVisible();
     await expect(card.getByText("3:30")).toBeVisible();
-  });
 
-  test("clicking a video card navigates to viewer", async ({ page }) => {
-    await page.getByText("cloud palace").click();
+    await card.click();
     await expect(page).toHaveURL(/\/videos\/\d+/);
-    // Viewer page should show caption rows from seed data
     await expect(page.locator("[data-index='0']")).toBeVisible();
   });
 
