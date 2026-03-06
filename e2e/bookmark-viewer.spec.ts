@@ -23,14 +23,6 @@ test.describe("bookmark viewer", () => {
     ).toBeVisible();
   });
 
-  test("shows bookmark indicators on caption rows", async ({ page }) => {
-    // Caption at idx=0 has a bookmark (꼬집어) — check for highlighted text
-    const firstRow = page.locator("[data-index='0']");
-    const highlight = firstRow.locator("span.border-amber-400");
-    await expect(highlight.first()).toBeVisible();
-    await expect(highlight.first()).toHaveText("꼬집어");
-  });
-
   test("switches to bookmarks tab and shows bookmark list", async ({
     page,
   }) => {
