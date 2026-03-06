@@ -176,7 +176,7 @@ Agent proposes bookmark candidates (interesting vocab from the Korean captions).
 - Hanja-based words where etymology aids memorization
 - Konglish or loanwords with interesting usage
 
-Aim for 10-20 words per video.
+Target ~1 bookmark per 10s of video duration (e.g. 3 min → ~18, 10 min → ~60). Err on the side of over-bookmarking — the user has quick deletion UI for curation.
 
 ### Bookmark fields
 

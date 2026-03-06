@@ -62,6 +62,8 @@ A web app for language learning via YouTube subtitles. Watch videos with dual ca
 - [ ] feat: repeatable eval process for ytsub agent skill — run skill against sample videos, check for common failure modes (wrong offsets, API errors, subtitle quality issues, payload format), track success rate across runs
 - [ ] Bookmark export — JSON export for Anki pipeline consumption
 - [ ] chore: consolidate E2E tests — merge related tests that share setup into single test blocks to reduce repeated login/navigation overhead
+- [ ] fix: bookmark popover — dismiss previous popover immediately when a new one opens (currently they can overlap due to timeout)
+- [ ] fix: bookmark popover — allow upward or downward positioning to avoid clipping under the panel container
 - [ ] refactor: adopt component library
 
 ## TODO: Backlog

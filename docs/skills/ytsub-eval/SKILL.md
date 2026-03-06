@@ -59,7 +59,7 @@ TODO: add videos for scenario C (ko manual only) and D (ko auto only).
 | Ko text quality    | Korean text reads naturally, no obvious speech-to-text artifacts |
 | Ko/En alignment    | Spot-check 5-10 pairs — translations correspond to Korean        |
 | Bookmark relevance | Vocab is genuinely intermediate+ and interesting                 |
-| Bookmark count     | 10-20 per video                                                  |
+| Bookmark count     | ~1 per 10s of video duration                                     |
 
 ## Eval log
 
