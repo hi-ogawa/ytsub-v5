@@ -52,15 +52,18 @@ test.describe("bookmark viewer", () => {
     // Caption idx=13 has bookmark 미로 with etymology 迷路
     // Scroll virtual list to bring row 13 into view
     await page.evaluate(() => {
-      const container = document
-        .querySelector("[data-index='0']")
-        ?.closest("[style*='overflow']") as HTMLElement | null;
+      let container = document.querySelector("[data-index='0']")
+        ?.parentElement as HTMLElement | null;
+      while (container) {
+        if (getComputedStyle(container).overflowY === "auto") break;
+        container = container.parentElement;
+      }
       if (container) container.scrollTop = 1000;
     });
     const row = page.locator("[data-index='13']");
     await expect(row).toBeVisible();
-    const highlight = row.locator("span.border-amber-400").first();
-    await highlight.hover({ force: true });
+    const wrapper = row.locator("span.relative").first();
+    await wrapper.hover();
     await expect(page.getByText("迷路")).toBeVisible();
   });
 
