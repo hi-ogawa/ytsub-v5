@@ -45,6 +45,8 @@ A web app for language learning via YouTube subtitles. Watch videos with dual ca
 - [x] chore: dev DB seed script — populate dev DB with sample videos, captions, and bookmarks for manual testing
 - [x] fix: `importVideo` caption insert hits D1 SQL variable limit on large videos (~300+ captions) — need to batch the insert
 - [x] feat: bookmark highlight rendering — show bookmarked words/phrases inline in caption text
+- [x] feat: import file upload — upload `import.json` via UI instead of API curl
+- [x] chore: normalize SKILL.md artifacts — align intermediate file schemas, remove API concerns
 
 ## TODO
 
