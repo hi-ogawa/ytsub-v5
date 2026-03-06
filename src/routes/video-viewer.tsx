@@ -185,6 +185,8 @@ type Bookmark = {
   translation: string;
   context: string;
   timestamp: number;
+  etymology: string;
+  notes: string;
   status: string;
 };
 
@@ -301,9 +303,9 @@ function BookmarkWord({
           <span className="block text-xs text-gray-500">
             {bookmark.translation}
           </span>
-          {bookmark.context && (
-            <span className="mt-1 block text-[10px] text-gray-400">
-              {bookmark.context}
+          {bookmark.etymology && (
+            <span className="mt-1 block text-[10px] text-gray-600">
+              {bookmark.etymology}
             </span>
           )}
           {onGoToBookmark && (
@@ -435,6 +437,12 @@ function BookmarksList({
             <div className="text-sm font-medium">{bm.text}</div>
             {bm.translation && (
               <div className="text-sm text-gray-500">{bm.translation}</div>
+            )}
+            {bm.etymology && (
+              <div className="text-xs text-gray-600">{bm.etymology}</div>
+            )}
+            {bm.notes && (
+              <div className="text-xs text-gray-400">{bm.notes}</div>
             )}
             {caption && (
               <div className="mt-0.5 border-t pt-1 text-xs text-gray-400">
