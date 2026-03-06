@@ -57,6 +57,7 @@ export const bookmarks = sqliteTable(
     translation: text().notNull().default(""),
     context: text().notNull().default(""),
     timestamp: real().notNull().default(0),
+    etymology: text().notNull().default(""),
     notes: text().notNull().default(""),
     status: text().notNull().default("pending"),
     createdAt: text("created_at")

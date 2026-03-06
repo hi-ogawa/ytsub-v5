@@ -173,23 +173,24 @@ Agent proposes bookmark candidates (interesting vocab from the Korean captions).
 
 - Intermediate level or above (skip basic greetings, particles, ultra-common verbs like 하다/가다/오다)
 - Slang, colloquial expressions, internet-speak that textbooks don't teach
-- Hanja-based words where etymology aids memorization
+- Hanja-based words where etymology aids memorization (populate the `etymology` field with hanja characters and breakdowns)
 - Konglish or loanwords with interesting usage
 
 Target ~1 bookmark per 10s of video duration (e.g. 3 min → ~18, 10 min → ~60). Err on the side of over-bookmarking — the user has quick deletion UI for curation.
 
 ### Bookmark fields
 
-| Field       | Description                                          |
-| ----------- | ---------------------------------------------------- |
-| text        | Korean word as it appears in the subtitle            |
-| translation | English meaning                                      |
-| captionIdx  | Index into merged captions (for timestamp/captionId) |
-| side        | 0 = primary (ko), 1 = secondary (en)                 |
-| offset      | Character offset of the word within caption text     |
-| context     | The full caption line containing the word            |
-| notes       | Optional notes                                       |
-| status      | "pending" or "learned"                               |
+| Field       | Description                                                                    |
+| ----------- | ------------------------------------------------------------------------------ |
+| text        | Korean word as it appears in the subtitle                                      |
+| translation | English meaning                                                                |
+| captionIdx  | Index into merged captions (for timestamp/captionId)                           |
+| side        | 0 = primary (ko), 1 = secondary (en)                                           |
+| offset      | Character offset of the word within caption text                               |
+| context     | The full caption line containing the word                                      |
+| etymology   | Hanja/etymology (e.g. `迷路` or `非現實的; 비(non) + 현실(reality) + 적(adj)`) |
+| notes       | Optional notes                                                                 |
+| status      | "pending" or "learned"                                                         |
 
 **Output:** `bookmarks.json`:
 
@@ -202,6 +203,7 @@ Target ~1 bookmark per 10s of video duration (e.g. 3 min → ~18, 10 min → ~60
     "side": 0,
     "offset": 5,
     "context": "아직 좀 헷갈리기는 해",
+    "etymology": "",
     "notes": "",
     "status": "pending"
   }

@@ -17,6 +17,7 @@ interface Bookmark {
   side: 0 | 1;
   offset: number;
   context: string;
+  etymology: string;
   notes: string;
   status: string;
 }
