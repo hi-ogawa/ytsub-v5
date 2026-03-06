@@ -5,4 +5,3 @@ dist/
 test-results/
 e2e/.auth.json
 .dev.vars.production
-package-lock.json
