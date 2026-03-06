@@ -91,7 +91,7 @@ File: `e2e/import.spec.ts`
 
 ### Test fixture
 
-Use `docs/skills/ytsub/data/7GU_VQfgMT0/import.json` as the test fixture — it's a real skill output already in the repo.
+Use `scripts/db-seed-json/7GU_VQfgMT0/import.json` as the test fixture — it's a real skill output already committed to the repo.
 
 ### Reference
 

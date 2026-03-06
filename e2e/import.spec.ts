@@ -3,7 +3,7 @@ import { expect, test } from "@playwright/test";
 import { login, setupDb } from "./helper.ts";
 
 const fixturePath = path.resolve(
-  "docs/skills/ytsub/data/7GU_VQfgMT0/import.json",
+  "scripts/db-seed-json/7GU_VQfgMT0/import.json",
 );
 
 test.describe("import file upload", () => {
