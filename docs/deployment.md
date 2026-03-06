@@ -57,6 +57,7 @@ pnpm wrangler secret bulk .dev.vars.production
 ```
 
 Current secrets:
+
 - `AUTH_SECRET` — session signing key
 - `AUTH_PASSWORD_HASH` — SHA-256 hash of the login password
 
@@ -65,6 +66,7 @@ The `vars` in `wrangler.jsonc` are dev-only defaults. Secrets override them in p
 ## Initial Setup (one-time, already done)
 
 See `docs/tasks/2026-03-04-deployment.md` for the original setup steps:
+
 - Creating the D1 database
 - Setting secrets
 - First deploy
