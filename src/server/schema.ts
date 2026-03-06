@@ -1,3 +1,4 @@
+import { sql } from "drizzle-orm";
 import {
   index,
   int,
@@ -16,7 +17,9 @@ export const videos = sqliteTable("videos", {
   duration: int().notNull().default(0),
   language1: text().notNull().default("ko"),
   language2: text().notNull().default("en"),
-  createdAt: text("created_at").notNull().default("(datetime('now'))"),
+  createdAt: text("created_at")
+    .notNull()
+    .default(sql`(datetime('now'))`),
 });
 
 export const captions = sqliteTable(
@@ -56,7 +59,9 @@ export const bookmarks = sqliteTable(
     timestamp: real().notNull().default(0),
     notes: text().notNull().default(""),
     status: text().notNull().default("pending"),
-    createdAt: text("created_at").notNull().default("(datetime('now'))"),
+    createdAt: text("created_at")
+      .notNull()
+      .default(sql`(datetime('now'))`),
   },
   (t) => [
     index("idx_bookmarks_video").on(t.videoId),
