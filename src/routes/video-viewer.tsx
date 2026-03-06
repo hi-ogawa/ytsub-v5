@@ -308,11 +308,6 @@ function BookmarkWord({
               {bookmark.etymology}
             </span>
           )}
-          {bookmark.context && (
-            <span className="mt-1 block text-[10px] text-gray-400">
-              {bookmark.context}
-            </span>
-          )}
           {onGoToBookmark && (
             <span
               role="button"
