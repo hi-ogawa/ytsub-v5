@@ -47,23 +47,24 @@ A web app for language learning via YouTube subtitles. Watch videos with dual ca
 - [x] feat: bookmark highlight rendering — show bookmarked words/phrases inline in caption text
 - [x] feat: import file upload — upload `import.json` via UI instead of API curl
 - [x] chore: normalize SKILL.md artifacts — align intermediate file schemas, remove API concerns
-
-## TODO
-
-- [ ] fix: tweak captions view auto scroll
+- [x] fix: tweak captions view auto scroll
   - smooth
   - no auto scroll during interaction
   - ability to disable
-- [ ] feat: manual bookmarking — text selection in caption panel to create bookmark
+- [x] feat: manual bookmarking — text selection in caption panel to create bookmark
   - DOM walk via `data-index`, `data-side`, `data-offset` attributes (v3 approach)
+- [x] fix: bookmark popover — dismiss previous popover immediately when a new one opens (currently they can overlap due to timeout)
+- [x] fix: bookmark popover — allow upward or downward positioning to avoid clipping under the panel container
+
+## TODO
+
 - [ ] feat: repeat/loop mode — loop a section between two caption timestamps
 - [ ] chore: unit-testable API layer — swap `cloudflare:workers` env + D1 drizzle adapter for local SQLite (e.g. `better-sqlite3`) so RPC handlers can be tested directly without spinning up wrangler/Playwright
 - [ ] refactor: use `sql` template for `createdAt` schema defaults instead of string literal — avoids Drizzle binding `(datetime('now'))` as a param, reducing bind count per row and allowing larger batch sizes
 - [ ] feat: repeatable eval process for ytsub agent skill — run skill against sample videos, check for common failure modes (wrong offsets, API errors, subtitle quality issues, payload format), track success rate across runs
-- [ ] Bookmark export — JSON export for Anki pipeline consumption
+- [ ] feat: Bookmark export — export to import bookmarks for Anki study
+- [ ] test: test skills/scripts
 - [ ] chore: consolidate E2E tests — merge related tests that share setup into single test blocks to reduce repeated login/navigation overhead
-- [ ] fix: bookmark popover — dismiss previous popover immediately when a new one opens (currently they can overlap due to timeout)
-- [ ] fix: bookmark popover — allow upward or downward positioning to avoid clipping under the panel container
 - [ ] refactor: adopt component library
 
 ## TODO: Backlog
