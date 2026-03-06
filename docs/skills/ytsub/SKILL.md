@@ -174,7 +174,6 @@ Agent proposes bookmark candidates (interesting vocab from the Korean captions).
 - Intermediate level or above (skip basic greetings, particles, ultra-common verbs like 하다/가다/오다)
 - Slang, colloquial expressions, internet-speak that textbooks don't teach
 - Hanja-based words where etymology aids memorization (populate the `etymology` field with hanja characters and breakdowns)
-- Konglish or loanwords with interesting usage
 
 Target ~1 bookmark per 10s of video duration (e.g. 3 min → ~18, 10 min → ~60). Err on the side of over-bookmarking — the user has quick deletion UI for curation.
 
