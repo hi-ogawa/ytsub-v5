@@ -32,27 +32,16 @@ test.describe("bookmark viewer", () => {
     await expect(page.getByText("to pinch").first()).toBeVisible();
   });
 
-  test("highlights bookmark words in caption text", async ({ page }) => {
-    // Caption at idx=0 has bookmark 꼬집어 — should be highlighted with amber underline
+  test("bookmark highlight and popover", async ({ page }) => {
+    // Caption idx=0 has bookmark 꼬집어 — highlighted with amber underline
     const firstRow = page.locator("[data-index='0']");
     const highlight = firstRow.locator("span.border-amber-400");
     await expect(highlight.first()).toBeVisible();
     await expect(highlight.first()).toHaveText("꼬집어");
-  });
 
-  test("shows popover on bookmark word hover", async ({ page }) => {
-    const firstRow = page.locator("[data-index='0']");
-    const highlight = firstRow.locator("span.border-amber-400").first();
-    await highlight.hover({ force: true });
-    // Popover should show translation (popover overflows row, so check page-level)
+    // Hover shows popover with translation and etymology
+    await highlight.first().hover({ force: true });
     await expect(page.getByText("to pinch")).toBeVisible();
-  });
-
-  test("popover shows etymology for bookmark", async ({ page }) => {
-    // Caption idx=0 has bookmark 꼬집어 with etymology 꼬집다
-    const firstRow = page.locator("[data-index='0']");
-    const highlight = firstRow.locator("span.border-amber-400").first();
-    await highlight.hover({ force: true });
     await expect(page.getByText("掐")).toBeVisible();
   });
 
