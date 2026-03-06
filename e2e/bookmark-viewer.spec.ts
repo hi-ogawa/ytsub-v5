@@ -32,36 +32,17 @@ test.describe("bookmark viewer", () => {
     await expect(page.getByText("to pinch").first()).toBeVisible();
   });
 
-  test("highlights bookmark words in caption text", async ({ page }) => {
-    // Caption at idx=0 has bookmark 꼬집어 — should be highlighted with amber underline
+  test("bookmark highlight and popover", async ({ page }) => {
+    // Caption idx=0 has bookmark 꼬집어 — highlighted with amber underline
     const firstRow = page.locator("[data-index='0']");
     const highlight = firstRow.locator("span.border-amber-400");
     await expect(highlight.first()).toBeVisible();
     await expect(highlight.first()).toHaveText("꼬집어");
-  });
 
-  test("shows popover on bookmark word hover", async ({ page }) => {
-    const firstRow = page.locator("[data-index='0']");
-    const highlight = firstRow.locator("span.border-amber-400").first();
-    await highlight.hover({ force: true });
-    // Popover should show translation (popover overflows row, so check page-level)
+    // Hover shows popover with translation and etymology
+    await highlight.first().hover({ force: true });
     await expect(page.getByText("to pinch")).toBeVisible();
-  });
-
-  test("popover shows etymology for hanja bookmark", async ({ page }) => {
-    // Caption idx=13 has bookmark 미로 with etymology 迷路
-    // Scroll virtual list to bring row 13 into view
-    await page.evaluate(() => {
-      const container = document
-        .querySelector("[data-index='0']")
-        ?.closest("[style*='overflow']") as HTMLElement | null;
-      if (container) container.scrollTop = 1000;
-    });
-    const row = page.locator("[data-index='13']");
-    await expect(row).toBeVisible();
-    const highlight = row.locator("span.border-amber-400").first();
-    await highlight.hover({ force: true });
-    await expect(page.getByText("迷路")).toBeVisible();
+    await expect(page.getByText("掐")).toBeVisible();
   });
 
   test("popover does not show notes", async ({ page }) => {

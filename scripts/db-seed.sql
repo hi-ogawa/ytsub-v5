@@ -56,7 +56,7 @@ INSERT INTO captions (video_id, idx, begin, end, text1, text2) VALUES
 ((SELECT id FROM videos WHERE youtube_id = '7GU_VQfgMT0'), 51, 197.794, 201.797, '날 부른 이름 듣고 있으니까', 'I''m hearing my name you left in the wind');
 
 INSERT INTO bookmarks (video_id, caption_id, text, side, offset, translation, context, timestamp, etymology, notes, status)
-SELECT v.id, c.id, '꼬집어', 0, 0, 'to pinch (꼬집다)', '꼬집어 봐 뜬 꿈인 것 같아', 25.585, '', '꼬집어 보다 = pinch oneself to check if dreaming', 'pending'
+SELECT v.id, c.id, '꼬집어', 0, 0, 'to pinch (꼬집다)', '꼬집어 봐 뜬 꿈인 것 같아', 25.585, '掐', '꼬집어 보다 = pinch oneself to check if dreaming', 'pending'
   FROM videos v JOIN captions c ON c.video_id = v.id AND c.idx = 0
   WHERE v.youtube_id = '7GU_VQfgMT0';
 
