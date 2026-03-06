@@ -48,23 +48,12 @@ test.describe("bookmark viewer", () => {
     await expect(page.getByText("to pinch")).toBeVisible();
   });
 
-  test("popover shows etymology for hanja bookmark", async ({ page }) => {
-    // Caption idx=13 has bookmark 미로 with etymology 迷路
-    // Scroll virtual list to bring row 13 into view
-    await page.evaluate(() => {
-      let container = document.querySelector("[data-index='0']")
-        ?.parentElement as HTMLElement | null;
-      while (container) {
-        if (getComputedStyle(container).overflowY === "auto") break;
-        container = container.parentElement;
-      }
-      if (container) container.scrollTop = 1000;
-    });
-    const row = page.locator("[data-index='13']");
-    await expect(row).toBeVisible();
-    const wrapper = row.locator("span.relative").first();
-    await wrapper.hover();
-    await expect(page.getByText("迷路")).toBeVisible();
+  test("popover shows etymology for bookmark", async ({ page }) => {
+    // Caption idx=0 has bookmark 꼬집어 with etymology 꼬집다
+    const firstRow = page.locator("[data-index='0']");
+    const highlight = firstRow.locator("span.border-amber-400").first();
+    await highlight.hover({ force: true });
+    await expect(page.getByText("掐")).toBeVisible();
   });
 
   test("popover does not show notes", async ({ page }) => {
