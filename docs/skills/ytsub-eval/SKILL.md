@@ -1,3 +1,9 @@
+---
+name: ytsub-eval
+description: >-
+  Run the ytsub skill against test videos and verify output quality.
+---
+
 # ytsub-eval skill
 
 Run the `ytsub` skill against test videos and verify output quality.

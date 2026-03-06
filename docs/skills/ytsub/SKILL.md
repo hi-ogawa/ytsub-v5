@@ -1,3 +1,10 @@
+---
+name: ytsub
+description: >-
+  Given a YouTube URL, produce clean bilingual captions (ko/en) and curated
+  vocab bookmarks, then import to ytsub via API.
+---
+
 # ytsub skill
 
 Given a YouTube URL, produce clean bilingual captions (ko/en) and curated vocab bookmarks, then import to ytsub via API.
