@@ -25,8 +25,8 @@ interface Caption {
   idx: number;
   begin: number;
   end: number;
-  ko: string;
-  en: string;
+  text1: string;
+  text2: string;
 }
 
 const bookmarksFile = process.argv[2];
@@ -58,7 +58,7 @@ for (const b of bookmarks) {
   }
 
   // Validate context matches caption text
-  const captionText = b.side === 0 ? caption.ko : caption.en;
+  const captionText = b.side === 0 ? caption.text1 : caption.text2;
   if (b.context !== captionText) {
     console.error(`WARN  [${b.text}]: context mismatch at idx ${b.captionIdx}`);
     console.error(`  context:  "${b.context}"`);

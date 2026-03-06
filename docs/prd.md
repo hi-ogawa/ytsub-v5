@@ -45,6 +45,8 @@ A web app for language learning via YouTube subtitles. Watch videos with dual ca
 - [x] chore: dev DB seed script — populate dev DB with sample videos, captions, and bookmarks for manual testing
 - [x] fix: `importVideo` caption insert hits D1 SQL variable limit on large videos (~300+ captions) — need to batch the insert
 - [x] feat: bookmark highlight rendering — show bookmarked words/phrases inline in caption text
+- [x] feat: import file upload — upload `import.json` via UI instead of API curl
+- [x] chore: normalize SKILL.md artifacts — align intermediate file schemas, remove API concerns
 
 ## TODO
 
@@ -59,6 +61,9 @@ A web app for language learning via YouTube subtitles. Watch videos with dual ca
 - [ ] refactor: use `sql` template for `createdAt` schema defaults instead of string literal — avoids Drizzle binding `(datetime('now'))` as a param, reducing bind count per row and allowing larger batch sizes
 - [ ] feat: repeatable eval process for ytsub agent skill — run skill against sample videos, check for common failure modes (wrong offsets, API errors, subtitle quality issues, payload format), track success rate across runs
 - [ ] Bookmark export — JSON export for Anki pipeline consumption
+- [ ] chore: consolidate E2E tests — merge related tests that share setup into single test blocks to reduce repeated login/navigation overhead
+- [ ] fix: bookmark popover — dismiss previous popover immediately when a new one opens (currently they can overlap due to timeout)
+- [ ] fix: bookmark popover — allow upward or downward positioning to avoid clipping under the panel container
 - [ ] refactor: adopt component library
 
 ## TODO: Backlog

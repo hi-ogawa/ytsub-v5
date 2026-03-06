@@ -2,23 +2,23 @@
 name: ytsub
 description: >-
   Given a YouTube URL, produce clean bilingual captions (ko/en) and curated
-  vocab bookmarks, then import to ytsub via API.
+  vocab bookmarks as import.json.
 ---
 
 # ytsub skill
 
-Given a YouTube URL, produce clean bilingual captions (ko/en) and curated vocab bookmarks, then import to ytsub via API.
+Given a YouTube URL, produce clean bilingual captions (ko/en) and curated vocab bookmarks as `import.json`. The user imports via the app's upload UI.
 
 ## Target artifacts
 
 Each step produces a file in `data/<id>/` for user review before proceeding.
 
-| File             | Quality bar                                                     |
-| ---------------- | --------------------------------------------------------------- |
-| `video.json`     | Correct metadata (title, channel, duration)                     |
-| `captions.json`  | Clean, well-segmented ko/en pairs where translations correspond |
-| `bookmarks.json` | 10-20 notable vocab items with correct offsets                  |
-| `import.json`    | Valid API payload assembled from above                          |
+| File             | Quality bar                                                           |
+| ---------------- | --------------------------------------------------------------------- |
+| `video.json`     | Correct metadata (title, channel, duration)                           |
+| `captions.json`  | Clean, well-segmented text1/text2 pairs where translations correspond |
+| `bookmarks.json` | 10-20 notable vocab items with correct offsets                        |
+| `import.json`    | Valid payload assembled from above                                    |
 
 ## File structure
 
@@ -27,6 +27,7 @@ Each step produces a file in `data/<id>/` for user review before proceeding.
 ├── SKILL.md              # this file
 ├── scripts/
 │   ├── parse-json3.ts         # json3 → caption cues JSON
+│   ├── check-alignment.ts    # check 1:1 cue alignment, merge if aligned
 │   └── validate-bookmarks.ts  # auto-correct bookmark offsets
 └── data/
     └── <id>/             # per-video working directory
@@ -40,30 +41,6 @@ Each step produces a file in `data/<id>/` for user review before proceeding.
         └── import.json       # assembled payload
 ```
 
-## Config
-
-```
-APP_BASE_URL = http://localhost:5173   # ytsub app (API at /api)
-```
-
-All API calls use `POST ${APP_BASE_URL}/api/<router>/<procedure>` with oRPC envelope:
-
-```bash
-curl -X POST "${APP_BASE_URL}/api/videos/importVideo" \
-  -H "Content-Type: application/json" \
-  -d '{"json": <payload>}'
-```
-
-Response is also wrapped: `{"json": <result>}`.
-
-## Error handling
-
-When external tools fail (yt-dlp errors, YouTube API 429s, network issues):
-
-1. Report the exact error to the user
-2. Do NOT retry automatically — these are often rate limits or auth issues
-3. Wait for user instructions (e.g. retry later, provide cookies, try different video)
-
 ---
 
 ## Step 1: Fetch & assess
@@ -72,7 +49,7 @@ When external tools fail (yt-dlp errors, YouTube API 429s, network issues):
 
 ```bash
 mkdir -p ./data/<id> && cd ./data/<id>
-yt-dlp --print '{"youtubeId":"%(id)s","title":"%(title)s","channelName":"%(channel)s","channelId":"%(channel_id)s","duration":%(duration)s}' --skip-download "<URL>" > video.json
+yt-dlp --print '{"youtubeId":"%(id)s","title":"%(title)s","channelName":"%(channel)s","channelId":"%(channel_id)s","duration":%(duration)s,"language1":"ko","language2":"en"}' --skip-download "<URL>" > video.json
 ```
 
 ### List available subtitle tracks
@@ -124,7 +101,7 @@ After fetching and parsing, determine which scenario applies:
 
 | Scenario        | Ko source | En source | Approach                                            |
 | --------------- | --------- | --------- | --------------------------------------------------- |
-| A: Both manual  | manual    | manual    | Audit en translations against ko, fix misalignments |
+| A: Both manual  | manual    | manual    | Try script merge; if unaligned, LLM audit           |
 | B: Ko auto + En | auto      | manual    | Fix ko text using en as context, align to en timing |
 | C: Ko manual    | manual    | —         | LLM translates ko → en                              |
 | D: Ko auto only | auto      | —         | Fix ko text, then LLM translate                     |
@@ -136,9 +113,23 @@ After fetching and parsing, determine which scenario applies:
 
 ## Step 2: Produce captions.json
 
-The goal is clean, well-segmented ko/en pairs where translations correspond. Use the parsed cues (`ko.json`, `en.json`) as reference material and produce `captions.json` directly.
+The goal is clean, well-segmented text1/text2 pairs where translations correspond.
 
-This is a **translation auditing task**. For each caption, produce correct Korean text and a corresponding English translation. Use whichever sources are available:
+### Try script merge first (Scenario A)
+
+When both ko and en subs are manual, check if they're already 1:1 aligned:
+
+```bash
+npx tsx ../../scripts/check-alignment.ts ko.json en.json > captions.json
+```
+
+If this succeeds (exit 0), the cues matched within 0.5s tolerance and `captions.json` is ready. Skip the LLM merge below and proceed to Step 3.
+
+If it fails (count mismatch or timestamp drift), fall back to the LLM merge.
+
+### LLM merge (fallback or Scenarios B/C/D)
+
+Use the parsed cues (`ko.json`, `en.json`) as reference material and produce `captions.json` directly. This is a **translation auditing task**:
 
 | Scenario        | Ko source | En source | What to do                                          |
 | --------------- | --------- | --------- | --------------------------------------------------- |
@@ -164,13 +155,13 @@ When fixing auto-generated Korean, watch for:
     "idx": 0,
     "begin": 25.585,
     "end": 29.489,
-    "ko": "꼬집어 봐 뜬 꿈인 것 같아",
-    "en": "am I awake? or am I still dreaming"
+    "text1": "꼬집어 봐 뜬 꿈인 것 같아",
+    "text2": "am I awake? or am I still dreaming"
   }
 ]
 ```
 
-**Review:** Check alignment — do ko/en pairs make sense together? Flag any misaligned rows.
+**Review:** Check alignment — do text1/text2 pairs make sense together? Flag any misaligned rows.
 
 ---
 
@@ -185,7 +176,7 @@ Agent proposes bookmark candidates (interesting vocab from the Korean captions).
 - Hanja-based words where etymology aids memorization
 - Konglish or loanwords with interesting usage
 
-Aim for 10-20 words per video.
+Target ~1 bookmark per 10s of video duration (e.g. 3 min → ~18, 10 min → ~60). Err on the side of over-bookmarking — the user has quick deletion UI for curation.
 
 ### Bookmark fields
 
@@ -231,64 +222,14 @@ The script auto-corrects offsets via `indexOf`, fixes context mismatches, and er
 
 ---
 
-## Step 4: Import
+## Step 4: Assemble import.json
 
-Assemble the import payload from intermediate files, then push via `importVideo`.
+Assemble the final payload from intermediate files:
 
 ```bash
 cd ./data/<id>
 jq -n --slurpfile c captions.json --slurpfile b bookmarks.json \
-  '{video: (input + {language1:"ko",language2:"en"}), captions: [$c[][] | {idx,begin,end,text1:.ko,text2:.en}], bookmarks: $b[]}' \
-  video.json > import.json
+  '{video: input, captions: $c[], bookmarks: $b[]}' video.json > import.json
 ```
 
-```
-POST /api/videos/importVideo
-```
-
-```json
-{
-  "video": {
-    "youtubeId": "...",
-    "title": "...",
-    "channelName": "...",
-    "channelId": "...",
-    "duration": 210,
-    "language1": "ko",
-    "language2": "en"
-  },
-  "captions": [
-    { "idx": 0, "begin": 25.585, "end": 29.489, "text1": "...", "text2": "..." }
-  ],
-  "bookmarks": [
-    {
-      "text": "헷갈리다",
-      "translation": "to be confused",
-      "captionIdx": 4,
-      "side": 0,
-      "offset": 5,
-      "context": "아직 좀 헷갈리기는 해"
-    }
-  ]
-}
-```
-
-- Map from merged captions: `ko` → `text1`, `en` → `text2`
-- `captionIdx` is resolved to `captionId` server-side
-- Returns `{ videoId, captions, bookmarks }` with counts
-
----
-
-## API reference
-
-All endpoints use `POST /api/<router>/<procedure>`.
-
-| Endpoint                   | Key fields                                         |
-| -------------------------- | -------------------------------------------------- |
-| `videos/importVideo`       | video{}, captions[], bookmarks[] — one-shot import |
-| `videos/listVideos`        | limit, offset → {items, total}                     |
-| `videos/getVideo`          | id → video + captionCount                          |
-| `videos/deleteVideo`       | id (cascades captions)                             |
-| `bookmarks/listBookmarks`  | videoId, status, limit, offset → {items, total}    |
-| `bookmarks/updateBookmark` | id, status?, translation?, notes?                  |
-| `bookmarks/deleteBookmark` | id                                                 |
+Hand `import.json` to the user. They import via the app's upload UI.
