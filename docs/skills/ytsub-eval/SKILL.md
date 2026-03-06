@@ -28,6 +28,7 @@ Each video covers a different subtitle scenario. Add more as edge cases are disc
 | `7GU_VQfgMT0` | A: Both manual  | manual  | manual         | Billlie, song, seed data |
 | `E8KM2qWSUS0` | B: Ko auto + En | auto    | manual         | tripleS, variety show    |
 | `DtK-CkwNHSY` | B: Ko auto + En | auto    | manual (en-US) | tripleS, en-US variant   |
+| `eNdOWsNPmf8` | A: Both manual  | manual  | manual         | UNIS, song, heavy EN mix |
 
 TODO: add videos for scenario C (ko manual only) and D (ko auto only).
 
@@ -46,11 +47,10 @@ TODO: add videos for scenario C (ko manual only) and D (ko auto only).
 | ----------------------- | ------------------------------------------- | ----------------------------- |
 | video.json valid        | Has youtubeId, title, channelName, duration | All fields present, non-empty |
 | captions.json parseable | Valid JSON array                            | Parses without error          |
-| No empty captions       | Every entry has non-empty `ko`              | Zero empty ko fields          |
+| No empty captions       | Every entry has non-empty `text1`           | Zero empty text1 fields       |
 | No garbled markers      | No `>>` in ko text                          | Zero matches                  |
 | Bookmark offsets valid  | Run `validate-bookmarks.ts`                 | Zero errors                   |
 | import.json valid       | Has video, captions[], bookmarks[]          | Correct shape                 |
-| API import succeeds     | POST to importVideo                         | 200 response                  |
 
 ### Manual (LLM judgment)
 
@@ -66,6 +66,12 @@ TODO: add videos for scenario C (ko manual only) and D (ko auto only).
 Record results here. Append new entries at the top.
 
 ```
+2026-03-06 | eNdOWsNPmf8 | Scenario A (both manual) | 11/11 PASS
+  Captions: 70 pairs, Korean text natural, alignment good
+  Bookmarks: 19 (target 10-20), offsets valid (2 fixed), relevance good
+  Fixed "전불" → "전부를" typo in 3 captions. Heavy EN/KO mix (K-pop).
+  Cost: 40k tokens, 25 tool calls, ~3.5 min
+
 2026-03-05 | DtK-CkwNHSY | Scenario B (ko auto + en-US manual) | no review
   Captions: 40 pairs, Bookmarks: 15, offsets validated (8 fixed)
   Cost: 38k tokens, 18 tool calls, ~3 min

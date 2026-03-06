@@ -27,6 +27,7 @@ Each step produces a file in `data/<id>/` for user review before proceeding.
 ├── SKILL.md              # this file
 ├── scripts/
 │   ├── parse-json3.ts         # json3 → caption cues JSON
+│   ├── check-alignment.ts    # check 1:1 cue alignment, merge if aligned
 │   └── validate-bookmarks.ts  # auto-correct bookmark offsets
 └── data/
     └── <id>/             # per-video working directory
@@ -100,7 +101,7 @@ After fetching and parsing, determine which scenario applies:
 
 | Scenario        | Ko source | En source | Approach                                            |
 | --------------- | --------- | --------- | --------------------------------------------------- |
-| A: Both manual  | manual    | manual    | Audit en translations against ko, fix misalignments |
+| A: Both manual  | manual    | manual    | Try script merge; if unaligned, LLM audit           |
 | B: Ko auto + En | auto      | manual    | Fix ko text using en as context, align to en timing |
 | C: Ko manual    | manual    | —         | LLM translates ko → en                              |
 | D: Ko auto only | auto      | —         | Fix ko text, then LLM translate                     |
@@ -112,9 +113,23 @@ After fetching and parsing, determine which scenario applies:
 
 ## Step 2: Produce captions.json
 
-The goal is clean, well-segmented text1/text2 pairs where translations correspond. Use the parsed cues (`ko.json`, `en.json`) as reference material and produce `captions.json` directly.
+The goal is clean, well-segmented text1/text2 pairs where translations correspond.
 
-This is a **translation auditing task**. For each caption, produce correct Korean text and a corresponding English translation. Use whichever sources are available:
+### Try script merge first (Scenario A)
+
+When both ko and en subs are manual, check if they're already 1:1 aligned:
+
+```bash
+npx tsx ../../scripts/check-alignment.ts ko.json en.json > captions.json
+```
+
+If this succeeds (exit 0), the cues matched within 0.5s tolerance and `captions.json` is ready. Skip the LLM merge below and proceed to Step 3.
+
+If it fails (count mismatch or timestamp drift), fall back to the LLM merge.
+
+### LLM merge (fallback or Scenarios B/C/D)
+
+Use the parsed cues (`ko.json`, `en.json`) as reference material and produce `captions.json` directly. This is a **translation auditing task**:
 
 | Scenario        | Ko source | En source | What to do                                          |
 | --------------- | --------- | --------- | --------------------------------------------------- |
