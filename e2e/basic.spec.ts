@@ -36,6 +36,12 @@ test.describe("video list and navigation", () => {
       name: /cloud palace/,
     });
     await expect(card).toBeVisible();
+    const thumbnail = card.locator("img");
+    await expect(thumbnail).toBeVisible();
+    await expect(thumbnail).toHaveAttribute(
+      "src",
+      /img\.youtube\.com\/vi\/.+\/mqdefault\.jpg/,
+    );
     await expect(card.locator("p", { hasText: "Billlie" })).toBeVisible();
     await expect(card.getByText("ko / en")).toBeVisible();
     await expect(card.getByText("3:30")).toBeVisible();
