@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { orpc } from "../rpc.ts";
 
@@ -159,6 +159,103 @@ function ImportDialog({ onClose }: { onClose: () => void }) {
   );
 }
 
+function VideoCard({
+  video,
+  onDelete,
+}: {
+  video: {
+    id: number;
+    youtubeId: string;
+    title: string;
+    channelName: string | null;
+    language1: string;
+    language2: string;
+    duration: number;
+    createdAt: string;
+  };
+  onDelete: () => void;
+}) {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    function onClickOutside(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", onClickOutside);
+    return () => document.removeEventListener("mousedown", onClickOutside);
+  }, [menuOpen]);
+
+  return (
+    <div className="relative">
+      <Link
+        to={`/videos/${video.id}`}
+        className="block overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm transition-shadow hover:shadow-md"
+      >
+        <img
+          src={`https://img.youtube.com/vi/${video.youtubeId}/mqdefault.jpg`}
+          alt=""
+          loading="lazy"
+          className="aspect-video w-full object-cover"
+        />
+        <div className="p-4">
+          <h2 className="mb-1 line-clamp-2 pr-5 font-semibold leading-snug">
+            {video.title}
+          </h2>
+          <p className="mb-3 truncate text-sm text-gray-500">
+            {video.channelName || "Unknown channel"}
+          </p>
+          <div className="flex items-center gap-2 text-xs text-gray-400">
+            <span className="rounded bg-gray-100 px-2 py-0.5 font-mono">
+              {video.language1} / {video.language2}
+            </span>
+            <span>{formatDuration(video.duration)}</span>
+            <span className="ml-auto">{formatDate(video.createdAt)}</span>
+          </div>
+        </div>
+      </Link>
+      <div ref={menuRef} className="absolute right-2 top-[calc(56.2%+0.5rem)]">
+        <button
+          className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setMenuOpen((v) => !v);
+          }}
+        >
+          <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+            <path d="M10 6a1.5 1.5 0 110-3 1.5 1.5 0 010 3zm0 5.5a1.5 1.5 0 110-3 1.5 1.5 0 010 3zm0 5.5a1.5 1.5 0 110-3 1.5 1.5 0 010 3z" />
+          </svg>
+        </button>
+        {menuOpen && (
+          <div className="absolute right-0 mt-1 w-32 rounded border bg-white py-1 shadow-lg">
+            <button
+              className="flex w-full items-center gap-2 px-3 py-1.5 text-sm text-red-600 hover:bg-red-50"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setMenuOpen(false);
+                if (
+                  window.confirm(
+                    `Delete "${video.title}"? This will also delete its captions and bookmarks.`,
+                  )
+                ) {
+                  onDelete();
+                }
+              }}
+            >
+              Delete
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export function VideoListPage() {
   const [showImport, setShowImport] = useState(false);
   const queryClient = useQueryClient();
@@ -199,43 +296,11 @@ export function VideoListPage() {
           ) : (
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
               {data.items.map((video) => (
-                <Link
+                <VideoCard
                   key={video.id}
-                  to={`/videos/${video.id}`}
-                  className="group relative block rounded-lg border border-gray-200 bg-white p-4 shadow-sm transition-shadow hover:shadow-md"
-                >
-                  <button
-                    className="absolute right-2 top-2 rounded p-0.5 text-gray-300 hover:bg-red-50 hover:text-red-500"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      if (
-                        window.confirm(
-                          `Delete "${video.title}"? This will also delete its captions and bookmarks.`,
-                        )
-                      ) {
-                        deleteMutation.mutate({ id: video.id });
-                      }
-                    }}
-                  >
-                    ✕
-                  </button>
-                  <h2 className="mb-1 line-clamp-2 pr-5 font-semibold leading-snug">
-                    {video.title}
-                  </h2>
-                  <p className="mb-3 truncate text-sm text-gray-500">
-                    {video.channelName || "Unknown channel"}
-                  </p>
-                  <div className="flex items-center gap-2 text-xs text-gray-400">
-                    <span className="rounded bg-gray-100 px-2 py-0.5 font-mono">
-                      {video.language1} / {video.language2}
-                    </span>
-                    <span>{formatDuration(video.duration)}</span>
-                    <span className="ml-auto">
-                      {formatDate(video.createdAt)}
-                    </span>
-                  </div>
-                </Link>
+                  video={video}
+                  onDelete={() => deleteMutation.mutate({ id: video.id })}
+                />
               ))}
             </div>
           )}
