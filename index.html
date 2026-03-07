@@ -17,11 +17,10 @@
     <script>
       (function () {
         var t = localStorage.getItem("ytsub:theme");
-        if (
+        var dark =
           t === "dark" ||
-          (!t && matchMedia("(prefers-color-scheme: dark)").matches)
-        )
-          document.documentElement.classList.add("dark");
+          (t !== "light" && matchMedia("(prefers-color-scheme: dark)").matches);
+        if (dark) document.documentElement.classList.add("dark");
       })();
     </script>
   </head>

@@ -57,27 +57,64 @@ function AuthLayout() {
   );
 }
 
+type Theme = "light" | "dark" | "system";
+const THEME_KEY = "ytsub:theme";
+const THEMES: Theme[] = ["light", "dark", "system"];
+
+function resolveTheme(theme: Theme): boolean {
+  if (theme === "system")
+    return matchMedia("(prefers-color-scheme: dark)").matches;
+  return theme === "dark";
+}
+
+function applyDarkClass(dark: boolean) {
+  // Disable transitions during theme switch to prevent color flicker
+  const css = document.createElement("style");
+  css.textContent = "*, *::before, *::after { transition: none !important; }";
+  document.head.appendChild(css);
+
+  document.documentElement.classList.toggle("dark", dark);
+
+  // Force a reflow so the no-transition style takes effect, then remove it
+  document.body.offsetHeight; // eslint-disable-line @typescript-eslint/no-unused-expressions
+  css.remove();
+}
+
 function useTheme() {
-  const [dark, setDark] = useState(() =>
-    document.documentElement.classList.contains("dark"),
-  );
+  const [theme, setTheme] = useState<Theme>(() => {
+    const stored = localStorage.getItem(THEME_KEY);
+    if (stored === "light" || stored === "dark") return stored;
+    return "system";
+  });
 
   useEffect(() => {
-    if (dark) {
-      document.documentElement.classList.add("dark");
+    applyDarkClass(resolveTheme(theme));
+    if (theme === "system") {
+      localStorage.removeItem(THEME_KEY);
     } else {
-      document.documentElement.classList.remove("dark");
+      localStorage.setItem(THEME_KEY, theme);
     }
-    localStorage.setItem("ytsub:theme", dark ? "dark" : "light");
-  }, [dark]);
+  }, [theme]);
 
-  return { dark, toggle: () => setDark((v) => !v) };
+  // Listen for system preference changes when in "system" mode
+  useEffect(() => {
+    if (theme !== "system") return;
+    const mql = matchMedia("(prefers-color-scheme: dark)");
+    const handler = (e: MediaQueryListEvent) => applyDarkClass(e.matches);
+    mql.addEventListener("change", handler);
+    return () => mql.removeEventListener("change", handler);
+  }, [theme]);
+
+  const cycle = () =>
+    setTheme((t) => THEMES[(THEMES.indexOf(t) + 1) % THEMES.length]);
+
+  return { theme, isDark: resolveTheme(theme), cycle };
 }
 
 function HeaderMenu() {
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
-  const { dark, toggle: toggleTheme } = useTheme();
+  const { theme, cycle: cycleTheme } = useTheme();
 
   const logoutMutation = useMutation(
     orpc.auth.logout.mutationOptions({
@@ -91,10 +128,10 @@ function HeaderMenu() {
     <div className="relative flex items-center gap-1">
       <button
         className="flex h-7 w-7 items-center justify-center rounded text-muted-foreground hover:bg-muted"
-        onClick={toggleTheme}
-        aria-label={dark ? "Switch to light mode" : "Switch to dark mode"}
+        onClick={cycleTheme}
+        aria-label={`Theme: ${theme}`}
       >
-        {dark ? (
+        {theme === "light" && (
           <svg
             className="h-4 w-4"
             fill="none"
@@ -108,7 +145,8 @@ function HeaderMenu() {
               d="M12 3v1m0 16v1m8.66-13.66l-.71.71M4.05 19.95l-.71.71M21 12h-1M4 12H3m16.66 7.66l-.71-.71M4.05 4.05l-.71-.71M16 12a4 4 0 11-8 0 4 4 0 018 0z"
             />
           </svg>
-        ) : (
+        )}
+        {theme === "dark" && (
           <svg
             className="h-4 w-4"
             fill="none"
@@ -120,6 +158,21 @@ function HeaderMenu() {
               strokeLinejoin="round"
               strokeWidth={2}
               d="M20.354 15.354A9 9 0 018.646 3.646 9.005 9.005 0 0012 21a9.005 9.005 0 008.354-5.646z"
+            />
+          </svg>
+        )}
+        {theme === "system" && (
+          <svg
+            className="h-4 w-4"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
             />
           </svg>
         )}

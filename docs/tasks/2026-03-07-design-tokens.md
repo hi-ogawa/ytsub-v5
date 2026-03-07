@@ -338,5 +338,5 @@ None expected — selectors target semantic token class names which don't change
 
 - [x] Plan confirmed
 - [x] Initial implementation
-- [ ] Three-way toggle (dark / light / system)
-- [ ] Disable transitions during toggle
+- [x] Three-way toggle (dark / light / system)
+- [x] Disable transitions during toggle
