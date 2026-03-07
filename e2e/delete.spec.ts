@@ -10,23 +10,16 @@ test.describe("delete video", () => {
     await login(page);
   });
 
-  test("cancel delete keeps the video", async ({ page }) => {
+  test("cancel then confirm delete video", async ({ page }) => {
     const card = page.getByRole("link", { name: /cloud palace/ });
     await expect(card).toBeVisible();
 
-    page.on("dialog", (dialog) => dialog.dismiss());
+    page.once("dialog", (dialog) => dialog.dismiss());
     await card.getByRole("button").click();
-
-    await expect(card).toBeVisible();
-  });
-
-  test("confirm delete removes the video", async ({ page }) => {
-    const card = page.getByRole("link", { name: /cloud palace/ });
     await expect(card).toBeVisible();
 
-    page.on("dialog", (dialog) => dialog.accept());
+    page.once("dialog", (dialog) => dialog.accept());
     await card.getByRole("button").click();
-
     await expect(card).not.toBeVisible();
   });
 });
@@ -45,29 +38,19 @@ test.describe("delete bookmark", () => {
     await page.getByRole("button", { name: /Bookmarks/ }).click();
   });
 
-  test("cancel delete keeps the bookmark", async ({ page }) => {
+  test("cancel then confirm delete bookmark", async ({ page }) => {
     const bookmarkRow = page
       .locator("div.flex.cursor-pointer")
       .filter({ hasText: "꼬집어" })
       .first();
     await expect(bookmarkRow).toBeVisible();
 
-    page.on("dialog", (dialog) => dialog.dismiss());
+    page.once("dialog", (dialog) => dialog.dismiss());
     await bookmarkRow.getByRole("button", { name: "✕" }).click();
-
-    await expect(bookmarkRow).toBeVisible();
-  });
-
-  test("confirm delete removes the bookmark", async ({ page }) => {
-    const bookmarkRow = page
-      .locator("div.flex.cursor-pointer")
-      .filter({ hasText: "꼬집어" })
-      .first();
     await expect(bookmarkRow).toBeVisible();
 
-    page.on("dialog", (dialog) => dialog.accept());
+    page.once("dialog", (dialog) => dialog.accept());
     await bookmarkRow.getByRole("button", { name: "✕" }).click();
-
     await expect(bookmarkRow).not.toBeVisible();
   });
 });

@@ -18,6 +18,7 @@ export const bookmarksRouter = authed.router({
             translation: z.string().optional().default(""),
             context: z.string().optional().default(""),
             timestamp: z.number().optional().default(0),
+            etymology: z.string().optional().default(""),
             notes: z.string().optional().default(""),
             status: z.string().optional().default("pending"),
           }),
@@ -36,6 +37,7 @@ export const bookmarksRouter = authed.router({
         translation: b.translation,
         context: b.context,
         timestamp: sql.raw(`${b.timestamp}`),
+        etymology: b.etymology,
         notes: b.notes,
         status: b.status,
       }));
@@ -86,6 +88,7 @@ export const bookmarksRouter = authed.router({
         id: z.number().int(),
         status: z.string().optional(),
         translation: z.string().optional(),
+        etymology: z.string().optional(),
         notes: z.string().optional(),
       }),
     )
@@ -95,6 +98,8 @@ export const bookmarksRouter = authed.router({
       if (updates.status !== undefined) setValues.status = updates.status;
       if (updates.translation !== undefined)
         setValues.translation = updates.translation;
+      if (updates.etymology !== undefined)
+        setValues.etymology = updates.etymology;
       if (updates.notes !== undefined) setValues.notes = updates.notes;
       if (Object.keys(setValues).length === 0) {
         throw new Error("No fields to update");

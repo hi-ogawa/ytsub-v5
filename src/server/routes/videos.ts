@@ -154,6 +154,7 @@ export const videosRouter = authed.router({
               side: z.number().int().optional().default(0),
               offset: z.number().int().optional().default(0),
               context: z.string().optional().default(""),
+              etymology: z.string().optional().default(""),
               notes: z.string().optional().default(""),
               status: z.string().optional().default("pending"),
             }),
@@ -215,6 +216,7 @@ export const videosRouter = authed.router({
             translation: b.translation,
             context: b.context,
             timestamp: sql.raw(`${input.captions[b.captionIdx]?.begin ?? 0}`),
+            etymology: b.etymology,
             notes: b.notes,
             status: b.status,
           }));

@@ -23,14 +23,6 @@ test.describe("bookmark viewer", () => {
     ).toBeVisible();
   });
 
-  test("shows bookmark indicators on caption rows", async ({ page }) => {
-    // Caption at idx=0 has a bookmark (꼬집어) — check for highlighted text
-    const firstRow = page.locator("[data-index='0']");
-    const highlight = firstRow.locator("span.border-amber-400");
-    await expect(highlight.first()).toBeVisible();
-    await expect(highlight.first()).toHaveText("꼬집어");
-  });
-
   test("switches to bookmarks tab and shows bookmark list", async ({
     page,
   }) => {
@@ -40,20 +32,41 @@ test.describe("bookmark viewer", () => {
     await expect(page.getByText("to pinch").first()).toBeVisible();
   });
 
-  test("highlights bookmark words in caption text", async ({ page }) => {
-    // Caption at idx=0 has bookmark 꼬집어 — should be highlighted with amber underline
+  test("bookmark highlight and popover", async ({ page }) => {
+    // Caption idx=0 has bookmark 꼬집어 — highlighted with amber underline
     const firstRow = page.locator("[data-index='0']");
     const highlight = firstRow.locator("span.border-amber-400");
     await expect(highlight.first()).toBeVisible();
     await expect(highlight.first()).toHaveText("꼬집어");
+
+    // Hover shows popover with translation and etymology
+    await highlight.first().hover({ force: true });
+    await expect(page.getByText("to pinch")).toBeVisible();
+    await expect(page.getByText("掐")).toBeVisible();
   });
 
-  test("shows popover on bookmark word hover", async ({ page }) => {
+  test("popover does not show notes", async ({ page }) => {
+    // Caption idx=0 has bookmark 꼬집어 with notes but no etymology
     const firstRow = page.locator("[data-index='0']");
     const highlight = firstRow.locator("span.border-amber-400").first();
     await highlight.hover({ force: true });
-    // Popover should show translation (popover overflows row, so check page-level)
+    // Translation should show
     await expect(page.getByText("to pinch")).toBeVisible();
+    // Notes should NOT be in the popover
+    await expect(
+      page.getByText("pinch oneself to check if dreaming"),
+    ).not.toBeVisible();
+  });
+
+  test("bookmark list shows etymology and notes", async ({ page }) => {
+    await page.getByRole("button", { name: /Bookmarks/ }).click();
+    // 미로 has etymology 迷路
+    await expect(page.getByText("迷路").first()).toBeVisible();
+    // 초침 has etymology 秒針 and notes
+    await expect(page.getByText("秒針").first()).toBeVisible();
+    await expect(
+      page.getByText("흐르는 초침 = flowing/ticking second hand").first(),
+    ).toBeVisible();
   });
 
   test("bookmark list shows caption context", async ({ page }) => {

@@ -382,6 +382,7 @@
       "side": 0,
       "offset": 0,
       "context": "꼬집어 봐 뜬 꿈인 것 같아",
+      "etymology": "掐",
       "notes": "꼬집어 보다 = pinch oneself to check if dreaming",
       "status": "pending"
     },
@@ -432,7 +433,8 @@
       "side": 0,
       "offset": 4,
       "context": "수많은 미로 안갯속",
-      "notes": "Hanja: 迷路",
+      "etymology": "迷路",
+      "notes": "",
       "status": "pending"
     },
     {
@@ -452,7 +454,8 @@
       "side": 0,
       "offset": 14,
       "context": "나를 속이고 숨겨 흐르는 초침",
-      "notes": "Hanja: 秒針; 흐르는 초침 = flowing/ticking second hand",
+      "etymology": "秒針",
+      "notes": "흐르는 초침 = flowing/ticking second hand",
       "status": "pending"
     },
     {
@@ -462,7 +465,8 @@
       "side": 0,
       "offset": 14,
       "context": "저 멀리 보인 건 난 걸 비현실적인 REM 속 walkway",
-      "notes": "Hanja: 非現實的; 비(non) + 현실(reality) + 적(adjective suffix)",
+      "etymology": "非現實的; 비(non) + 현실(reality) + 적(adjective suffix)",
+      "notes": "",
       "status": "pending"
     },
     {

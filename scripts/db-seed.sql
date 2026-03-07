@@ -55,78 +55,78 @@ INSERT INTO captions (video_id, idx, begin, end, text1, text2) VALUES
 ((SELECT id FROM videos WHERE youtube_id = '7GU_VQfgMT0'), 50, 192.578, 197.794, '이렇게 해서라도 난 너를 만나고 싶어', 'if I could see you again sure I can take another step'),
 ((SELECT id FROM videos WHERE youtube_id = '7GU_VQfgMT0'), 51, 197.794, 201.797, '날 부른 이름 듣고 있으니까', 'I''m hearing my name you left in the wind');
 
-INSERT INTO bookmarks (video_id, caption_id, text, side, offset, translation, context, timestamp, notes, status)
-SELECT v.id, c.id, '꼬집어', 0, 0, 'to pinch (꼬집다)', '꼬집어 봐 뜬 꿈인 것 같아', 25.585, '꼬집어 보다 = pinch oneself to check if dreaming', 'pending'
+INSERT INTO bookmarks (video_id, caption_id, text, side, offset, translation, context, timestamp, etymology, notes, status)
+SELECT v.id, c.id, '꼬집어', 0, 0, 'to pinch (꼬집다)', '꼬집어 봐 뜬 꿈인 것 같아', 25.585, '掐', '꼬집어 보다 = pinch oneself to check if dreaming', 'pending'
   FROM videos v JOIN captions c ON c.video_id = v.id AND c.idx = 0
   WHERE v.youtube_id = '7GU_VQfgMT0';
 
-INSERT INTO bookmarks (video_id, caption_id, text, side, offset, translation, context, timestamp, notes, status)
-SELECT v.id, c.id, '헷갈리기는', 0, 5, 'to be confused (헷갈리다)', '아직 좀 헷갈리기는 해', 39.954, '-기는 하다 pattern = does (verb) but...', 'pending'
+INSERT INTO bookmarks (video_id, caption_id, text, side, offset, translation, context, timestamp, etymology, notes, status)
+SELECT v.id, c.id, '헷갈리기는', 0, 5, 'to be confused (헷갈리다)', '아직 좀 헷갈리기는 해', 39.954, '', '-기는 하다 pattern = does (verb) but...', 'pending'
   FROM videos v JOIN captions c ON c.video_id = v.id AND c.idx = 4
   WHERE v.youtube_id = '7GU_VQfgMT0';
 
-INSERT INTO bookmarks (video_id, caption_id, text, side, offset, translation, context, timestamp, notes, status)
-SELECT v.id, c.id, '헤매던', 0, 3, 'to wander lost (헤매다)', '매번 헤매던 그림을', 44.884, '', 'pending'
+INSERT INTO bookmarks (video_id, caption_id, text, side, offset, translation, context, timestamp, etymology, notes, status)
+SELECT v.id, c.id, '헤매던', 0, 3, 'to wander lost (헤매다)', '매번 헤매던 그림을', 44.884, '', '', 'pending'
   FROM videos v JOIN captions c ON c.video_id = v.id AND c.idx = 5
   WHERE v.youtube_id = '7GU_VQfgMT0';
 
-INSERT INTO bookmarks (video_id, caption_id, text, side, offset, translation, context, timestamp, notes, status)
-SELECT v.id, c.id, '차올라', 0, 13, 'to well up, to rise (차오르다)', '다 끝났다 생각한 순간 차올라 yeah', 52.469, '차오르다 = to fill up, surge, well up', 'pending'
+INSERT INTO bookmarks (video_id, caption_id, text, side, offset, translation, context, timestamp, etymology, notes, status)
+SELECT v.id, c.id, '차올라', 0, 13, 'to well up, to rise (차오르다)', '다 끝났다 생각한 순간 차올라 yeah', 52.469, '', '차오르다 = to fill up, surge, well up', 'pending'
   FROM videos v JOIN captions c ON c.video_id = v.id AND c.idx = 8
   WHERE v.youtube_id = '7GU_VQfgMT0';
 
-INSERT INTO bookmarks (video_id, caption_id, text, side, offset, translation, context, timestamp, notes, status)
-SELECT v.id, c.id, '제자리', 0, 0, 'same place, standing still', '제자리 같은 공간', 58.421, '제자리걸음 = marking time, going nowhere', 'pending'
+INSERT INTO bookmarks (video_id, caption_id, text, side, offset, translation, context, timestamp, etymology, notes, status)
+SELECT v.id, c.id, '제자리', 0, 0, 'same place, standing still', '제자리 같은 공간', 58.421, '', '제자리걸음 = marking time, going nowhere', 'pending'
   FROM videos v JOIN captions c ON c.video_id = v.id AND c.idx = 9
   WHERE v.youtube_id = '7GU_VQfgMT0';
 
-INSERT INTO bookmarks (video_id, caption_id, text, side, offset, translation, context, timestamp, notes, status)
-SELECT v.id, c.id, '미로', 0, 4, 'maze, labyrinth', '수많은 미로 안갯속', 70.042, 'Hanja: 迷路', 'pending'
+INSERT INTO bookmarks (video_id, caption_id, text, side, offset, translation, context, timestamp, etymology, notes, status)
+SELECT v.id, c.id, '미로', 0, 4, 'maze, labyrinth', '수많은 미로 안갯속', 70.042, '迷路', '', 'pending'
   FROM videos v JOIN captions c ON c.video_id = v.id AND c.idx = 13
   WHERE v.youtube_id = '7GU_VQfgMT0';
 
-INSERT INTO bookmarks (video_id, caption_id, text, side, offset, translation, context, timestamp, notes, status)
-SELECT v.id, c.id, '안갯속', 0, 7, 'in the fog, shrouded in mist', '수많은 미로 안갯속', 70.042, '안개 (fog) + 속 (inside)', 'pending'
+INSERT INTO bookmarks (video_id, caption_id, text, side, offset, translation, context, timestamp, etymology, notes, status)
+SELECT v.id, c.id, '안갯속', 0, 7, 'in the fog, shrouded in mist', '수많은 미로 안갯속', 70.042, '', '안개 (fog) + 속 (inside)', 'pending'
   FROM videos v JOIN captions c ON c.video_id = v.id AND c.idx = 13
   WHERE v.youtube_id = '7GU_VQfgMT0';
 
-INSERT INTO bookmarks (video_id, caption_id, text, side, offset, translation, context, timestamp, notes, status)
-SELECT v.id, c.id, '초침', 0, 14, 'second hand (of a clock)', '나를 속이고 숨겨 흐르는 초침', 75.597, 'Hanja: 秒針; 흐르는 초침 = flowing/ticking second hand', 'pending'
+INSERT INTO bookmarks (video_id, caption_id, text, side, offset, translation, context, timestamp, etymology, notes, status)
+SELECT v.id, c.id, '초침', 0, 14, 'second hand (of a clock)', '나를 속이고 숨겨 흐르는 초침', 75.597, '秒針', '흐르는 초침 = flowing/ticking second hand', 'pending'
   FROM videos v JOIN captions c ON c.video_id = v.id AND c.idx = 15
   WHERE v.youtube_id = '7GU_VQfgMT0';
 
-INSERT INTO bookmarks (video_id, caption_id, text, side, offset, translation, context, timestamp, notes, status)
-SELECT v.id, c.id, '비현실적인', 0, 14, 'unrealistic, surreal', '저 멀리 보인 건 난 걸 비현실적인 REM 속 walkway', 97.111, 'Hanja: 非現實的; 비(non) + 현실(reality) + 적(adjective suffix)', 'pending'
+INSERT INTO bookmarks (video_id, caption_id, text, side, offset, translation, context, timestamp, etymology, notes, status)
+SELECT v.id, c.id, '비현실적인', 0, 14, 'unrealistic, surreal', '저 멀리 보인 건 난 걸 비현실적인 REM 속 walkway', 97.111, '非現實的; 비(non) + 현실(reality) + 적(adjective suffix)', '', 'pending'
   FROM videos v JOIN captions c ON c.video_id = v.id AND c.idx = 22
   WHERE v.youtube_id = '7GU_VQfgMT0';
 
-INSERT INTO bookmarks (video_id, caption_id, text, side, offset, translation, context, timestamp, notes, status)
-SELECT v.id, c.id, '애써', 0, 5, 'to try hard, make an effort (애쓰다)', '찾아보려 애써', 38.198, '', 'pending'
+INSERT INTO bookmarks (video_id, caption_id, text, side, offset, translation, context, timestamp, etymology, notes, status)
+SELECT v.id, c.id, '애써', 0, 5, 'to try hard, make an effort (애쓰다)', '찾아보려 애써', 38.198, '', '', 'pending'
   FROM videos v JOIN captions c ON c.video_id = v.id AND c.idx = 3
   WHERE v.youtube_id = '7GU_VQfgMT0';
 
-INSERT INTO bookmarks (video_id, caption_id, text, side, offset, translation, context, timestamp, notes, status)
-SELECT v.id, c.id, '뚫고서', 0, 0, 'breaking through (뚫다)', '뚫고서 네게 날아가', 154.713, '-고서 = after doing; 뚫다 = to pierce/break through', 'pending'
+INSERT INTO bookmarks (video_id, caption_id, text, side, offset, translation, context, timestamp, etymology, notes, status)
+SELECT v.id, c.id, '뚫고서', 0, 0, 'breaking through (뚫다)', '뚫고서 네게 날아가', 154.713, '', '-고서 = after doing; 뚫다 = to pierce/break through', 'pending'
   FROM videos v JOIN captions c ON c.video_id = v.id AND c.idx = 36
   WHERE v.youtube_id = '7GU_VQfgMT0';
 
-INSERT INTO bookmarks (video_id, caption_id, text, side, offset, translation, context, timestamp, notes, status)
-SELECT v.id, c.id, '녹아내린', 0, 0, 'melted away (녹아내리다)', '녹아내린 어제도', 179.96, '녹다 (melt) + 내리다 (go down) compound verb', 'pending'
+INSERT INTO bookmarks (video_id, caption_id, text, side, offset, translation, context, timestamp, etymology, notes, status)
+SELECT v.id, c.id, '녹아내린', 0, 0, 'melted away (녹아내리다)', '녹아내린 어제도', 179.96, '', '녹다 (melt) + 내리다 (go down) compound verb', 'pending'
   FROM videos v JOIN captions c ON c.video_id = v.id AND c.idx = 45
   WHERE v.youtube_id = '7GU_VQfgMT0';
 
-INSERT INTO bookmarks (video_id, caption_id, text, side, offset, translation, context, timestamp, notes, status)
-SELECT v.id, c.id, '닿지', 0, 0, 'to reach, touch (닿다)', '닿지 않는 내일도', 182.498, '닿지 않는 = unreachable', 'pending'
+INSERT INTO bookmarks (video_id, caption_id, text, side, offset, translation, context, timestamp, etymology, notes, status)
+SELECT v.id, c.id, '닿지', 0, 0, 'to reach, touch (닿다)', '닿지 않는 내일도', 182.498, '', '닿지 않는 = unreachable', 'pending'
   FROM videos v JOIN captions c ON c.video_id = v.id AND c.idx = 46
   WHERE v.youtube_id = '7GU_VQfgMT0';
 
-INSERT INTO bookmarks (video_id, caption_id, text, side, offset, translation, context, timestamp, notes, status)
-SELECT v.id, c.id, '갇힌다', 0, 0, 'to be trapped, locked in (갇히다)', '갇힌다 해도 갈래', 188, '갇히다 = passive of 가두다 (to confine)', 'pending'
+INSERT INTO bookmarks (video_id, caption_id, text, side, offset, translation, context, timestamp, etymology, notes, status)
+SELECT v.id, c.id, '갇힌다', 0, 0, 'to be trapped, locked in (갇히다)', '갇힌다 해도 갈래', 188, '', '갇히다 = passive of 가두다 (to confine)', 'pending'
   FROM videos v JOIN captions c ON c.video_id = v.id AND c.idx = 48
   WHERE v.youtube_id = '7GU_VQfgMT0';
 
-INSERT INTO bookmarks (video_id, caption_id, text, side, offset, translation, context, timestamp, notes, status)
-SELECT v.id, c.id, '펼쳐진', 0, 7, 'unfolded, spread out (펼쳐지다)', '더 이상하게 펼쳐진 viewfinder 뒤', 106.133, '펼치다 (spread) + 지다 (passive)', 'pending'
+INSERT INTO bookmarks (video_id, caption_id, text, side, offset, translation, context, timestamp, etymology, notes, status)
+SELECT v.id, c.id, '펼쳐진', 0, 7, 'unfolded, spread out (펼쳐지다)', '더 이상하게 펼쳐진 viewfinder 뒤', 106.133, '', '펼치다 (spread) + 지다 (passive)', 'pending'
   FROM videos v JOIN captions c ON c.video_id = v.id AND c.idx = 24
   WHERE v.youtube_id = '7GU_VQfgMT0';
 
@@ -175,78 +175,78 @@ INSERT INTO captions (video_id, idx, begin, end, text1, text2) VALUES
 ((SELECT id FROM videos WHERE youtube_id = 'DtK-CkwNHSY'), 38, 261.695, 266.328, '그러면 이번 영상 일기도 여기서 마치도록 하겠습니다.', 'That''s it for today''s video diary.'),
 ((SELECT id FROM videos WHERE youtube_id = 'DtK-CkwNHSY'), 39, 266.932, 271.705, '봐주신 분들 너무 감사합니다. 안녕!', 'Thank you so much to everyone who watched. Bye!');
 
-INSERT INTO bookmarks (video_id, caption_id, text, side, offset, translation, context, timestamp, notes, status)
-SELECT v.id, c.id, '영통 팬사', 0, 6, 'video call fan sign (fan meeting via video call)', '저는 지금 영통 팬사를 끝나고 이렇게 영상 일기를 찍고 있습니다.', 8.519, '영통 = 영상통화 (video call), 팬사 = 팬사인회 (fan sign event). Common idol fandom abbreviation.', 'pending'
+INSERT INTO bookmarks (video_id, caption_id, text, side, offset, translation, context, timestamp, etymology, notes, status)
+SELECT v.id, c.id, '영통 팬사', 0, 6, 'video call fan sign (fan meeting via video call)', '저는 지금 영통 팬사를 끝나고 이렇게 영상 일기를 찍고 있습니다.', 8.519, '', '영통 = 영상통화 (video call), 팬사 = 팬사인회 (fan sign event). Common idol fandom abbreviation.', 'pending'
   FROM videos v JOIN captions c ON c.video_id = v.id AND c.idx = 2
   WHERE v.youtube_id = 'DtK-CkwNHSY';
 
-INSERT INTO bookmarks (video_id, caption_id, text, side, offset, translation, context, timestamp, notes, status)
-SELECT v.id, c.id, '찾아뵙는', 0, 16, 'to visit/meet (humble form)', '오랜만에 이렇게 영상 일기로 찾아뵙는 거 같은데요. 여러분들 보고 싶으셨죠?', 15.28, '찾아뵙다 = humble form of 찾아보다. Shows respect toward the audience.', 'pending'
+INSERT INTO bookmarks (video_id, caption_id, text, side, offset, translation, context, timestamp, etymology, notes, status)
+SELECT v.id, c.id, '찾아뵙는', 0, 16, 'to visit/meet (humble form)', '오랜만에 이렇게 영상 일기로 찾아뵙는 거 같은데요. 여러분들 보고 싶으셨죠?', 15.28, '', '찾아뵙다 = humble form of 찾아보다. Shows respect toward the audience.', 'pending'
   FROM videos v JOIN captions c ON c.video_id = v.id AND c.idx = 3
   WHERE v.youtube_id = 'DtK-CkwNHSY';
 
-INSERT INTO bookmarks (video_id, caption_id, text, side, offset, translation, context, timestamp, notes, status)
-SELECT v.id, c.id, '컴백', 0, 6, 'comeback (music release/return)', '약간 이제 컴백 이후로 영상 일기가 처음인 거 같은데요.', 25.41, 'Konglish from English ''comeback''. In K-pop, refers to releasing new music after a hiatus.', 'pending'
+INSERT INTO bookmarks (video_id, caption_id, text, side, offset, translation, context, timestamp, etymology, notes, status)
+SELECT v.id, c.id, '컴백', 0, 6, 'comeback (music release/return)', '약간 이제 컴백 이후로 영상 일기가 처음인 거 같은데요.', 25.41, '', 'Konglish from English ''comeback''. In K-pop, refers to releasing new music after a hiatus.', 'pending'
   FROM videos v JOIN captions c ON c.video_id = v.id AND c.idx = 5
   WHERE v.youtube_id = 'DtK-CkwNHSY';
 
-INSERT INTO bookmarks (video_id, caption_id, text, side, offset, translation, context, timestamp, notes, status)
-SELECT v.id, c.id, '빵 투어', 0, 21, 'bread tour (bakery hopping trip)', '최근에 제가 또 대전에 시그널 찍으러 빵 투어를 갔잖아요.', 36.69, '투어 is Konglish from ''tour''. 빵 투어 = visiting famous bakeries.', 'pending'
+INSERT INTO bookmarks (video_id, caption_id, text, side, offset, translation, context, timestamp, etymology, notes, status)
+SELECT v.id, c.id, '빵 투어', 0, 21, 'bread tour (bakery hopping trip)', '최근에 제가 또 대전에 시그널 찍으러 빵 투어를 갔잖아요.', 36.69, '', '투어 is Konglish from ''tour''. 빵 투어 = visiting famous bakeries.', 'pending'
   FROM videos v JOIN captions c ON c.video_id = v.id AND c.idx = 7
   WHERE v.youtube_id = 'DtK-CkwNHSY';
 
-INSERT INTO bookmarks (video_id, caption_id, text, side, offset, translation, context, timestamp, notes, status)
-SELECT v.id, c.id, '성심당', 0, 3, 'Seongsimdang (famous Daejeon bakery)', '진짜 성심당도 가고 근처에 맛집도 가고 이렇게 해서 되게 놀랐던 시그널 촬영이었고요.', 70.027, 'One of Korea''s most iconic bakeries, located in Daejeon since 1956.', 'pending'
+INSERT INTO bookmarks (video_id, caption_id, text, side, offset, translation, context, timestamp, etymology, notes, status)
+SELECT v.id, c.id, '성심당', 0, 3, 'Seongsimdang (famous Daejeon bakery)', '진짜 성심당도 가고 근처에 맛집도 가고 이렇게 해서 되게 놀랐던 시그널 촬영이었고요.', 70.027, '', 'One of Korea''s most iconic bakeries, located in Daejeon since 1956.', 'pending'
   FROM videos v JOIN captions c ON c.video_id = v.id AND c.idx = 12
   WHERE v.youtube_id = 'DtK-CkwNHSY';
 
-INSERT INTO bookmarks (video_id, caption_id, text, side, offset, translation, context, timestamp, notes, status)
-SELECT v.id, c.id, '뿌듯해하고', 0, 26, 'feeling proud/satisfied', '되게 신유 언니도 그렇고 하연이도 그렇고 되게 뿌듯해하고 즐거워했던 촬영이었던 거 같습니다.', 79.119, '뿌듯하다 = to feel proud/fulfilled. -해하다 form shows observed emotion in others.', 'pending'
+INSERT INTO bookmarks (video_id, caption_id, text, side, offset, translation, context, timestamp, etymology, notes, status)
+SELECT v.id, c.id, '뿌듯해하고', 0, 26, 'feeling proud/satisfied', '되게 신유 언니도 그렇고 하연이도 그렇고 되게 뿌듯해하고 즐거워했던 촬영이었던 거 같습니다.', 79.119, '', '뿌듯하다 = to feel proud/fulfilled. -해하다 form shows observed emotion in others.', 'pending'
   FROM videos v JOIN captions c ON c.video_id = v.id AND c.idx = 13
   WHERE v.youtube_id = 'DtK-CkwNHSY';
 
-INSERT INTO bookmarks (video_id, caption_id, text, side, offset, translation, context, timestamp, notes, status)
-SELECT v.id, c.id, '당황스러웠는데', 0, 17, 'was flustered/shocked', '그래서 이거 뭐지? 진짜 너무 당황스러웠는데 뭔가 감사했던 일이었어요.', 113.316, '당황스럽다 = to be flustered/embarrassed. -스럽다 suffix turns nouns into adjectives.', 'pending'
+INSERT INTO bookmarks (video_id, caption_id, text, side, offset, translation, context, timestamp, etymology, notes, status)
+SELECT v.id, c.id, '당황스러웠는데', 0, 17, 'was flustered/shocked', '그래서 이거 뭐지? 진짜 너무 당황스러웠는데 뭔가 감사했던 일이었어요.', 113.316, '', '당황스럽다 = to be flustered/embarrassed. -스럽다 suffix turns nouns into adjectives.', 'pending'
   FROM videos v JOIN captions c ON c.video_id = v.id AND c.idx = 17
   WHERE v.youtube_id = 'DtK-CkwNHSY';
 
-INSERT INTO bookmarks (video_id, caption_id, text, side, offset, translation, context, timestamp, notes, status)
-SELECT v.id, c.id, '헷갈리는', 0, 28, 'confusing / hard to tell apart', '뭔가 갑자기 제가 내가 박시온인지 빵시온인지 약간 헷갈리는 그런 느낌이었고요.', 141.612, '헷갈리다 = to be confused/mixed up. Very common colloquial verb.', 'pending'
+INSERT INTO bookmarks (video_id, caption_id, text, side, offset, translation, context, timestamp, etymology, notes, status)
+SELECT v.id, c.id, '헷갈리는', 0, 28, 'confusing / hard to tell apart', '뭔가 갑자기 제가 내가 박시온인지 빵시온인지 약간 헷갈리는 그런 느낌이었고요.', 141.612, '', '헷갈리다 = to be confused/mixed up. Very common colloquial verb.', 'pending'
   FROM videos v JOIN captions c ON c.video_id = v.id AND c.idx = 21
   WHERE v.youtube_id = 'DtK-CkwNHSY';
 
-INSERT INTO bookmarks (video_id, caption_id, text, side, offset, translation, context, timestamp, notes, status)
-SELECT v.id, c.id, '셋리', 0, 18, 'setlist (concert song lineup)', '멤버들도 말했다시피 진짜 콘서트 셋리가 예전이랑 좀 많이 다를 거고', 154.967, 'Abbreviated Konglish from ''setlist''. K-pop fans commonly use this term.', 'pending'
+INSERT INTO bookmarks (video_id, caption_id, text, side, offset, translation, context, timestamp, etymology, notes, status)
+SELECT v.id, c.id, '셋리', 0, 18, 'setlist (concert song lineup)', '멤버들도 말했다시피 진짜 콘서트 셋리가 예전이랑 좀 많이 다를 거고', 154.967, '', 'Abbreviated Konglish from ''setlist''. K-pop fans commonly use this term.', 'pending'
   FROM videos v JOIN captions c ON c.video_id = v.id AND c.idx = 23
   WHERE v.youtube_id = 'DtK-CkwNHSY';
 
-INSERT INTO bookmarks (video_id, caption_id, text, side, offset, translation, context, timestamp, notes, status)
-SELECT v.id, c.id, '알차게', 0, 11, 'in a fulfilling/packed way', '또 그것만큼 저희가 알차게 준비를 하고 있으니까 다들 많이 기대해 주시고', 162.862, '알차다 = to be substantial/fulfilling. Implies content that is rich and well-prepared.', 'pending'
+INSERT INTO bookmarks (video_id, caption_id, text, side, offset, translation, context, timestamp, etymology, notes, status)
+SELECT v.id, c.id, '알차게', 0, 11, 'in a fulfilling/packed way', '또 그것만큼 저희가 알차게 준비를 하고 있으니까 다들 많이 기대해 주시고', 162.862, '', '알차다 = to be substantial/fulfilling. Implies content that is rich and well-prepared.', 'pending'
   FROM videos v JOIN captions c ON c.video_id = v.id AND c.idx = 24
   WHERE v.youtube_id = 'DtK-CkwNHSY';
 
-INSERT INTO bookmarks (video_id, caption_id, text, side, offset, translation, context, timestamp, notes, status)
-SELECT v.id, c.id, '어이가 없게', 0, 12, 'in a ridiculously/absurdly (funny) way', '저희 문 유닛이 되게 어이가 없게 웃긴 멤버들이 다 모여 있거든요.', 215.478, '어이(가) 없다 = to be absurd/dumbfounding. Here used positively to mean ''ridiculously funny''.', 'pending'
+INSERT INTO bookmarks (video_id, caption_id, text, side, offset, translation, context, timestamp, etymology, notes, status)
+SELECT v.id, c.id, '어이가 없게', 0, 12, 'in a ridiculously/absurdly (funny) way', '저희 문 유닛이 되게 어이가 없게 웃긴 멤버들이 다 모여 있거든요.', 215.478, '', '어이(가) 없다 = to be absurd/dumbfounding. Here used positively to mean ''ridiculously funny''.', 'pending'
   FROM videos v JOIN captions c ON c.video_id = v.id AND c.idx = 30
   WHERE v.youtube_id = 'DtK-CkwNHSY';
 
-INSERT INTO bookmarks (video_id, caption_id, text, side, offset, translation, context, timestamp, notes, status)
-SELECT v.id, c.id, '케미', 0, 9, 'chemistry (interpersonal dynamics)', '그래서 진짜 이 케미를 웨이브 여러분들께 진짜 보여 드리고 싶은데 되게 아쉬운 거 같아요.', 221.079, 'Konglish from ''chemistry''. Used in K-pop/variety to describe fun group dynamics.', 'pending'
+INSERT INTO bookmarks (video_id, caption_id, text, side, offset, translation, context, timestamp, etymology, notes, status)
+SELECT v.id, c.id, '케미', 0, 9, 'chemistry (interpersonal dynamics)', '그래서 진짜 이 케미를 웨이브 여러분들께 진짜 보여 드리고 싶은데 되게 아쉬운 거 같아요.', 221.079, '', 'Konglish from ''chemistry''. Used in K-pop/variety to describe fun group dynamics.', 'pending'
   FROM videos v JOIN captions c ON c.video_id = v.id AND c.idx = 31
   WHERE v.youtube_id = 'DtK-CkwNHSY';
 
-INSERT INTO bookmarks (video_id, caption_id, text, side, offset, translation, context, timestamp, notes, status)
-SELECT v.id, c.id, '아쉬운', 0, 40, 'regrettable / a shame', '그래서 진짜 이 케미를 웨이브 여러분들께 진짜 보여 드리고 싶은데 되게 아쉬운 거 같아요.', 221.079, '아쉽다 = to feel regret/disappointment about something lacking. Very versatile emotional word.', 'pending'
+INSERT INTO bookmarks (video_id, caption_id, text, side, offset, translation, context, timestamp, etymology, notes, status)
+SELECT v.id, c.id, '아쉬운', 0, 40, 'regrettable / a shame', '그래서 진짜 이 케미를 웨이브 여러분들께 진짜 보여 드리고 싶은데 되게 아쉬운 거 같아요.', 221.079, '', '아쉽다 = to feel regret/disappointment about something lacking. Very versatile emotional word.', 'pending'
   FROM videos v JOIN captions c ON c.video_id = v.id AND c.idx = 31
   WHERE v.youtube_id = 'DtK-CkwNHSY';
 
-INSERT INTO bookmarks (video_id, caption_id, text, side, offset, translation, context, timestamp, notes, status)
-SELECT v.id, c.id, '최고치를 끌어올리고', 0, 7, 'to push to the highest level', '최대한 진짜 최고치를 끌어올리고 싶고 정말 열심히 준비해서 좋은 무대를 보여 드리고 싶습니다.', 245.494, '최고치 = peak/maximum value (최고 + 치). 끌어올리다 = to pull up/raise.', 'pending'
+INSERT INTO bookmarks (video_id, caption_id, text, side, offset, translation, context, timestamp, etymology, notes, status)
+SELECT v.id, c.id, '최고치를 끌어올리고', 0, 7, 'to push to the highest level', '최대한 진짜 최고치를 끌어올리고 싶고 정말 열심히 준비해서 좋은 무대를 보여 드리고 싶습니다.', 245.494, '', '최고치 = peak/maximum value (최고 + 치). 끌어올리다 = to pull up/raise.', 'pending'
   FROM videos v JOIN captions c ON c.video_id = v.id AND c.idx = 36
   WHERE v.youtube_id = 'DtK-CkwNHSY';
 
-INSERT INTO bookmarks (video_id, caption_id, text, side, offset, translation, context, timestamp, notes, status)
-SELECT v.id, c.id, '아깝지 않도록', 0, 12, 'so that it''s not a waste', '그 귀한 시간이 정말 아깝지 않도록 보여 드리고 싶어요.', 255.72, '아깝다 = to feel something is wasted/too precious to lose. -지 않도록 = so that it won''t be~', 'pending'
+INSERT INTO bookmarks (video_id, caption_id, text, side, offset, translation, context, timestamp, etymology, notes, status)
+SELECT v.id, c.id, '아깝지 않도록', 0, 12, 'so that it''s not a waste', '그 귀한 시간이 정말 아깝지 않도록 보여 드리고 싶어요.', 255.72, '', '아깝다 = to feel something is wasted/too precious to lose. -지 않도록 = so that it won''t be~', 'pending'
   FROM videos v JOIN captions c ON c.video_id = v.id AND c.idx = 37
   WHERE v.youtube_id = 'DtK-CkwNHSY';
 
@@ -541,78 +541,78 @@ INSERT INTO captions (video_id, idx, begin, end, text1, text2) VALUES
 ((SELECT id FROM videos WHERE youtube_id = 'E8KM2qWSUS0'), 284, 618.924, 623.726, '(다음 회에 계속...)', '[To be continued...]'),
 ((SELECT id FROM videos WHERE youtube_id = 'E8KM2qWSUS0'), 285, 623.726, 642.363, '(2화 예고)', '[Episode 2 Preview]');
 
-INSERT INTO bookmarks (video_id, caption_id, text, side, offset, translation, context, timestamp, notes, status)
-SELECT v.id, c.id, '두바이 쿠키', 0, 5, 'Dubai (chewy) cookie — viral Korean snack trend', '누가 내 두바이 쿠키 먹었어?', 29.429, '두바이 초콜릿/쿠키 — a food trend that went viral in Korea', 'pending'
+INSERT INTO bookmarks (video_id, caption_id, text, side, offset, translation, context, timestamp, etymology, notes, status)
+SELECT v.id, c.id, '두바이 쿠키', 0, 5, 'Dubai (chewy) cookie — viral Korean snack trend', '누가 내 두바이 쿠키 먹었어?', 29.429, '', '두바이 초콜릿/쿠키 — a food trend that went viral in Korea', 'pending'
   FROM videos v JOIN captions c ON c.video_id = v.id AND c.idx = 13
   WHERE v.youtube_id = 'E8KM2qWSUS0';
 
-INSERT INTO bookmarks (video_id, caption_id, text, side, offset, translation, context, timestamp, notes, status)
-SELECT v.id, c.id, '몽유병', 0, 3, 'sleepwalking (somnambulism)', '누가 몽유병이 있나 보다', 90.858, '몽(夢) dream + 유(遊) wander + 병(病) illness', 'pending'
+INSERT INTO bookmarks (video_id, caption_id, text, side, offset, translation, context, timestamp, etymology, notes, status)
+SELECT v.id, c.id, '몽유병', 0, 3, 'sleepwalking (somnambulism)', '누가 몽유병이 있나 보다', 90.858, '', '몽(夢) dream + 유(遊) wander + 병(病) illness', 'pending'
   FROM videos v JOIN captions c ON c.video_id = v.id AND c.idx = 40
   WHERE v.youtube_id = 'E8KM2qWSUS0';
 
-INSERT INTO bookmarks (video_id, caption_id, text, side, offset, translation, context, timestamp, notes, status)
-SELECT v.id, c.id, '꽂히면', 0, 6, 'to get obsessed with / hooked on something', '제가 한번 꽂히면 직진하는 스타일이라 가지고', 58.396, '꽂히다 (lit. to get stuck/pierced) — colloquial for becoming fixated', 'pending'
+INSERT INTO bookmarks (video_id, caption_id, text, side, offset, translation, context, timestamp, etymology, notes, status)
+SELECT v.id, c.id, '꽂히면', 0, 6, 'to get obsessed with / hooked on something', '제가 한번 꽂히면 직진하는 스타일이라 가지고', 58.396, '', '꽂히다 (lit. to get stuck/pierced) — colloquial for becoming fixated', 'pending'
   FROM videos v JOIN captions c ON c.video_id = v.id AND c.idx = 27
   WHERE v.youtube_id = 'E8KM2qWSUS0';
 
-INSERT INTO bookmarks (video_id, caption_id, text, side, offset, translation, context, timestamp, notes, status)
-SELECT v.id, c.id, '직진', 0, 10, 'going straight / charging ahead without hesitation', '제가 한번 꽂히면 직진하는 스타일이라 가지고', 58.396, '직(直) straight + 진(進) advance — used colloquially for going all-in', 'pending'
+INSERT INTO bookmarks (video_id, caption_id, text, side, offset, translation, context, timestamp, etymology, notes, status)
+SELECT v.id, c.id, '직진', 0, 10, 'going straight / charging ahead without hesitation', '제가 한번 꽂히면 직진하는 스타일이라 가지고', 58.396, '', '직(直) straight + 진(進) advance — used colloquially for going all-in', 'pending'
   FROM videos v JOIN captions c ON c.video_id = v.id AND c.idx = 27
   WHERE v.youtube_id = 'E8KM2qWSUS0';
 
-INSERT INTO bookmarks (video_id, caption_id, text, side, offset, translation, context, timestamp, notes, status)
-SELECT v.id, c.id, '기절했어', 0, 3, 'passed out / fainted (used hyperbolically for falling asleep instantly)', '우리 기절했어. 바로 기절했어', 114.145, '기절(氣絕) — commonly used as slang for ''fell asleep immediately''', 'pending'
+INSERT INTO bookmarks (video_id, caption_id, text, side, offset, translation, context, timestamp, etymology, notes, status)
+SELECT v.id, c.id, '기절했어', 0, 3, 'passed out / fainted (used hyperbolically for falling asleep instantly)', '우리 기절했어. 바로 기절했어', 114.145, '', '기절(氣絕) — commonly used as slang for ''fell asleep immediately''', 'pending'
   FROM videos v JOIN captions c ON c.video_id = v.id AND c.idx = 51
   WHERE v.youtube_id = 'E8KM2qWSUS0';
 
-INSERT INTO bookmarks (video_id, caption_id, text, side, offset, translation, context, timestamp, notes, status)
-SELECT v.id, c.id, '웨이팅', 0, 6, 'waiting (in line) — Konglish from English ''waiting''', '그거 내가 웨이팅해서 산 거란 말이야', 184.66, 'Konglish: 웨이팅하다 = to wait in line (especially for restaurants/shops)', 'pending'
+INSERT INTO bookmarks (video_id, caption_id, text, side, offset, translation, context, timestamp, etymology, notes, status)
+SELECT v.id, c.id, '웨이팅', 0, 6, 'waiting (in line) — Konglish from English ''waiting''', '그거 내가 웨이팅해서 산 거란 말이야', 184.66, '', 'Konglish: 웨이팅하다 = to wait in line (especially for restaurants/shops)', 'pending'
   FROM videos v JOIN captions c ON c.video_id = v.id AND c.idx = 82
   WHERE v.youtube_id = 'E8KM2qWSUS0';
 
-INSERT INTO bookmarks (video_id, caption_id, text, side, offset, translation, context, timestamp, notes, status)
-SELECT v.id, c.id, '애교', 0, 23, 'aegyo — cute/charming behavior', '막내가 그렇게 랜덤으로 밥 시키고 싶으면 애교 좀 부려 봐', 228.528, '애교 부리다 = to act cute; a core K-culture concept', 'pending'
+INSERT INTO bookmarks (video_id, caption_id, text, side, offset, translation, context, timestamp, etymology, notes, status)
+SELECT v.id, c.id, '애교', 0, 23, 'aegyo — cute/charming behavior', '막내가 그렇게 랜덤으로 밥 시키고 싶으면 애교 좀 부려 봐', 228.528, '', '애교 부리다 = to act cute; a core K-culture concept', 'pending'
   FROM videos v JOIN captions c ON c.video_id = v.id AND c.idx = 101
   WHERE v.youtube_id = 'E8KM2qWSUS0';
 
-INSERT INTO bookmarks (video_id, caption_id, text, side, offset, translation, context, timestamp, notes, status)
-SELECT v.id, c.id, '형편이 없었어요', 0, 43, 'was terrible / hopeless (lit. ''had no prospects'')', '야 진짜 나 진짜 별론데요. 그게 랩인가? 소민이가 오늘 보여준 랩의 실력은 형편이 없었어요', 245.432, '형편없다 — describes something pathetically bad', 'pending'
+INSERT INTO bookmarks (video_id, caption_id, text, side, offset, translation, context, timestamp, etymology, notes, status)
+SELECT v.id, c.id, '형편이 없었어요', 0, 43, 'was terrible / hopeless (lit. ''had no prospects'')', '야 진짜 나 진짜 별론데요. 그게 랩인가? 소민이가 오늘 보여준 랩의 실력은 형편이 없었어요', 245.432, '', '형편없다 — describes something pathetically bad', 'pending'
   FROM videos v JOIN captions c ON c.video_id = v.id AND c.idx = 108
   WHERE v.youtube_id = 'E8KM2qWSUS0';
 
-INSERT INTO bookmarks (video_id, caption_id, text, side, offset, translation, context, timestamp, notes, status)
-SELECT v.id, c.id, '갸루', 0, 6, 'gyaru — Japanese subculture fashion style', '요! MC 갸루~', 252.66, 'From Japanese ギャル (gal) — a flashy/cute fashion subculture', 'pending'
+INSERT INTO bookmarks (video_id, caption_id, text, side, offset, translation, context, timestamp, etymology, notes, status)
+SELECT v.id, c.id, '갸루', 0, 6, 'gyaru — Japanese subculture fashion style', '요! MC 갸루~', 252.66, '', 'From Japanese ギャル (gal) — a flashy/cute fashion subculture', 'pending'
   FROM videos v JOIN captions c ON c.video_id = v.id AND c.idx = 110
   WHERE v.youtube_id = 'E8KM2qWSUS0';
 
-INSERT INTO bookmarks (video_id, caption_id, text, side, offset, translation, context, timestamp, notes, status)
-SELECT v.id, c.id, '흑화했다', 0, 0, 'turned to the dark side / went evil', '흑화했다 지금', 534.726, '흑(黑) black + 화(化) transform — internet slang from webtoons/games for a character turning evil', 'pending'
+INSERT INTO bookmarks (video_id, caption_id, text, side, offset, translation, context, timestamp, etymology, notes, status)
+SELECT v.id, c.id, '흑화했다', 0, 0, 'turned to the dark side / went evil', '흑화했다 지금', 534.726, '', '흑(黑) black + 화(化) transform — internet slang from webtoons/games for a character turning evil', 'pending'
   FROM videos v JOIN captions c ON c.video_id = v.id AND c.idx = 251
   WHERE v.youtube_id = 'E8KM2qWSUS0';
 
-INSERT INTO bookmarks (video_id, caption_id, text, side, offset, translation, context, timestamp, notes, status)
-SELECT v.id, c.id, '뿌듯했던', 0, 7, 'felt proud / gratified', '언니로서 좀 뿌듯했던 거 같아요', 531, '뿌듯하다 — warm proud feeling, often used by seniors about juniors', 'pending'
+INSERT INTO bookmarks (video_id, caption_id, text, side, offset, translation, context, timestamp, etymology, notes, status)
+SELECT v.id, c.id, '뿌듯했던', 0, 7, 'felt proud / gratified', '언니로서 좀 뿌듯했던 거 같아요', 531, '', '뿌듯하다 — warm proud feeling, often used by seniors about juniors', 'pending'
   FROM videos v JOIN captions c ON c.video_id = v.id AND c.idx = 249
   WHERE v.youtube_id = 'E8KM2qWSUS0';
 
-INSERT INTO bookmarks (video_id, caption_id, text, side, offset, translation, context, timestamp, notes, status)
-SELECT v.id, c.id, '범인', 0, 12, 'culprit / criminal', '아무튼 오늘 안에 꼭 범인을 찾을 거야. 나는', 212.693, '범(犯) crime + 인(人) person — used playfully here in their roleplay', 'pending'
+INSERT INTO bookmarks (video_id, caption_id, text, side, offset, translation, context, timestamp, etymology, notes, status)
+SELECT v.id, c.id, '범인', 0, 12, 'culprit / criminal', '아무튼 오늘 안에 꼭 범인을 찾을 거야. 나는', 212.693, '', '범(犯) crime + 인(人) person — used playfully here in their roleplay', 'pending'
   FROM videos v JOIN captions c ON c.video_id = v.id AND c.idx = 93
   WHERE v.youtube_id = 'E8KM2qWSUS0';
 
-INSERT INTO bookmarks (video_id, caption_id, text, side, offset, translation, context, timestamp, notes, status)
-SELECT v.id, c.id, '언쟁', 0, 3, 'argument / verbal dispute', '잠시 언쟁이 있었습니다', 84.759, '언(言) words + 쟁(爭) fight — a formal word for argument', 'pending'
+INSERT INTO bookmarks (video_id, caption_id, text, side, offset, translation, context, timestamp, etymology, notes, status)
+SELECT v.id, c.id, '언쟁', 0, 3, 'argument / verbal dispute', '잠시 언쟁이 있었습니다', 84.759, '', '언(言) words + 쟁(爭) fight — a formal word for argument', 'pending'
   FROM videos v JOIN captions c ON c.video_id = v.id AND c.idx = 37
   WHERE v.youtube_id = 'E8KM2qWSUS0';
 
-INSERT INTO bookmarks (video_id, caption_id, text, side, offset, translation, context, timestamp, notes, status)
-SELECT v.id, c.id, '철이 없어지고', 0, 4, 'becoming immature / losing common sense', '갈수록 철이 없어지고 있거든요', 571.231, '철이 없다 = to be immature/thoughtless (lit. ''lacking iron/sense'')', 'pending'
+INSERT INTO bookmarks (video_id, caption_id, text, side, offset, translation, context, timestamp, etymology, notes, status)
+SELECT v.id, c.id, '철이 없어지고', 0, 4, 'becoming immature / losing common sense', '갈수록 철이 없어지고 있거든요', 571.231, '', '철이 없다 = to be immature/thoughtless (lit. ''lacking iron/sense'')', 'pending'
   FROM videos v JOIN captions c ON c.video_id = v.id AND c.idx = 266
   WHERE v.youtube_id = 'E8KM2qWSUS0';
 
-INSERT INTO bookmarks (video_id, caption_id, text, side, offset, translation, context, timestamp, notes, status)
-SELECT v.id, c.id, '까불면', 0, 5, 'to act up / be cheeky / mess around', '언니한테 까불면 어떡해 막내', 284.526, '까불다 — colloquial for behaving cheekily, often said to younger people', 'pending'
+INSERT INTO bookmarks (video_id, caption_id, text, side, offset, translation, context, timestamp, etymology, notes, status)
+SELECT v.id, c.id, '까불면', 0, 5, 'to act up / be cheeky / mess around', '언니한테 까불면 어떡해 막내', 284.526, '', '까불다 — colloquial for behaving cheekily, often said to younger people', 'pending'
   FROM videos v JOIN captions c ON c.video_id = v.id AND c.idx = 124
   WHERE v.youtube_id = 'E8KM2qWSUS0';
 

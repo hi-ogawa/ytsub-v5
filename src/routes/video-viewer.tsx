@@ -3,6 +3,7 @@ import { useVirtualizer } from "@tanstack/react-virtual";
 import {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -184,6 +185,8 @@ type Bookmark = {
   translation: string;
   context: string;
   timestamp: number;
+  etymology: string;
+  notes: string;
   status: string;
 };
 
@@ -191,6 +194,12 @@ function highlightText(
   text: string,
   marks: { offset: number; length: number; bookmark: Bookmark }[],
   onGoToBookmark?: (bookmarkId: number) => void,
+  popoverState?: {
+    activeBookmarkId: number | null;
+    onHoverBookmark: (id: number) => void;
+    onLeaveBookmark: () => void;
+    scrollElementRef: React.RefObject<HTMLDivElement | null>;
+  },
 ) {
   if (marks.length === 0) return <span data-offset={0}>{text}</span>;
   const sorted = [...marks].sort((a, b) => a.offset - b.offset);
@@ -210,6 +219,10 @@ function highlightText(
         bookmark={m.bookmark}
         offset={m.offset}
         onGoToBookmark={onGoToBookmark}
+        activeBookmarkId={popoverState?.activeBookmarkId ?? null}
+        onHoverBookmark={popoverState?.onHoverBookmark}
+        onLeaveBookmark={popoverState?.onLeaveBookmark}
+        scrollElementRef={popoverState?.scrollElementRef}
       >
         {text.slice(m.offset, end)}
       </BookmarkWord>,
@@ -230,46 +243,64 @@ function BookmarkWord({
   offset,
   children,
   onGoToBookmark,
+  activeBookmarkId,
+  onHoverBookmark,
+  onLeaveBookmark,
+  scrollElementRef,
 }: {
   bookmark: Bookmark;
   offset: number;
   children: React.ReactNode;
   onGoToBookmark?: (bookmarkId: number) => void;
+  activeBookmarkId: number | null;
+  onHoverBookmark?: (id: number) => void;
+  onLeaveBookmark?: () => void;
+  scrollElementRef?: React.RefObject<HTMLDivElement | null>;
 }) {
-  const [open, setOpen] = useState(false);
-  const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isOpen = activeBookmarkId === bookmark.id;
   const spanRef = useRef<HTMLSpanElement>(null);
-  function onEnter() {
-    if (closeTimer.current) clearTimeout(closeTimer.current);
-    setOpen(true);
-  }
-  function onLeave() {
-    closeTimer.current = setTimeout(() => setOpen(false), 300);
-  }
+  const [popoverBelow, setPopoverBelow] = useState(false);
+
+  useLayoutEffect(() => {
+    if (!isOpen || !spanRef.current) {
+      setPopoverBelow(false);
+      return;
+    }
+    const spanRect = spanRef.current.getBoundingClientRect();
+    const containerTop = scrollElementRef?.current
+      ? scrollElementRef.current.getBoundingClientRect().top
+      : 0;
+    const spaceAbove = spanRect.top - containerTop;
+    if (spaceAbove < 80) setPopoverBelow(true);
+  }, [isOpen, scrollElementRef]);
 
   // Tap outside to dismiss on mobile
   useEffect(() => {
-    if (!open) return;
+    if (!isOpen) return;
     function handleTouch(e: TouchEvent) {
       if (spanRef.current && !spanRef.current.contains(e.target as Node)) {
-        setOpen(false);
+        onLeaveBookmark?.();
       }
     }
     document.addEventListener("touchstart", handleTouch);
     return () => document.removeEventListener("touchstart", handleTouch);
-  }, [open]);
+  }, [isOpen, onLeaveBookmark]);
 
   return (
     <span
       ref={spanRef}
       className="relative inline-block"
       data-offset={offset}
-      onMouseEnter={onEnter}
-      onMouseLeave={onLeave}
+      onMouseEnter={() => onHoverBookmark?.(bookmark.id)}
+      onMouseLeave={() => onLeaveBookmark?.()}
       onClick={(e) => {
         // Toggle popover on tap/click; stop propagation to prevent seek
         e.stopPropagation();
-        setOpen((prev) => !prev);
+        if (isOpen) {
+          onLeaveBookmark?.();
+        } else {
+          onHoverBookmark?.(bookmark.id);
+        }
       }}
     >
       <span
@@ -281,17 +312,21 @@ function BookmarkWord({
       >
         {children}
       </span>
-      {open && (
-        <span className="absolute bottom-full left-0 z-10 mb-1 w-48 rounded border bg-white p-2 shadow-lg">
+      {isOpen && (
+        <span
+          className={`absolute left-0 z-10 w-48 rounded border bg-white p-2 shadow-lg ${
+            popoverBelow ? "top-full mt-1" : "bottom-full mb-1"
+          }`}
+        >
           <span className="block text-xs font-medium text-gray-800">
             {bookmark.text}
           </span>
           <span className="block text-xs text-gray-500">
             {bookmark.translation}
           </span>
-          {bookmark.context && (
-            <span className="mt-1 block text-[10px] text-gray-400">
-              {bookmark.context}
+          {bookmark.etymology && (
+            <span className="mt-1 block text-[10px] text-gray-600">
+              {bookmark.etymology}
             </span>
           )}
           {onGoToBookmark && (
@@ -424,6 +459,12 @@ function BookmarksList({
             {bm.translation && (
               <div className="text-sm text-gray-500">{bm.translation}</div>
             )}
+            {bm.etymology && (
+              <div className="text-xs text-gray-600">{bm.etymology}</div>
+            )}
+            {bm.notes && (
+              <div className="text-xs text-gray-400">{bm.notes}</div>
+            )}
             {caption && (
               <div className="mt-0.5 border-t pt-1 text-xs text-gray-400">
                 <div>{caption.text1}</div>
@@ -489,6 +530,22 @@ export function VideoViewerPage() {
     null,
   );
   const flashCaptionCounter = useRef(0);
+
+  // Shared popover state – only one bookmark popover open at a time
+  const [activeBookmarkId, setActiveBookmarkId] = useState<number | null>(null);
+  const activeBookmarkTimer = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
+  function onHoverBookmark(id: number) {
+    if (activeBookmarkTimer.current) clearTimeout(activeBookmarkTimer.current);
+    setActiveBookmarkId(id);
+  }
+  function onLeaveBookmark() {
+    activeBookmarkTimer.current = setTimeout(
+      () => setActiveBookmarkId(null),
+      300,
+    );
+  }
 
   const queryClient = useQueryClient();
   const createBookmarkMutation = useMutation(
@@ -894,6 +951,12 @@ export function VideoViewerPage() {
                             entry.text1,
                             text1Marks ?? [],
                             onGoToBookmark,
+                            {
+                              activeBookmarkId,
+                              onHoverBookmark,
+                              onLeaveBookmark,
+                              scrollElementRef,
+                            },
                           )}
                         </div>
                         <div className="flex-1 pl-2" data-side="1">
@@ -901,6 +964,12 @@ export function VideoViewerPage() {
                             entry.text2,
                             text2Marks ?? [],
                             onGoToBookmark,
+                            {
+                              activeBookmarkId,
+                              onHoverBookmark,
+                              onLeaveBookmark,
+                              scrollElementRef,
+                            },
                           )}
                         </div>
                       </div>
