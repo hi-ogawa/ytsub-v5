@@ -1,3 +1,5 @@
+// Reference: docs/skills/ui/references/shadcn/apps/v4/registry/new-york-v4/ui/dropdown-menu.tsx
+
 import {
   createContext,
   useCallback,
@@ -10,40 +12,48 @@ import {
   type ReactNode,
 } from "react";
 
-interface MenuContextValue {
+interface DropdownMenuContextValue {
   open: boolean;
   setOpen: (open: boolean) => void;
   triggerRef: React.RefObject<HTMLButtonElement | null>;
 }
 
-const MenuContext = createContext<MenuContextValue | null>(null);
+const DropdownMenuContext = createContext<DropdownMenuContextValue | null>(
+  null,
+);
 
-function useMenu() {
-  const ctx = useContext(MenuContext);
-  if (!ctx) throw new Error("Menu components must be used within <Menu>");
+function useDropdownMenu() {
+  const ctx = useContext(DropdownMenuContext);
+  if (!ctx)
+    throw new Error(
+      "DropdownMenu components must be used within <DropdownMenu>",
+    );
   return ctx;
 }
 
-function Menu({ children }: { children: ReactNode }) {
+function DropdownMenu({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
 
   return (
-    <MenuContext.Provider value={{ open, setOpen, triggerRef }}>
-      <div data-slot="menu" className="relative">
+    <DropdownMenuContext.Provider value={{ open, setOpen, triggerRef }}>
+      <div data-slot="dropdown-menu" className="relative">
         {children}
       </div>
-    </MenuContext.Provider>
+    </DropdownMenuContext.Provider>
   );
 }
 
-function MenuTrigger({ className, ...props }: ComponentProps<"button">) {
-  const { open, setOpen, triggerRef } = useMenu();
+function DropdownMenuTrigger({
+  className,
+  ...props
+}: ComponentProps<"button">) {
+  const { open, setOpen, triggerRef } = useDropdownMenu();
 
   return (
     <button
       ref={triggerRef}
-      data-slot="menu-trigger"
+      data-slot="dropdown-menu-trigger"
       type="button"
       aria-expanded={open}
       aria-haspopup="menu"
@@ -60,8 +70,8 @@ function MenuTrigger({ className, ...props }: ComponentProps<"button">) {
   );
 }
 
-function MenuContent({ className, ...props }: ComponentProps<"div">) {
-  const { open, setOpen, triggerRef } = useMenu();
+function DropdownMenuContent({ className, ...props }: ComponentProps<"div">) {
+  const { open, setOpen, triggerRef } = useDropdownMenu();
   const contentRef = useRef<HTMLDivElement>(null);
 
   const close = useCallback(() => {
@@ -88,7 +98,7 @@ function MenuContent({ className, ...props }: ComponentProps<"div">) {
   useEffect(() => {
     if (!open) return;
     const first = contentRef.current?.querySelector<HTMLElement>(
-      '[data-slot="menu-item"]',
+      '[data-slot="dropdown-menu-item"]',
     );
     first?.focus();
   }, [open]);
@@ -98,7 +108,7 @@ function MenuContent({ className, ...props }: ComponentProps<"div">) {
   const handleKeyDown = (e: KeyboardEvent) => {
     const items = Array.from(
       contentRef.current?.querySelectorAll<HTMLElement>(
-        '[data-slot="menu-item"]',
+        '[data-slot="dropdown-menu-item"]',
       ) ?? [],
     );
     const current = document.activeElement as HTMLElement;
@@ -142,7 +152,7 @@ function MenuContent({ className, ...props }: ComponentProps<"div">) {
   return (
     <div
       ref={contentRef}
-      data-slot="menu-content"
+      data-slot="dropdown-menu-content"
       role="menu"
       onKeyDown={handleKeyDown}
       className={
@@ -154,18 +164,18 @@ function MenuContent({ className, ...props }: ComponentProps<"div">) {
   );
 }
 
-function MenuItem({
+function DropdownMenuItem({
   className,
   variant = "default",
   ...props
 }: ComponentProps<"button"> & {
   variant?: "default" | "destructive";
 }) {
-  const { setOpen, triggerRef } = useMenu();
+  const { setOpen, triggerRef } = useDropdownMenu();
 
   return (
     <button
-      data-slot="menu-item"
+      data-slot="dropdown-menu-item"
       data-variant={variant}
       role="menuitem"
       type="button"
@@ -192,4 +202,9 @@ function MenuItem({
   );
 }
 
-export { Menu, MenuTrigger, MenuContent, MenuItem };
+export {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+};

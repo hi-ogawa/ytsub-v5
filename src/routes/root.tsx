@@ -8,11 +8,11 @@ import {
   useRouteLoaderData,
 } from "react-router";
 import {
-  Menu,
-  MenuContent,
-  MenuItem,
-  MenuTrigger,
-} from "../components/ui/menu.tsx";
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "../components/ui/dropdown-menu.tsx";
 import { orpc } from "../rpc.ts";
 
 export async function authLoader() {
@@ -150,8 +150,8 @@ function HeaderMenu({ authenticated }: { authenticated: boolean }) {
   );
 
   return (
-    <Menu>
-      <MenuTrigger
+    <DropdownMenu>
+      <DropdownMenuTrigger
         data-testid="header-menu"
         className="flex h-7 w-7 items-center justify-center rounded text-muted-foreground hover:bg-muted"
       >
@@ -168,9 +168,9 @@ function HeaderMenu({ authenticated }: { authenticated: boolean }) {
             d="M12 6.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 12.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 18.75a.75.75 0 110-1.5.75.75 0 010 1.5z"
           />
         </svg>
-      </MenuTrigger>
-      <MenuContent className="w-36">
-        <MenuItem
+      </DropdownMenuTrigger>
+      <DropdownMenuContent className="w-36">
+        <DropdownMenuItem
           data-testid="theme-toggle"
           data-theme={theme}
           onClick={cycleTheme}
@@ -178,11 +178,13 @@ function HeaderMenu({ authenticated }: { authenticated: boolean }) {
         >
           <ThemeIcon theme={theme} />
           <span className="capitalize">{theme}</span>
-        </MenuItem>
+        </DropdownMenuItem>
         {authenticated && (
-          <MenuItem onClick={() => logoutMutation.mutate({})}>Log out</MenuItem>
+          <DropdownMenuItem onClick={() => logoutMutation.mutate({})}>
+            Log out
+          </DropdownMenuItem>
         )}
-      </MenuContent>
-    </Menu>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
