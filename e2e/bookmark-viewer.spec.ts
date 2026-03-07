@@ -35,28 +35,29 @@ test.describe("bookmark viewer", () => {
   test("bookmark highlight and popover", async ({ page }) => {
     // Caption idx=0 has bookmark 꼬집어 — highlighted with amber underline
     const firstRow = page.locator("[data-index='0']");
-    const highlight = firstRow.locator("span.border-highlight-alt-border");
-    await expect(highlight.first()).toBeVisible();
-    await expect(highlight.first()).toHaveText("꼬집어");
+    const highlight = firstRow.getByTestId("bookmark-highlight").first();
+    await expect(highlight).toBeVisible();
+    await expect(highlight).toHaveText("꼬집어");
 
     // Hover shows popover with translation and etymology
-    await highlight.first().hover({ force: true });
-    await expect(page.getByText("to pinch")).toBeVisible();
-    await expect(page.getByText("掐")).toBeVisible();
+    await highlight.dispatchEvent("mouseover");
+    const popover = page.getByTestId("bookmark-popover");
+    await expect(popover).toBeVisible();
+    await expect(popover.getByText("to pinch")).toBeVisible();
+    await expect(popover.getByText("掐")).toBeVisible();
   });
 
   test("popover does not show notes", async ({ page }) => {
     // Caption idx=0 has bookmark 꼬집어 with notes but no etymology
     const firstRow = page.locator("[data-index='0']");
-    const highlight = firstRow
-      .locator("span.border-highlight-alt-border")
-      .first();
-    await highlight.hover({ force: true });
+    const highlight = firstRow.getByTestId("bookmark-highlight").first();
+    await highlight.dispatchEvent("mouseover");
+    const popover = page.getByTestId("bookmark-popover");
     // Translation should show
-    await expect(page.getByText("to pinch")).toBeVisible();
+    await expect(popover.getByText("to pinch")).toBeVisible();
     // Notes should NOT be in the popover
     await expect(
-      page.getByText("pinch oneself to check if dreaming"),
+      popover.getByText("pinch oneself to check if dreaming"),
     ).not.toBeVisible();
   });
 
@@ -137,9 +138,9 @@ test.describe("bookmark viewer", () => {
     ).not.toBeVisible();
 
     // New manual bookmark highlight should appear on the caption row (sky color)
-    const highlight = row.locator("span.border-highlight-border");
-    await expect(highlight.first()).toBeVisible();
-    await expect(highlight.first()).toHaveText("향한");
+    const highlight = row.getByTestId("bookmark-highlight").first();
+    await expect(highlight).toBeVisible();
+    await expect(highlight).toHaveText("향한");
 
     // Bookmark should appear in the bookmarks tab
     await page.getByRole("button", { name: /Bookmarks/ }).click();
@@ -151,10 +152,11 @@ test.describe("bookmark viewer", () => {
   }) => {
     // Hover on highlighted bookmark word in caption at idx=0
     const row = page.locator("[data-index='0']");
-    const highlight = row.locator("span.border-highlight-alt-border").first();
-    await highlight.hover({ force: true });
+    const highlight = row.getByTestId("bookmark-highlight").first();
+    await highlight.dispatchEvent("mouseover");
     // Click "Go to bookmark" link in popover
-    const goBtn = page.getByRole("button", { name: "Go to bookmark" });
+    const popover = page.getByTestId("bookmark-popover");
+    const goBtn = popover.getByRole("button", { name: "Go to bookmark" });
     await expect(goBtn).toBeVisible();
     await goBtn.dispatchEvent("mousedown");
     // Should switch to bookmarks tab and show the bookmark
