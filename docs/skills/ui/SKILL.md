@@ -80,7 +80,7 @@ function DropdownMenuContent({ className, sideOffset = 4, ...props }) {
 3. Identify which Radix primitives it uses
 4. Decide per sub-component: **re-export** (no styling needed) or **wrap** (apply our tokens)
 5. Only export what the app actually uses — skip checkbox items, radio groups, etc. until needed
-6. Add a `// Reference:` comment at the top linking to the shadcn source file
+6. Do NOT add reference comments — the shadcn source is in `references/` if needed
 
 ## Icons
 

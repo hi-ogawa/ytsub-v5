@@ -1,4 +1,3 @@
-// Reference: docs/skills/ui/references/shadcn/apps/v4/registry/new-york-v4/ui/popover.tsx
 import { Popover as PopoverPrimitive } from "radix-ui";
 import type { ComponentProps } from "react";
 
