@@ -202,38 +202,46 @@ export function VideoListPage() {
                 <Link
                   key={video.id}
                   to={`/videos/${video.id}`}
-                  className="block rounded-lg border border-gray-200 bg-white p-4 shadow-sm transition-shadow hover:shadow-md"
+                  className="block overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm transition-shadow hover:shadow-md"
                 >
-                  <h2 className="mb-1 line-clamp-2 font-semibold leading-snug">
-                    {video.title}
-                  </h2>
-                  <p className="mb-3 truncate text-sm text-gray-500">
-                    {video.channelName || "Unknown channel"}
-                  </p>
-                  <div className="flex items-center gap-2 text-xs text-gray-400">
-                    <span className="rounded bg-gray-100 px-2 py-0.5 font-mono">
-                      {video.language1} / {video.language2}
-                    </span>
-                    <span>{formatDuration(video.duration)}</span>
-                    <span className="ml-auto">
-                      {formatDate(video.createdAt)}
-                    </span>
-                    <button
-                      className="ml-1 rounded p-0.5 text-gray-300 hover:bg-red-50 hover:text-red-500"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        if (
-                          window.confirm(
-                            `Delete "${video.title}"? This will also delete its captions and bookmarks.`,
-                          )
-                        ) {
-                          deleteMutation.mutate({ id: video.id });
-                        }
-                      }}
-                    >
-                      ✕
-                    </button>
+                  <img
+                    src={`https://img.youtube.com/vi/${video.youtubeId}/mqdefault.jpg`}
+                    alt=""
+                    loading="lazy"
+                    className="aspect-video w-full object-cover"
+                  />
+                  <div className="p-4">
+                    <h2 className="mb-1 line-clamp-2 font-semibold leading-snug">
+                      {video.title}
+                    </h2>
+                    <p className="mb-3 truncate text-sm text-gray-500">
+                      {video.channelName || "Unknown channel"}
+                    </p>
+                    <div className="flex items-center gap-2 text-xs text-gray-400">
+                      <span className="rounded bg-gray-100 px-2 py-0.5 font-mono">
+                        {video.language1} / {video.language2}
+                      </span>
+                      <span>{formatDuration(video.duration)}</span>
+                      <span className="ml-auto">
+                        {formatDate(video.createdAt)}
+                      </span>
+                      <button
+                        className="ml-1 rounded p-0.5 text-gray-300 hover:bg-red-50 hover:text-red-500"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          if (
+                            window.confirm(
+                              `Delete "${video.title}"? This will also delete its captions and bookmarks.`,
+                            )
+                          ) {
+                            deleteMutation.mutate({ id: video.id });
+                          }
+                        }}
+                      >
+                        ✕
+                      </button>
+                    </div>
                   </div>
                 </Link>
               ))}
