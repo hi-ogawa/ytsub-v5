@@ -48,11 +48,13 @@ test.describe("delete bookmark", () => {
     await expect(bookmarkRow).toBeVisible();
 
     page.once("dialog", (dialog) => dialog.dismiss());
-    await bookmarkRow.getByRole("button", { name: "✕" }).click();
+    await bookmarkRow.getByRole("button").first().click();
+    await page.getByRole("menuitem", { name: /Delete/ }).click();
     await expect(bookmarkRow).toBeVisible();
 
     page.once("dialog", (dialog) => dialog.accept());
-    await bookmarkRow.getByRole("button", { name: "✕" }).click();
+    await bookmarkRow.getByRole("button").first().click();
+    await page.getByRole("menuitem", { name: /Delete/ }).click();
     await expect(bookmarkRow).not.toBeVisible();
   });
 });
