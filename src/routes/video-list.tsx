@@ -202,9 +202,25 @@ export function VideoListPage() {
                 <Link
                   key={video.id}
                   to={`/videos/${video.id}`}
-                  className="block rounded-lg border border-gray-200 bg-white p-4 shadow-sm transition-shadow hover:shadow-md"
+                  className="group relative block rounded-lg border border-gray-200 bg-white p-4 shadow-sm transition-shadow hover:shadow-md"
                 >
-                  <h2 className="mb-1 line-clamp-2 font-semibold leading-snug">
+                  <button
+                    className="absolute right-2 top-2 rounded p-0.5 text-gray-300 hover:bg-red-50 hover:text-red-500"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      if (
+                        window.confirm(
+                          `Delete "${video.title}"? This will also delete its captions and bookmarks.`,
+                        )
+                      ) {
+                        deleteMutation.mutate({ id: video.id });
+                      }
+                    }}
+                  >
+                    ✕
+                  </button>
+                  <h2 className="mb-1 line-clamp-2 pr-5 font-semibold leading-snug">
                     {video.title}
                   </h2>
                   <p className="mb-3 truncate text-sm text-gray-500">
@@ -218,22 +234,6 @@ export function VideoListPage() {
                     <span className="ml-auto">
                       {formatDate(video.createdAt)}
                     </span>
-                    <button
-                      className="ml-1 rounded p-0.5 text-gray-300 hover:bg-red-50 hover:text-red-500"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        if (
-                          window.confirm(
-                            `Delete "${video.title}"? This will also delete its captions and bookmarks.`,
-                          )
-                        ) {
-                          deleteMutation.mutate({ id: video.id });
-                        }
-                      }}
-                    >
-                      ✕
-                    </button>
                   </div>
                 </Link>
               ))}

@@ -389,17 +389,6 @@ function BookmarksList({
             }}
           >
             <div className="flex items-center gap-1 text-xs text-gray-400">
-              <button
-                className="rounded p-0.5 text-gray-300 hover:bg-red-50 hover:text-red-500"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (window.confirm(`Delete bookmark "${bm.text}"?`)) {
-                    deleteMutation.mutate({ id: bm.id });
-                  }
-                }}
-              >
-                ✕
-              </button>
               {bm.status === "manual" && (
                 <span className="rounded bg-sky-100 px-1 text-sky-600">
                   manual
@@ -433,6 +422,17 @@ function BookmarksList({
                   </svg>
                 </button>
               )}
+              <button
+                className="rounded p-0.5 text-gray-300 hover:bg-red-50 hover:text-red-500"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (window.confirm(`Delete bookmark "${bm.text}"?`)) {
+                    deleteMutation.mutate({ id: bm.id });
+                  }
+                }}
+              >
+                ✕
+              </button>
             </div>
             <div className="text-sm font-medium">{bm.text}</div>
             {bm.translation && (
