@@ -909,7 +909,7 @@ export function VideoViewerPage() {
                       ref={virtualizer.measureElement}
                       data-index={item.index}
                       className={[
-                        "flex w-full flex-col gap-1 border p-1 px-2",
+                        "flex w-full flex-col gap-1 border p-1 px-2 hover:bg-muted",
                         isEntryPlaying && "ring-2 ring-ring",
                         isCurrent ? "border-ring" : "border-border",
                         item.index === flashCaptionIndex && "flash-highlight",
