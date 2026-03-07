@@ -29,7 +29,7 @@ export async function authLoader() {
 export function RootLayout() {
   const { authenticated } = useLoaderData<typeof authLoader>();
   return (
-    <div className="flex h-screen flex-col bg-background text-foreground">
+    <div className="flex h-screen flex-col">
       <header className="flex h-10 flex-none items-center justify-between border-b px-3">
         <Link to="/" className="text-sm font-semibold">
           ytsub
