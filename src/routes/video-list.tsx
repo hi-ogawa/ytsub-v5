@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { X } from "lucide-react";
+import { EllipsisVertical, Trash2 } from "lucide-react";
 import { useRef, useState } from "react";
 import { Link, useNavigate } from "react-router";
 import {
@@ -7,6 +7,12 @@ import {
   DialogContent,
   DialogTitle,
 } from "../components/ui/dialog.tsx";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "../components/ui/dropdown-menu.tsx";
 import { orpc } from "../rpc.ts";
 
 function formatDuration(seconds: number): string {
@@ -219,9 +225,45 @@ export function VideoListPage() {
                     className="aspect-video w-full object-cover"
                   />
                   <div className="p-4">
-                    <h2 className="mb-1 line-clamp-2 font-semibold leading-snug">
-                      {video.title}
-                    </h2>
+                    <div className="mb-1 flex items-start gap-1">
+                      <h2 className="line-clamp-2 flex-1 font-semibold leading-snug">
+                        {video.title}
+                      </h2>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger
+                          className="-mr-1.5 -mt-1 shrink-0 rounded p-1.5 text-muted-foreground hover:bg-muted"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                          }}
+                        >
+                          <EllipsisVertical className="h-4 w-4" />
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent
+                          align="end"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                          }}
+                        >
+                          <DropdownMenuItem
+                            className="text-destructive focus:text-destructive"
+                            onClick={() => {
+                              if (
+                                window.confirm(
+                                  `Delete "${video.title}"? This will also delete its captions and bookmarks.`,
+                                )
+                              ) {
+                                deleteMutation.mutate({ id: video.id });
+                              }
+                            }}
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
                     <p className="mb-3 truncate text-sm text-muted-foreground">
                       {video.channelName || "Unknown channel"}
                     </p>
@@ -233,22 +275,6 @@ export function VideoListPage() {
                       <span className="ml-auto">
                         {formatDate(video.createdAt)}
                       </span>
-                      <button
-                        className="ml-1 rounded p-0.5 text-muted-foreground hover:bg-destructive-subtle hover:text-destructive"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          if (
-                            window.confirm(
-                              `Delete "${video.title}"? This will also delete its captions and bookmarks.`,
-                            )
-                          ) {
-                            deleteMutation.mutate({ id: video.id });
-                          }
-                        }}
-                      >
-                        <X className="h-3.5 w-3.5" />
-                      </button>
                     </div>
                   </div>
                 </Link>

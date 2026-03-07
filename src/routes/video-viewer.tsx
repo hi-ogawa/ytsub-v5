@@ -5,8 +5,10 @@ import {
   Bookmark as BookmarkIcon,
   ChevronLeft,
   ChevronRight,
+  EllipsisVertical,
   ExternalLink,
   Loader2,
+  Trash2,
   X,
 } from "lucide-react";
 import {
@@ -18,6 +20,12 @@ import {
   type RefCallback,
 } from "react";
 import { useParams } from "react-router";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "../components/ui/dropdown-menu.tsx";
 import {
   Popover,
   PopoverContent,
@@ -290,16 +298,16 @@ function BookmarkWord({
           </span>
         )}
         {onGoToBookmark && (
-          <span
-            role="button"
-            className="mt-1 block cursor-pointer text-[10px] text-accent hover:underline"
+          <button
+            className="mt-1 rounded p-0.5 text-muted-foreground hover:bg-accent hover:text-foreground"
+            title="Go to bookmark"
             onMouseDown={(e) => {
               e.stopPropagation();
               onGoToBookmark(bookmark.id);
             }}
           >
-            Go to bookmark
-          </span>
+            <ExternalLink className="h-3.5 w-3.5" />
+          </button>
         )}
       </PopoverContent>
     </Popover>
@@ -368,38 +376,36 @@ function BookmarksList({
               player.playVideo();
             }}
           >
-            <div className="flex items-center gap-1 text-xs text-muted-foreground">
-              <button
-                className="rounded p-0.5 text-muted-foreground hover:bg-destructive-subtle hover:text-destructive"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (window.confirm(`Delete bookmark "${bm.text}"?`)) {
-                    deleteMutation.mutate({ id: bm.id });
-                  }
-                }}
-              >
-                ✕
-              </button>
-              {bm.status === "manual" && (
-                <span className="rounded bg-highlight px-1 text-highlight-foreground">
-                  manual
-                </span>
-              )}
-              <span className="ml-auto">{formatTimestamp(bm.timestamp)}</span>
-              {bm.captionId && (
-                <button
-                  className="rounded p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground"
-                  title="Go to caption"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onGoToCaption(bm.captionId!);
-                  }}
+            <div className="flex items-start gap-1">
+              <div className="flex-1 text-sm font-medium">{bm.text}</div>
+              <span className="shrink-0 text-xs text-muted-foreground">
+                {formatTimestamp(bm.timestamp)}
+              </span>
+              <DropdownMenu>
+                <DropdownMenuTrigger
+                  className="-mr-1 -mt-0.5 shrink-0 rounded p-1 text-muted-foreground hover:bg-muted"
+                  onClick={(e) => e.stopPropagation()}
                 >
-                  <ExternalLink className="h-3.5 w-3.5" />
-                </button>
-              )}
+                  <EllipsisVertical className="h-3.5 w-3.5" />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  align="end"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <DropdownMenuItem
+                    className="text-destructive focus:text-destructive"
+                    onClick={() => {
+                      if (window.confirm(`Delete bookmark "${bm.text}"?`)) {
+                        deleteMutation.mutate({ id: bm.id });
+                      }
+                    }}
+                  >
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    Delete
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
-            <div className="text-sm font-medium">{bm.text}</div>
             {bm.translation && (
               <div className="text-sm text-muted-foreground">
                 {bm.translation}
@@ -414,9 +420,35 @@ function BookmarksList({
               <div className="text-xs text-muted-foreground">{bm.notes}</div>
             )}
             {caption && (
-              <div className="mt-0.5 border-t border-border pt-1 text-xs text-muted-foreground">
-                <div>{caption.text1}</div>
-                <div>{caption.text2}</div>
+              <div className="mt-0.5 flex items-start gap-1 border-t border-border pt-1 text-xs text-muted-foreground">
+                <div className="flex-1">
+                  <div>{caption.text1}</div>
+                  <div>{caption.text2}</div>
+                </div>
+                <div className="flex shrink-0 items-center gap-1">
+                  {bm.status === "manual" && (
+                    <span className="rounded bg-highlight px-1 text-highlight-foreground">
+                      manual
+                    </span>
+                  )}
+                  <button
+                    className="rounded p-0.5 text-muted-foreground hover:bg-accent hover:text-foreground"
+                    title="Go to caption"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onGoToCaption(bm.captionId!);
+                    }}
+                  >
+                    <ExternalLink className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              </div>
+            )}
+            {!caption && bm.status === "manual" && (
+              <div className="text-xs">
+                <span className="rounded bg-highlight px-1 text-highlight-foreground">
+                  manual
+                </span>
               </div>
             )}
           </div>
