@@ -44,6 +44,12 @@
   --color-highlight-alt-border: var(--color-amber-400);
 }
 
+*,
+::after,
+::before {
+  border-color: var(--color-border);
+}
+
 body {
   font-family: "Inter", sans-serif;
   -webkit-font-smoothing: antialiased;
