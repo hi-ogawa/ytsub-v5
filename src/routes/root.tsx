@@ -27,10 +27,7 @@ export function RootLayout() {
         <Link to="/" className="text-sm font-semibold">
           ytsub
         </Link>
-        <div className="flex items-center gap-1">
-          <ThemeToggle />
-          {authenticated && <HeaderMenu />}
-        </div>
+        <HeaderMenu authenticated={authenticated} />
       </header>
       <main className="flex-1 overflow-auto">
         <Outlet />
@@ -109,66 +106,36 @@ function useTheme() {
   return { theme, isDark: resolveTheme(theme), cycle };
 }
 
-function ThemeToggle() {
-  const { theme, cycle: cycleTheme } = useTheme();
+const THEME_ICONS: Record<Theme, string> = {
+  light:
+    "M12 3v1m0 16v1m8.66-13.66l-.71.71M4.05 19.95l-.71.71M21 12h-1M4 12H3m16.66 7.66l-.71-.71M4.05 4.05l-.71-.71M16 12a4 4 0 11-8 0 4 4 0 018 0z",
+  dark: "M20.354 15.354A9 9 0 018.646 3.646 9.005 9.005 0 0012 21a9.005 9.005 0 008.354-5.646z",
+  system:
+    "M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z",
+};
+
+function ThemeIcon({ theme }: { theme: Theme }) {
   return (
-    <button
-      className="flex h-7 w-7 items-center justify-center rounded text-muted-foreground hover:bg-muted"
-      onClick={cycleTheme}
-      aria-label={`Theme: ${theme}`}
+    <svg
+      className="h-4 w-4"
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
     >
-      {theme === "light" && (
-        <svg
-          className="h-4 w-4"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M12 3v1m0 16v1m8.66-13.66l-.71.71M4.05 19.95l-.71.71M21 12h-1M4 12H3m16.66 7.66l-.71-.71M4.05 4.05l-.71-.71M16 12a4 4 0 11-8 0 4 4 0 018 0z"
-          />
-        </svg>
-      )}
-      {theme === "dark" && (
-        <svg
-          className="h-4 w-4"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M20.354 15.354A9 9 0 018.646 3.646 9.005 9.005 0 0012 21a9.005 9.005 0 008.354-5.646z"
-          />
-        </svg>
-      )}
-      {theme === "system" && (
-        <svg
-          className="h-4 w-4"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-          />
-        </svg>
-      )}
-    </button>
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d={THEME_ICONS[theme]}
+      />
+    </svg>
   );
 }
 
-function HeaderMenu() {
+function HeaderMenu({ authenticated }: { authenticated: boolean }) {
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const { theme, cycle: cycleTheme } = useTheme();
 
   const logoutMutation = useMutation(
     orpc.auth.logout.mutationOptions({
@@ -207,11 +174,20 @@ function HeaderMenu() {
           className="absolute right-0 top-full z-10 mt-1 w-36 rounded border border-border bg-popover py-1 shadow-sm"
         >
           <button
-            className="w-full px-3 py-1.5 text-left text-sm text-foreground hover:bg-muted"
-            onClick={() => logoutMutation.mutate({})}
+            className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm text-foreground hover:bg-muted"
+            onClick={cycleTheme}
           >
-            Log out
+            <ThemeIcon theme={theme} />
+            <span className="capitalize">{theme}</span>
           </button>
+          {authenticated && (
+            <button
+              className="w-full px-3 py-1.5 text-left text-sm text-foreground hover:bg-muted"
+              onClick={() => logoutMutation.mutate({})}
+            >
+              Log out
+            </button>
+          )}
         </div>
       )}
     </div>
