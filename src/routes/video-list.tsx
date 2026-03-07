@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { orpc } from "../rpc.ts";
 
@@ -27,16 +27,9 @@ interface ImportData {
   bookmarks?: unknown[];
 }
 
-function ImportDialog({
-  open,
-  onClose,
-}: {
-  open: boolean;
-  onClose: () => void;
-}) {
+function ImportDialog({ onClose }: { onClose: () => void }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const dialogRef = useRef<HTMLDialogElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const [parsed, setParsed] = useState<ImportData | null>(null);
   const [parseError, setParseError] = useState("");
@@ -52,33 +45,6 @@ function ImportDialog({
       },
     }),
   );
-
-  useEffect(() => {
-    const dialog = dialogRef.current;
-    if (!dialog) return;
-    if (open && !dialog.open) {
-      dialog.showModal();
-    } else if (!open && dialog.open) {
-      dialog.close();
-    }
-  }, [open]);
-
-  const handleClose = useCallback(() => {
-    setParsed(null);
-    setParseError("");
-    onClose();
-  }, [onClose]);
-
-  useEffect(() => {
-    const dialog = dialogRef.current;
-    if (!dialog) return;
-    const onCancel = (e: Event) => {
-      e.preventDefault();
-      handleClose();
-    };
-    dialog.addEventListener("cancel", onCancel);
-    return () => dialog.removeEventListener("cancel", onCancel);
-  }, [handleClose]);
 
   function handleFile(file: File) {
     setParseError("");
@@ -100,101 +66,96 @@ function ImportDialog({
   }
 
   return (
-    <dialog
-      ref={dialogRef}
-      className="fixed inset-0 m-auto w-full max-w-md rounded-lg bg-card p-6 shadow-lg backdrop:bg-overlay"
-      onClick={(e) => {
-        const rect = dialogRef.current?.getBoundingClientRect();
-        if (!rect) return;
-        const outside =
-          e.clientX < rect.left ||
-          e.clientX > rect.right ||
-          e.clientY < rect.top ||
-          e.clientY > rect.bottom;
-        if (outside) handleClose();
-      }}
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-overlay"
+      onClick={onClose}
     >
-      <h2 className="mb-4 text-lg font-semibold">Import Video</h2>
-
       <div
-        className="mb-4 rounded-lg border-2 border-dashed border-border p-6 text-center text-sm text-muted-foreground"
-        onDragOver={(e) => {
-          e.preventDefault();
-          e.currentTarget.classList.add("border-ring", "bg-highlight-bg");
-        }}
-        onDragLeave={(e) => {
-          e.currentTarget.classList.remove("border-ring", "bg-highlight-bg");
-        }}
-        onDrop={(e) => {
-          e.preventDefault();
-          e.currentTarget.classList.remove("border-ring", "bg-highlight-bg");
-          const file = e.dataTransfer.files[0];
-          if (file) handleFile(file);
-        }}
+        className="w-full max-w-md rounded-lg bg-card p-6 shadow-lg"
+        onClick={(e) => e.stopPropagation()}
       >
-        <p className="mb-2">
-          Drop <code>import.json</code> here or{" "}
-          <button
-            type="button"
-            className="text-accent underline"
-            onClick={() => fileRef.current?.click()}
-          >
-            browse
-          </button>
-        </p>
-        <input
-          ref={fileRef}
-          type="file"
-          accept=".json"
-          className="hidden"
-          data-testid="file-input"
-          onChange={(e) => {
-            const file = e.target.files?.[0];
+        <h2 className="mb-4 text-lg font-semibold">Import Video</h2>
+
+        <div
+          className="mb-4 rounded-lg border-2 border-dashed border-border p-6 text-center text-sm text-muted-foreground"
+          onDragOver={(e) => {
+            e.preventDefault();
+            e.currentTarget.classList.add("border-ring", "bg-highlight-bg");
+          }}
+          onDragLeave={(e) => {
+            e.currentTarget.classList.remove("border-ring", "bg-highlight-bg");
+          }}
+          onDrop={(e) => {
+            e.preventDefault();
+            e.currentTarget.classList.remove("border-ring", "bg-highlight-bg");
+            const file = e.dataTransfer.files[0];
             if (file) handleFile(file);
           }}
-        />
-      </div>
-
-      {parseError && (
-        <p className="mb-4 text-sm text-destructive">{parseError}</p>
-      )}
-
-      {parsed && (
-        <div className="mb-4 rounded border border-border bg-muted p-3 text-sm">
-          <p className="font-medium">{parsed.video.title}</p>
-          <p className="text-muted-foreground">
-            {parsed.captions.length} captions, {parsed.bookmarks?.length ?? 0}{" "}
-            bookmarks
+        >
+          <p className="mb-2">
+            Drop <code>import.json</code> here or{" "}
+            <button
+              type="button"
+              className="text-accent underline"
+              onClick={() => fileRef.current?.click()}
+            >
+              browse
+            </button>
           </p>
+          <input
+            ref={fileRef}
+            type="file"
+            accept=".json"
+            className="hidden"
+            data-testid="file-input"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) handleFile(file);
+            }}
+          />
         </div>
-      )}
 
-      {importMutation.isError && (
-        <p className="mb-4 text-sm text-destructive">
-          Import failed: {importMutation.error.message}
-        </p>
-      )}
+        {parseError && (
+          <p className="mb-4 text-sm text-destructive">{parseError}</p>
+        )}
 
-      <div className="flex justify-end gap-2">
-        <button
-          type="button"
-          className="rounded px-3 py-1.5 text-sm text-muted-foreground hover:bg-muted"
-          onClick={handleClose}
-        >
-          Cancel
-        </button>
-        <button
-          type="button"
-          disabled={!parsed || importMutation.isPending}
-          className="rounded bg-primary px-3 py-1.5 text-sm text-primary-foreground hover:bg-primary-hover disabled:opacity-50"
-          onClick={() => {
-            if (parsed) importMutation.mutate(parsed as never);
-          }}
-        >
-          {importMutation.isPending ? "Importing..." : "Import"}
-        </button>
+        {parsed && (
+          <div className="mb-4 rounded border border-border bg-muted p-3 text-sm">
+            <p className="font-medium">{parsed.video.title}</p>
+            <p className="text-muted-foreground">
+              {parsed.captions.length} captions, {parsed.bookmarks?.length ?? 0}{" "}
+              bookmarks
+            </p>
+          </div>
+        )}
+
+        {importMutation.isError && (
+          <p className="mb-4 text-sm text-destructive">
+            Import failed: {importMutation.error.message}
+          </p>
+        )}
+
+        <div className="flex justify-end gap-2">
+          <button
+            type="button"
+            className="rounded px-3 py-1.5 text-sm text-muted-foreground hover:bg-muted"
+            onClick={onClose}
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            disabled={!parsed || importMutation.isPending}
+            className="rounded bg-primary px-3 py-1.5 text-sm text-primary-foreground hover:bg-primary-hover disabled:opacity-50"
+            onClick={() => {
+              if (parsed) importMutation.mutate(parsed as never);
+            }}
+          >
+            {importMutation.isPending ? "Importing..." : "Import"}
+          </button>
+        </div>
       </div>
-    </dialog>
+    </div>
   );
 }
 
@@ -225,7 +186,7 @@ export function VideoListPage() {
           Import
         </button>
       </div>
-      <ImportDialog open={showImport} onClose={() => setShowImport(false)} />
+      {showImport && <ImportDialog onClose={() => setShowImport(false)} />}
       {isLoading ? (
         <p className="text-sm text-muted-foreground">Loading…</p>
       ) : isError || !data ? (
