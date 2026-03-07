@@ -3,45 +3,45 @@
 @theme inline {
   /* Page */
   --color-background: var(--color-white);
-  --color-foreground: oklch(0.274 0 0); /* ~gray-800 */
+  --color-foreground: var(--color-gray-800);
 
   /* Cards & popovers */
   --color-card: var(--color-white);
-  --color-card-foreground: oklch(0.274 0 0);
+  --color-card-foreground: var(--color-gray-800);
   --color-popover: var(--color-white);
-  --color-popover-foreground: oklch(0.274 0 0);
+  --color-popover-foreground: var(--color-gray-800);
 
   /* Primary (buttons) */
   --color-primary: var(--color-black);
   --color-primary-foreground: var(--color-white);
 
   /* Muted (subtle bg, dimmed text) */
-  --color-muted: oklch(0.968 0 0); /* ~gray-100 */
-  --color-muted-foreground: oklch(0.556 0 0); /* ~gray-500 */
+  --color-muted: var(--color-gray-100);
+  --color-muted-foreground: var(--color-gray-500);
 
   /* Accent (blue interactive) */
-  --color-accent: oklch(0.623 0.214 259); /* ~blue-500 */
+  --color-accent: var(--color-blue-500);
   --color-accent-foreground: var(--color-white);
 
   /* Destructive (errors, danger) */
-  --color-destructive: oklch(0.577 0.245 27); /* ~red-600 */
-  --color-destructive-subtle: oklch(0.971 0.013 17); /* ~red-50 */
+  --color-destructive: var(--color-red-600);
+  --color-destructive-subtle: var(--color-red-50);
 
   /* Borders & rings */
-  --color-border: oklch(0.922 0 0); /* ~gray-200 */
-  --color-input: oklch(0.922 0 0);
-  --color-ring: oklch(0.623 0.214 259); /* ~blue-500 */
+  --color-border: var(--color-gray-200);
+  --color-input: var(--color-gray-200);
+  --color-ring: var(--color-blue-500);
 
   /* Overlay */
-  --color-overlay: oklch(0 0 0 / 40%);
+  --color-overlay: color-mix(in oklch, black 40%, transparent);
 
   /* Highlights (bookmark underlines) */
-  --color-highlight: oklch(0.936 0.032 262); /* ~sky-100 */
-  --color-highlight-bg: oklch(0.951 0.026 237); /* ~sky-50 */
-  --color-highlight-border: oklch(0.746 0.16 232); /* ~sky-400 */
-  --color-highlight-foreground: oklch(0.588 0.158 241); /* ~sky-600 */
-  --color-highlight-alt-bg: oklch(0.962 0.059 95); /* ~amber-50 */
-  --color-highlight-alt-border: oklch(0.745 0.16 82); /* ~amber-400 */
+  --color-highlight: var(--color-sky-100);
+  --color-highlight-bg: var(--color-sky-50);
+  --color-highlight-border: var(--color-sky-400);
+  --color-highlight-foreground: var(--color-sky-600);
+  --color-highlight-alt-bg: var(--color-amber-50);
+  --color-highlight-alt-border: var(--color-amber-400);
 }
 
 body {
