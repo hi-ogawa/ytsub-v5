@@ -1,59 +1,91 @@
-# E2E: Replace CSS class selectors with data-testid
+# E2E: Improve test selectors for debuggability
 
-## Problem
+## Phase 1 — Replace CSS class selectors (done)
 
-E2E tests select bookmark highlight spans by Tailwind class names (`span.border-amber-400`, `span.border-sky-400`). These break whenever styling changes — e.g., the design token migration in `docs/tasks/2026-03-07-design-tokens.md`.
+Bookmark highlight spans used Tailwind classes (`span.border-amber-400`, `span.border-sky-400`) as selectors. Replaced with `data-testid="highlight-manual"` / `data-testid="highlight-auto"`.
 
-CSS classes describe **how it looks**. Tests should select by **what it is**.
+## Phase 2 — Broader selector cleanup
 
-## Approach
+### Problem
 
-Add `data-testid` attributes to highlight spans in the viewer component, then update E2E selectors to use them.
+Tests use opaque selectors and unscoped `getByText` assertions that are hard to debug when they fail:
 
-## Current selectors
-
-| File                          | Line | Selector                | What it means                        |
-| ----------------------------- | ---- | ----------------------- | ------------------------------------ |
-| `e2e/bookmark-viewer.spec.ts` | 38   | `span.border-amber-400` | highlighted text2 (translation) span |
-| `e2e/bookmark-viewer.spec.ts` | 51   | `span.border-amber-400` | highlighted text2 span               |
-| `e2e/bookmark-viewer.spec.ts` | 138  | `span.border-sky-400`   | highlighted text1 (Korean) span      |
-| `e2e/bookmark-viewer.spec.ts` | 152  | `span.border-amber-400` | highlighted text2 span               |
-| `e2e/import.spec.ts`          | 68   | `span.border-amber-400` | highlighted text2 span               |
-
-## Proposed change
-
-In the viewer component, add `data-testid` to highlight spans:
-
-```tsx
-// text1 (Korean) highlight
-<span data-testid="highlight-text1" className="...">word</span>
-
-// text2 (translation) highlight
-<span data-testid="highlight-text2" className="...">word</span>
-```
-
-In E2E tests:
+**1. `data-index` / `data-side` are internal, not self-documenting**
 
 ```ts
-// before
-row.locator("span.border-amber-400");
-
-// after
-row.locator('[data-testid="highlight-text2"]');
+// What is data-index='0'? A caption row? A list item?
+page.locator("[data-index='0']");
+// What is data-side='0'? Korean? Translation?
+document.querySelector("[data-side='0']");
 ```
 
-## Implementation steps
+Used in: `bookmark-viewer.spec.ts` (lines 14, 37, 50, 86, 92, 106, 112–113, 153, 180, 187–188), `import.spec.ts` (lines 38, 58, 66), `basic.spec.ts` (line 51), `delete.spec.ts` (line 37)
 
-1. Find where highlight spans are rendered in `src/routes/video-viewer.tsx`
-2. Add `data-testid="highlight-text1"` / `data-testid="highlight-text2"` to the respective spans
-3. Update 5 selectors across `e2e/bookmark-viewer.spec.ts` and `e2e/import.spec.ts`
-4. `pnpm build` to verify
-5. `pnpm test-e2e` to verify tests pass
+**2. Unscoped `page.getByText()` + `toBeVisible()` — no context on failure**
 
-## Sequencing
+```ts
+// Fails with "expected text not found" — where was it looking?
+await expect(page.getByText("to pinch")).toBeVisible();
+// Could match anywhere: popover, bookmark list, caption text...
+```
 
-Do this **after** the design token migration — that PR will update the selectors to token class names as an intermediate step. This follow-up replaces them with `data-testid` so future styling changes never break tests again.
+Used in: `bookmark-viewer.spec.ts` (lines 31–32, 44–45, 56, 66–70, 89, 146, 164), `import.spec.ts` (lines 23, 28–30, 62, 70)
+
+**3. CSS class selectors for structure**
+
+```ts
+// Fragile — depends on Tailwind classes
+.locator("div.flex.cursor-pointer")   // delete.spec.ts:43
+.locator("[role=dialog], .fixed")      // import.spec.ts:34, 54
+```
+
+**4. `toHaveClass(/font-medium/)` for active tab state**
+
+```ts
+// Tests styling detail instead of semantic state
+await expect(page.getByRole("button", { name: /Bookmarks/ })).toHaveClass(
+  /font-medium/,
+);
+```
+
+Used in: `bookmark-viewer.spec.ts` (lines 161, 177)
+
+### Proposed testid additions
+
+| Component                        | Current selector               | Proposed `data-testid`                                        |
+| -------------------------------- | ------------------------------ | ------------------------------------------------------------- |
+| Caption row                      | `[data-index='N']`             | `caption-row` (keep `data-index` for virtualizer, add testid) |
+| Caption text1 (Korean) side      | `[data-side='0']`              | `caption-text1`                                               |
+| Caption text2 (translation) side | `[data-side='1']`              | `caption-text2`                                               |
+| Bookmark popover                 | `.absolute.z-10...` (implicit) | `bookmark-popover`                                            |
+| Bookmark list item               | `div.flex.cursor-pointer`      | `bookmark-item`                                               |
+| Import dialog                    | `[role=dialog], .fixed`        | `import-dialog`                                               |
+
+### Proposed assertion style
+
+```ts
+// before — opaque
+const row = page.locator("[data-index='0']");
+await highlight.first().hover({ force: true });
+await expect(page.getByText("to pinch")).toBeVisible();
+
+// after — self-documenting, scoped
+const row = page.getByTestId("caption-row").nth(0);
+await highlight.first().hover({ force: true });
+const popover = page.getByTestId("bookmark-popover");
+await expect(popover.getByText("to pinch")).toBeVisible();
+```
+
+For active tab state, use `aria-selected` or `data-active` instead of checking CSS classes.
+
+### Implementation steps
+
+1. Add `data-testid` attributes to components listed above
+2. Update E2E selectors to use `getByTestId` with scoped assertions
+3. Keep `data-index` / `data-side` / `data-offset` — they serve runtime purposes (virtualizer, bookmark selection logic)
+4. `pnpm build && pnpm test-e2e`
 
 ## Status
 
-- [x] Implementation — used `highlight-manual` / `highlight-auto` (matches bookmark status semantics)
+- [x] Phase 1: highlight spans (`highlight-manual` / `highlight-auto`)
+- [ ] Phase 2: broader selector cleanup
