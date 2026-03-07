@@ -71,7 +71,7 @@ function applyDarkClass(dark: boolean) {
   document.documentElement.classList.toggle("dark", dark);
 
   // Force a reflow so the no-transition style takes effect, then remove it
-  document.body.offsetHeight; // eslint-disable-line @typescript-eslint/no-unused-expressions
+  document.body.offsetHeight;
   css.remove();
 }
 
