@@ -148,6 +148,7 @@ function HeaderMenu({ authenticated }: { authenticated: boolean }) {
   return (
     <div className="relative">
       <button
+        data-testid="header-menu"
         className="flex h-7 w-7 items-center justify-center rounded text-muted-foreground hover:bg-muted"
         onClick={() => setOpen((v) => !v)}
         onBlur={(e) => {
@@ -174,6 +175,8 @@ function HeaderMenu({ authenticated }: { authenticated: boolean }) {
           className="absolute right-0 top-full z-10 mt-1 w-36 rounded border border-border bg-popover py-1 shadow-sm"
         >
           <button
+            data-testid="theme-toggle"
+            data-theme={theme}
             className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm text-foreground hover:bg-muted"
             onClick={cycleTheme}
           >
