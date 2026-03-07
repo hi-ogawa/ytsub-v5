@@ -1,6 +1,15 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import {
+  ArrowDown,
+  Bookmark as BookmarkIcon,
+  ChevronLeft,
+  ChevronRight,
+  ExternalLink,
+  Loader2,
+  X,
+} from "lucide-react";
+import {
   useCallback,
   useEffect,
   useLayoutEffect,
@@ -417,22 +426,7 @@ function BookmarksList({
                     onGoToCaption(bm.captionId!);
                   }}
                 >
-                  <svg
-                    className="h-3.5 w-3.5"
-                    viewBox="0 0 20 20"
-                    fill="currentColor"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M4.25 5.5a.75.75 0 00-.75.75v8.5c0 .414.336.75.75.75h8.5a.75.75 0 00.75-.75v-4a.75.75 0 011.5 0v4A2.25 2.25 0 0112.75 17h-8.5A2.25 2.25 0 012 14.75v-8.5A2.25 2.25 0 014.25 4h5a.75.75 0 010 1.5h-5z"
-                      clipRule="evenodd"
-                    />
-                    <path
-                      fillRule="evenodd"
-                      d="M6.194 12.753a.75.75 0 001.06.053L16.5 4.44v2.81a.75.75 0 001.5 0v-4.5a.75.75 0 00-.75-.75h-4.5a.75.75 0 000 1.5h2.553l-9.056 8.194a.75.75 0 00-.053 1.06z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
+                  <ExternalLink className="h-3.5 w-3.5" />
                 </button>
               )}
             </div>
@@ -817,13 +811,7 @@ export function VideoViewerPage() {
               onClick={toggleAutoScroll}
               title={autoScroll ? "Auto-scroll on" : "Auto-scroll off"}
             >
-              <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                <path
-                  fillRule="evenodd"
-                  d="M10 3a.75.75 0 01.75.75v10.638l3.96-4.158a.75.75 0 111.08 1.04l-5.25 5.5a.75.75 0 01-1.08 0l-5.25-5.5a.75.75 0 111.08-1.04l3.96 4.158V3.75A.75.75 0 0110 3z"
-                  clipRule="evenodd"
-                />
-              </svg>
+              <ArrowDown className="h-4 w-4" />
             </button>
             {sortedBookmarks.length > 0 && (
               <div className="flex gap-0.5">
@@ -832,34 +820,14 @@ export function VideoViewerPage() {
                   onClick={onPrevBookmark}
                   title="Previous bookmark"
                 >
-                  <svg
-                    className="h-4 w-4"
-                    viewBox="0 0 20 20"
-                    fill="currentColor"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M12.79 5.23a.75.75 0 01-.02 1.06L8.832 10l3.938 3.71a.75.75 0 11-1.04 1.08l-4.5-4.25a.75.75 0 010-1.08l4.5-4.25a.75.75 0 011.06.02z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
+                  <ChevronLeft className="h-4 w-4" />
                 </button>
                 <button
                   className="rounded p-0.5 text-muted-foreground hover:bg-muted"
                   onClick={onNextBookmark}
                   title="Next bookmark"
                 >
-                  <svg
-                    className="h-4 w-4"
-                    viewBox="0 0 20 20"
-                    fill="currentColor"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
+                  <ChevronRight className="h-4 w-4" />
                 </button>
               </div>
             )}
@@ -996,9 +964,7 @@ export function VideoViewerPage() {
               onClick={onCancelBookmark}
               title="Cancel"
             >
-              <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                <path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z" />
-              </svg>
+              <X className="h-5 w-5" />
             </button>
             <button
               className="flex h-10 w-10 items-center justify-center rounded-full bg-accent text-accent-foreground shadow hover:bg-accent/90"
@@ -1007,37 +973,9 @@ export function VideoViewerPage() {
               title="Create bookmark"
             >
               {createBookmarkMutation.isPending ? (
-                <svg
-                  className="h-5 w-5 animate-spin"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                >
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                  />
-                  <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-                  />
-                </svg>
+                <Loader2 className="h-5 w-5 animate-spin" />
               ) : (
-                <svg
-                  className="h-5 w-5"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M5 4a2 2 0 012-2h6a2 2 0 012 2v14l-5-2.5L5 18V4z"
-                    clipRule="evenodd"
-                  />
-                </svg>
+                <BookmarkIcon className="h-5 w-5 fill-current" />
               )}
             </button>
           </div>

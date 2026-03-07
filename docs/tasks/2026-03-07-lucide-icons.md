@@ -51,4 +51,4 @@ Install `lucide-react` (what shadcn uses) and replace all inline SVGs with named
 
 ## Status
 
-- **Planning** — awaiting feedback
+- **Done** — all inline SVGs replaced with lucide-react icons, build passes
