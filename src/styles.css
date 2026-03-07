@@ -13,6 +13,7 @@
 
   /* Primary (buttons) */
   --color-primary: var(--color-black);
+  --color-primary-hover: var(--color-gray-800);
   --color-primary-foreground: var(--color-white);
 
   /* Muted (subtle bg, dimmed text) */

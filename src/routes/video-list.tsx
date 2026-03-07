@@ -180,7 +180,7 @@ export function VideoListPage() {
         <h1 className="text-2xl font-bold">Videos</h1>
         <button
           type="button"
-          className="rounded bg-primary px-3 py-1.5 text-sm text-primary-foreground hover:bg-primary/90"
+          className="rounded bg-primary px-3 py-1.5 text-sm text-primary-foreground hover:bg-primary-hover"
           onClick={() => setShowImport(true)}
         >
           Import
