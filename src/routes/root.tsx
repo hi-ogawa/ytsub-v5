@@ -1,5 +1,5 @@
 import { useMutation } from "@tanstack/react-query";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Link,
   Navigate,
@@ -7,6 +7,12 @@ import {
   useLoaderData,
   useRouteLoaderData,
 } from "react-router";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "../components/ui/dropdown-menu.tsx";
 import { orpc } from "../rpc.ts";
 
 export async function authLoader() {
@@ -133,8 +139,6 @@ function ThemeIcon({ theme }: { theme: Theme }) {
 }
 
 function HeaderMenu({ authenticated }: { authenticated: boolean }) {
-  const [open, setOpen] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
   const { theme, cycle: cycleTheme } = useTheme();
 
   const logoutMutation = useMutation(
@@ -146,14 +150,10 @@ function HeaderMenu({ authenticated }: { authenticated: boolean }) {
   );
 
   return (
-    <div className="relative">
-      <button
+    <DropdownMenu>
+      <DropdownMenuTrigger
         data-testid="header-menu"
         className="flex h-7 w-7 items-center justify-center rounded text-muted-foreground hover:bg-muted"
-        onClick={() => setOpen((v) => !v)}
-        onBlur={(e) => {
-          if (!menuRef.current?.contains(e.relatedTarget)) setOpen(false);
-        }}
       >
         <svg
           className="h-4 w-4"
@@ -168,31 +168,26 @@ function HeaderMenu({ authenticated }: { authenticated: boolean }) {
             d="M12 6.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 12.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 18.75a.75.75 0 110-1.5.75.75 0 010 1.5z"
           />
         </svg>
-      </button>
-      {open && (
-        <div
-          ref={menuRef}
-          className="absolute right-0 top-full z-10 mt-1 w-36 rounded border border-border bg-popover py-1 shadow-sm"
+      </DropdownMenuTrigger>
+      <DropdownMenuContent className="w-36">
+        <DropdownMenuItem
+          data-testid="theme-toggle"
+          data-theme={theme}
+          onSelect={(e) => {
+            e.preventDefault();
+            cycleTheme();
+          }}
+          className="gap-2"
         >
-          <button
-            data-testid="theme-toggle"
-            data-theme={theme}
-            className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm text-foreground hover:bg-muted"
-            onClick={cycleTheme}
-          >
-            <ThemeIcon theme={theme} />
-            <span className="capitalize">{theme}</span>
-          </button>
-          {authenticated && (
-            <button
-              className="w-full px-3 py-1.5 text-left text-sm text-foreground hover:bg-muted"
-              onClick={() => logoutMutation.mutate({})}
-            >
-              Log out
-            </button>
-          )}
-        </div>
-      )}
-    </div>
+          <ThemeIcon theme={theme} />
+          <span className="capitalize">{theme}</span>
+        </DropdownMenuItem>
+        {authenticated && (
+          <DropdownMenuItem onSelect={() => logoutMutation.mutate({})}>
+            Log out
+          </DropdownMenuItem>
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
