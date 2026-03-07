@@ -278,6 +278,7 @@ function BookmarkWord({
     <span
       ref={spanRef}
       className="relative inline-block"
+      data-testid="bookmark-highlight"
       data-offset={offset}
       onMouseEnter={() => onHoverBookmark?.(bookmark.id)}
       onMouseLeave={() => onLeaveBookmark?.()}
@@ -293,6 +294,7 @@ function BookmarkWord({
       </span>
       {isOpen && (
         <span
+          data-testid="bookmark-popover"
           className={`absolute left-0 z-10 w-48 rounded border border-border bg-popover p-2 shadow-lg ${
             popoverBelow ? "top-full mt-1" : "bottom-full mb-1"
           }`}
