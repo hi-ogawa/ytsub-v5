@@ -84,4 +84,5 @@ function DropdownMenuContent({ className, sideOffset = 4, ...props }) {
 - Use our design tokens (see `src/styles.css`) — not shadcn's Tailwind classes
 - No `cn()` utility — use string concatenation for optional className
 - No `cva()` — use `data-[variant=...]` selectors for variants
+- No `data-slot` — we don't use it; drop it when adapting from shadcn
 - Keep components minimal — add sub-components as needed, not upfront
