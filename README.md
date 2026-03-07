@@ -6,7 +6,7 @@ A web app for language learning via YouTube subtitles. Watch videos with dual su
 
 ```bash
 pnpm install
-pnpm db:migrate
+pnpm db:bootstrap
 pnpm dev
 ```
 
