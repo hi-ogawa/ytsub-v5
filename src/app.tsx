@@ -11,6 +11,7 @@ import {
   Outlet,
   RouterProvider,
   useLoaderData,
+  useRouteLoaderData,
 } from "react-router";
 import { LoginPage } from "./routes/login.tsx";
 import { VideoListPage } from "./routes/video-list.tsx";
@@ -29,28 +30,37 @@ async function authLoader() {
   return { authenticated: data.json.authenticated };
 }
 
-function GuestLayout() {
+function RootLayout() {
   const { authenticated } = useLoaderData<typeof authLoader>();
-  if (authenticated) return <Navigate to="/" replace />;
-  return <Outlet />;
-}
-
-function AuthLayout() {
-  const { authenticated } = useLoaderData<typeof authLoader>();
-  if (!authenticated) return <Navigate to="/login" replace />;
   return (
     <div className="flex h-screen flex-col">
       <header className="flex h-10 flex-none items-center justify-between border-b px-3">
         <Link to="/" className="text-sm font-semibold">
           ytsub
         </Link>
-        <HeaderMenu />
+        {authenticated && <HeaderMenu />}
       </header>
       <main className="flex-1 overflow-auto">
         <Outlet />
       </main>
     </div>
   );
+}
+
+function GuestLayout() {
+  const { authenticated } = useRouteLoaderData("root") as Awaited<
+    ReturnType<typeof authLoader>
+  >;
+  if (authenticated) return <Navigate to="/" replace />;
+  return <Outlet />;
+}
+
+function AuthLayout() {
+  const { authenticated } = useRouteLoaderData("root") as Awaited<
+    ReturnType<typeof authLoader>
+  >;
+  if (!authenticated) return <Navigate to="/login" replace />;
+  return <Outlet />;
 }
 
 function HeaderMenu() {
@@ -107,16 +117,21 @@ function HeaderMenu() {
 
 const router = createBrowserRouter([
   {
-    Component: GuestLayout,
-    loader: authLoader,
-    children: [{ path: "/login", Component: LoginPage }],
-  },
-  {
-    Component: AuthLayout,
+    id: "root",
+    Component: RootLayout,
     loader: authLoader,
     children: [
-      { path: "/", Component: VideoListPage },
-      { path: "/videos/:id", Component: VideoViewerPage },
+      {
+        Component: GuestLayout,
+        children: [{ path: "/login", Component: LoginPage }],
+      },
+      {
+        Component: AuthLayout,
+        children: [
+          { path: "/", Component: VideoListPage },
+          { path: "/videos/:id", Component: VideoViewerPage },
+        ],
+      },
     ],
   },
 ]);
