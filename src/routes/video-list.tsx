@@ -67,27 +67,27 @@ function ImportDialog({ onClose }: { onClose: () => void }) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-overlay"
       onClick={onClose}
     >
       <div
-        className="w-full max-w-md rounded-lg bg-white p-6 shadow-lg"
+        className="w-full max-w-md rounded-lg bg-card p-6 shadow-lg"
         onClick={(e) => e.stopPropagation()}
       >
         <h2 className="mb-4 text-lg font-semibold">Import Video</h2>
 
         <div
-          className="mb-4 rounded-lg border-2 border-dashed border-gray-300 p-6 text-center text-sm text-gray-500"
+          className="mb-4 rounded-lg border-2 border-dashed border-border p-6 text-center text-sm text-muted-foreground"
           onDragOver={(e) => {
             e.preventDefault();
-            e.currentTarget.classList.add("border-blue-400", "bg-blue-50");
+            e.currentTarget.classList.add("border-ring", "bg-highlight-bg");
           }}
           onDragLeave={(e) => {
-            e.currentTarget.classList.remove("border-blue-400", "bg-blue-50");
+            e.currentTarget.classList.remove("border-ring", "bg-highlight-bg");
           }}
           onDrop={(e) => {
             e.preventDefault();
-            e.currentTarget.classList.remove("border-blue-400", "bg-blue-50");
+            e.currentTarget.classList.remove("border-ring", "bg-highlight-bg");
             const file = e.dataTransfer.files[0];
             if (file) handleFile(file);
           }}
@@ -96,7 +96,7 @@ function ImportDialog({ onClose }: { onClose: () => void }) {
             Drop <code>import.json</code> here or{" "}
             <button
               type="button"
-              className="text-blue-600 underline"
+              className="text-accent underline"
               onClick={() => fileRef.current?.click()}
             >
               browse
@@ -116,13 +116,13 @@ function ImportDialog({ onClose }: { onClose: () => void }) {
         </div>
 
         {parseError && (
-          <p className="mb-4 text-sm text-red-600">{parseError}</p>
+          <p className="mb-4 text-sm text-destructive">{parseError}</p>
         )}
 
         {parsed && (
-          <div className="mb-4 rounded border border-gray-200 bg-gray-50 p-3 text-sm">
+          <div className="mb-4 rounded border border-border bg-muted p-3 text-sm">
             <p className="font-medium">{parsed.video.title}</p>
-            <p className="text-gray-500">
+            <p className="text-muted-foreground">
               {parsed.captions.length} captions, {parsed.bookmarks?.length ?? 0}{" "}
               bookmarks
             </p>
@@ -130,7 +130,7 @@ function ImportDialog({ onClose }: { onClose: () => void }) {
         )}
 
         {importMutation.isError && (
-          <p className="mb-4 text-sm text-red-600">
+          <p className="mb-4 text-sm text-destructive">
             Import failed: {importMutation.error.message}
           </p>
         )}
@@ -138,7 +138,7 @@ function ImportDialog({ onClose }: { onClose: () => void }) {
         <div className="flex justify-end gap-2">
           <button
             type="button"
-            className="rounded px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-100"
+            className="rounded px-3 py-1.5 text-sm text-muted-foreground hover:bg-muted"
             onClick={onClose}
           >
             Cancel
@@ -146,7 +146,7 @@ function ImportDialog({ onClose }: { onClose: () => void }) {
           <button
             type="button"
             disabled={!parsed || importMutation.isPending}
-            className="rounded bg-black px-3 py-1.5 text-sm text-white disabled:opacity-50"
+            className="rounded bg-primary px-3 py-1.5 text-sm text-primary-foreground hover:bg-primary-hover disabled:opacity-50"
             onClick={() => {
               if (parsed) importMutation.mutate(parsed as never);
             }}
@@ -180,7 +180,7 @@ export function VideoListPage() {
         <h1 className="text-2xl font-bold">Videos</h1>
         <button
           type="button"
-          className="rounded bg-black px-3 py-1.5 text-sm text-white hover:bg-gray-800"
+          className="rounded bg-primary px-3 py-1.5 text-sm text-primary-foreground hover:bg-primary-hover"
           onClick={() => setShowImport(true)}
         >
           Import
@@ -188,21 +188,23 @@ export function VideoListPage() {
       </div>
       {showImport && <ImportDialog onClose={() => setShowImport(false)} />}
       {isLoading ? (
-        <p className="text-sm text-gray-500">Loading…</p>
+        <p className="text-sm text-muted-foreground">Loading…</p>
       ) : isError || !data ? (
-        <p className="text-sm text-red-500">Failed to load videos.</p>
+        <p className="text-sm text-destructive">Failed to load videos.</p>
       ) : (
         <>
-          <p className="mb-6 text-sm text-gray-500">{data.total} videos</p>
+          <p className="mb-6 text-sm text-muted-foreground">
+            {data.total} videos
+          </p>
           {data.items.length === 0 ? (
-            <p className="text-sm text-gray-400">No videos yet.</p>
+            <p className="text-sm text-muted-foreground">No videos yet.</p>
           ) : (
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
               {data.items.map((video) => (
                 <Link
                   key={video.id}
                   to={`/videos/${video.id}`}
-                  className="block overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm transition-shadow hover:shadow-md"
+                  className="block overflow-hidden rounded-lg border border-border bg-card shadow-sm transition-all hover:shadow-md hover:border-ring"
                 >
                   <img
                     src={`https://img.youtube.com/vi/${video.youtubeId}/mqdefault.jpg`}
@@ -214,11 +216,11 @@ export function VideoListPage() {
                     <h2 className="mb-1 line-clamp-2 font-semibold leading-snug">
                       {video.title}
                     </h2>
-                    <p className="mb-3 truncate text-sm text-gray-500">
+                    <p className="mb-3 truncate text-sm text-muted-foreground">
                       {video.channelName || "Unknown channel"}
                     </p>
-                    <div className="flex items-center gap-2 text-xs text-gray-400">
-                      <span className="rounded bg-gray-100 px-2 py-0.5 font-mono">
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <span className="rounded bg-muted px-2 py-0.5 font-mono">
                         {video.language1} / {video.language2}
                       </span>
                       <span>{formatDuration(video.duration)}</span>
@@ -226,7 +228,7 @@ export function VideoListPage() {
                         {formatDate(video.createdAt)}
                       </span>
                       <button
-                        className="ml-1 rounded p-0.5 text-gray-300 hover:bg-red-50 hover:text-red-500"
+                        className="ml-1 rounded p-0.5 text-muted-foreground hover:bg-destructive-subtle hover:text-destructive"
                         onClick={(e) => {
                           e.preventDefault();
                           e.stopPropagation();

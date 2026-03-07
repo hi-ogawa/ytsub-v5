@@ -34,12 +34,12 @@ export function LoginPage() {
       <button
         type="submit"
         disabled={login.isPending}
-        className="w-full rounded bg-black px-3 py-2 text-white disabled:opacity-50"
+        className="w-full rounded bg-primary px-3 py-2 text-primary-foreground hover:bg-primary-hover disabled:opacity-50"
       >
         {login.isPending ? "..." : "Login"}
       </button>
       {login.isError && (
-        <p className="text-sm text-red-600">Invalid password</p>
+        <p className="text-sm text-destructive">Invalid password</p>
       )}
     </form>
   );

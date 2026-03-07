@@ -285,33 +285,33 @@ function BookmarkWord({
       <span
         className={
           bookmark.status === "manual"
-            ? "border-b-2 border-sky-400 bg-sky-50"
-            : "border-b-2 border-amber-400 bg-amber-50"
+            ? "border-b-2 border-highlight-border bg-highlight-bg"
+            : "border-b-2 border-highlight-alt-border bg-highlight-alt-bg"
         }
       >
         {children}
       </span>
       {isOpen && (
         <span
-          className={`absolute left-0 z-10 w-48 rounded border bg-white p-2 shadow-lg ${
+          className={`absolute left-0 z-10 w-48 rounded border border-border bg-popover p-2 shadow-lg ${
             popoverBelow ? "top-full mt-1" : "bottom-full mb-1"
           }`}
         >
-          <span className="block text-xs font-medium text-gray-800">
+          <span className="block text-xs font-medium text-popover-foreground">
             {bookmark.text}
           </span>
-          <span className="block text-xs text-gray-500">
+          <span className="block text-xs text-muted-foreground">
             {bookmark.translation}
           </span>
           {bookmark.etymology && (
-            <span className="mt-1 block text-[10px] text-gray-600">
+            <span className="mt-1 block text-[10px] text-muted-foreground">
               {bookmark.etymology}
             </span>
           )}
           {onGoToBookmark && (
             <span
               role="button"
-              className="mt-1 block cursor-pointer text-[10px] text-blue-500 hover:underline"
+              className="mt-1 block cursor-pointer text-[10px] text-accent hover:underline"
               onMouseDown={(e) => {
                 e.stopPropagation();
                 onGoToBookmark(bookmark.id);
@@ -381,16 +381,16 @@ function BookmarksList({
           <div
             key={bm.id}
             data-bookmark-id={bm.id}
-            className="flex cursor-pointer flex-col gap-1 border border-gray-200 p-2 hover:bg-gray-50"
+            className="flex cursor-pointer flex-col gap-1 border border-border p-2 hover:bg-muted"
             onClick={() => {
               if (!player) return;
               player.seekTo(bm.timestamp);
               player.playVideo();
             }}
           >
-            <div className="flex items-center gap-1 text-xs text-gray-400">
+            <div className="flex items-center gap-1 text-xs text-muted-foreground">
               <button
-                className="rounded p-0.5 text-gray-300 hover:bg-red-50 hover:text-red-500"
+                className="rounded p-0.5 text-muted-foreground hover:bg-destructive-subtle hover:text-destructive"
                 onClick={(e) => {
                   e.stopPropagation();
                   if (window.confirm(`Delete bookmark "${bm.text}"?`)) {
@@ -401,14 +401,14 @@ function BookmarksList({
                 ✕
               </button>
               {bm.status === "manual" && (
-                <span className="rounded bg-sky-100 px-1 text-sky-600">
+                <span className="rounded bg-highlight px-1 text-highlight-foreground">
                   manual
                 </span>
               )}
               <span className="ml-auto">{formatTimestamp(bm.timestamp)}</span>
               {bm.captionId && (
                 <button
-                  className="rounded p-0.5 text-gray-400 hover:bg-gray-200 hover:text-gray-600"
+                  className="rounded p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground"
                   title="Go to caption"
                   onClick={(e) => {
                     e.stopPropagation();
@@ -436,16 +436,20 @@ function BookmarksList({
             </div>
             <div className="text-sm font-medium">{bm.text}</div>
             {bm.translation && (
-              <div className="text-sm text-gray-500">{bm.translation}</div>
+              <div className="text-sm text-muted-foreground">
+                {bm.translation}
+              </div>
             )}
             {bm.etymology && (
-              <div className="text-xs text-gray-600">{bm.etymology}</div>
+              <div className="text-xs text-muted-foreground">
+                {bm.etymology}
+              </div>
             )}
             {bm.notes && (
-              <div className="text-xs text-gray-400">{bm.notes}</div>
+              <div className="text-xs text-muted-foreground">{bm.notes}</div>
             )}
             {caption && (
-              <div className="mt-0.5 border-t pt-1 text-xs text-gray-400">
+              <div className="mt-0.5 border-t border-border pt-1 text-xs text-muted-foreground">
                 <div>{caption.text1}</div>
                 <div>{caption.text2}</div>
               </div>
@@ -745,7 +749,7 @@ export function VideoViewerPage() {
   if (videoQuery.isLoading || captionsQuery.isLoading) {
     return (
       <div className="flex h-full items-center justify-center">
-        <p className="text-sm text-gray-500">Loading…</p>
+        <p className="text-sm text-muted-foreground">Loading…</p>
       </div>
     );
   }
@@ -753,7 +757,7 @@ export function VideoViewerPage() {
   if (videoQuery.isError || !video) {
     return (
       <div className="flex h-full items-center justify-center">
-        <p className="text-sm text-red-500">Failed to load video.</p>
+        <p className="text-sm text-destructive">Failed to load video.</p>
       </div>
     );
   }
@@ -781,8 +785,8 @@ export function VideoViewerPage() {
             className={[
               "rounded px-2 py-0.5 text-sm",
               activeTab === "captions"
-                ? "bg-gray-200 font-medium"
-                : "text-gray-500 hover:bg-gray-100",
+                ? "bg-muted font-medium"
+                : "text-muted-foreground hover:bg-muted",
             ].join(" ")}
             onClick={() => setActiveTab("captions")}
           >
@@ -792,8 +796,8 @@ export function VideoViewerPage() {
             className={[
               "rounded px-2 py-0.5 text-sm",
               activeTab === "bookmarks"
-                ? "bg-gray-200 font-medium"
-                : "text-gray-500 hover:bg-gray-100",
+                ? "bg-muted font-medium"
+                : "text-muted-foreground hover:bg-muted",
             ].join(" ")}
             onClick={() => setActiveTab("bookmarks")}
           >
@@ -805,8 +809,8 @@ export function VideoViewerPage() {
               className={[
                 "rounded p-0.5",
                 autoScroll
-                  ? "text-blue-500 hover:bg-blue-50"
-                  : "text-gray-300 hover:bg-gray-100",
+                  ? "text-accent hover:bg-highlight-bg"
+                  : "text-muted-foreground hover:bg-muted",
               ].join(" ")}
               onClick={toggleAutoScroll}
               title={autoScroll ? "Auto-scroll on" : "Auto-scroll off"}
@@ -822,7 +826,7 @@ export function VideoViewerPage() {
             {sortedBookmarks.length > 0 && (
               <div className="flex gap-0.5">
                 <button
-                  className="rounded p-0.5 text-gray-500 hover:bg-gray-100"
+                  className="rounded p-0.5 text-muted-foreground hover:bg-muted"
                   onClick={onPrevBookmark}
                   title="Previous bookmark"
                 >
@@ -839,7 +843,7 @@ export function VideoViewerPage() {
                   </svg>
                 </button>
                 <button
-                  className="rounded p-0.5 text-gray-500 hover:bg-gray-100"
+                  className="rounded p-0.5 text-muted-foreground hover:bg-muted"
                   onClick={onNextBookmark}
                   title="Next bookmark"
                 >
@@ -905,9 +909,9 @@ export function VideoViewerPage() {
                       ref={virtualizer.measureElement}
                       data-index={item.index}
                       className={[
-                        "flex w-full flex-col gap-1 border p-1 px-2",
-                        isEntryPlaying && "ring-2 ring-blue-300",
-                        isCurrent ? "border-blue-500" : "border-gray-200",
+                        "flex w-full flex-col gap-1 border p-1 px-2 hover:bg-muted",
+                        isEntryPlaying && "ring-2 ring-ring",
+                        isCurrent ? "border-ring" : "border-border",
                         item.index === flashCaptionIndex && "flash-highlight",
                         item.index === 0 && "mt-1.5",
                         item.index === captions.length - 1 && "mb-1.5",
@@ -915,7 +919,7 @@ export function VideoViewerPage() {
                         .filter(Boolean)
                         .join(" ")}
                     >
-                      <div className="flex items-center text-xs text-gray-400">
+                      <div className="flex items-center text-xs text-muted-foreground">
                         <span className="ml-auto">
                           {formatTimestamp(entry.begin)} –{" "}
                           {formatTimestamp(entry.end)}
@@ -965,7 +969,9 @@ export function VideoViewerPage() {
           <div className="flex-[1_0_0] overflow-y-auto">
             {sortedBookmarks.length === 0 ? (
               <div className="flex h-full items-center justify-center">
-                <p className="text-sm text-gray-400">No bookmarks yet</p>
+                <p className="text-sm text-muted-foreground">
+                  No bookmarks yet
+                </p>
               </div>
             ) : (
               <BookmarksList
@@ -984,7 +990,7 @@ export function VideoViewerPage() {
         {(bookmarkSelection || createBookmarkMutation.isPending) && (
           <div className="absolute bottom-2 right-2 flex gap-2">
             <button
-              className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-200 shadow hover:bg-gray-300"
+              className="flex h-10 w-10 items-center justify-center rounded-full bg-muted shadow hover:bg-muted/80"
               onClick={onCancelBookmark}
               title="Cancel"
             >
@@ -993,7 +999,7 @@ export function VideoViewerPage() {
               </svg>
             </button>
             <button
-              className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-500 text-white shadow hover:bg-blue-600"
+              className="flex h-10 w-10 items-center justify-center rounded-full bg-accent text-accent-foreground shadow hover:bg-accent/90"
               onClick={onClickBookmark}
               disabled={createBookmarkMutation.isPending}
               title="Create bookmark"
