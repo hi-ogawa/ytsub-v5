@@ -26,7 +26,13 @@ Build interactive UI components following the shadcn pattern: **Radix handles be
 
 ## Reference material
 
-The shadcn/ui source is available locally at `references/shadcn/` (gitignored). Key paths:
+The shadcn/ui source is available locally at `references/shadcn/` (gitignored). If missing, clone it:
+
+```sh
+git clone --depth 1 https://github.com/shadcn-ui/ui.git references/shadcn
+```
+
+Key paths:
 
 | Path                                                    | Contents               |
 | ------------------------------------------------------- | ---------------------- |
