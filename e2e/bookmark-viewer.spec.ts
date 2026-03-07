@@ -40,7 +40,7 @@ test.describe("bookmark viewer", () => {
     await expect(highlight).toHaveText("꼬집어");
 
     // Hover shows popover with translation and etymology
-    await highlight.dispatchEvent("mouseover");
+    await highlight.click();
     const popover = page.getByTestId("bookmark-popover");
     await expect(popover).toBeVisible();
     await expect(popover.getByText("to pinch")).toBeVisible();
@@ -51,7 +51,7 @@ test.describe("bookmark viewer", () => {
     // Caption idx=0 has bookmark 꼬집어 with notes but no etymology
     const firstRow = page.locator("[data-index='0']");
     const highlight = firstRow.getByTestId("bookmark-highlight").first();
-    await highlight.dispatchEvent("mouseover");
+    await highlight.click();
     const popover = page.getByTestId("bookmark-popover");
     // Translation should show
     await expect(popover.getByText("to pinch")).toBeVisible();
@@ -153,7 +153,7 @@ test.describe("bookmark viewer", () => {
     // Hover on highlighted bookmark word in caption at idx=0
     const row = page.locator("[data-index='0']");
     const highlight = row.getByTestId("bookmark-highlight").first();
-    await highlight.dispatchEvent("mouseover");
+    await highlight.click();
     // Click "Go to bookmark" link in popover
     const popover = page.getByTestId("bookmark-popover");
     const goBtn = popover.getByRole("button", { name: "Go to bookmark" });

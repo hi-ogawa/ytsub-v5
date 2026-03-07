@@ -56,4 +56,8 @@ Buttons, inputs, forms, badges — too simple to benefit.
 
 ## Status
 
-- **Planning** — awaiting feedback
+- **Phase 1 complete**
+  - Dropdown menu: done (prior commit `7b2c92b`)
+  - Dialog: done — ImportDialog uses Radix Dialog via `src/components/ui/dialog.tsx`
+  - Popover: done — BookmarkWord uses Radix Popover via `src/components/ui/popover.tsx`
+- All 40 e2e tests passing
