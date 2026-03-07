@@ -82,6 +82,18 @@ function DropdownMenuContent({ className, sideOffset = 4, ...props }) {
 5. Only export what the app actually uses — skip checkbox items, radio groups, etc. until needed
 6. Add a `// Reference:` comment at the top linking to the shadcn source file
 
+## Icons
+
+Use `lucide-react` (same as shadcn). Import individual icons — they tree-shake per icon.
+
+```tsx
+import { Sun, Moon, ChevronLeft } from "lucide-react";
+
+<Sun className="h-4 w-4" />;
+```
+
+Do not hand-write inline SVG paths.
+
 ## Conventions
 
 - File names match shadcn: `dropdown-menu.tsx`, `dialog.tsx`, `popover.tsx`, etc.
