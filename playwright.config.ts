@@ -22,5 +22,4 @@ export default defineConfig({
   },
   forbidOnly: !!process.env.CI,
   reporter: process.env.CI ? [["list"], ["github"]] : "list",
-  testIgnore: ["setup.ts"],
 });
