@@ -329,7 +329,14 @@ Restructure `styles.css` into the shadcn pattern we originally planned:
 
 None expected — selectors target semantic token class names which don't change between modes.
 
+### Feedback
+
+- Three-way toggle: dark / light / system (not just dark/light binary). "System" should follow `prefers-color-scheme` and be the default when no explicit choice is stored.
+- Prevent CSS transitions/animations during theme toggle — add a temporary class that disables all transitions (e.g. `document.documentElement.classList.add('no-transitions')`, flush layout, then remove) to avoid flickering colors mid-switch.
+
 ### Status (dark mode)
 
-- [ ] Plan confirmed
-- [ ] Implementation
+- [x] Plan confirmed
+- [x] Initial implementation
+- [ ] Three-way toggle (dark / light / system)
+- [ ] Disable transitions during toggle
