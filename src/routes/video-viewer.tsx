@@ -19,10 +19,10 @@ import {
 } from "react";
 import { useParams } from "react-router";
 import {
-  HoverCard,
-  HoverCardContent,
-  HoverCardTrigger,
-} from "../components/ui/hover-card.tsx";
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "../components/ui/popover.tsx";
 import { orpc } from "../rpc.ts";
 
 // --- YouTube IFrame API types ---
@@ -253,12 +253,13 @@ function BookmarkWord({
   onGoToBookmark?: (bookmarkId: number) => void;
 }) {
   return (
-    <HoverCard openDelay={0} closeDelay={100}>
-      <HoverCardTrigger asChild>
+    <Popover>
+      <PopoverTrigger asChild>
         <span
-          className="inline-block"
+          className="inline-block cursor-pointer"
           data-testid="bookmark-highlight"
           data-offset={offset}
+          onClick={(e) => e.stopPropagation()}
         >
           <span
             className={
@@ -270,11 +271,12 @@ function BookmarkWord({
             {children}
           </span>
         </span>
-      </HoverCardTrigger>
-      <HoverCardContent
+      </PopoverTrigger>
+      <PopoverContent
         data-testid="bookmark-popover"
         side="top"
         avoidCollisions
+        onOpenAutoFocus={(e) => e.preventDefault()}
       >
         <span className="block text-xs font-medium text-popover-foreground">
           {bookmark.text}
@@ -299,8 +301,8 @@ function BookmarkWord({
             Go to bookmark
           </span>
         )}
-      </HoverCardContent>
-    </HoverCard>
+      </PopoverContent>
+    </Popover>
   );
 }
 

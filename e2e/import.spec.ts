@@ -66,7 +66,7 @@ test.describe("import file upload", () => {
     const row = page.locator("[data-index='13']");
     await row.scrollIntoViewIfNeeded();
     const highlight = row.locator("span.border-highlight-alt-border").first();
-    await highlight.hover({ force: true });
+    await highlight.click({ force: true });
     await expect(page.getByText("迷路")).toBeVisible();
   });
 });
