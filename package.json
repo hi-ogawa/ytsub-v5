@@ -15,6 +15,7 @@
     "types": "wrangler types --no-include-runtime",
     "db:migrate": "CI=true wrangler d1 migrations apply DB --local",
     "db:reset": "rm -rf .wrangler/state/v3/d1 && pnpm db:migrate",
+    "db:bootstrap": "pnpm db:reset && pnpm db:seed",
     "db:clear": "wrangler d1 execute DB --local --file scripts/db-clear.sql -y",
     "db:seed-gen": "node scripts/db-seed-gen.ts scripts/db-seed-json/*/import.json > scripts/db-seed.sql",
     "db:seed": "wrangler d1 execute DB --local --file scripts/db-seed.sql -y"
@@ -26,6 +27,7 @@
     "@tanstack/react-query": "^5.90.21",
     "@tanstack/react-virtual": "^3.13.19",
     "drizzle-orm": "^0.45.1",
+    "lucide-react": "^0.577.0",
     "radix-ui": "^1.4.3",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",

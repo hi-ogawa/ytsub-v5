@@ -1,4 +1,5 @@
 import { useMutation } from "@tanstack/react-query";
+import { EllipsisVertical, Monitor, Moon, Sun } from "lucide-react";
 import { useEffect, useState } from "react";
 import {
   Link,
@@ -112,30 +113,11 @@ function useTheme() {
   return { theme, isDark: resolveTheme(theme), cycle };
 }
 
-const THEME_ICONS: Record<Theme, string> = {
-  light:
-    "M12 3v1m0 16v1m8.66-13.66l-.71.71M4.05 19.95l-.71.71M21 12h-1M4 12H3m16.66 7.66l-.71-.71M4.05 4.05l-.71-.71M16 12a4 4 0 11-8 0 4 4 0 018 0z",
-  dark: "M20.354 15.354A9 9 0 018.646 3.646 9.005 9.005 0 0012 21a9.005 9.005 0 008.354-5.646z",
-  system:
-    "M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z",
-};
+const THEME_ICON_MAP = { light: Sun, dark: Moon, system: Monitor } as const;
 
 function ThemeIcon({ theme }: { theme: Theme }) {
-  return (
-    <svg
-      className="h-4 w-4"
-      fill="none"
-      stroke="currentColor"
-      viewBox="0 0 24 24"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={2}
-        d={THEME_ICONS[theme]}
-      />
-    </svg>
-  );
+  const Icon = THEME_ICON_MAP[theme];
+  return <Icon className="h-4 w-4" />;
 }
 
 function HeaderMenu({ authenticated }: { authenticated: boolean }) {
@@ -155,19 +137,7 @@ function HeaderMenu({ authenticated }: { authenticated: boolean }) {
         data-testid="header-menu"
         className="flex h-7 w-7 items-center justify-center rounded text-muted-foreground hover:bg-muted"
       >
-        <svg
-          className="h-4 w-4"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M12 6.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 12.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 18.75a.75.75 0 110-1.5.75.75 0 010 1.5z"
-          />
-        </svg>
+        <EllipsisVertical className="h-4 w-4" />
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-36">
         <DropdownMenuItem
