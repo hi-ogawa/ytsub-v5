@@ -298,16 +298,16 @@ function BookmarkWord({
           </span>
         )}
         {onGoToBookmark && (
-          <span
-            role="button"
-            className="mt-1 block cursor-pointer text-[10px] text-accent hover:underline"
+          <button
+            className="mt-1 rounded p-0.5 text-muted-foreground hover:bg-accent hover:text-foreground"
+            title="Go to bookmark"
             onMouseDown={(e) => {
               e.stopPropagation();
               onGoToBookmark(bookmark.id);
             }}
           >
-            Go to bookmark
-          </span>
+            <ExternalLink className="h-3.5 w-3.5" />
+          </button>
         )}
       </PopoverContent>
     </Popover>
