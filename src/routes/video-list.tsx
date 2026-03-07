@@ -204,7 +204,7 @@ export function VideoListPage() {
                 <Link
                   key={video.id}
                   to={`/videos/${video.id}`}
-                  className="block overflow-hidden rounded-lg border border-border bg-card shadow-sm transition-shadow hover:shadow-md"
+                  className="block overflow-hidden rounded-lg border border-border bg-card shadow-sm transition-all hover:shadow-md hover:border-ring"
                 >
                   <img
                     src={`https://img.youtube.com/vi/${video.youtubeId}/mqdefault.jpg`}
