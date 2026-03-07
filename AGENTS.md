@@ -16,6 +16,7 @@
 | `docs/prd.md`                     | Task list (features & priorities) |
 | `docs/background/architecture.md` | Problem context, design decisions |
 | `docs/tasks/YYYY-MM-DD-*.md`      | Task-specific planning/notes      |
+| `docs/skills/*/SKILL.md`          | Reusable agent skills             |
 
 Read `docs/prd.md` for the task list and `docs/background/architecture.md` for architecture context before implementing features.
 
