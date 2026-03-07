@@ -1,6 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRef, useState } from "react";
 import { Link, useNavigate } from "react-router";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogTitle,
+} from "../components/ui/dialog.tsx";
 import { orpc } from "../rpc.ts";
 
 function formatDuration(seconds: number): string {
@@ -27,7 +33,13 @@ interface ImportData {
   bookmarks?: unknown[];
 }
 
-function ImportDialog({ onClose }: { onClose: () => void }) {
+function ImportDialog({
+  open,
+  onOpenChange,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const fileRef = useRef<HTMLInputElement>(null);
@@ -40,7 +52,7 @@ function ImportDialog({ onClose }: { onClose: () => void }) {
         await queryClient.invalidateQueries({
           queryKey: orpc.videos.listVideos.queryOptions({ input: {} }).queryKey,
         });
-        onClose();
+        onOpenChange(false);
         navigate(`/videos/${data.videoId}`);
       },
     }),
@@ -66,15 +78,9 @@ function ImportDialog({ onClose }: { onClose: () => void }) {
   }
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-overlay"
-      onClick={onClose}
-    >
-      <div
-        className="w-full max-w-md rounded-lg bg-card p-6 shadow-lg"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <h2 className="mb-4 text-lg font-semibold">Import Video</h2>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogTitle>Import Video</DialogTitle>
 
         <div
           className="mb-4 rounded-lg border-2 border-dashed border-border p-6 text-center text-sm text-muted-foreground"
@@ -136,13 +142,14 @@ function ImportDialog({ onClose }: { onClose: () => void }) {
         )}
 
         <div className="flex justify-end gap-2">
-          <button
-            type="button"
-            className="rounded px-3 py-1.5 text-sm text-muted-foreground hover:bg-muted"
-            onClick={onClose}
-          >
-            Cancel
-          </button>
+          <DialogClose asChild>
+            <button
+              type="button"
+              className="rounded px-3 py-1.5 text-sm text-muted-foreground hover:bg-muted"
+            >
+              Cancel
+            </button>
+          </DialogClose>
           <button
             type="button"
             disabled={!parsed || importMutation.isPending}
@@ -154,8 +161,8 @@ function ImportDialog({ onClose }: { onClose: () => void }) {
             {importMutation.isPending ? "Importing..." : "Import"}
           </button>
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -186,7 +193,7 @@ export function VideoListPage() {
           Import
         </button>
       </div>
-      {showImport && <ImportDialog onClose={() => setShowImport(false)} />}
+      <ImportDialog open={showImport} onOpenChange={setShowImport} />
       {isLoading ? (
         <p className="text-sm text-muted-foreground">Loading…</p>
       ) : isError || !data ? (
