@@ -224,7 +224,7 @@ The `:root` / `.dark` pattern makes dark mode straightforward later:
 
 Include as part of implementation step 5 (video-viewer.tsx) since those are the bookmark highlight spans.
 
-## Status
+## Status (design tokens)
 
 - [x] Color audit complete
 - [x] shadcn convention researched
@@ -233,3 +233,103 @@ Include as part of implementation step 5 (video-viewer.tsx) since those are the 
 - [x] Consolidation decisions confirmed
 - [x] Implementation complete
 - [x] Build passes, zero raw color classes remaining in src/
+
+---
+
+## Phase 2: Dark Mode
+
+### Current state
+
+Tokens are defined directly in `@theme inline` using Tailwind var references (`var(--color-gray-800)`, etc.). This works for light mode but **doesn't support dark mode** — `@theme inline` values can't be conditionally overridden by a `.dark` class.
+
+### Approach: split into `:root` / `.dark` + `@theme inline` bridge
+
+Restructure `styles.css` into the shadcn pattern we originally planned:
+
+1. **`:root`** — define raw color values for light mode
+2. **`.dark`** — override the same variables with dark values
+3. **`@theme inline`** — bridge `:root` vars into Tailwind (unchanged across modes)
+
+```css
+:root {
+  --background: var(--color-white);
+  --foreground: var(--color-gray-800);
+  --primary: var(--color-black);
+  --primary-hover: var(--color-gray-800);
+  /* ... */
+}
+
+.dark {
+  --background: var(--color-gray-950);
+  --foreground: var(--color-gray-100);
+  --primary: var(--color-white);
+  --primary-hover: var(--color-gray-200);
+  /* ... */
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  /* ... */
+}
+```
+
+### Dark palette (proposed)
+
+| Token                  | Light     | Dark      |
+| ---------------------- | --------- | --------- |
+| `background`           | white     | gray-950  |
+| `foreground`           | gray-800  | gray-100  |
+| `card`                 | white     | gray-900  |
+| `card-foreground`      | gray-800  | gray-100  |
+| `popover`              | white     | gray-900  |
+| `popover-foreground`   | gray-800  | gray-100  |
+| `primary`              | black     | white     |
+| `primary-hover`        | gray-800  | gray-200  |
+| `primary-foreground`   | white     | black     |
+| `muted`                | gray-100  | gray-800  |
+| `muted-foreground`     | gray-500  | gray-400  |
+| `accent`               | blue-500  | blue-400  |
+| `accent-foreground`    | white     | white     |
+| `destructive`          | red-600   | red-400   |
+| `destructive-subtle`   | red-50    | red-950   |
+| `border`               | gray-200  | gray-800  |
+| `input`                | gray-200  | gray-800  |
+| `ring`                 | blue-500  | blue-400  |
+| `overlay`              | black/40% | black/60% |
+| `highlight`            | sky-100   | sky-900   |
+| `highlight-bg`         | sky-100   | sky-950   |
+| `highlight-border`     | sky-400   | sky-500   |
+| `highlight-foreground` | sky-600   | sky-300   |
+| `highlight-alt-bg`     | amber-100 | amber-950 |
+| `highlight-alt-border` | amber-400 | amber-500 |
+
+### Toggle mechanism
+
+- Add a toggle button in `HeaderMenu` (app.tsx)
+- Toggle `.dark` class on `<html>` element
+- Persist preference in `localStorage` (key: `ytsub:theme`)
+- Default: follow system preference via `prefers-color-scheme`
+- Apply before React hydration to avoid flash (inline script in `index.html` or early body script)
+
+### Implementation steps
+
+1. Restructure `styles.css`: `:root` + `.dark` + `@theme inline` bridge
+2. Add `.dark` values (see palette above)
+3. Add `bg-background text-foreground` to `<body>` or root `<div>` in `app.tsx`
+4. Add theme toggle to `HeaderMenu`
+5. Add anti-flash script in `index.html`
+6. `pnpm build` to verify
+7. Visual check light + dark with `pnpm dev`
+8. E2E tests — no selector changes expected (tokens unchanged)
+
+### E2E impact
+
+None expected — selectors target semantic token class names which don't change between modes.
+
+### Status (dark mode)
+
+- [ ] Plan confirmed
+- [ ] Implementation
