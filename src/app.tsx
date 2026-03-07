@@ -68,7 +68,7 @@ function HeaderMenu() {
   return (
     <div className="relative">
       <button
-        className="flex h-7 w-7 items-center justify-center rounded text-gray-500 hover:bg-gray-100"
+        className="flex h-7 w-7 items-center justify-center rounded text-muted-foreground hover:bg-muted"
         onClick={() => setOpen((v) => !v)}
         onBlur={(e) => {
           if (!menuRef.current?.contains(e.relatedTarget)) setOpen(false);
@@ -91,10 +91,10 @@ function HeaderMenu() {
       {open && (
         <div
           ref={menuRef}
-          className="absolute right-0 top-full z-10 mt-1 w-36 rounded border bg-white py-1 shadow-sm"
+          className="absolute right-0 top-full z-10 mt-1 w-36 rounded border border-border bg-popover py-1 shadow-sm"
         >
           <button
-            className="w-full px-3 py-1.5 text-left text-sm text-gray-700 hover:bg-gray-100"
+            className="w-full px-3 py-1.5 text-left text-sm text-foreground hover:bg-muted"
             onClick={() => logoutMutation.mutate({})}
           >
             Log out
