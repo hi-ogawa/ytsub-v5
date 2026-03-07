@@ -3,13 +3,17 @@ import { useVirtualizer } from "@tanstack/react-virtual";
 import {
   useCallback,
   useEffect,
-  useLayoutEffect,
   useMemo,
   useRef,
   useState,
   type RefCallback,
 } from "react";
 import { useParams } from "react-router";
+import {
+  Popover,
+  PopoverAnchor,
+  PopoverContent,
+} from "../components/ui/popover.tsx";
 import { orpc } from "../rpc.ts";
 
 // --- YouTube IFrame API types ---
@@ -198,7 +202,6 @@ function highlightText(
     activeBookmarkId: number | null;
     onHoverBookmark: (id: number) => void;
     onLeaveBookmark: () => void;
-    scrollElementRef: React.RefObject<HTMLDivElement | null>;
   },
 ) {
   if (marks.length === 0) return <span data-offset={0}>{text}</span>;
@@ -222,7 +225,6 @@ function highlightText(
         activeBookmarkId={popoverState?.activeBookmarkId ?? null}
         onHoverBookmark={popoverState?.onHoverBookmark}
         onLeaveBookmark={popoverState?.onLeaveBookmark}
-        scrollElementRef={popoverState?.scrollElementRef}
       >
         {text.slice(m.offset, end)}
       </BookmarkWord>,
@@ -246,7 +248,6 @@ function BookmarkWord({
   activeBookmarkId,
   onHoverBookmark,
   onLeaveBookmark,
-  scrollElementRef,
 }: {
   bookmark: Bookmark;
   offset: number;
@@ -255,76 +256,64 @@ function BookmarkWord({
   activeBookmarkId: number | null;
   onHoverBookmark?: (id: number) => void;
   onLeaveBookmark?: () => void;
-  scrollElementRef?: React.RefObject<HTMLDivElement | null>;
 }) {
   const isOpen = activeBookmarkId === bookmark.id;
-  const spanRef = useRef<HTMLSpanElement>(null);
-  const [popoverBelow, setPopoverBelow] = useState(false);
-
-  useLayoutEffect(() => {
-    if (!isOpen || !spanRef.current) {
-      setPopoverBelow(false);
-      return;
-    }
-    const spanRect = spanRef.current.getBoundingClientRect();
-    const containerTop = scrollElementRef?.current
-      ? scrollElementRef.current.getBoundingClientRect().top
-      : 0;
-    const spaceAbove = spanRect.top - containerTop;
-    if (spaceAbove < 80) setPopoverBelow(true);
-  }, [isOpen, scrollElementRef]);
 
   return (
-    <span
-      ref={spanRef}
-      className="relative inline-block"
-      data-testid="bookmark-highlight"
-      data-offset={offset}
-      onMouseEnter={() => onHoverBookmark?.(bookmark.id)}
-      onMouseLeave={() => onLeaveBookmark?.()}
-    >
-      <span
-        className={
-          bookmark.status === "manual"
-            ? "border-b-2 border-highlight-border bg-highlight-bg"
-            : "border-b-2 border-highlight-alt-border bg-highlight-alt-bg"
-        }
-      >
-        {children}
-      </span>
-      {isOpen && (
+    <Popover open={isOpen}>
+      <PopoverAnchor asChild>
         <span
-          data-testid="bookmark-popover"
-          className={`absolute left-0 z-10 w-48 rounded border border-border bg-popover p-2 shadow-lg ${
-            popoverBelow ? "top-full mt-1" : "bottom-full mb-1"
-          }`}
+          className="inline-block"
+          data-testid="bookmark-highlight"
+          data-offset={offset}
+          onMouseEnter={() => onHoverBookmark?.(bookmark.id)}
+          onMouseLeave={() => onLeaveBookmark?.()}
         >
-          <span className="block text-xs font-medium text-popover-foreground">
-            {bookmark.text}
+          <span
+            className={
+              bookmark.status === "manual"
+                ? "border-b-2 border-highlight-border bg-highlight-bg"
+                : "border-b-2 border-highlight-alt-border bg-highlight-alt-bg"
+            }
+          >
+            {children}
           </span>
-          <span className="block text-xs text-muted-foreground">
-            {bookmark.translation}
-          </span>
-          {bookmark.etymology && (
-            <span className="mt-1 block text-[10px] text-muted-foreground">
-              {bookmark.etymology}
-            </span>
-          )}
-          {onGoToBookmark && (
-            <span
-              role="button"
-              className="mt-1 block cursor-pointer text-[10px] text-accent hover:underline"
-              onMouseDown={(e) => {
-                e.stopPropagation();
-                onGoToBookmark(bookmark.id);
-              }}
-            >
-              Go to bookmark
-            </span>
-          )}
         </span>
-      )}
-    </span>
+      </PopoverAnchor>
+      <PopoverContent
+        data-testid="bookmark-popover"
+        side="top"
+        avoidCollisions
+        onMouseEnter={() => onHoverBookmark?.(bookmark.id)}
+        onMouseLeave={() => onLeaveBookmark?.()}
+        onOpenAutoFocus={(e) => e.preventDefault()}
+        onCloseAutoFocus={(e) => e.preventDefault()}
+      >
+        <span className="block text-xs font-medium text-popover-foreground">
+          {bookmark.text}
+        </span>
+        <span className="block text-xs text-muted-foreground">
+          {bookmark.translation}
+        </span>
+        {bookmark.etymology && (
+          <span className="mt-1 block text-[10px] text-muted-foreground">
+            {bookmark.etymology}
+          </span>
+        )}
+        {onGoToBookmark && (
+          <span
+            role="button"
+            className="mt-1 block cursor-pointer text-[10px] text-accent hover:underline"
+            onMouseDown={(e) => {
+              e.stopPropagation();
+              onGoToBookmark(bookmark.id);
+            }}
+          >
+            Go to bookmark
+          </span>
+        )}
+      </PopoverContent>
+    </Popover>
   );
 }
 
@@ -940,7 +929,6 @@ export function VideoViewerPage() {
                               activeBookmarkId,
                               onHoverBookmark,
                               onLeaveBookmark,
-                              scrollElementRef,
                             },
                           )}
                         </div>
@@ -953,7 +941,6 @@ export function VideoViewerPage() {
                               activeBookmarkId,
                               onHoverBookmark,
                               onLeaveBookmark,
-                              scrollElementRef,
                             },
                           )}
                         </div>
