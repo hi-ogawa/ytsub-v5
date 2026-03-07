@@ -37,23 +37,25 @@
 
   /* Highlights (bookmark underlines) */
   --color-highlight: var(--color-sky-100);
-  --color-highlight-bg: var(--color-sky-50);
+  --color-highlight-bg: var(--color-sky-100);
   --color-highlight-border: var(--color-sky-400);
   --color-highlight-foreground: var(--color-sky-600);
-  --color-highlight-alt-bg: var(--color-amber-50);
+  --color-highlight-alt-bg: var(--color-amber-100);
   --color-highlight-alt-border: var(--color-amber-400);
 }
 
-*,
-::after,
-::before {
-  border-color: var(--color-border);
-}
+@layer base {
+  *,
+  ::after,
+  ::before {
+    border-color: var(--color-border);
+  }
 
-body {
-  font-family: "Inter", sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  body {
+    font-family: "Inter", sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
 }
 
 @keyframes flash-highlight {
