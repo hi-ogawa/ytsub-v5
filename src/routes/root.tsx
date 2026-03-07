@@ -173,14 +173,17 @@ function HeaderMenu({ authenticated }: { authenticated: boolean }) {
         <DropdownMenuItem
           data-testid="theme-toggle"
           data-theme={theme}
-          onClick={cycleTheme}
+          onSelect={(e) => {
+            e.preventDefault();
+            cycleTheme();
+          }}
           className="gap-2"
         >
           <ThemeIcon theme={theme} />
           <span className="capitalize">{theme}</span>
         </DropdownMenuItem>
         {authenticated && (
-          <DropdownMenuItem onClick={() => logoutMutation.mutate({})}>
+          <DropdownMenuItem onSelect={() => logoutMutation.mutate({})}>
             Log out
           </DropdownMenuItem>
         )}
