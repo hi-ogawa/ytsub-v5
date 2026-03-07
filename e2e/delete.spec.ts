@@ -16,10 +16,12 @@ test.describe("delete video", () => {
 
     page.once("dialog", (dialog) => dialog.dismiss());
     await card.getByRole("button").click();
+    await page.getByRole("menuitem", { name: /Delete/ }).click();
     await expect(card).toBeVisible();
 
     page.once("dialog", (dialog) => dialog.accept());
     await card.getByRole("button").click();
+    await page.getByRole("menuitem", { name: /Delete/ }).click();
     await expect(card).not.toBeVisible();
   });
 });
