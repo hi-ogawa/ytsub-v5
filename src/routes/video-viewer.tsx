@@ -283,6 +283,9 @@ function BookmarkWord({
       onMouseLeave={() => onLeaveBookmark?.()}
     >
       <span
+        data-testid={
+          bookmark.status === "manual" ? "highlight-manual" : "highlight-auto"
+        }
         className={
           bookmark.status === "manual"
             ? "border-b-2 border-sky-400 bg-sky-50"

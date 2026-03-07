@@ -65,7 +65,7 @@ test.describe("import file upload", () => {
     await page.getByRole("button", { name: "Captions" }).click();
     const row = page.locator("[data-index='13']");
     await row.scrollIntoViewIfNeeded();
-    const highlight = row.locator("span.border-amber-400").first();
+    const highlight = row.locator('[data-testid="highlight-auto"]').first();
     await highlight.hover({ force: true });
     await expect(page.getByText("迷路")).toBeVisible();
   });

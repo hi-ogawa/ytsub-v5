@@ -35,7 +35,7 @@ test.describe("bookmark viewer", () => {
   test("bookmark highlight and popover", async ({ page }) => {
     // Caption idx=0 has bookmark 꼬집어 — highlighted with amber underline
     const firstRow = page.locator("[data-index='0']");
-    const highlight = firstRow.locator("span.border-amber-400");
+    const highlight = firstRow.locator('[data-testid="highlight-auto"]');
     await expect(highlight.first()).toBeVisible();
     await expect(highlight.first()).toHaveText("꼬집어");
 
@@ -48,7 +48,9 @@ test.describe("bookmark viewer", () => {
   test("popover does not show notes", async ({ page }) => {
     // Caption idx=0 has bookmark 꼬집어 with notes but no etymology
     const firstRow = page.locator("[data-index='0']");
-    const highlight = firstRow.locator("span.border-amber-400").first();
+    const highlight = firstRow
+      .locator('[data-testid="highlight-auto"]')
+      .first();
     await highlight.hover({ force: true });
     // Translation should show
     await expect(page.getByText("to pinch")).toBeVisible();
@@ -135,7 +137,7 @@ test.describe("bookmark viewer", () => {
     ).not.toBeVisible();
 
     // New manual bookmark highlight should appear on the caption row (sky color)
-    const highlight = row.locator("span.border-sky-400");
+    const highlight = row.locator('[data-testid="highlight-manual"]');
     await expect(highlight.first()).toBeVisible();
     await expect(highlight.first()).toHaveText("향한");
 
@@ -149,7 +151,7 @@ test.describe("bookmark viewer", () => {
   }) => {
     // Hover on highlighted bookmark word in caption at idx=0
     const row = page.locator("[data-index='0']");
-    const highlight = row.locator("span.border-amber-400").first();
+    const highlight = row.locator('[data-testid="highlight-auto"]').first();
     await highlight.hover({ force: true });
     // Click "Go to bookmark" link in popover
     const goBtn = page.getByRole("button", { name: "Go to bookmark" });
