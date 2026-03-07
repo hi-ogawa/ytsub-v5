@@ -238,6 +238,7 @@ function BookmarkWord({
 }) {
   const [open, setOpen] = useState(false);
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const spanRef = useRef<HTMLSpanElement>(null);
   function onEnter() {
     if (closeTimer.current) clearTimeout(closeTimer.current);
     setOpen(true);
@@ -245,12 +246,31 @@ function BookmarkWord({
   function onLeave() {
     closeTimer.current = setTimeout(() => setOpen(false), 300);
   }
+
+  // Tap outside to dismiss on mobile
+  useEffect(() => {
+    if (!open) return;
+    function handleTouch(e: TouchEvent) {
+      if (spanRef.current && !spanRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    }
+    document.addEventListener("touchstart", handleTouch);
+    return () => document.removeEventListener("touchstart", handleTouch);
+  }, [open]);
+
   return (
     <span
+      ref={spanRef}
       className="relative inline-block"
       data-offset={offset}
       onMouseEnter={onEnter}
       onMouseLeave={onLeave}
+      onClick={(e) => {
+        // Toggle popover on tap/click; stop propagation to prevent seek
+        e.stopPropagation();
+        setOpen((prev) => !prev);
+      }}
     >
       <span
         className={
