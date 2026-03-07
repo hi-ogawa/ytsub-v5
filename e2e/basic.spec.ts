@@ -60,7 +60,7 @@ test.describe("video list and navigation", () => {
 
   test("logout redirects to login", async ({ page }) => {
     // Open header menu and click logout
-    await page.getByRole("banner").getByRole("button").click();
+    await page.getByRole("banner").getByRole("button").last().click();
     await page.getByText("Log out").click();
     await expect(page).toHaveURL("/login");
     // Verify session is cleared by navigating to /
