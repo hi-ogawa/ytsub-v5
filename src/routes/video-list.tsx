@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { X } from "lucide-react";
 import { useRef, useState } from "react";
 import { Link, useNavigate } from "react-router";
 import {
@@ -248,7 +249,7 @@ export function VideoListPage() {
                           }
                         }}
                       >
-                        ✕
+                        <X className="h-3.5 w-3.5" />
                       </button>
                     </div>
                   </div>
