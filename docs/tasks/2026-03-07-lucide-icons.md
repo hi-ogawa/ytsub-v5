@@ -51,4 +51,9 @@ Install `lucide-react` (what shadcn uses) and replace all inline SVGs with named
 
 ## Status
 
-- **Planning** — awaiting feedback
+- **Done** — all inline SVGs replaced with lucide-react imports
+  - `lucide-react` added to dependencies
+  - `root.tsx`: ThemeIcon (Sun/Moon/Monitor) + EllipsisVertical
+  - `video-viewer.tsx`: ExternalLink, ArrowDown, ChevronLeft, ChevronRight, X, Loader2, Bookmark
+  - `video-list.tsx`: X icon replacing ✕ text
+  - `pnpm tsc`, `pnpm build`, and `pnpm lint` all pass
