@@ -19,10 +19,10 @@ import {
 } from "react";
 import { useParams } from "react-router";
 import {
-  Popover,
-  PopoverAnchor,
-  PopoverContent,
-} from "../components/ui/popover.tsx";
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from "../components/ui/hover-card.tsx";
 import { orpc } from "../rpc.ts";
 
 // --- YouTube IFrame API types ---
@@ -207,11 +207,6 @@ function highlightText(
   text: string,
   marks: { offset: number; length: number; bookmark: Bookmark }[],
   onGoToBookmark?: (bookmarkId: number) => void,
-  popoverState?: {
-    activeBookmarkId: number | null;
-    onHoverBookmark: (id: number) => void;
-    onLeaveBookmark: () => void;
-  },
 ) {
   if (marks.length === 0) return <span data-offset={0}>{text}</span>;
   const sorted = [...marks].sort((a, b) => a.offset - b.offset);
@@ -231,9 +226,6 @@ function highlightText(
         bookmark={m.bookmark}
         offset={m.offset}
         onGoToBookmark={onGoToBookmark}
-        activeBookmarkId={popoverState?.activeBookmarkId ?? null}
-        onHoverBookmark={popoverState?.onHoverBookmark}
-        onLeaveBookmark={popoverState?.onLeaveBookmark}
       >
         {text.slice(m.offset, end)}
       </BookmarkWord>,
@@ -254,29 +246,19 @@ function BookmarkWord({
   offset,
   children,
   onGoToBookmark,
-  activeBookmarkId,
-  onHoverBookmark,
-  onLeaveBookmark,
 }: {
   bookmark: Bookmark;
   offset: number;
   children: React.ReactNode;
   onGoToBookmark?: (bookmarkId: number) => void;
-  activeBookmarkId: number | null;
-  onHoverBookmark?: (id: number) => void;
-  onLeaveBookmark?: () => void;
 }) {
-  const isOpen = activeBookmarkId === bookmark.id;
-
   return (
-    <Popover open={isOpen}>
-      <PopoverAnchor asChild>
+    <HoverCard openDelay={0} closeDelay={100}>
+      <HoverCardTrigger asChild>
         <span
           className="inline-block"
           data-testid="bookmark-highlight"
           data-offset={offset}
-          onMouseEnter={() => onHoverBookmark?.(bookmark.id)}
-          onMouseLeave={() => onLeaveBookmark?.()}
         >
           <span
             className={
@@ -288,15 +270,11 @@ function BookmarkWord({
             {children}
           </span>
         </span>
-      </PopoverAnchor>
-      <PopoverContent
+      </HoverCardTrigger>
+      <HoverCardContent
         data-testid="bookmark-popover"
         side="top"
         avoidCollisions
-        onMouseEnter={() => onHoverBookmark?.(bookmark.id)}
-        onMouseLeave={() => onLeaveBookmark?.()}
-        onOpenAutoFocus={(e) => e.preventDefault()}
-        onCloseAutoFocus={(e) => e.preventDefault()}
       >
         <span className="block text-xs font-medium text-popover-foreground">
           {bookmark.text}
@@ -321,8 +299,8 @@ function BookmarkWord({
             Go to bookmark
           </span>
         )}
-      </PopoverContent>
-    </Popover>
+      </HoverCardContent>
+    </HoverCard>
   );
 }
 
@@ -498,22 +476,6 @@ export function VideoViewerPage() {
     null,
   );
   const flashCaptionCounter = useRef(0);
-
-  // Shared popover state – only one bookmark popover open at a time
-  const [activeBookmarkId, setActiveBookmarkId] = useState<number | null>(null);
-  const activeBookmarkTimer = useRef<ReturnType<typeof setTimeout> | null>(
-    null,
-  );
-  function onHoverBookmark(id: number) {
-    if (activeBookmarkTimer.current) clearTimeout(activeBookmarkTimer.current);
-    setActiveBookmarkId(id);
-  }
-  function onLeaveBookmark() {
-    activeBookmarkTimer.current = setTimeout(
-      () => setActiveBookmarkId(null),
-      300,
-    );
-  }
 
   const queryClient = useQueryClient();
   const createBookmarkMutation = useMutation(
@@ -893,11 +855,6 @@ export function VideoViewerPage() {
                             entry.text1,
                             text1Marks ?? [],
                             onGoToBookmark,
-                            {
-                              activeBookmarkId,
-                              onHoverBookmark,
-                              onLeaveBookmark,
-                            },
                           )}
                         </div>
                         <div className="flex-1 pl-2" data-side="1">
@@ -905,11 +862,6 @@ export function VideoViewerPage() {
                             entry.text2,
                             text2Marks ?? [],
                             onGoToBookmark,
-                            {
-                              activeBookmarkId,
-                              onHoverBookmark,
-                              onLeaveBookmark,
-                            },
                           )}
                         </div>
                       </div>
