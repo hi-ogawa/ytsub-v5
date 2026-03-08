@@ -217,37 +217,14 @@ This split is good news — the server pipeline is mostly deterministic code wit
 
 ---
 
-## Recommendation
+## Reframing
 
-**Option D** (app owns the pipeline) is the strongest long-term direction. It centralizes intelligence, makes the pipeline testable, and allows multiple trigger paths. Option B is a pragmatic stepping stone.
+After discussion, the conclusion is that **cloud AI integration should be deprioritized**. Most of the pipeline can be replaced by deterministic code + better UI. See:
 
-### Phased approach
+- `2026-03-08-ai-less-workflow.md` — the AI-less import workflow (preferred direction)
+- `2026-03-08-unaligned-caption-viewer.md` — viewer design that removes the alignment requirement
 
-**Phase 1: Server-side AI processing (Option B/D core)**
-- Add `POST /api/processSubtitles` endpoint — accepts raw json3 + video metadata
-- Port json3 parsing scripts to server-side TypeScript
-- Integrate Claude API (Sonnet) for caption alignment/translation + vocab extraction
-- Async job handling (Durable Objects or simple polling pattern)
-- Return structured results (captions + bookmarks) stored in D1
-
-**Phase 2: Simplify openclaw skill**
-- Skill becomes: yt-dlp fetch → POST raw subs to API → done
-- ~10 lines of SKILL.md instead of ~200
-- Openclaw still handles Telegram trigger + delivery notification
-
-**Phase 3: In-app review UI**
-- Import results land as "pending review"
-- Review UI: approve/reject/edit individual captions and bookmarks
-- Overlaps with existing backlog item (bookmark approval flow)
-
-**Phase 4: Web UI trigger**
-- "Import video" form in the app — paste URL, upload json3 files directly
-- Works without openclaw entirely
-
-**Phase 5 (future): Remove yt-dlp dependency**
-- Browser extension (already in backlog) fetches subs from YouTube same-origin
-- Or: server-side subtitle extraction if a reliable method emerges
-- At this point, openclaw skill can be retired entirely
+Cloud AI remains a future **optional enhancement** (auto-fix garbled Korean, suggest bookmarks, fill etymology) once the core AI-less workflow is solid.
 
 ---
 
