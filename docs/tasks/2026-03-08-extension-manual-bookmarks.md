@@ -2,163 +2,133 @@
 
 ## Problem
 
-The main app supports manual bookmarking (text selection → create bookmark via API), but the extension has no bookmarking at all. The extension's `CaptionList` renders plain text without `data-side`/`data-offset` attributes, so the v3-style DOM walk for text selection doesn't work there.
+The extension (and dev-viewer) caption panel has no bookmarking. Users should be able to select text in captions and create bookmarks stored in localStorage, then export them in `import.json`.
 
-The PRD specifies:
+## Current State (after latest main)
 
-- Use localStorage for storage (extension has no backend access)
-- Include local bookmarks in the `import.json` export
-
-## Current State
-
-**Main app** (`video-viewer.tsx`): Full bookmarking — `data-*` attributes on DOM, `extractBookmarkSelection()`, `selectionchange` listener, floating FABs, `highlightText()` for inline highlights, server-side storage via oRPC.
-
-**Shared `CaptionList`** (`src/components/caption-list.tsx`): Simple text rendering, no `data-side`/`data-offset`, no bookmark awareness. Used by extension and dev-viewer.
-
-**Extension** (`src/extension/content.tsx`): Thin wrapper around `CaptionPanel` → `CaptionList`. No bookmark support.
-
-Key insight: `video-viewer.tsx` does NOT use the shared `CaptionList` — it has its own virtualized rendering with inline bookmark highlights. So all changes to `caption-list.tsx` only affect the extension and dev-viewer.
+- **`CaptionPanel`** (`caption-panel.tsx`): Already has settings dropdown with "Export import.json" button, but exports `bookmarks: []`. Has `videoMeta` prop with video info. Renders `CaptionViewer` → `CaptionList`.
+- **`CaptionList`** (`caption-list.tsx`): Plain text rendering — no `data-side`/`data-offset` attributes, no bookmark awareness.
+- **`video-viewer.tsx`**: Has its own bookmark system (server-backed, virtualized rendering). Not touched in this task — it does NOT use the shared `CaptionList`.
+- **Export**: Already wired — `handleExport()` in `caption-panel.tsx` L253-283 builds `import.json` with `bookmarks: []`.
 
 ## Approach
 
-Add bookmark support to the shared `CaptionList` via props. The extension wires these props to localStorage; the dev-viewer can ignore them (or use them for testing).
+All work in shared components (`caption-list.tsx`, `caption-panel.tsx`) + one new lib file. No changes to `video-viewer.tsx` or `content.tsx`.
 
-### Architecture Decisions
+### Data Model
 
-1. **Storage**: localStorage with key `zamak:bookmarks` → `{ [youtubeId]: ExtensionBookmark[] }`
-2. **Bookmark model** (extension-local):
-   ```ts
-   type ExtensionBookmark = {
-     id: string; // crypto.randomUUID()
-     text: string;
-     side: number; // 0 = lang1, 1 = lang2
-     offset: number; // character offset in caption text
-     captionIndex: number; // index in merged rows array
-     timestamp: number; // row.begin
-     context: string; // full text of the bookmarked side
-     createdAt: string; // ISO datetime
-   };
-   ```
-3. **Selection logic**: Extract `extractBookmarkSelection()` to `src/lib/bookmark-selection.ts` — shared between main app and extension (both do the same DOM walk).
-4. **Highlight rendering**: Add `highlightText()` to `caption-list.tsx` (simpler version — no popover, just underline styling).
-5. **Export**: Generate `import.json` from current video metadata + captions + localStorage bookmarks. Button in caption panel settings dropdown (future) or a standalone export button.
+```ts
+// src/lib/extension-bookmarks.ts
+type ExtensionBookmark = {
+  id: string; // crypto.randomUUID()
+  text: string;
+  side: number; // 0 = lang1, 1 = lang2
+  offset: number; // character offset in caption text
+  captionIndex: number; // index in merged rows array
+  timestamp: number; // row.begin
+  context: string; // full text on the bookmarked side
+  createdAt: string; // ISO datetime
+};
+// localStorage key: zamak:bookmarks:{youtubeId}
+```
+
+### Selection Logic
+
+Reuse the same DOM walk pattern from `video-viewer.tsx`:
+
+- `data-index` → caption row index (already exists on `CaptionList` rows, L89)
+- `data-side` → language side (add to text divs)
+- `data-offset` → character offset within text (add spans)
+
+Walk: text node → `span[data-offset]` → `div[data-side]` → up to `div[data-index]`
 
 ## Reference Files
 
-| File                                   | Role                                           |
-| -------------------------------------- | ---------------------------------------------- |
-| `src/routes/video-viewer.tsx` L150-195 | `extractBookmarkSelection()` to extract        |
-| `src/routes/video-viewer.tsx` L214-252 | `highlightText()` pattern to port              |
-| `src/routes/video-viewer.tsx` L532-560 | Selection listener + mutation flow             |
-| `src/routes/video-viewer.tsx` L945-968 | Floating FAB UI                                |
-| `src/components/caption-list.tsx`      | Shared component to modify                     |
-| `src/components/caption-panel.tsx`     | Shared panel — will orchestrate bookmark state |
-| `src/extension/content.tsx`            | Extension entry — wire localStorage bookmarks  |
-| `scripts/db-seed-gen.ts` L6-34         | `import.json` schema (export target format)    |
+| File                                        | Role                                               |
+| ------------------------------------------- | -------------------------------------------------- |
+| `src/routes/video-viewer.tsx` L157-195      | `extractBookmarkSelection()` — DOM walk pattern    |
+| `src/routes/video-viewer.tsx` L214-252      | `highlightText()` — offset-based span segmentation |
+| `src/components/caption-list.tsx`           | Shared component to modify                         |
+| `src/components/caption-panel.tsx` L253-283 | Existing export (needs bookmarks filled in)        |
+| `src/components/caption-panel.tsx` L363-406 | `CaptionViewer` — passes props to `CaptionList`    |
 
 ## Implementation Steps
 
-### Step 1: Extract `extractBookmarkSelection()` to shared lib
+### Step 1: Create `src/lib/extension-bookmarks.ts`
 
-Create `src/lib/bookmark-selection.ts`:
+localStorage CRUD for bookmarks:
 
-- Move `BookmarkSelection` interface and `extractBookmarkSelection()` from `video-viewer.tsx`
-- Import in both `video-viewer.tsx` and the new extension bookmark logic
-- No behavior change — just extraction
+- `getBookmarks(youtubeId): ExtensionBookmark[]`
+- `addBookmark(youtubeId, data): ExtensionBookmark`
+- `deleteBookmark(youtubeId, bookmarkId): void`
+- `extractBookmarkSelection(selection: Selection): BookmarkSelection | undefined` — the DOM walk logic (same algorithm as video-viewer.tsx but written fresh in this file)
 
-### Step 2: Add `data-side` and `data-offset` attributes to `CaptionList`
+Key: `zamak:bookmarks:{youtubeId}` (one key per video, simpler than nested object).
 
-In `src/components/caption-list.tsx`:
+### Step 2: Add `data-side`, `data-offset` to `CaptionList` + highlight rendering
 
-- Add `data-side="0"` and `data-side="1"` to the two text divs (currently L111-112)
-- Wrap text content in `<span data-offset={0}>` by default (plain text case)
-- When bookmarks exist, use `highlightText()` to render segmented spans with correct offsets
+In `caption-list.tsx`:
 
-### Step 3: Add bookmark props to `CaptionList`
+- Add `data-side="0"` / `data-side="1"` to the two text divs (L105-106)
+- Add `highlightText()` function: takes text + bookmark marks → returns spans with `data-offset` attributes and highlight styling
+- When no bookmarks for a row, render `<span data-offset={0}>{text}</span>` (still needs the attribute for selection to work)
 
-New optional props:
+### Step 3: Add bookmark props to `CaptionList` and `CaptionViewer`
+
+New optional props on `CaptionList`:
 
 ```ts
-bookmarksByIndex?: Map<number, ExtensionBookmark[]>;  // bookmarks grouped by captionIndex
+bookmarksByIndex?: Map<number, ExtensionBookmark[]>;
 ```
 
-When provided, `CaptionList` renders bookmarks inline using highlight spans. When absent, behavior unchanged (backward compatible).
+Thread through `CaptionViewer` → `CaptionList`. When provided, compute marks per row and call `highlightText()`. When absent, same as today but with data attributes added.
 
-### Step 4: Add bookmark highlight rendering
+### Step 4: Add selection handling + floating FABs to `CaptionPanel`
 
-Port a simplified `highlightText()` into `caption-list.tsx`:
+New optional props on `CaptionPanel`:
 
-- Same offset-based span segmentation as `video-viewer.tsx`
-- Simpler highlight: just `border-b-2 border-highlight-border bg-highlight-bg` (no popover, no click-to-navigate)
-- Each segment wrapped in `<span data-offset={N}>` for selection support
+```ts
+onCreateBookmark?: (sel: { captionIndex: number; side: number; offset: number; text: string }) => void;
+bookmarksByIndex?: Map<number, ExtensionBookmark[]>;
+```
 
-### Step 5: Add selection handling + floating FABs to `CaptionPanel`
+When `onCreateBookmark` is provided:
 
-In `src/components/caption-panel.tsx`, add optional bookmark mode:
+- Listen for `selectionchange` (on `document` — works for both regular DOM and shadow DOM in Chromium)
+- Use `extractBookmarkSelection()` to parse
+- Show floating bookmark/cancel FAB buttons (same style as video-viewer.tsx)
+- On confirm → call `onCreateBookmark`, clear selection
 
-- New props: `onCreateBookmark?: (selection: BookmarkSelection) => void`
-- When `onCreateBookmark` is provided:
-  - Listen for `selectionchange` events
-  - Use `extractBookmarkSelection()` to parse selection
-  - Show floating bookmark/cancel FABs
-  - On confirm → call `onCreateBookmark(selection)` callback
-- When absent, no bookmark UI (backward compatible)
+Pass `bookmarksByIndex` through to `CaptionViewer` → `CaptionList`.
 
-Note: in the extension's shadow DOM, `document.getSelection()` may need to use `shadowRoot.getSelection()` or the shadow root's selection API. Verify this works.
+### Step 5: Wire bookmarks in `content.tsx`
 
-### Step 6: localStorage bookmark store
+- `useState` for bookmarks, initialized from `getBookmarks(videoId)`
+- `onCreateBookmark` callback: call `addBookmark()`, update state
+- Group bookmarks by `captionIndex` into a `Map`, pass to `CaptionPanel`
+- No changes to extension architecture — just new props
 
-Create `src/lib/extension-bookmarks.ts`:
+### Step 6: Include bookmarks in export
 
-- `getBookmarks(youtubeId: string): ExtensionBookmark[]`
-- `addBookmark(youtubeId: string, bookmark: Omit<ExtensionBookmark, 'id' | 'createdAt'>): ExtensionBookmark`
-- `deleteBookmark(youtubeId: string, bookmarkId: string): void`
-- `getAllBookmarks(): Record<string, ExtensionBookmark[]>`
-- All read/write to `localStorage` key `zamak:bookmarks`
+In `caption-panel.tsx` `handleExport()`:
 
-### Step 7: Wire extension content.tsx
-
-In `src/extension/content.tsx`:
-
-- Read bookmarks from localStorage for current videoId
-- Group by `captionIndex` → pass as `bookmarksByIndex` to `CaptionList` (via `CaptionPanel`)
-- Provide `onCreateBookmark` callback that calls `addBookmark()` and triggers re-render
-- Pass bookmarks through `CaptionPanel` to `CaptionList`
-
-### Step 8: Export import.json
-
-Add export button to the extension panel (e.g., in the caption panel header or a settings dropdown):
-
-- Collect current video metadata (from `fetchPlayerApi` result)
-- Collect current merged captions
-- Collect localStorage bookmarks for this video
-- Map to `import.json` format:
-  ```json
-  {
-    "video": { "youtubeId", "title", "channelName", "channelId", "duration", "language1", "language2" },
-    "captions": [{ "idx", "begin", "end", "text1", "text2" }],
-    "bookmarks": [{ "text", "translation": "", "captionIdx", "side", "offset", "context", "status": "manual" }]
-  }
+- Accept bookmarks via the existing data flow (new prop or from the bookmark map)
+- Map `ExtensionBookmark[]` to import.json bookmark format:
+  ```ts
+  { text, translation: "", captionIdx: captionIndex, side, offset, context, status: "manual" }
   ```
-- Trigger download as `{youtubeId}-import.json`
 
-### Step 9: Update `video-viewer.tsx` to use shared extraction
-
-Replace inline `extractBookmarkSelection()` with import from `src/lib/bookmark-selection.ts`. No behavior change.
-
-### Step 10: Verify
+### Step 7: Verify
 
 - `pnpm tsc && pnpm lint`
 - `pnpm build`
-- Manual test via dev-viewer: select text → FABs appear → create bookmark → highlight appears
-- Manual test via extension: same flow + verify localStorage persistence + export
+- Test via dev-viewer: select text → FABs appear → create bookmark → highlight appears → export includes bookmark
 
 ## Edge Cases
 
-- **Shadow DOM selection**: `document.getSelection()` may not work inside shadow DOM in all browsers. Chromium supports `shadowRoot.getSelection()` (non-standard). May need to use `document.getSelection()` and validate the selection is within our shadow root.
-- **Caption re-merge**: If user changes track selection, caption indices change. Bookmarks tied to old indices become stale. Options: (a) clear bookmarks on track change, (b) store enough context (text + side) to re-match. Start with (a) — simpler, and track changes are rare.
-- **Overlapping bookmarks**: Same handling as main app — each bookmark is independent, multiple highlights can overlap.
-- **Large bookmark lists**: localStorage has ~5MB limit. Each bookmark is ~200 bytes. 25,000 bookmarks before hitting limits — not a concern.
+- **Shadow DOM selection**: `document.getSelection()` works in Chromium for shadow DOM content. The DOM walk navigates `parentElement` which stays within the shadow tree. Should work without special handling.
+- **Caption re-merge on track change**: Bookmarks store `captionIndex` which is tied to the merged row array. If tracks change, indices may shift. For v1: bookmarks only display when indices still match. Could add text-based re-matching later.
+- **DOM structure**: The walk expects text → `span[data-offset]` → `div[data-side]` → `div` (flex row) → `div[data-index]`. Match this exactly in `CaptionList`.
 
 ## Status
 
