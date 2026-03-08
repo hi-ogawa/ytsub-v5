@@ -1,4 +1,4 @@
-// Generate extension icons from public/favicon.svg using sharp.
+// Generate extension PNGs from public/favicon.svg using sharp.
 // Usage: node scripts/generate-icons.ts
 
 import { readFileSync, mkdirSync } from "fs";
@@ -10,9 +10,8 @@ const OUT_DIR = join(import.meta.dirname!, "..", "src", "extension", "icons");
 mkdirSync(OUT_DIR, { recursive: true });
 
 const svg = readFileSync(SVG_PATH);
-const sizes = [16, 48, 128];
 
-for (const size of sizes) {
+for (const size of [16, 48, 128]) {
   await sharp(svg)
     .resize(size, size)
     .png()
