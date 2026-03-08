@@ -22,23 +22,7 @@ export function CaptionFab({
     <button
       type="button"
       onClick={onClick}
-      style={{
-        position: "fixed",
-        bottom: "20px",
-        right: "20px",
-        width: "48px",
-        height: "48px",
-        borderRadius: "50%",
-        border: "none",
-        background: open ? "var(--color-ring, var(--ring))" : "#1a3a5c",
-        color: "var(--color-foreground, var(--foreground))",
-        cursor: "pointer",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        pointerEvents: "auto",
-        boxShadow: "0 2px 8px rgba(0,0,0,0.4)",
-      }}
+      className={`fixed right-5 bottom-5 flex h-12 w-12 cursor-pointer items-center justify-center rounded-full border-none text-foreground shadow-lg pointer-events-auto ${open ? "bg-ring" : "bg-[#1a3a5c]"}`}
       title={open ? "Hide captions" : "Show captions"}
     >
       <Captions size={24} />
