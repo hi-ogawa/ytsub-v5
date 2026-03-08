@@ -244,13 +244,14 @@ export function CaptionPanel({
         </div>
         {!isAutoStrategy && (
           <select
-            className="mx-1 rounded border bg-background px-1 py-0.5 text-xs"
+            className="mr-1 px-1 rounded border bg-background py-0.5 text-xs"
             value={forceStrategy ?? activeStrategy ?? ""}
             onChange={(e) =>
               setForceStrategy((e.target.value as MergeStrategy) || undefined)
             }
-            title="Merge strategy"
+            title="Alignment strategy"
           >
+            <option disabled>(alignment)</option>
             {FALLBACK_STRATEGIES.map((s) => (
               <option key={s} value={s}>
                 {s}
