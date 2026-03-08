@@ -15,7 +15,7 @@ interface YouTubeVideoData {
   duration: number;
 }
 
-interface YouTubeCaptionTrack {
+export interface YouTubeCaptionTrack {
   baseUrl: string;
   languageCode: string;
   kind?: string; // "asr" = auto-generated, absent = manual
@@ -23,7 +23,7 @@ interface YouTubeCaptionTrack {
   vssId: string;
 }
 
-interface YouTubeExtractionResult {
+export interface YouTubeExtractionResult {
   video: YouTubeVideoData;
   captionTracks: YouTubeCaptionTrack[];
 }
@@ -38,7 +38,7 @@ interface Json3File {
   events: Json3Event[];
 }
 
-interface CaptionCue {
+export interface CaptionCue {
   begin: number;
   end: number;
   text: string;
