@@ -56,27 +56,113 @@ test.describe("dev-viewer caption panel", () => {
     );
   });
 
+  test("settings menu opens and closes", async ({ page }) => {
+    await page.getByTitle("Show captions").click();
+    await expect(page.locator("[data-index='0']")).toBeVisible();
+
+    // Open settings menu
+    await page.getByTitle("Settings").click();
+    await expect(page.getByText("Auto-scroll")).toBeVisible();
+
+    // Close by pressing Escape
+    await page.keyboard.press("Escape");
+    await expect(page.getByText("Auto-scroll")).not.toBeVisible();
+  });
+
+  test("auto-scroll toggle via settings menu", async ({ page }) => {
+    await page.getByTitle("Show captions").click();
+    await expect(page.locator("[data-index='0']")).toBeVisible();
+
+    // Auto-scroll defaults to on
+    let stored = await page.evaluate(() =>
+      localStorage.getItem("zamak:auto-scroll"),
+    );
+    expect(stored).toBeNull(); // default = true, not yet stored
+
+    // Open settings menu and toggle auto-scroll off (menu stays open)
+    await page.getByTitle("Settings").click();
+    await page.getByText("Auto-scroll").click();
+
+    // Verify localStorage updated
+    stored = await page.evaluate(() =>
+      localStorage.getItem("zamak:auto-scroll"),
+    );
+    expect(stored).toBe("false");
+
+    // Toggle back on
+    await page.getByText("Auto-scroll").click();
+    stored = await page.evaluate(() =>
+      localStorage.getItem("zamak:auto-scroll"),
+    );
+    expect(stored).toBe("true");
+  });
+
   test("strategy dropdown switches merge strategy", async ({ page }) => {
     await page.getByTitle("Show captions").click();
     await expect(page.locator("[data-index='0']")).toBeVisible();
 
-    // Strategy dropdown should be visible (fixture falls back to partition)
+    // Open settings menu to access strategy select
+    await page.getByTitle("Settings").click();
     const strategySelect = page.locator("select[title='Alignment strategy']");
     await expect(strategySelect).toBeVisible();
     await expect(strategySelect).toHaveValue("partition");
 
     // Count rows with partition strategy (default)
+    // Close menu first to count rows
+    await page.keyboard.press("Escape");
     const partitionCount = await page.locator("[data-index]").count();
 
-    // Switch to overlap — should produce more rows (one per cue1)
+    // Reopen and switch to overlap — should produce more rows
+    await page.getByTitle("Settings").click();
     await strategySelect.selectOption("overlap");
+    await page.keyboard.press("Escape");
     await expect(page.locator("[data-index='0']")).toBeVisible();
     const overlapCount = await page.locator("[data-index]").count();
     expect(overlapCount).toBeGreaterThan(partitionCount);
 
     // Switch to best-overlap
-    await strategySelect.selectOption("best-overlap");
+    await page.getByTitle("Settings").click();
+    await page
+      .locator("select[title='Alignment strategy']")
+      .selectOption("best-overlap");
+    await page.keyboard.press("Escape");
     await expect(page.locator("[data-index='0']")).toBeVisible();
+  });
+
+  test("export downloads valid import.json", async ({ page }) => {
+    await page.getByTitle("Show captions").click();
+    await expect(page.locator("[data-index='0']")).toBeVisible();
+
+    // Open settings menu and click export
+    await page.getByTitle("Settings").click();
+    const [download] = await Promise.all([
+      page.waitForEvent("download"),
+      page.getByText("Export import.json").click(),
+    ]);
+
+    // Verify download filename
+    expect(download.suggestedFilename()).toMatch(/^import-.*\.json$/);
+
+    // Read and validate exported JSON
+    const content = await (
+      await download.createReadStream()
+    )
+      .toArray()
+      .then((chunks) => Buffer.concat(chunks).toString());
+    const data = JSON.parse(content);
+
+    // Must match importVideo schema shape
+    expect(data.video).toBeDefined();
+    expect(data.video.youtubeId).toBeTruthy();
+    expect(data.video.title).toBeTruthy();
+    expect(data.captions).toBeInstanceOf(Array);
+    expect(data.captions.length).toBeGreaterThan(0);
+    expect(data.captions[0]).toHaveProperty("idx");
+    expect(data.captions[0]).toHaveProperty("begin");
+    expect(data.captions[0]).toHaveProperty("end");
+    expect(data.captions[0]).toHaveProperty("text1");
+    expect(data.captions[0]).toHaveProperty("text2");
+    expect(data.bookmarks).toEqual([]);
   });
 
   test("panel left edge can be dragged to resize", async ({ page }) => {
