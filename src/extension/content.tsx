@@ -186,8 +186,8 @@ function remove() {
 function init() {
   if (isWatchPage()) inject();
 
+  document.addEventListener("yt-navigate-start", remove);
   document.addEventListener("yt-navigate-finish", () => {
-    remove();
     if (isWatchPage()) inject();
   });
 }
