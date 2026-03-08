@@ -31,20 +31,20 @@ Only three scenarios occur in practice. D (ko auto only, no en) doesn't come up.
 ```
 Browser extension (on YouTube page)
   → Extracts video metadata (title, channel, duration, id)
-  → Extracts subtitle tracks (ko + en json3)
-  → POSTs raw data to app API
+  → Extracts subtitle tracks (ko + en)
+  → Parses → cue arrays
+  → Algorithmic alignment → text1/text2 paired rows
+  → POSTs import.json to app API (same format as today)
 
 App server
-  → Parses json3 → cue arrays (deterministic, port of parse-json3.ts)
-  → Algorithmic alignment → text1/text2 paired rows (same schema as today)
-  → Stores in D1
+  → Stores in D1 (existing importVideo logic, no changes needed)
 
 Viewer (browser)
   → Current viewer works as-is (aligned pairs)
   → Manual bookmarking via text selection (already built)
 ```
 
-**Happy path:** If algorithmic alignment is good enough, no schema change and no viewer change needed. Current import format (text1/text2 rows) still works. The only new pieces are the browser extension and a smarter alignment algorithm.
+**Happy path:** All processing happens in the extension. The server receives the same import.json format as today — no schema change, no API change, no viewer change. The only new pieces are the browser extension and a smarter alignment algorithm, both running client-side.
 
 **Fallback:** If alignment can't cover enough cases, explore an unaligned viewer that handles two independent tracks (see `2026-03-08-unaligned-caption-viewer.md`). This would require a schema change.
 
@@ -55,9 +55,11 @@ Viewer (browser)
 Content script running on `youtube.com/*` that:
 
 - Reads video metadata from the page / YouTube player API
-- Fetches available subtitle tracks (YouTube exposes these via `timedtext` API from same origin)
-- Downloads ko + en (or auto-translated en) as json3
-- Sends to the app via API
+- Fetches subtitle tracks (YouTube exposes these via `timedtext` API from same origin)
+- Downloads ko + en (or auto-translated en)
+- Parses subtitles → cue arrays (port of `parse-json3.ts`)
+- Runs algorithmic alignment → text1/text2 paired rows
+- POSTs import.json to the app API (same format as current `importVideo`)
 
 This is the **biggest piece of new work** and the main blocker. Already in the backlog.
 
@@ -94,8 +96,8 @@ The current `check-alignment.ts` is strict: same cue count + all timestamps with
 | Current (agent)                         | AI-less                                                            |
 | --------------------------------------- | ------------------------------------------------------------------ |
 | yt-dlp (local CLI)                      | Browser extension (same-origin)                                    |
-| parse-json3.ts (agent runs)             | Server-side parsing (same code)                                    |
-| check-alignment.ts (agent runs)         | Server-side fuzzy alignment (DTW or overlap-based)                 |
+| parse-json3.ts (agent runs)             | Extension-side parsing (same code, runs in browser)                |
+| check-alignment.ts (agent runs)         | Extension-side fuzzy alignment (DTW or overlap-based)              |
 | LLM caption alignment (scenarios B/C/D) | Algorithmic alignment (same output format)                         |
 | LLM Korean text fixing                  | Accept auto-gen quality or manual edit                             |
 | LLM translation (scenario C)            | YouTube auto-translate                                             |
