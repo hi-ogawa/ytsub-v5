@@ -39,11 +39,13 @@ Two columns, each scrolling independently based on its own timestamps.
 - No alignment needed at all — just two arrays of `{begin, end, text}`
 
 **Pros:**
+
 - Simplest data model — just store raw cues per language
 - Works with any subtitle source, no pre-processing
 - Natural for subtitles with very different segmentation (e.g., 50 ko cues vs 80 en cues)
 
 **Cons:**
+
 - Loses the "glanceable pair" — harder to see which en matches which ko at a given moment
 - Two independent scroll positions may feel disorienting
 - Bookmark `captionIdx` would need to reference a specific language track, not a merged row
@@ -70,11 +72,13 @@ Ko is the main list (drives scroll). En appears as contextual annotation for the
 - Could show 0, 1, or 2+ en cues depending on overlap
 
 **Pros:**
+
 - Single scroll position — clean, focused
 - Ko text is the primary study material, en is reference
 - Feels like "subtitles with translation tooltip"
 
 **Cons:**
+
 - Only see en for the current cue — can't scan ahead/behind in en
 - Asymmetric — what if user wants en as primary?
 - Multiple overlapping en cues need visual treatment
@@ -103,11 +107,13 @@ Single scrolling list, but cues are grouped by time bands rather than 1:1 pairin
 - Band boundaries determined by clustering cue timestamps
 
 **Pros:**
+
 - Single scroll, paired feel
 - Handles N:M naturally — 2 ko cues + 1 en cue in the same band is fine
 - Closest to current UX (still feels like "rows")
 
 **Cons:**
+
 - Grouping algorithm needs tuning (band size, gap detection)
 - Visual clutter when many cues land in the same band
 - Not obvious which ko maps to which en within a band
@@ -122,11 +128,13 @@ Use alignment when it works (scenario A with matching counts), fall back to dual
 - If alignment is weak, fall back to direction A, B, or C
 
 **Pros:**
+
 - Best UX for well-aligned content (which is common for scenario A)
 - Graceful degradation for misaligned content
 - Alignment is a display concern, not a data concern
 
 **Cons:**
+
 - Two rendering modes to build and maintain
 - "Confidence" threshold needs tuning
 - May be confusing if the same video switches between modes
@@ -136,6 +144,7 @@ Use alignment when it works (scenario A with matching counts), fall back to dual
 Current model: `captions` table has `text1` + `text2` per row (pre-aligned).
 
 Unaligned model options:
+
 1. **Two rows per cue** — add a `language` column, each cue is its own row. Simple, flexible.
 2. **Separate tables** — `captions_ko`, `captions_en`. Awkward.
 3. **Keep current schema, nullable text2** — store ko cues as primary, leave text2 null. Populate text2 at display time via temporal matching. Minimal migration.
@@ -144,15 +153,15 @@ Option 1 is cleanest. Would need to update the viewer queries and components.
 
 ## Interaction with Existing Features
 
-| Feature | Impact |
-|---------|--------|
-| Click-to-seek | Works — each cue has its own timestamp |
-| Auto-scroll | Works — sync to current cue per language |
-| Current cue highlight | Works — per language track |
+| Feature                             | Impact                                                                                     |
+| ----------------------------------- | ------------------------------------------------------------------------------------------ |
+| Click-to-seek                       | Works — each cue has its own timestamp                                                     |
+| Auto-scroll                         | Works — sync to current cue per language                                                   |
+| Current cue highlight               | Works — per language track                                                                 |
 | Manual bookmarking (text selection) | Works — need to know which language track the selection is in (already tracked via `side`) |
-| Bookmark indicators | Need to associate bookmark with a cue in a specific language, not a merged row |
-| Bookmark navigation (prev/next) | Works — navigate by timestamp |
-| Virtualized list | Works with all approaches (TanStack Virtual) |
+| Bookmark indicators                 | Need to associate bookmark with a cue in a specific language, not a merged row             |
+| Bookmark navigation (prev/next)     | Works — navigate by timestamp                                                              |
+| Virtualized list                    | Works with all approaches (TanStack Virtual)                                               |
 
 ## Open Questions
 
