@@ -1,7 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { useParams } from "react-router";
-import { CaptionFab, CaptionPanel } from "../components/caption-panel.tsx";
+import {
+  CaptionFab,
+  CaptionPanel,
+  ResizablePanel,
+} from "../components/caption-panel.tsx";
 import { useYouTubePlayer } from "../components/youtube-player.tsx";
 import {
   type CaptionCue,
@@ -73,13 +77,13 @@ export function DevViewerPage() {
 
       {/* Floating caption panel (same position as extension) */}
       {panelOpen && meta && (
-        <div className="fixed top-[65px] right-[10px] bottom-[56px] w-[400px] flex flex-col overflow-hidden rounded-lg border border-border bg-background">
+        <ResizablePanel className="fixed top-[65px] right-[10px] bottom-[56px] flex flex-col overflow-hidden rounded-lg border border-border bg-background">
           <CaptionPanel
             tracks={meta.captionTracks}
             fetchCues={(track) => fetchTrackFixture(videoId, track)}
             player={player}
           />
-        </div>
+        </ResizablePanel>
       )}
       <CaptionFab open={panelOpen} onClick={() => setPanelOpen((v) => !v)} />
     </div>
