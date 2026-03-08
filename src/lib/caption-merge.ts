@@ -34,6 +34,9 @@ export interface MergedCaption {
   cue1Indices: number[];
   /** Which cue2 indices were assigned to this row */
   cue2Indices: number[];
+  /** Individual text segments before joining (for rendering separators) */
+  text1Segments: string[];
+  text2Segments: string[];
 }
 
 // === Strategy 1: Strict check (current v5 behavior) ===
@@ -56,6 +59,8 @@ export function mergeStrict(
     text2: cues2[i].text,
     cue1Indices: [i],
     cue2Indices: [i],
+    text1Segments: [c1.text],
+    text2Segments: [cues2[i].text],
   }));
 }
 
@@ -92,13 +97,13 @@ export function mergeOverlap(
       .map((c2, j) => ({ c2, j, overlap: computeOverlap(c1, c2) }))
       .filter((o) => o.overlap > 0);
 
-    let text2 = "";
+    let text2Segments: string[] = [];
     let cue2Indices: number[] = [];
     if (overlaps.length > 0) {
       // Include all overlapping cue2s, sorted by start time
       overlaps.sort((a, b) => a.c2.begin - b.c2.begin);
       cue2Indices = overlaps.map((o) => o.j);
-      text2 = overlaps.map((o) => o.c2.text).join(" ");
+      text2Segments = overlaps.map((o) => o.c2.text);
       for (const j of cue2Indices) assignedCue2s.add(j);
     }
 
@@ -107,9 +112,11 @@ export function mergeOverlap(
       begin: c1.begin,
       end: c1.end,
       text1: c1.text,
-      text2,
+      text2: text2Segments.join(" "),
       cue1Indices: [i],
       cue2Indices,
+      text1Segments: [c1.text],
+      text2Segments,
     };
   });
 
@@ -125,6 +132,8 @@ export function mergeOverlap(
         text2: cues2[j].text,
         cue1Indices: [],
         cue2Indices: [j],
+        text1Segments: [],
+        text2Segments: [cues2[j].text],
       });
     }
   }
@@ -169,6 +178,8 @@ export function mergeBestOverlap(
         text2: cues2[bestJ].text,
         cue1Indices: [i],
         cue2Indices: [bestJ],
+        text1Segments: [c1.text],
+        text2Segments: [cues2[bestJ].text],
       };
     }
     return {
@@ -179,6 +190,8 @@ export function mergeBestOverlap(
       text2: "",
       cue1Indices: [i],
       cue2Indices: [],
+      text1Segments: [c1.text],
+      text2Segments: [],
     };
   });
 
@@ -194,6 +207,8 @@ export function mergeBestOverlap(
         text2: cues2[j].text,
         cue1Indices: [],
         cue2Indices: [j],
+        text1Segments: [],
+        text2Segments: [cues2[j].text],
       });
     }
   }
@@ -240,7 +255,8 @@ export function mergePartition(
 
   return drivers.map((drv, d) => {
     const assigned = assignments.get(d) ?? [];
-    const followerText = assigned.map((f) => followers[f].text).join(" ");
+    const followerSegments = assigned.map((f) => followers[f].text);
+    const followerText = followerSegments.join(" ");
     return {
       idx: d,
       begin: drv.begin,
@@ -249,6 +265,8 @@ export function mergePartition(
       text2: cue1Drives ? followerText : drv.text,
       cue1Indices: cue1Drives ? [d] : assigned,
       cue2Indices: cue1Drives ? assigned : [d],
+      text1Segments: cue1Drives ? [drv.text] : followerSegments,
+      text2Segments: cue1Drives ? followerSegments : [drv.text],
     };
   });
 }
@@ -291,15 +309,17 @@ export function mergeBidirectional(
 
   return cues1.map((c1, i) => {
     const assigned = cue1ToCue2s.get(i) ?? [];
-    const text2 = assigned.map((j) => cues2[j].text).join(" ");
+    const text2Segments = assigned.map((j) => cues2[j].text);
     return {
       idx: i,
       begin: c1.begin,
       end: c1.end,
       text1: c1.text,
-      text2,
+      text2: text2Segments.join(" "),
       cue1Indices: [i],
       cue2Indices: assigned,
+      text1Segments: [c1.text],
+      text2Segments,
     };
   });
 }
@@ -330,6 +350,8 @@ export function mergeDTW(
       text2: "",
       cue1Indices: [i],
       cue2Indices: [],
+      text1Segments: [c.text],
+      text2Segments: [],
     }));
   }
 
@@ -421,15 +443,17 @@ export function mergeDTW(
 
   return cues1.map((c1, idx) => {
     const assigned = assignments.get(idx) ?? [];
-    const text2 = assigned.map((j) => cues2[j].text).join(" ");
+    const text2Segments = assigned.map((j) => cues2[j].text);
     return {
       idx,
       begin: c1.begin,
       end: c1.end,
       text1: c1.text,
-      text2,
+      text2: text2Segments.join(" "),
       cue1Indices: [idx],
       cue2Indices: assigned,
+      text1Segments: [c1.text],
+      text2Segments,
     };
   });
 }

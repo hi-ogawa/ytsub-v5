@@ -61,7 +61,7 @@ describe("mergeStrict", () => {
     const result = mergeStrict(cues1, cues2);
     expect(result).toBeDefined();
     expect(result).toHaveLength(2);
-    expect(result![0]).toEqual({
+    expect(result![0]).toMatchObject({
       idx: 0,
       begin: 0,
       end: 2,
@@ -70,7 +70,7 @@ describe("mergeStrict", () => {
       cue1Indices: [0],
       cue2Indices: [0],
     });
-    expect(result![1]).toEqual({
+    expect(result![1]).toMatchObject({
       idx: 1,
       begin: 3,
       end: 5,

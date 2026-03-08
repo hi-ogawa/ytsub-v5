@@ -6,13 +6,28 @@ type AlignedRow = {
   end: number;
   text1: string;
   text2: string;
-  cue1Indices?: number[];
-  cue2Indices?: number[];
+  text1Segments?: string[];
+  text2Segments?: string[];
 };
 
-function MergeBadge({ count }: { count: number | undefined }) {
-  if (!count || count <= 1) return null;
-  return <span className="ml-1 text-xs text-muted-foreground">×{count}</span>;
+function SegmentedText({
+  text,
+  segments,
+}: {
+  text: string;
+  segments?: string[];
+}) {
+  if (!segments || segments.length <= 1) return <>{text}</>;
+  return (
+    <>
+      {segments.map((seg, i) => (
+        <span key={i}>
+          {i > 0 && <span className="text-muted-foreground"> · </span>}
+          {seg}
+        </span>
+      ))}
+    </>
+  );
 }
 
 function formatTimestamp(seconds: number): string {
@@ -116,12 +131,10 @@ export function CaptionList({
             </div>
             <div className="flex text-sm">
               <div className="flex-1 border-r pr-2">
-                {row.text1}
-                <MergeBadge count={row.cue1Indices?.length} />
+                <SegmentedText text={row.text1} segments={row.text1Segments} />
               </div>
               <div className="flex-1 pl-2">
-                {row.text2}
-                <MergeBadge count={row.cue2Indices?.length} />
+                <SegmentedText text={row.text2} segments={row.text2Segments} />
               </div>
             </div>
           </div>
