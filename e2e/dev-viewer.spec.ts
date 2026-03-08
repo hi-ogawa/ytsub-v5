@@ -56,6 +56,29 @@ test.describe("dev-viewer caption panel", () => {
     );
   });
 
+  test("strategy dropdown switches merge strategy", async ({ page }) => {
+    await page.getByTitle("Show captions").click();
+    await expect(page.locator("[data-index='0']")).toBeVisible();
+
+    // Strategy dropdown should be visible (fixture falls back to partition)
+    const strategySelect = page.locator("select[title='Alignment strategy']");
+    await expect(strategySelect).toBeVisible();
+    await expect(strategySelect).toHaveValue("partition");
+
+    // Count rows with partition strategy (default)
+    const partitionCount = await page.locator("[data-index]").count();
+
+    // Switch to overlap — should produce more rows (one per cue1)
+    await strategySelect.selectOption("overlap");
+    await expect(page.locator("[data-index='0']")).toBeVisible();
+    const overlapCount = await page.locator("[data-index]").count();
+    expect(overlapCount).toBeGreaterThan(partitionCount);
+
+    // Switch to best-overlap
+    await strategySelect.selectOption("best-overlap");
+    await expect(page.locator("[data-index='0']")).toBeVisible();
+  });
+
   test("panel left edge can be dragged to resize", async ({ page }) => {
     await page.getByTitle("Show captions").click();
     await expect(page.locator("[data-index='0']")).toBeVisible();

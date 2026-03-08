@@ -1,7 +1,7 @@
 // Visual preview of caption merging against youtube-json test data.
 // Usage: npx tsx scripts/caption-merge-preview.ts <videoId> [strategy]
 //
-// Strategies: strict, relaxed, overlap, bidirectional, dtw, tiered (default)
+// Strategies: strict, relaxed, overlap, best-overlap, partition, bidirectional, dtw, tiered (default)
 //
 // Example:
 //   node scripts/caption-merge-preview.ts 7GU_VQfgMT0
@@ -13,34 +13,21 @@ import { join } from "path";
 import {
   type CaptionCue,
   type MergedCaption,
+  mergeBestOverlap,
   mergeBidirectional,
   mergeCaptions,
   mergeDTW,
   mergeOverlap,
+  mergePartition,
   mergeRelaxedStrict,
   mergeStrict,
 } from "../src/lib/caption-merge.ts";
+import { parseJson3 } from "../src/lib/youtube.ts";
 
 // --- helpers ---
 
-function parseJson3(path: string): CaptionCue[] {
-  const data = JSON.parse(readFileSync(path, "utf-8"));
-  const cues: CaptionCue[] = [];
-  for (const event of data.events) {
-    if (!event.segs || !event.dDurationMs) continue;
-    const text = event.segs
-      .map((s: { utf8: string }) => s.utf8)
-      .join("")
-      .replace(/\n/g, " ")
-      .trim();
-    if (!text) continue;
-    cues.push({
-      begin: event.tStartMs / 1000,
-      end: (event.tStartMs + event.dDurationMs) / 1000,
-      text,
-    });
-  }
-  return cues;
+function loadTrackFile(path: string): CaptionCue[] {
+  return parseJson3(JSON.parse(readFileSync(path, "utf-8")));
 }
 
 function fmt(seconds: number): string {
@@ -72,7 +59,7 @@ function main() {
     );
     console.error(`\nAvailable videos: ${available.join(", ")}`);
     console.error(
-      "Strategies: strict, relaxed, overlap, bidirectional, dtw, tiered",
+      "Strategies: strict, relaxed, overlap, best-overlap, partition, bidirectional, dtw, tiered",
     );
     process.exit(1);
   }
@@ -93,8 +80,8 @@ function main() {
     process.exit(1);
   }
 
-  const koCues = parseJson3(join(videoDir, koFile));
-  const enCues = parseJson3(join(videoDir, enFile));
+  const koCues = loadTrackFile(join(videoDir, koFile));
+  const enCues = loadTrackFile(join(videoDir, enFile));
 
   const { merged, usedStrategy } = runMerge(koCues, enCues, strategyName);
 
@@ -138,6 +125,16 @@ function runMerge(
     }
     case "overlap":
       return { merged: mergeOverlap(koCues, enCues), usedStrategy: "overlap" };
+    case "best-overlap":
+      return {
+        merged: mergeBestOverlap(koCues, enCues),
+        usedStrategy: "best-overlap",
+      };
+    case "partition":
+      return {
+        merged: mergePartition(koCues, enCues),
+        usedStrategy: "partition",
+      };
     case "bidirectional":
       return {
         merged: mergeBidirectional(koCues, enCues),
