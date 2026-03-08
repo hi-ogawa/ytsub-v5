@@ -1,5 +1,14 @@
-import { expect, test } from "@playwright/test";
+import { expect, type Page, test } from "@playwright/test";
 import { login } from "./helper.ts";
+
+/** Open panel and select ko/en tracks so caption rows appear */
+async function openPanelWithTracks(page: Page) {
+  await page.getByTitle("Show captions").click();
+  const selects = page.locator("select");
+  await selects.nth(0).selectOption(".ko");
+  await selects.nth(1).selectOption(".en");
+  await expect(page.locator("[data-index='0']")).toBeVisible();
+}
 
 test.describe("dev-viewer caption panel", () => {
   test.beforeEach(async ({ page }) => {
@@ -11,9 +20,8 @@ test.describe("dev-viewer caption panel", () => {
     // Panel starts closed — no caption rows visible
     await expect(page.locator("[data-index='0']")).not.toBeVisible();
 
-    // Open panel via FAB
-    await page.getByTitle("Show captions").click();
-    await expect(page.locator("[data-index='0']")).toBeVisible();
+    // Open panel and select tracks
+    await openPanelWithTracks(page);
 
     // Close panel via FAB
     await page.getByTitle("Hide captions").click();
@@ -23,26 +31,26 @@ test.describe("dev-viewer caption panel", () => {
   test("panel shows merged caption rows from fixture data", async ({
     page,
   }) => {
-    await page.getByTitle("Show captions").click();
-    await expect(page.locator("[data-index='0']")).toBeVisible();
+    await openPanelWithTracks(page);
 
     // Multiple rows rendered (fixture has many cues)
     await expect(page.locator("[data-index='5']")).toBeVisible();
   });
 
-  test("defaults to ko/en language pair", async ({ page }) => {
+  test("no tracks selected by default without preference", async ({ page }) => {
     await page.getByTitle("Show captions").click();
-    await expect(page.locator("[data-index='0']")).toBeVisible();
 
-    // Track pickers: first select = ko, second select = en
+    // Track pickers default to "None"
     const selects = page.locator("select");
-    await expect(selects.nth(0)).toHaveValue(".ko");
-    await expect(selects.nth(1)).toHaveValue(".en");
+    await expect(selects.nth(0)).toHaveValue("");
+    await expect(selects.nth(1)).toHaveValue("");
+
+    // No caption rows rendered
+    await expect(page.locator("[data-index='0']")).not.toBeVisible();
   });
 
   test("switching language reloads captions", async ({ page }) => {
-    await page.getByTitle("Show captions").click();
-    await expect(page.locator("[data-index='0']")).toBeVisible();
+    await openPanelWithTracks(page);
 
     // Grab initial text from first row
     const firstRowText = await page.locator("[data-index='0']").textContent();
@@ -57,8 +65,7 @@ test.describe("dev-viewer caption panel", () => {
   });
 
   test("settings menu with auto-scroll toggle", async ({ page }) => {
-    await page.getByTitle("Show captions").click();
-    await expect(page.locator("[data-index='0']")).toBeVisible();
+    await openPanelWithTracks(page);
 
     const autoScrollItem = page.locator("[data-checked]");
 
@@ -77,6 +84,7 @@ test.describe("dev-viewer caption panel", () => {
 
     // Reload and verify it persists as off
     await page.reload();
+    // Tracks should be restored from per-video preference (saved above)
     await page.getByTitle("Show captions").click();
     await expect(page.locator("[data-index='0']")).toBeVisible();
     await page.getByTitle("Settings").click();
@@ -84,8 +92,7 @@ test.describe("dev-viewer caption panel", () => {
   });
 
   test("strategy dropdown switches merge strategy", async ({ page }) => {
-    await page.getByTitle("Show captions").click();
-    await expect(page.locator("[data-index='0']")).toBeVisible();
+    await openPanelWithTracks(page);
 
     // Open settings menu to access strategy select
     await page.getByTitle("Settings").click();
@@ -116,8 +123,7 @@ test.describe("dev-viewer caption panel", () => {
   });
 
   test("export downloads valid import.json", async ({ page }) => {
-    await page.getByTitle("Show captions").click();
-    await expect(page.locator("[data-index='0']")).toBeVisible();
+    await openPanelWithTracks(page);
 
     // Open settings menu and click export
     await page.getByTitle("Settings").click();
@@ -166,8 +172,7 @@ test.describe("dev-viewer caption panel", () => {
   });
 
   test("panel left edge can be dragged to resize", async ({ page }) => {
-    await page.getByTitle("Show captions").click();
-    await expect(page.locator("[data-index='0']")).toBeVisible();
+    await openPanelWithTracks(page);
 
     const panel = page.getByTestId("resizable-panel");
     const initialBox = (await panel.boundingBox())!;
@@ -196,8 +201,7 @@ test.describe("dev-viewer caption panel", () => {
   });
 
   test("caption rows show timestamp and dual-column text", async ({ page }) => {
-    await page.getByTitle("Show captions").click();
-    await expect(page.locator("[data-index='0']")).toBeVisible();
+    await openPanelWithTracks(page);
 
     const row = page.locator("[data-index='0']");
 
