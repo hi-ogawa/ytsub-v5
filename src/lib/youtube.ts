@@ -15,7 +15,7 @@ interface YouTubeVideoData {
   duration: number;
 }
 
-interface YouTubeCaptionTrack {
+export interface YouTubeCaptionTrack {
   baseUrl: string;
   languageCode: string;
   kind?: string; // "asr" = auto-generated, absent = manual

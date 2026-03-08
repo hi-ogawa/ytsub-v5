@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router";
 import { type AlignedRow, CaptionList } from "../components/caption-list.tsx";
+import { TrackPicker } from "../components/track-picker.tsx";
 import { useYouTubePlayer } from "../components/youtube-player.tsx";
 import {
   type CaptionCue,
+  type YouTubeCaptionTrack,
   type YouTubeExtractionResult,
   parseJson3,
   pickTracks,
@@ -48,6 +50,9 @@ function alignByIndex(cues1: CaptionCue[], cues2: CaptionCue[]): AlignedRow[] {
 
 export function DevViewerPage() {
   const { videoId } = useParams<"videoId">();
+  const [tracks, setTracks] = useState<YouTubeCaptionTrack[]>([]);
+  const [selectedVssId1, setSelectedVssId1] = useState<string>();
+  const [selectedVssId2, setSelectedVssId2] = useState<string>();
   const [rows, setRows] = useState<AlignedRow[]>([]);
   const [error, setError] = useState<string>();
   const [loading, setLoading] = useState(true);
@@ -57,29 +62,40 @@ export function DevViewerPage() {
 
   const { ref: playerElRef, player } = useYouTubePlayer(youtubeId);
 
-  // Load data
+  // Load metadata
   useEffect(() => {
     if (!videoId) return;
     setLoading(true);
     setError(undefined);
 
     fetchMetadata(videoId)
-      .then(async (meta) => {
+      .then((meta) => {
         setYoutubeId(meta.video.youtubeId);
+        setTracks(meta.captionTracks);
         const { track1, track2 } = pickTracks(meta.captionTracks);
-        const [cues1, cues2] = await Promise.all([
-          track1
-            ? fetchTrackFixture(videoId, track1.vssId)
-            : Promise.resolve([]),
-          track2
-            ? fetchTrackFixture(videoId, track2.vssId)
-            : Promise.resolve([]),
-        ]);
-        setRows(alignByIndex(cues1, cues2));
+        setSelectedVssId1(track1?.vssId);
+        setSelectedVssId2(track2?.vssId);
       })
       .catch((err) => setError(String(err)))
       .finally(() => setLoading(false));
   }, [videoId]);
+
+  // Fetch tracks when selection changes
+  useEffect(() => {
+    if (!videoId) return;
+    setRows([]);
+
+    Promise.all([
+      selectedVssId1
+        ? fetchTrackFixture(videoId, selectedVssId1)
+        : Promise.resolve([]),
+      selectedVssId2
+        ? fetchTrackFixture(videoId, selectedVssId2)
+        : Promise.resolve([]),
+    ])
+      .then(([cues1, cues2]) => setRows(alignByIndex(cues1, cues2)))
+      .catch((err) => setError(String(err)));
+  }, [videoId, selectedVssId1, selectedVssId2]);
 
   // RAF loop — poll player time, update current entry
   useEffect(() => {
@@ -133,6 +149,15 @@ export function DevViewerPage() {
 
       {/* Caption panel */}
       <div className="flex min-h-0 flex-[1_0_0] flex-col border-t lg:w-1/3 lg:flex-none lg:rounded lg:border">
+        <TrackPicker
+          tracks={tracks}
+          selectedVssId1={selectedVssId1}
+          selectedVssId2={selectedVssId2}
+          onSelect={(v1, v2) => {
+            setSelectedVssId1(v1);
+            setSelectedVssId2(v2);
+          }}
+        />
         <CaptionList
           rows={rows}
           currentIndex={currentIndex}
