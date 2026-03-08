@@ -15,7 +15,7 @@ The extension works locally via "Load unpacked" but isn't published to the Chrom
 ## Build & Package
 
 ```sh
-CI=true pnpm build-ext   # build with production name "ytsub"
+CI=true pnpm build-ext   # build with production name "Zamak"
 pnpm zip-ext              # creates dist/extension.zip
 ```
 
@@ -28,7 +28,7 @@ Use these when filling out the Developer Dashboard form:
 ### Extension Name
 
 ```
-ytsub — YouTube Dual Subtitles
+Zamak — YouTube Dual Subtitles
 ```
 
 ### Summary (132 char limit)
@@ -40,7 +40,7 @@ Watch YouTube with dual-language subtitles side by side. Click to seek, auto-scr
 ### Description
 
 ```
-ytsub adds a floating subtitle panel to YouTube that shows two languages side by side — perfect for language learners.
+Zamak adds a floating subtitle panel to YouTube that shows two languages side by side — perfect for language learners.
 
 Features:
 • Dual-language captions — see Korean + English (or any available pair) at the same time
@@ -52,7 +52,7 @@ Features:
 • No account required, no data collection — everything runs locally
 
 How it works:
-When you visit a YouTube video, ytsub fetches the available subtitle tracks and displays them in a side-by-side panel overlaid on the page. The panel syncs with video playback in real time.
+When you visit a YouTube video, Zamak fetches the available subtitle tracks and displays them in a side-by-side panel overlaid on the page. The panel syncs with video playback in real time.
 
 Supported: Any YouTube video with subtitles in two or more languages.
 ```
