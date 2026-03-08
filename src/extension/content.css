@@ -29,7 +29,8 @@
 }
 
 #ytsub-root {
-  height: 100%;
+  display: flex;
+  flex-direction: column;
   background-color: var(--background);
   color: var(--foreground);
   border: 1px solid var(--border);
