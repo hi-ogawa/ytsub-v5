@@ -108,8 +108,9 @@ Adding server integration (e.g. syncing bookmarks to the main Zamak app) would a
 
 ## What's Remaining
 
-- [ ] Register Chrome Web Store developer account ($5 one-time fee)
-- [ ] Take screenshots for store listing
-- [ ] Upload zip and fill out listing using details above
-- [ ] Submit for review (typically 1-3 business days)
+- [x] Register Chrome Web Store developer account
+- [x] Take screenshots for store listing
+- [x] Upload zip and fill out listing
+- [x] Submit for review (submitted 2026-03-08)
+- [ ] Confirm approval and verify live listing
 - [ ] (Optional) CI automation for publishing on tag/release
