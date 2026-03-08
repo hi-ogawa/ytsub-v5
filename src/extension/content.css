@@ -14,11 +14,12 @@
   --text-lg--line-height: 28px;
 }
 
-/* Semantic color tokens matching YouTube's dark theme.
+/* Semantic color tokens matching YouTube's theme.
    The shared @theme inline bridge (styles.css) references these
    (e.g. --color-background: var(--background)).
-   TODO: support light mode (detect YouTube's theme and switch) */
-:host {
+   Theme class (.dark/.light) is set by content.tsx based on YouTube's html[dark] attribute. */
+:host,
+:host(.dark) {
   color-scheme: dark;
   --background: #0f0f0f;
   --foreground: #f1f1f1;
@@ -27,6 +28,21 @@
   --border: #3f3f3f;
   --ring: #3ea6ff;
   --input: #3f3f3f;
+  --fab-active: #2563eb;
+  --fab-inactive: #1a3a5c;
+}
+
+:host(.light) {
+  color-scheme: light;
+  --background: #ffffff;
+  --foreground: #0f0f0f;
+  --muted: #f2f2f2;
+  --muted-foreground: #606060;
+  --border: #d6d6d6;
+  --ring: #065fd4;
+  --input: #d6d6d6;
+  --fab-active: #065fd4;
+  --fab-inactive: #c0d5ec;
 }
 
 #zamak-root {

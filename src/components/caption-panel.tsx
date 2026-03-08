@@ -25,7 +25,7 @@ export function CaptionFab({
     <button
       type="button"
       onClick={onClick}
-      className={`fixed right-3 bottom-3 flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border-none text-foreground shadow-lg pointer-events-auto ${open ? "bg-[#2563eb]" : "bg-[#1a3a5c]"}`}
+      className={`fixed right-3 bottom-3 flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border-none text-foreground shadow-lg pointer-events-auto ${open ? "bg-[var(--fab-active)]" : "bg-[var(--fab-inactive)]"}`}
       title={open ? "Hide captions" : "Show captions"}
     >
       <svg

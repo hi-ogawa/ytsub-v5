@@ -43,6 +43,10 @@
   --highlight-foreground: var(--color-sky-600);
   --highlight-alt-bg: var(--color-amber-100);
   --highlight-alt-border: var(--color-amber-400);
+
+  /* FAB (extension caption toggle) */
+  --fab-active: #065fd4;
+  --fab-inactive: #c0d5ec;
 }
 
 .dark {
@@ -88,6 +92,10 @@
   --highlight-foreground: var(--color-sky-300);
   --highlight-alt-bg: var(--color-amber-950);
   --highlight-alt-border: var(--color-amber-500);
+
+  /* FAB (extension caption toggle) */
+  --fab-active: #2563eb;
+  --fab-inactive: #1a3a5c;
 }
 
 @layer base {

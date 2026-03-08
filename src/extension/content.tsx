@@ -97,6 +97,28 @@ function ExtensionViewer({ videoId }: { videoId: string }) {
   );
 }
 
+// --- YouTube theme detection ---
+
+function isYouTubeDark(): boolean {
+  return document.documentElement.hasAttribute("dark");
+}
+
+function applyTheme(host: HTMLElement) {
+  const dark = isYouTubeDark();
+  host.classList.toggle("dark", dark);
+  host.classList.toggle("light", !dark);
+}
+
+function observeTheme(host: HTMLElement): MutationObserver {
+  applyTheme(host);
+  const observer = new MutationObserver(() => applyTheme(host));
+  observer.observe(document.documentElement, {
+    attributes: true,
+    attributeFilter: ["dark"],
+  });
+  return observer;
+}
+
 // --- Style injection ---
 
 // Inject CSS into shadow root, hoisting @property declarations to document head
@@ -143,6 +165,8 @@ function getVideoId() {
   return new URL(window.location.href).searchParams.get("v");
 }
 
+let themeObserver: MutationObserver | null = null;
+
 function inject() {
   if (document.getElementById("zamak-host")) return;
 
@@ -165,6 +189,9 @@ function inject() {
 
   addStyle(shadow, contentCss);
 
+  // Detect YouTube dark/light theme and keep in sync
+  themeObserver = observeTheme(host);
+
   const container = document.createElement("div");
   shadow.appendChild(container);
 
@@ -178,6 +205,8 @@ function inject() {
 }
 
 function remove() {
+  themeObserver?.disconnect();
+  themeObserver = null;
   document.getElementById("zamak-host")?.remove();
 }
 
