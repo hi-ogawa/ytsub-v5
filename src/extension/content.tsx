@@ -46,6 +46,75 @@ function alignByIndex(cues1: CaptionCue[], cues2: CaptionCue[]): AlignedRow[] {
   return rows;
 }
 
+function CaptionsIcon() {
+  return (
+    <svg
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <rect x="1" y="4" width="22" height="16" rx="2" />
+      <path d="M7 9h4" />
+      <path d="M13 9h4" />
+      <path d="M7 13h2" />
+      <path d="M11 13h6" />
+    </svg>
+  );
+}
+
+function App({ videoId }: { videoId: string }) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <>
+      {open && (
+        <div
+          id="ytsub-root"
+          style={{
+            position: "fixed",
+            right: "10px",
+            top: "65px",
+            bottom: "80px",
+            width: "400px",
+            pointerEvents: "auto",
+          }}
+        >
+          <ExtensionViewer videoId={videoId} />
+        </div>
+      )}
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        style={{
+          position: "fixed",
+          bottom: "20px",
+          right: "20px",
+          width: "48px",
+          height: "48px",
+          borderRadius: "50%",
+          border: "none",
+          background: open ? "var(--ring)" : "var(--muted)",
+          color: "var(--foreground)",
+          cursor: "pointer",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          pointerEvents: "auto",
+          boxShadow: "0 2px 8px rgba(0,0,0,0.4)",
+        }}
+        title={open ? "Hide captions" : "Show captions"}
+      >
+        <CaptionsIcon />
+      </button>
+    </>
+  );
+}
+
 function ExtensionViewer({ videoId }: { videoId: string }) {
   const [tracks, setTracks] = useState<YouTubeCaptionTrack[]>([]);
   const [selectedVssId1, setSelectedVssId1] = useState<string>();
@@ -205,11 +274,9 @@ function inject() {
   Object.assign(host.style, {
     all: "initial",
     position: "fixed",
-    right: "10px",
-    top: "65px",
-    bottom: "20px",
-    width: "400px",
+    inset: "0",
     zIndex: "100000",
+    pointerEvents: "none",
   });
   document.body.appendChild(host);
 
@@ -218,12 +285,11 @@ function inject() {
   addStyle(shadow, contentCss);
 
   const container = document.createElement("div");
-  container.id = "ytsub-root";
   shadow.appendChild(container);
 
   createRoot(container).render(
     <StrictMode>
-      <ExtensionViewer videoId={videoId} />
+      <App videoId={videoId} />
     </StrictMode>,
   );
 }
