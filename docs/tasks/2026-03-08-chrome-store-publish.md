@@ -79,9 +79,12 @@ Take screenshots at 1280×800 showing:
 ### Privacy
 
 - **Single purpose description**: "Display dual-language subtitles on YouTube videos for language learning"
-- **Permissions justification**:
-  - `activeTab`: Access the current YouTube tab to read video metadata and subtitle data
-  - `storage`: Remember user preferences (panel width, open/closed state)
+- **Permissions**: None — content script match rule is sufficient, no `activeTab` or `storage` (uses `localStorage` directly)
+- **Host permission justification** (for `https://www.youtube.com/*` content script match):
+  ```
+  The content script injects a dual-language subtitle panel into YouTube watch pages. It reads the video's existing subtitle tracks via YouTube's in-page player API and displays them side by side for language learners. The script only runs on youtube.com and does not access any other hosts.
+  ```
+- **Remote code**: No — all JS is bundled in the extension package, no external script tags, no eval(), no remote Wasm
 - **Data use disclosures**: No data collected, no data shared, no analytics, no remote servers contacted (except YouTube's own subtitle API from within the YouTube page)
 - **Privacy policy**: Not required for extensions that don't collect user data
 
@@ -91,6 +94,17 @@ Take screenshots at 1280×800 showing:
 - Content script runs in MAIN world to access YouTube's player APIs
 - No background/service worker
 - No remote code loading
+
+## Future: Bookmark Sync with Server
+
+Adding server integration (e.g. syncing bookmarks to the main Zamak app) would affect the Chrome Web Store listing:
+
+- **New permissions needed**: `host_permissions` for the API domain (e.g. `https://zamak.example.com/*`), possibly `storage` for auth tokens
+- **Privacy policy required**: mandatory once the extension transmits user data to a remote server
+- **Privacy disclosures**: must declare what data is sent (bookmarks, video IDs) and where
+- **Host permissions justification**: explain why the API domain is needed
+- **Review impact**: remote server communication triggers closer review; first submission with remote permissions takes longer (days vs hours)
+- **Recommended approach**: publish the current minimal version first (no permissions, fast approval), then add server integration in a later update — incremental permission additions are easier to get approved
 
 ## What's Remaining
 

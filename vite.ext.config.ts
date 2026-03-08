@@ -27,7 +27,7 @@ export default defineConfig({
           encoding: "utf8",
         });
         const manifest = JSON.parse(raw);
-        if (!process.env.CI) {
+        if (this.meta.watchMode) {
           manifest.name = "Zamak-dev";
         }
         this.emitFile({
