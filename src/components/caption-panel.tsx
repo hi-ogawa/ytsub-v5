@@ -6,7 +6,11 @@ import {
   type MergeStrategy,
   mergeCaptions,
 } from "../lib/caption-merge.ts";
-import { type CaptionCue, type YouTubeCaptionTrack } from "../lib/youtube.ts";
+import {
+  type CaptionCue,
+  type YouTubeCaptionTrack,
+  pickBestTrack,
+} from "../lib/youtube.ts";
 import { CaptionList } from "./caption-list.tsx";
 import { TrackPicker } from "./track-picker.tsx";
 import type { YTPlayer } from "./youtube-player.tsx";
@@ -119,14 +123,6 @@ function savePreferredLangs(lang1: string, lang2: string) {
   localStorage.setItem(LANGS_KEY, JSON.stringify({ lang1, lang2 }));
 }
 
-function pickByPreferredLang(
-  tracks: YouTubeCaptionTrack[],
-  lang: string,
-): YouTubeCaptionTrack | undefined {
-  const forLang = tracks.filter((t) => t.languageCode === lang);
-  return forLang.find((t) => !t.kind) ?? forLang.find((t) => t.kind === "asr");
-}
-
 export function CaptionPanel({
   tracks,
   fetchCues,
@@ -137,10 +133,10 @@ export function CaptionPanel({
   player: YTPlayer | null;
 }) {
   const [selectedVssId1, setSelectedVssId1] = useState<string | undefined>(
-    () => pickByPreferredLang(tracks, getPreferredLangs().lang1)?.vssId,
+    () => pickBestTrack(tracks, getPreferredLangs().lang1)?.vssId,
   );
   const [selectedVssId2, setSelectedVssId2] = useState<string | undefined>(
-    () => pickByPreferredLang(tracks, getPreferredLangs().lang2)?.vssId,
+    () => pickBestTrack(tracks, getPreferredLangs().lang2)?.vssId,
   );
   const [currentIndex, setCurrentIndex] = useState<number>();
   const [isPlaying, setIsPlaying] = useState(false);

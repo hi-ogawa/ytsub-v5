@@ -316,21 +316,22 @@ export function parseJson3(data: Json3File): CaptionCue[] {
   return cues;
 }
 
-/** Pick best caption tracks for ko + en from available tracks. */
-export function pickTracks(
+/** Pick best track for a language, with prefix fallback (e.g. "en" matches "en-US"). */
+export function pickBestTrack(
   tracks: YouTubeCaptionTrack[],
-  lang1 = "ko",
-  lang2 = "en",
-): {
-  track1: YouTubeCaptionTrack | undefined;
-  track2: YouTubeCaptionTrack | undefined;
-} {
-  function pickBest(lang: string) {
-    const forLang = tracks.filter((t) => t.languageCode === lang);
-    // Prefer manual (kind absent) over auto-generated (kind: "asr")
-    return (
-      forLang.find((t) => !t.kind) ?? forLang.find((t) => t.kind === "asr")
-    );
+  lang: string,
+): YouTubeCaptionTrack | undefined {
+  // Prefer manual (kind absent) over auto-generated (kind: "asr")
+  function bestOfKind(list: YouTubeCaptionTrack[]) {
+    return list.find((t) => !t.kind) ?? list.find((t) => t.kind === "asr");
   }
-  return { track1: pickBest(lang1), track2: pickBest(lang2) };
+  // Exact match first
+  const exact = tracks.filter((t) => t.languageCode === lang);
+  if (exact.length > 0) return bestOfKind(exact);
+  // Prefix fallback: "en" matches "en-US", "en-GB", etc.
+  const base = lang.split("-")[0];
+  const prefix = tracks.filter(
+    (t) => t.languageCode === base || t.languageCode.startsWith(base + "-"),
+  );
+  return bestOfKind(prefix);
 }
