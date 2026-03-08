@@ -140,7 +140,7 @@ export function CaptionPanel({
   return (
     <>
       <div className="flex items-center border-b">
-        <div className="flex-1">
+        <div className="min-w-0 flex-1">
           <TrackPicker
             tracks={tracks}
             selectedVssId1={selectedVssId1}
