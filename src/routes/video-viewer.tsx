@@ -215,6 +215,7 @@ function highlightText(
   text: string,
   marks: { offset: number; length: number; bookmark: Bookmark }[],
   onGoToBookmark?: (bookmarkId: number) => void,
+  onPopoverOpenChange?: (open: boolean) => void,
 ) {
   if (marks.length === 0) return <span data-offset={0}>{text}</span>;
   const sorted = [...marks].sort((a, b) => a.offset - b.offset);
@@ -234,6 +235,7 @@ function highlightText(
         bookmark={m.bookmark}
         offset={m.offset}
         onGoToBookmark={onGoToBookmark}
+        onPopoverOpenChange={onPopoverOpenChange}
       >
         {text.slice(m.offset, end)}
       </BookmarkWord>,
@@ -254,14 +256,16 @@ function BookmarkWord({
   offset,
   children,
   onGoToBookmark,
+  onPopoverOpenChange,
 }: {
   bookmark: Bookmark;
   offset: number;
   children: React.ReactNode;
   onGoToBookmark?: (bookmarkId: number) => void;
+  onPopoverOpenChange?: (open: boolean) => void;
 }) {
   return (
-    <Popover>
+    <Popover onOpenChange={onPopoverOpenChange}>
       <PopoverTrigger asChild>
         <span
           className="inline-block cursor-pointer"
@@ -577,6 +581,12 @@ export function VideoViewerPage() {
     });
   }
 
+  // Pause auto-scroll when bookmark popover is open
+  const isPopoverOpenRef = useRef(false);
+  const onPopoverOpenChange = useCallback((open: boolean) => {
+    isPopoverOpenRef.current = open;
+  }, []);
+
   // Pause auto-scroll during manual interaction
   const isManualScrollRef = useRef(false);
   const setDebouncedTimeout = useDebouncedTimeout();
@@ -646,7 +656,8 @@ export function VideoViewerPage() {
             nextIndex !== prev &&
             nextIndex !== undefined &&
             autoScroll &&
-            !isManualScrollRef.current
+            !isManualScrollRef.current &&
+            !isPopoverOpenRef.current
           ) {
             const scrollEl = scrollElementRef.current;
             if (scrollEl) {
@@ -889,6 +900,7 @@ export function VideoViewerPage() {
                             entry.text1,
                             text1Marks ?? [],
                             onGoToBookmark,
+                            onPopoverOpenChange,
                           )}
                         </div>
                         <div className="flex-1 pl-2" data-side="1">
@@ -896,6 +908,7 @@ export function VideoViewerPage() {
                             entry.text2,
                             text2Marks ?? [],
                             onGoToBookmark,
+                            onPopoverOpenChange,
                           )}
                         </div>
                       </div>
