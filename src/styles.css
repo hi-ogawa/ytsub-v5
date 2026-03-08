@@ -34,5 +34,6 @@
   ::after,
   ::before {
     border-color: var(--color-border);
+    scrollbar-color: var(--color-muted) transparent;
   }
 }

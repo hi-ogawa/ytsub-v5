@@ -1,5 +1,4 @@
 import { useQuery } from "@tanstack/react-query";
-import { Captions } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   FALLBACK_STRATEGIES,
@@ -26,15 +25,24 @@ export function CaptionFab({
     <button
       type="button"
       onClick={onClick}
-      className={`fixed right-3 bottom-3 flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border-none text-foreground shadow-lg pointer-events-auto ${open ? "bg-ring" : "bg-[#1a3a5c]"}`}
+      className={`fixed right-3 bottom-3 flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border-none text-foreground shadow-lg pointer-events-auto ${open ? "bg-[#2563eb]" : "bg-[#1a3a5c]"}`}
       title={open ? "Hide captions" : "Show captions"}
     >
-      <Captions size={20} />
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        className="size-8"
+        viewBox="0 0 128 128"
+      >
+        <path
+          d="M28,36 h72 v12 l-52,32 h52 v12 h-72 v-12 l52,-32 h-52 z"
+          fill="#ffffff"
+        />
+      </svg>
     </button>
   );
 }
 
-const WIDTH_KEY = "ytsub:panel-width";
+const WIDTH_KEY = "zamak:panel-width";
 const DEFAULT_WIDTH = 400;
 const MIN_WIDTH = 280;
 const MAX_WIDTH = 800;
@@ -109,7 +117,7 @@ export function ResizablePanel({
   );
 }
 
-const LANGS_KEY = "ytsub:preferred-langs";
+const LANGS_KEY = "zamak:preferred-langs";
 
 function getPreferredLangs(): { lang1: string; lang2: string } {
   try {
@@ -142,7 +150,7 @@ export function CaptionPanel({
   const [isPlaying, setIsPlaying] = useState(false);
   const [autoScroll, setAutoScroll] = useState(() => {
     try {
-      const stored = localStorage.getItem("ytsub:auto-scroll");
+      const stored = localStorage.getItem("zamak:auto-scroll");
       return stored !== null ? (JSON.parse(stored) as boolean) : true;
     } catch {
       return true;
@@ -215,7 +223,7 @@ export function CaptionPanel({
   function toggleAutoScroll() {
     setAutoScroll((prev) => {
       const next = !prev;
-      localStorage.setItem("ytsub:auto-scroll", JSON.stringify(next));
+      localStorage.setItem("zamak:auto-scroll", JSON.stringify(next));
       return next;
     });
   }

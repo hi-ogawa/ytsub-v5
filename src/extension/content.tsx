@@ -39,7 +39,7 @@ function App({ videoId }: { videoId: string }) {
     <div>
       {open && (
         <ResizablePanel
-          id="ytsub-root"
+          id="zamak-root"
           style={{
             position: "fixed",
             right: "10px",
@@ -144,14 +144,14 @@ function getVideoId() {
 }
 
 function inject() {
-  if (document.getElementById("ytsub-host")) return;
+  if (document.getElementById("zamak-host")) return;
 
   const videoId = getVideoId();
   if (!videoId) return;
 
   // Create shadow root for style isolation
   const host = document.createElement("div");
-  host.id = "ytsub-host";
+  host.id = "zamak-host";
   Object.assign(host.style, {
     all: "initial",
     position: "fixed",
@@ -178,7 +178,7 @@ function inject() {
 }
 
 function remove() {
-  document.getElementById("ytsub-host")?.remove();
+  document.getElementById("zamak-host")?.remove();
 }
 
 // YouTube SPA navigation

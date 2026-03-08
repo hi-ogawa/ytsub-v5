@@ -38,7 +38,7 @@ test.describe("import file upload", () => {
     await expect(page.locator("[data-index='0']")).toBeVisible();
 
     // Imported video appears in list with valid date
-    await page.getByRole("link", { name: "ytsub" }).click();
+    await page.getByRole("link", { name: "Zamak" }).click();
     await expect(page).toHaveURL("/");
     const card = page.getByRole("link", { name: /cloud palace/ });
     await expect(card).toBeVisible();

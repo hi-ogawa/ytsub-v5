@@ -8,7 +8,7 @@ export default defineConfig({
     lib: {
       entry: "./src/extension/content.tsx",
       formats: ["iife"],
-      name: "ytsub",
+      name: "zamak",
       fileName: () => "content.js",
       cssFileName: "content",
     },
@@ -21,14 +21,14 @@ export default defineConfig({
     react(),
     tailwindcss(),
     {
-      name: "copy-manifest",
+      name: "copy-manifest-and-icons",
       async buildEnd() {
         const raw = await this.fs.readFile("./src/extension/manifest.json", {
-          encoding: "ascii",
+          encoding: "utf8",
         });
         const manifest = JSON.parse(raw);
-        if (!process.env.CI) {
-          manifest.name = "ytsub-dev";
+        if (this.meta.watchMode) {
+          manifest.name = "Zamak-dev";
         }
         this.emitFile({
           type: "asset",

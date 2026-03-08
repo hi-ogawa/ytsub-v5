@@ -21,7 +21,7 @@ export function LoginPage() {
 
   return (
     <form onSubmit={handleSubmit} className="mx-auto mt-32 max-w-xs space-y-4">
-      <h1 className="text-xl font-bold">ytsub — login</h1>
+      <h1 className="text-xl font-bold">Zamak — login</h1>
       <input
         ref={inputRef}
         name="password"

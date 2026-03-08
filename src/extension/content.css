@@ -19,6 +19,7 @@
    (e.g. --color-background: var(--background)).
    TODO: support light mode (detect YouTube's theme and switch) */
 :host {
+  color-scheme: dark;
   --background: #0f0f0f;
   --foreground: #f1f1f1;
   --muted: #272727;
@@ -28,7 +29,7 @@
   --input: #3f3f3f;
 }
 
-#ytsub-root {
+#zamak-root {
   display: flex;
   flex-direction: column;
   background-color: var(--background);

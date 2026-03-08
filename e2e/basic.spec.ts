@@ -8,7 +8,7 @@ test.beforeAll(async () => {
 test("redirects to /login when not authenticated", async ({ page }) => {
   await page.goto("/");
   await expect(page).toHaveURL("/login");
-  await expect(page.locator("h1")).toHaveText("ytsub — login");
+  await expect(page.locator("h1")).toHaveText("Zamak — login");
   await expect(page.getByPlaceholder("Password")).toBeVisible();
 });
 
@@ -54,7 +54,7 @@ test.describe("video list and navigation", () => {
   test("header logo navigates back to video list", async ({ page }) => {
     await page.getByText("cloud palace").click();
     await expect(page).toHaveURL(/\/videos\/\d+/);
-    await page.getByRole("link", { name: "ytsub" }).click();
+    await page.getByRole("link", { name: "Zamak" }).click();
     await expect(page).toHaveURL("/");
   });
 
