@@ -76,6 +76,15 @@ See ytsub-v4 for relevant technique.
 - [x] align/merge captions algorithm improvements
 - [x] release preview
 - [ ] release chrome store (waiting for review)
+- [ ] caption panel settings
+  - virtical dot next to track picker
+  - move alignment select and autoscroll toggle inside the dropdown
+  - export `import.json` to be imported on main app
+- [ ] fix: store selected track pair storage per video. not only globally.
+- [ ] support manual bookmark
+  - use local storage
+  - also include them in export `import.json`
+- [ ] adapt to youtube dark/light theme (currently style hard-coded for dark)
 
 ## TODO: Backlog
 
