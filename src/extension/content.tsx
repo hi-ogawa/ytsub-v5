@@ -7,6 +7,7 @@ import {
   CaptionPanel,
   ResizablePanel,
 } from "../components/caption-panel.tsx";
+import { PortalContainerProvider } from "../components/ui/portal-container.tsx";
 import type { YTPlayer } from "../components/youtube-player.tsx";
 import {
   type YouTubeCaptionTrack,
@@ -32,27 +33,35 @@ function getVideoPlayer(): YTPlayer | null {
   };
 }
 
-function App({ videoId }: { videoId: string }) {
+function App({
+  videoId,
+  portalContainer,
+}: {
+  videoId: string;
+  portalContainer: HTMLElement;
+}) {
   const [open, setOpen] = useState(false);
 
   return (
-    <div>
-      {open && (
-        <ResizablePanel
-          id="zamak-root"
-          style={{
-            position: "fixed",
-            right: "10px",
-            top: "65px",
-            bottom: "56px",
-            pointerEvents: "auto",
-          }}
-        >
-          <ExtensionViewer videoId={videoId} />
-        </ResizablePanel>
-      )}
-      <CaptionFab open={open} onClick={() => setOpen((v) => !v)} />
-    </div>
+    <PortalContainerProvider value={portalContainer}>
+      <div>
+        {open && (
+          <ResizablePanel
+            id="zamak-root"
+            style={{
+              position: "fixed",
+              right: "10px",
+              top: "65px",
+              bottom: "56px",
+              pointerEvents: "auto",
+            }}
+          >
+            <ExtensionViewer videoId={videoId} />
+          </ResizablePanel>
+        )}
+        <CaptionFab open={open} onClick={() => setOpen((v) => !v)} />
+      </div>
+    </PortalContainerProvider>
   );
 }
 
@@ -172,7 +181,7 @@ function inject() {
   createRoot(container).render(
     <StrictMode>
       <QueryClientProvider client={queryClient}>
-        <App videoId={videoId} />
+        <App videoId={videoId} portalContainer={container} />
       </QueryClientProvider>
     </StrictMode>,
   );

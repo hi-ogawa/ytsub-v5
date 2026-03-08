@@ -1,5 +1,6 @@
 import { Popover as PopoverPrimitive } from "radix-ui";
 import type { ComponentProps } from "react";
+import { usePortalContainer } from "./portal-container.tsx";
 
 const Popover = PopoverPrimitive.Root;
 const PopoverTrigger = PopoverPrimitive.Trigger;
@@ -10,8 +11,9 @@ function PopoverContent({
   sideOffset = 4,
   ...props
 }: ComponentProps<typeof PopoverPrimitive.Content>) {
+  const container = usePortalContainer();
   return (
-    <PopoverPrimitive.Portal>
+    <PopoverPrimitive.Portal container={container}>
       <PopoverPrimitive.Content
         align={align}
         sideOffset={sideOffset}

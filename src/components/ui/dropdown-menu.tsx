@@ -1,5 +1,6 @@
 import { DropdownMenu as DropdownMenuPrimitive } from "radix-ui";
 import type { ComponentProps } from "react";
+import { usePortalContainer } from "./portal-container.tsx";
 
 const DropdownMenu = DropdownMenuPrimitive.Root;
 const DropdownMenuTrigger = DropdownMenuPrimitive.Trigger;
@@ -9,8 +10,9 @@ function DropdownMenuContent({
   sideOffset = 4,
   ...props
 }: ComponentProps<typeof DropdownMenuPrimitive.Content>) {
+  const container = usePortalContainer();
   return (
-    <DropdownMenuPrimitive.Portal>
+    <DropdownMenuPrimitive.Portal container={container}>
       <DropdownMenuPrimitive.Content
         sideOffset={sideOffset}
         className={

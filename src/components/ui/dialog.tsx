@@ -1,5 +1,6 @@
 import { Dialog as DialogPrimitive } from "radix-ui";
 import type { ComponentProps } from "react";
+import { usePortalContainer } from "./portal-container.tsx";
 
 const Dialog = DialogPrimitive.Root;
 
@@ -23,7 +24,7 @@ function DialogContent({
   ...props
 }: ComponentProps<typeof DialogPrimitive.Content>) {
   return (
-    <DialogPrimitive.Portal>
+    <DialogPrimitive.Portal container={usePortalContainer()}>
       <DialogOverlay />
       <DialogPrimitive.Content
         className={
