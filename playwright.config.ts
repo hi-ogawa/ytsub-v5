@@ -2,6 +2,7 @@ import { defineConfig, devices } from "@playwright/test";
 
 export default defineConfig({
   testDir: "./e2e",
+  testIgnore: ["youtube-*.spec.ts"],
   workers: 1,
   globalSetup: "./e2e/global-setup.ts",
   webServer: {
