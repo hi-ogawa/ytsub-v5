@@ -64,8 +64,13 @@ A web app for language learning via YouTube subtitles. Watch videos with dual ca
 - [ ] feat: repeatable eval process for ytsub agent skill — run skill against sample videos, check for common failure modes (wrong offsets, API errors, subtitle quality issues, payload format), track success rate across runs
 - [ ] feat: Bookmark export — export to import bookmarks for Anki study
 - [ ] test: test skills/scripts
-- [ ] chore: consolidate E2E tests — merge related tests that share setup into single test blocks to reduce repeated login/navigation overhead
-- [ ] refactor: adopt component library
+
+## TODO: Extension
+
+- [ ] captions panel shouldn't cover YouTube's top-right profile popover
+- [ ] captions panel should be hidable (FAB at bottom-right, default closed)
+- [ ] align captions viewer experience with app video viewer (e.g. auto-scroll sensitivity)
+- [ ] align/merge captions algorithm improvements
 
 ## TODO: Backlog
 
@@ -73,7 +78,7 @@ A web app for language learning via YouTube subtitles. Watch videos with dual ca
 - [ ] feat: bookmark list page — browse/search all bookmarks across videos
 - [ ] Full-text search — search across captions and bookmarks (D1 FTS or LIKE)
 - [ ] Keyboard shortcuts — space (play/pause), arrow keys (prev/next caption), etc.
-- [ ] Mobile-friendly layout
-- [ ] Browser extension as data source (content script fetches subs from YouTube same-origin)
+- [x] Mobile-friendly layout
+- [x] Browser extension as data source (content script fetches subs from YouTube same-origin)
 - [ ] Authentication (multi users)
 - [ ] Typing practice (v3/v4 had this)

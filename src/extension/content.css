@@ -1,0 +1,40 @@
+@import "../styles.css";
+
+/* YouTube sets :root { font-size: 10px }, making all rem values 62.5% of expected.
+   Override Tailwind's rem-based spacing to use correct px values. */
+@theme inline {
+  --spacing: 4px;
+  --text-xs: 12px;
+  --text-xs--line-height: 16px;
+  --text-sm: 14px;
+  --text-sm--line-height: 20px;
+  --text-base: 16px;
+  --text-base--line-height: 24px;
+  --text-lg: 18px;
+  --text-lg--line-height: 28px;
+}
+
+/* Semantic color tokens matching YouTube's dark theme.
+   The shared @theme inline bridge (styles.css) references these
+   (e.g. --color-background: var(--background)).
+   TODO: support light mode (detect YouTube's theme and switch) */
+:host {
+  --background: #0f0f0f;
+  --foreground: #f1f1f1;
+  --muted: #272727;
+  --muted-foreground: #aaa;
+  --border: #3f3f3f;
+  --ring: #3ea6ff;
+  --input: #3f3f3f;
+}
+
+#ytsub-root {
+  height: 100%;
+  background-color: var(--background);
+  color: var(--foreground);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  font-family: "Roboto", "Arial", sans-serif;
+  font-size: 14px;
+}

@@ -1,0 +1,539 @@
+{
+  "wireMagic": "pb3",
+  "pens": [{}],
+  "wsWinStyles": [{}],
+  "wpWinPositions": [{}],
+  "events": [
+    {
+      "tStartMs": 25714,
+      "dDurationMs": 3907,
+      "segs": [
+        {
+          "utf8": "Creo que estoy soñando despierta"
+        }
+      ]
+    },
+    {
+      "tStartMs": 29621,
+      "dDurationMs": 5976,
+      "segs": [
+        {
+          "utf8": "Toda la noche, una y otra vez"
+        }
+      ]
+    },
+    {
+      "tStartMs": 35597,
+      "dDurationMs": 2609,
+      "segs": [
+        {
+          "utf8": "Atajo hacia ti"
+        }
+      ]
+    },
+    {
+      "tStartMs": 38206,
+      "dDurationMs": 1794,
+      "segs": [
+        {
+          "utf8": "Intento encontrarlo"
+        }
+      ]
+    },
+    {
+      "tStartMs": 40000,
+      "dDurationMs": 4759,
+      "segs": [
+        {
+          "utf8": "Aún me envuelve la confusión"
+        }
+      ]
+    },
+    {
+      "tStartMs": 44759,
+      "dDurationMs": 2933,
+      "segs": [
+        {
+          "utf8": "La vista en que me perdí"
+        }
+      ]
+    },
+    {
+      "tStartMs": 47692,
+      "dDurationMs": 2308,
+      "segs": [
+        {
+          "utf8": "La estoy recorriendo otra vez"
+        }
+      ]
+    },
+    {
+      "tStartMs": 50000,
+      "dDurationMs": 2706,
+      "segs": [
+        {
+          "utf8": "Dicen que un espacio se abrió"
+        }
+      ]
+    },
+    {
+      "tStartMs": 52706,
+      "dDurationMs": 5772,
+      "segs": [
+        {
+          "utf8": "Cuando creí que todo terminó, ya volvió, yeah"
+        }
+      ]
+    },
+    {
+      "tStartMs": 58478,
+      "dDurationMs": 1797,
+      "segs": [
+        {
+          "utf8": "Siempre en el mismo lugar"
+        }
+      ]
+    },
+    {
+      "tStartMs": 60275,
+      "dDurationMs": 3298,
+      "segs": [
+        {
+          "utf8": "Pero en realidad quiero correr más"
+        }
+      ]
+    },
+    {
+      "tStartMs": 63573,
+      "dDurationMs": 3623,
+      "segs": [
+        {
+          "utf8": "can’t stop it’s my world"
+        }
+      ]
+    },
+    {
+      "tStartMs": 67196,
+      "dDurationMs": 2804,
+      "segs": [
+        {
+          "utf8": "sé que todo ya está decidido"
+        }
+      ]
+    },
+    {
+      "tStartMs": 70000,
+      "dDurationMs": 2609,
+      "segs": [
+        {
+          "utf8": "En laberintos y velos"
+        }
+      ]
+    },
+    {
+      "tStartMs": 72609,
+      "dDurationMs": 3299,
+      "segs": [
+        {
+          "utf8": "De todos esos caminos"
+        }
+      ]
+    },
+    {
+      "tStartMs": 75908,
+      "dDurationMs": 2324,
+      "segs": [
+        {
+          "utf8": "Aunque el tiempo me engañe y llegue a frenarse"
+        }
+      ]
+    },
+    {
+      "tStartMs": 78232,
+      "dDurationMs": 2203,
+      "segs": [
+        {
+          "utf8": "yo no me detengo"
+        }
+      ]
+    },
+    {
+      "tStartMs": 80435,
+      "dDurationMs": 2284,
+      "segs": [
+        {
+          "utf8": "Aunque me vuelva a perder"
+        }
+      ]
+    },
+    {
+      "tStartMs": 82719,
+      "dDurationMs": 2211,
+      "segs": [
+        {
+          "utf8": "de la misma manera"
+        }
+      ]
+    },
+    {
+      "tStartMs": 84930,
+      "dDurationMs": 2995,
+      "segs": [
+        {
+          "utf8": "Yo quiero encontrarte a ti"
+        }
+      ]
+    },
+    {
+      "tStartMs": 87925,
+      "dDurationMs": 4634,
+      "segs": [
+        {
+          "utf8": "Qué lúcida es esta sensación"
+        }
+      ]
+    },
+    {
+      "tStartMs": 92559,
+      "dDurationMs": 2157,
+      "segs": [
+        {
+          "utf8": "Como un misterio sin fin"
+        }
+      ]
+    },
+    {
+      "tStartMs": 94716,
+      "dDurationMs": 2355,
+      "segs": [
+        {
+          "utf8": "y decifrando lo que es sutil"
+        }
+      ]
+    },
+    {
+      "tStartMs": 97071,
+      "dDurationMs": 2155,
+      "segs": [
+        {
+          "utf8": "De lejos vi mi reflejo"
+        }
+      ]
+    },
+    {
+      "tStartMs": 99226,
+      "dDurationMs": 4295,
+      "segs": [
+        {
+          "utf8": "Un pasillo en un REM surrrreal"
+        }
+      ]
+    },
+    {
+      "tStartMs": 103521,
+      "dDurationMs": 2731,
+      "segs": [
+        {
+          "utf8": "Creo saber y vuelvo a perderme"
+        }
+      ]
+    },
+    {
+      "tStartMs": 106252,
+      "dDurationMs": 2000,
+      "segs": [
+        {
+          "utf8": "Ya todo se vuelve irreal"
+        }
+      ]
+    },
+    {
+      "tStartMs": 108252,
+      "dDurationMs": 5287,
+      "segs": [
+        {
+          "utf8": "Detrás del visor"
+        }
+      ]
+    },
+    {
+      "tStartMs": 113539,
+      "dDurationMs": 2527,
+      "segs": [
+        {
+          "utf8": "La dirección está decidida"
+        }
+      ]
+    },
+    {
+      "tStartMs": 116066,
+      "dDurationMs": 2651,
+      "segs": [
+        {
+          "utf8": "El laberinto se rompió "
+        }
+      ]
+    },
+    {
+      "tStartMs": 118717,
+      "dDurationMs": 2933,
+      "segs": [
+        {
+          "utf8": "Y el camino se borro"
+        }
+      ]
+    },
+    {
+      "tStartMs": 121650,
+      "dDurationMs": 2568,
+      "segs": [
+        {
+          "utf8": "Aunque el tiempo me engañe y llegue a frenarse"
+        }
+      ]
+    },
+    {
+      "tStartMs": 124218,
+      "dDurationMs": 2160,
+      "segs": [
+        {
+          "utf8": "yo no me detengo"
+        }
+      ]
+    },
+    {
+      "tStartMs": 126378,
+      "dDurationMs": 2325,
+      "segs": [
+        {
+          "utf8": " Aunque me vuelva a perder"
+        }
+      ]
+    },
+    {
+      "tStartMs": 128703,
+      "dDurationMs": 2220,
+      "segs": [
+        {
+          "utf8": "de la misma manera"
+        }
+      ]
+    },
+    {
+      "tStartMs": 130923,
+      "dDurationMs": 2852,
+      "segs": [
+        {
+          "utf8": " Yo quiero encontrarte a ti"
+        }
+      ]
+    },
+    {
+      "tStartMs": 133775,
+      "dDurationMs": 3866,
+      "segs": [
+        {
+          "utf8": " Qué lúcida es esta sensación"
+        }
+      ]
+    },
+    {
+      "tStartMs": 138531,
+      "dDurationMs": 5109,
+      "segs": [
+        {
+          "utf8": " Ahora floto sobre las nubes"
+        }
+      ]
+    },
+    {
+      "tStartMs": 143640,
+      "dDurationMs": 5437,
+      "segs": [
+        {
+          "utf8": " Libre como la luz de la luna"
+        }
+      ]
+    },
+    {
+      "tStartMs": 149077,
+      "dDurationMs": 4123,
+      "segs": [
+        {
+          "utf8": " No me importa que camino"
+        }
+      ]
+    },
+    {
+      "tStartMs": 153200,
+      "dDurationMs": 1631,
+      "segs": [
+        {
+          "utf8": " (Qual palacio)"
+        }
+      ]
+    },
+    {
+      "tStartMs": 154831,
+      "dDurationMs": 4551,
+      "segs": [
+        {
+          "utf8": " Cruzo todo y vuelo hacia ti"
+        }
+      ]
+    },
+    {
+      "tStartMs": 159382,
+      "dDurationMs": 2618,
+      "segs": [
+        {
+          "utf8": " Pues ya le di la espalda al sol (ah)"
+        }
+      ]
+    },
+    {
+      "tStartMs": 162000,
+      "dDurationMs": 2907,
+      "segs": [
+        {
+          "utf8": " La luna fue quien me llamó"
+        }
+      ]
+    },
+    {
+      "tStartMs": 164907,
+      "dDurationMs": 2468,
+      "segs": [
+        {
+          "utf8": " Aunque el tiempo me engañe y llegue a frenarse"
+        }
+      ]
+    },
+    {
+      "tStartMs": 167375,
+      "dDurationMs": 2259,
+      "segs": [
+        {
+          "utf8": " yo no me detengo "
+        }
+      ]
+    },
+    {
+      "tStartMs": 169634,
+      "dDurationMs": 2568,
+      "segs": [
+        {
+          "utf8": " Aunque me vuelva a perder"
+        }
+      ]
+    },
+    {
+      "tStartMs": 172202,
+      "dDurationMs": 2000,
+      "segs": [
+        {
+          "utf8": " de la misma manera"
+        }
+      ]
+    },
+    {
+      "tStartMs": 174202,
+      "dDurationMs": 2798,
+      "segs": [
+        {
+          "utf8": " Yo quiero encontrarte a ti "
+        }
+      ]
+    },
+    {
+      "tStartMs": 177000,
+      "dDurationMs": 1621,
+      "segs": [
+        {
+          "utf8": " Esta sensación,"
+        }
+      ]
+    },
+    {
+      "tStartMs": 178621,
+      "dDurationMs": 1379,
+      "segs": [
+        {
+          "utf8": " Lucido Momento"
+        }
+      ]
+    },
+    {
+      "tStartMs": 180000,
+      "dDurationMs": 2369,
+      "segs": [
+        {
+          "utf8": " Ayer también se derritió"
+        }
+      ]
+    },
+    {
+      "tStartMs": 182369,
+      "dDurationMs": 3116,
+      "segs": [
+        {
+          "utf8": " Hasta mañana no llego "
+        }
+      ]
+    },
+    {
+      "tStartMs": 185485,
+      "dDurationMs": 2518,
+      "segs": [
+        {
+          "utf8": " Si niebla esconda las reglas de mí"
+        }
+      ]
+    },
+    {
+      "tStartMs": 188003,
+      "dDurationMs": 2299,
+      "segs": [
+        {
+          "utf8": " Aún sigo adelante "
+        }
+      ]
+    },
+    {
+      "tStartMs": 190302,
+      "dDurationMs": 2309,
+      "segs": [
+        {
+          "utf8": "Aunque me vuelva a perder "
+        }
+      ]
+    },
+    {
+      "tStartMs": 192611,
+      "dDurationMs": 2070,
+      "segs": [
+        {
+          "utf8": " de la misma manera"
+        }
+      ]
+    },
+    {
+      "tStartMs": 194681,
+      "dDurationMs": 2767,
+      "segs": [
+        {
+          "utf8": " Y o quiero encontrarte a ti"
+        }
+      ]
+    },
+    {
+      "tStartMs": 197448,
+      "dDurationMs": 4094,
+      "segs": [
+        {
+          "utf8": " El nombre en tu voz me sigue llamando"
+        }
+      ]
+    }
+  ]
+}

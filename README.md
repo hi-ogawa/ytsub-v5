@@ -8,6 +8,7 @@ A web app for language learning via YouTube subtitles. Watch videos with dual su
 pnpm install
 pnpm db:bootstrap
 pnpm dev
+pnpm dev-ext
 ```
 
 ## Docs
