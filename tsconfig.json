@@ -1,5 +1,5 @@
 {
-  "include": ["src", "e2e", "*.ts"],
+  "include": ["src", "e2e", "scripts", "*.ts"],
   "compilerOptions": {
     "verbatimModuleSyntax": true,
     "target": "esnext",

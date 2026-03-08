@@ -56,6 +56,7 @@ To continue in fresh session: `Read docs/tasks/YYYY-MM-DD-<topic>.md and continu
 - **Never run long-running tasks** (dev servers, watch modes, etc.)
 - Use `pnpm build` to verify code, not `pnpm dev`
 - User runs `pnpm dev` manually in their terminal
+- **Never use `--` to pass args to pnpm scripts.** pnpm doesn't need `--` and it silently breaks filtering. Write `pnpm test "filename" -t "pattern"` or `pnpm test-e2e "filename" -g "pattern"` directly.
 
 ## Git Workflow
 
