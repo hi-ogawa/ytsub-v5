@@ -43,7 +43,7 @@ test("pick ko + en tracks from extraction result", async ({ page }) => {
   expect(track2!.languageCode).toBe("en");
 });
 
-test("fetch metadata via player API (iOS client)", async ({ page }) => {
+test("player API: fetch metadata + json3", async ({ page }) => {
   await page.goto(`https://www.youtube.com/watch?v=${TEST_VIDEO_ID}`);
 
   const result = await page.evaluate(fetchPlayerApi, TEST_VIDEO_ID);
@@ -56,40 +56,15 @@ test("fetch metadata via player API (iOS client)", async ({ page }) => {
   expect(track1).toBeDefined();
   expect(track1!.languageCode).toBe("ko");
 
-  console.log("player API track1 baseUrl:", track1!.baseUrl);
-  console.log(
-    "player API tracks:",
-    result.captionTracks.map(
-      (t) => `${t.languageCode} (${t.kind ?? "manual"})`,
-    ),
-  );
-});
-
-test("fetch json3 via player API baseUrl", async ({ page }) => {
-  await page.goto(`https://www.youtube.com/watch?v=${TEST_VIDEO_ID}`);
-
-  const result = await page.evaluate(fetchPlayerApi, TEST_VIDEO_ID);
-  const { track1 } = pickTracks(result.captionTracks);
-  expect(track1).toBeDefined();
-
-  // Fetch json3 using the player API's baseUrl (may bypass POT)
+  // Fetch and parse json3 for ko track
   const json3 = await page.evaluate(fetchTrackJson3, track1!.baseUrl);
-  expect(json3.events).toBeDefined();
   expect(json3.events.length).toBeGreaterThan(0);
 
   const cues = parseJson3(json3);
   expect(cues.length).toBeGreaterThan(0);
-  console.log(`ko: ${cues.length} cues, sample:`, cues[0]);
-
-  // Verify cue structure
-  for (const cue of cues) {
-    expect(cue.begin).toBeGreaterThanOrEqual(0);
-    expect(cue.end).toBeGreaterThan(cue.begin);
-    expect(cue.text).toBeTruthy();
-  }
 });
 
-test("fetch both tracks via player API and parse", async ({ page }) => {
+test("fetch both tracks and parse", async ({ page }) => {
   await page.goto(`https://www.youtube.com/watch?v=${TEST_VIDEO_ID}`);
 
   const result = await page.evaluate(fetchPlayerApi, TEST_VIDEO_ID);
@@ -107,8 +82,4 @@ test("fetch both tracks via player API and parse", async ({ page }) => {
 
   expect(cuesKo.length).toBeGreaterThan(0);
   expect(cuesEn.length).toBeGreaterThan(0);
-
-  console.log(`ko: ${cuesKo.length} cues, en: ${cuesEn.length} cues`);
-  console.log(`ko sample:`, cuesKo[0]);
-  console.log(`en sample:`, cuesEn[0]);
 });

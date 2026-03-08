@@ -9,11 +9,12 @@
 
 ## Core concept
 
-A web app that stores YouTube videos with their subtitles, provides a viewer with dual caption panel, and supports bookmarking words/phrases with rich metadata. External clients (agent, CLI) push video+subtitle data via API since YouTube no longer allows server-side fetching.
+A web app that stores YouTube videos with their subtitles, provides a viewer with dual caption panel, and supports bookmarking words/phrases with rich metadata.
 
 ```
-Clients (yt-dlp + agent, CLI, etc.)
-  API  →  push video metadata, caption cues, vocab entries
+Data sources (push video metadata, caption cues, vocab entries via API)
+  ├── Browser extension (on YouTube page) — primary
+  └── Agent skill (yt-dlp + LLM) — legacy, still works
 
 Web UI (browser)
   Video viewer: YouTube embed + dual caption panel
@@ -22,20 +23,20 @@ Web UI (browser)
 ```
 
 - Single-user app
-- App is a viewer/curator — doesn't know about yt-dlp, LLM, or Anki
+- App is a viewer/curator — doesn't know how data arrives
 - API is the boundary; any client can push data
 
-## Why not an extension?
+## Browser extension as data source
 
-v4 went extension because content scripts can hit YouTube APIs from same origin (how Language Reactor works too). Trade-off: extension gives direct YouTube access but adds complexity (store review, Chrome API constraints, harder to build full UI). Web app + yt-dlp is cleaner architecturally.
+See [architecture-extension.md](./architecture-extension.md) for how the extension fetches subtitles from YouTube (same-origin + iOS client spoofing to bypass CORS and POT).
 
-## Agent skill as data pipeline
+## Agent skill as data pipeline (legacy)
 
-The key insight of this project: a local AI agent (ytsub skill) is the primary data pipeline. The agent runs yt-dlp, parses TTML subtitles, aligns bilingual captions by timestamp, and extracts curated vocabulary — tasks that are tedious manually but natural for an agent with tool access.
+The original import pipeline: a local AI agent (ytsub skill) runs yt-dlp, parses subtitles, aligns bilingual captions by timestamp, and extracts curated vocabulary. See `docs/skills/ytsub/SKILL.md`.
 
-The skill (`docs/skills/ytsub/`) is self-contained and portable. Its pipeline: fetch subs → parse TTML → merge bilingual captions → extract vocab → push to app via API. The app doesn't know how data arrives — the API is the boundary.
+Still works but is slow (~3-7 min per video) and fragile. Being replaced by the browser extension for subtitle fetching and manual bookmarking for vocab extraction.
 
-For local development, the project reuses the skill's intermediate output (the merged JSON with video + captions + bookmarks) as seed data. `scripts/db-seed.ts` reads these JSON files and imports them directly into the local D1 database, bypassing the API. This is a project-level convenience, not part of the skill itself.
+For local development, the project reuses the skill's intermediate output (the merged JSON with video + captions + bookmarks) as seed data. `scripts/db-seed.ts` reads these JSON files and imports them directly into the local D1 database, bypassing the API.
 
 ## Data model
 

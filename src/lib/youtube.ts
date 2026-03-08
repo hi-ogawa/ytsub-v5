@@ -121,25 +121,61 @@ export async function fetchTrackJson3(baseUrl: string): Promise<Json3File> {
 }
 
 /**
- * Fetch video metadata via youtubei/v1/player with iOS client spoofing (v4 approach).
- * Returns the same structure as ytInitialPlayerResponse but from the iOS client context.
- * The caption track baseUrls from this response may bypass the POT requirement.
+ * Fetch video metadata via youtubei/v1/player with mobile client spoofing.
+ * Mobile clients don't require SUBS POT, so caption baseUrls work directly.
  * Must run in YouTube page context (same-origin).
+ *
+ * Client configs synced from yt-dlp (see docs/skills/yt-dlp/SKILL.md).
+ * Inlined in function body so page.evaluate() serialization works.
  */
 export async function fetchPlayerApi(
   videoId: string,
 ): Promise<YouTubeExtractionResult> {
-  // Step 1: Extract visitorData from ytcfg on the page
+  // Mobile clients that don't require JS player or SUBS POT
+  const clients = {
+    // yt-dlp's current default — simplest client, no POT policies at all
+    android_vr: {
+      clientId: "28",
+      userAgent:
+        "com.google.android.apps.youtube.vr.oculus/1.71.26 (Linux; U; Android 12L; eureka-user Build/SQ3A.220605.009.A1) gzip",
+      context: {
+        clientName: "ANDROID_VR",
+        clientVersion: "1.71.26",
+        deviceMake: "Oculus",
+        deviceModel: "Quest 3",
+        androidSdkVersion: 32,
+        osName: "Android",
+        osVersion: "12L",
+      },
+    },
+    // Fallback — proven in ytsub-v4
+    ios: {
+      clientId: "5",
+      userAgent:
+        "com.google.ios.youtube/21.02.3 (iPhone16,2; U; CPU iOS 18_3_2 like Mac OS X;)",
+      context: {
+        clientName: "IOS",
+        clientVersion: "21.02.3",
+        deviceMake: "Apple",
+        deviceModel: "iPhone16,2",
+        osName: "iPhone",
+        osVersion: "18.3.2.22D82",
+      },
+    },
+  };
+  const client = clients.android_vr;
+
+  // Extract visitorData from ytcfg on the page
   const ytcfg = (
     window as unknown as { ytcfg?: { data_?: Record<string, unknown> } }
   ).ytcfg;
   let visitorData: string | undefined;
   if (ytcfg?.data_) {
-    const data = ytcfg.data_;
+    const d = ytcfg.data_;
     visitorData =
-      (data.VISITOR_DATA as string) ??
+      (d.VISITOR_DATA as string) ??
       ((
-        (data.INNERTUBE_CONTEXT as Record<string, unknown>)?.client as Record<
+        (d.INNERTUBE_CONTEXT as Record<string, unknown>)?.client as Record<
           string,
           unknown
         >
@@ -149,40 +185,25 @@ export async function fetchPlayerApi(
     throw new Error("Could not extract visitorData from ytcfg");
   }
 
-  // Step 2: Call youtubei/v1/player with iOS client headers
-  // Based on yt-dlp's iOS client config and ytsub-v4
   const res = await fetch("https://www.youtube.com/youtubei/v1/player", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "X-YouTube-Client-Name": "5",
-      "X-YouTube-Client-Version": "20.10.4",
+      "X-YouTube-Client-Name": client.clientId,
+      "X-YouTube-Client-Version": client.context.clientVersion,
       "X-Goog-Visitor-Id": visitorData,
       Origin: "https://www.youtube.com",
-      "User-Agent":
-        "com.google.ios.youtube/20.10.4 (iPhone16,2; U; CPU iOS 18_3_2 like Mac OS X;)",
+      "User-Agent": client.userAgent,
     },
     body: JSON.stringify({
       videoId,
       context: {
         client: {
-          clientName: "IOS",
-          clientVersion: "20.10.4",
-          deviceMake: "Apple",
-          deviceModel: "iPhone16,2",
-          userAgent:
-            "com.google.ios.youtube/20.10.4 (iPhone16,2; U; CPU iOS 18_3_2 like Mac OS X;)",
-          osName: "iPhone",
-          osVersion: "18.3.2.22D82",
+          ...client.context,
+          userAgent: client.userAgent,
           hl: "en",
           timeZone: "UTC",
           utcOffsetMinutes: 0,
-        },
-      },
-      playbackContext: {
-        contentPlaybackContext: {
-          html5Preference: "HTML5_PREF_WANTS",
-          signatureTimestamp: 20073,
         },
       },
       contentCheckOk: true,
@@ -195,6 +216,8 @@ export async function fetchPlayerApi(
   }
 
   const data = (await res.json()) as Record<string, unknown>;
+
+  // Parse response (inlined — page.evaluate can't see external functions)
   const details = data.videoDetails as Record<string, unknown>;
   if (!details) {
     throw new Error("videoDetails not found in player API response");
@@ -211,19 +234,21 @@ export async function fetchPlayerApi(
 
   const captionTracks = rawTracks.map((track) => {
     const nameObj = track.name as Record<string, unknown> | undefined;
-    let name = String(track.languageCode);
+    let trackName = String(track.languageCode);
     if (nameObj) {
       if (typeof nameObj.simpleText === "string") {
-        name = nameObj.simpleText;
+        trackName = nameObj.simpleText;
       } else if (Array.isArray(nameObj.runs)) {
-        name = (nameObj.runs as { text: string }[]).map((r) => r.text).join("");
+        trackName = (nameObj.runs as { text: string }[])
+          .map((r) => r.text)
+          .join("");
       }
     }
     return {
       baseUrl: String(track.baseUrl),
       languageCode: String(track.languageCode),
       kind: track.kind ? String(track.kind) : undefined,
-      name,
+      name: trackName,
       vssId: String(track.vssId),
     };
   });
