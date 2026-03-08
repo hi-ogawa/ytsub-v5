@@ -3,10 +3,16 @@ import type { ComponentProps } from "react";
 import { usePortalContainer } from "./portal-container.tsx";
 
 function Popover({
-  modal = false,
+  modal,
   ...props
 }: ComponentProps<typeof PopoverPrimitive.Root>) {
-  return <PopoverPrimitive.Root modal={modal} {...props} />;
+  const container = usePortalContainer();
+  return (
+    <PopoverPrimitive.Root
+      modal={modal ?? (container ? false : undefined)}
+      {...props}
+    />
+  );
 }
 const PopoverTrigger = PopoverPrimitive.Trigger;
 

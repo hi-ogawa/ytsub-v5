@@ -3,10 +3,18 @@ import type { ComponentProps } from "react";
 import { usePortalContainer } from "./portal-container.tsx";
 
 function DropdownMenu({
-  modal = false,
+  modal,
   ...props
 }: ComponentProps<typeof DropdownMenuPrimitive.Root>) {
-  return <DropdownMenuPrimitive.Root modal={modal} {...props} />;
+  const container = usePortalContainer();
+  // In extension (shadow DOM), modal must be false to avoid setting
+  // pointer-events:none and overflow:hidden on document.body.
+  return (
+    <DropdownMenuPrimitive.Root
+      modal={modal ?? (container ? false : undefined)}
+      {...props}
+    />
+  );
 }
 const DropdownMenuTrigger = DropdownMenuPrimitive.Trigger;
 
