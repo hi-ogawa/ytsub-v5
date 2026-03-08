@@ -73,7 +73,7 @@ export function DevViewerPage() {
 
       {/* Floating caption panel (same position as extension) */}
       {panelOpen && meta && (
-        <div className="fixed top-[65px] right-[10px] bottom-[80px] w-[400px] overflow-hidden rounded-lg border border-border bg-background">
+        <div className="fixed top-[65px] right-[10px] bottom-[80px] w-[400px] flex flex-col overflow-hidden rounded-lg border border-border bg-background">
           <CaptionPanel
             tracks={meta.captionTracks}
             fetchCues={(track) => fetchTrackFixture(videoId, track)}
