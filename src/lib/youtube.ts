@@ -294,21 +294,6 @@ export function parseJson3(data: Json3File): CaptionCue[] {
   return cues;
 }
 
-/** Pick best caption tracks for ko + en from available tracks. */
-export function pickTracks(
-  tracks: YouTubeCaptionTrack[],
-  lang1 = "ko",
-  lang2 = "en",
-): {
-  track1: YouTubeCaptionTrack | undefined;
-  track2: YouTubeCaptionTrack | undefined;
-} {
-  return {
-    track1: pickBestTrack(tracks, lang1),
-    track2: pickBestTrack(tracks, lang2),
-  };
-}
-
 /** Pick best track for a language, with prefix fallback (e.g. "en" matches "en-US"). */
 export function pickBestTrack(
   tracks: YouTubeCaptionTrack[],
