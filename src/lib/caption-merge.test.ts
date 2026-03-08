@@ -240,14 +240,14 @@ describe("mergeCaptions (tiered)", () => {
     expect(result.strategy).toBe("strict");
   });
 
-  it("falls through to overlap on count mismatch", () => {
+  it("falls through to partition on count mismatch", () => {
     const cues1: CaptionCue[] = [
       { begin: 0, end: 5, text: "a" },
       { begin: 5, end: 10, text: "b" },
     ];
     const cues2: CaptionCue[] = [{ begin: 0, end: 10, text: "x" }];
     const result = mergeCaptions(cues1, cues2);
-    expect(result.strategy).toBe("overlap");
+    expect(result.strategy).toBe("partition");
   });
 });
 

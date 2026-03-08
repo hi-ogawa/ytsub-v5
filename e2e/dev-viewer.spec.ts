@@ -60,19 +60,19 @@ test.describe("dev-viewer caption panel", () => {
     await page.getByTitle("Show captions").click();
     await expect(page.locator("[data-index='0']")).toBeVisible();
 
-    // Strategy dropdown should be visible (fixture falls back to overlap)
+    // Strategy dropdown should be visible (fixture falls back to partition)
     const strategySelect = page.locator("select[title='Merge strategy']");
     await expect(strategySelect).toBeVisible();
-    await expect(strategySelect).toHaveValue("overlap");
+    await expect(strategySelect).toHaveValue("partition");
 
-    // Count rows with overlap strategy
-    const overlapCount = await page.locator("[data-index]").count();
-
-    // Switch to partition — should produce fewer rows (fewer-cue track drives)
-    await strategySelect.selectOption("partition");
-    await expect(page.locator("[data-index='0']")).toBeVisible();
+    // Count rows with partition strategy (default)
     const partitionCount = await page.locator("[data-index]").count();
-    expect(partitionCount).toBeLessThan(overlapCount);
+
+    // Switch to overlap — should produce more rows (one per cue1)
+    await strategySelect.selectOption("overlap");
+    await expect(page.locator("[data-index='0']")).toBeVisible();
+    const overlapCount = await page.locator("[data-index]").count();
+    expect(overlapCount).toBeGreaterThan(partitionCount);
 
     // Switch to best-overlap
     await strategySelect.selectOption("best-overlap");

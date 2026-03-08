@@ -13,15 +13,10 @@
 // | bidirectional | cue2→cue1   | no         | ~45-90%  | yes   | Each cue2 assigned to one cue1 |
 // | dtw           | global DP   | no         | ~47-90%  | yes   | Globally optimal, monotonic    |
 //
-// Why overlap is the best default for this use case:
-// - 100% coverage: every cue1 gets English text if any temporal overlap exists
-// - No drops: orphan cue2s (zero overlap) become rows with empty text1
-// - Duplicates are acceptable: the viewer shows ko/en pairs per row;
-//   seeing the same English line on adjacent Korean cues is fine for reading
-// - Simple and fast: O(n*m) greedy, no DP allocation
-// - Bidirectional/DTW trade coverage for dedup — not a useful tradeoff here
-//   since the reading experience degrades more from missing text than from
-//   occasional repetition
+// Why partition is the default:
+// - 100% coverage, no drops, no duplication on either side
+// - Fewer-cue track drives row count, longer-cue track fragments get merged
+// - Clean 1:1 sentence pairs in the common case (manual en + auto ko)
 
 export interface CaptionCue {
   begin: number;
@@ -456,9 +451,9 @@ interface MergeResult {
 }
 
 export const FALLBACK_STRATEGIES: MergeStrategy[] = [
+  "partition",
   "overlap",
   "best-overlap",
-  "partition",
   "bidirectional",
   "dtw",
 ];
@@ -506,6 +501,6 @@ export function mergeCaptions(
   const relaxed = mergeRelaxedStrict(cues1, cues2);
   if (relaxed) return { strategy: "relaxed-strict", captions: relaxed };
 
-  // Use overlap as default (100% coverage, no drops)
-  return { strategy: "overlap", captions: mergeOverlap(cues1, cues2) };
+  // Use partition as default (100% coverage, no drops, no duplication)
+  return { strategy: "partition", captions: mergePartition(cues1, cues2) };
 }
