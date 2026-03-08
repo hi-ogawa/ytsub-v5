@@ -56,27 +56,113 @@ test.describe("dev-viewer caption panel", () => {
     );
   });
 
+  test("settings menu with auto-scroll toggle", async ({ page }) => {
+    await page.getByTitle("Show captions").click();
+    await expect(page.locator("[data-index='0']")).toBeVisible();
+
+    const autoScrollItem = page.locator("[data-checked]");
+
+    // Open settings menu
+    await page.getByTitle("Settings").click();
+    await expect(autoScrollItem).toHaveAttribute("data-checked", "true");
+
+    // Close by pressing Escape
+    await page.keyboard.press("Escape");
+    await expect(page.getByText("Auto-scroll")).not.toBeVisible();
+
+    // Reopen and toggle off (menu stays open)
+    await page.getByTitle("Settings").click();
+    await page.getByText("Auto-scroll").click();
+    await expect(autoScrollItem).toHaveAttribute("data-checked", "false");
+
+    // Reload and verify it persists as off
+    await page.reload();
+    await page.getByTitle("Show captions").click();
+    await expect(page.locator("[data-index='0']")).toBeVisible();
+    await page.getByTitle("Settings").click();
+    await expect(autoScrollItem).toHaveAttribute("data-checked", "false");
+  });
+
   test("strategy dropdown switches merge strategy", async ({ page }) => {
     await page.getByTitle("Show captions").click();
     await expect(page.locator("[data-index='0']")).toBeVisible();
 
-    // Strategy dropdown should be visible (fixture falls back to partition)
+    // Open settings menu to access strategy select
+    await page.getByTitle("Settings").click();
     const strategySelect = page.locator("select[title='Alignment strategy']");
     await expect(strategySelect).toBeVisible();
     await expect(strategySelect).toHaveValue("partition");
 
     // Count rows with partition strategy (default)
+    // Close menu first to count rows
+    await page.keyboard.press("Escape");
     const partitionCount = await page.locator("[data-index]").count();
 
-    // Switch to overlap — should produce more rows (one per cue1)
+    // Reopen and switch to overlap — should produce more rows
+    await page.getByTitle("Settings").click();
     await strategySelect.selectOption("overlap");
+    await page.keyboard.press("Escape");
     await expect(page.locator("[data-index='0']")).toBeVisible();
     const overlapCount = await page.locator("[data-index]").count();
     expect(overlapCount).toBeGreaterThan(partitionCount);
 
     // Switch to best-overlap
-    await strategySelect.selectOption("best-overlap");
+    await page.getByTitle("Settings").click();
+    await page
+      .locator("select[title='Alignment strategy']")
+      .selectOption("best-overlap");
+    await page.keyboard.press("Escape");
     await expect(page.locator("[data-index='0']")).toBeVisible();
+  });
+
+  test("export downloads valid import.json", async ({ page }) => {
+    await page.getByTitle("Show captions").click();
+    await expect(page.locator("[data-index='0']")).toBeVisible();
+
+    // Open settings menu and click export
+    await page.getByTitle("Settings").click();
+    const [download] = await Promise.all([
+      page.waitForEvent("download"),
+      page.getByText("Export import.json").click(),
+    ]);
+
+    expect(download.suggestedFilename()).toBe("import-7GU_VQfgMT0.json");
+
+    // Read and validate exported JSON
+    const content = await (
+      await download.createReadStream()
+    )
+      .toArray()
+      .then((chunks) => Buffer.concat(chunks).toString());
+    const data = JSON.parse(content);
+
+    expect(data).toMatchObject({
+      video: {
+        youtubeId: "7GU_VQfgMT0",
+        title: "Billlie | 'cloud palace' 𝐁efore sunrise live",
+        channelName: "Billlie",
+        channelId: "UCyc9sUCxELTDK9vELO5Fzeg",
+        duration: 210,
+        language1: "ko",
+        language2: "en",
+      },
+      bookmarks: [],
+    });
+    expect(data.captions).toHaveLength(56);
+    expect(data.captions[0]).toEqual({
+      idx: 0,
+      begin: 25.714,
+      end: 29.621,
+      text1: "꼬집어 봐 뜬 꿈인 것 같아",
+      text2: "am I awake? or am I still dreaming",
+    });
+    expect(data.captions[55]).toEqual({
+      idx: 55,
+      begin: 197.448,
+      end: 201.542,
+      text1: "날 부른 이름 듣고 있으니까",
+      text2: "I\u2019m hearing my name you left in the wind",
+    });
   });
 
   test("panel left edge can be dragged to resize", async ({ page }) => {

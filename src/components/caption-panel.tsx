@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { Check, Download, EllipsisVertical } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   FALLBACK_STRATEGIES,
@@ -12,7 +13,21 @@ import {
 } from "../lib/youtube.ts";
 import { CaptionList } from "./caption-list.tsx";
 import { TrackPicker } from "./track-picker.tsx";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "./ui/dropdown-menu.tsx";
 import type { YTPlayer } from "./youtube-player.tsx";
+
+interface VideoMeta {
+  youtubeId: string;
+  title: string;
+  channelName?: string;
+  channelId?: string;
+  duration?: number;
+}
 
 export function CaptionFab({
   open,
@@ -135,10 +150,12 @@ export function CaptionPanel({
   tracks,
   fetchCues,
   player,
+  videoMeta,
 }: {
   tracks: YouTubeCaptionTrack[];
   fetchCues: (track: YouTubeCaptionTrack) => Promise<CaptionCue[]>;
   player: YTPlayer | null;
+  videoMeta?: VideoMeta;
 }) {
   const [selectedVssId1, setSelectedVssId1] = useState<string | undefined>(
     () => pickBestTrack(tracks, getPreferredLangs().lang1)?.vssId,
@@ -228,6 +245,38 @@ export function CaptionPanel({
     });
   }
 
+  function handleExport() {
+    if (!videoMeta) return;
+    const data = {
+      video: {
+        youtubeId: videoMeta.youtubeId,
+        title: videoMeta.title,
+        channelName: videoMeta.channelName ?? "",
+        channelId: videoMeta.channelId ?? "",
+        duration: videoMeta.duration ?? 0,
+        language1: sel1?.languageCode ?? "ko",
+        language2: sel2?.languageCode ?? "en",
+      },
+      captions: rows.map((r, i) => ({
+        idx: i,
+        begin: r.begin,
+        end: r.end,
+        text1: r.text1,
+        text2: r.text2,
+      })),
+      bookmarks: [],
+    };
+    const blob = new Blob([JSON.stringify(data, null, 2)], {
+      type: "application/json",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `import-${videoMeta.youtubeId}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
   return (
     <>
       <div className="flex items-center border-b">
@@ -246,45 +295,57 @@ export function CaptionPanel({
             }}
           />
         </div>
-        {!isAutoStrategy && (
-          <select
-            className="mr-1 px-1 rounded border bg-background py-0.5 text-xs"
-            value={forceStrategy ?? activeStrategy ?? ""}
-            onChange={(e) =>
-              setForceStrategy((e.target.value as MergeStrategy) || undefined)
-            }
-            title="Alignment strategy"
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            className="mr-1 shrink-0 rounded p-0.5 text-muted-foreground hover:bg-muted"
+            title="Settings"
           >
-            <option disabled>(alignment)</option>
-            {FALLBACK_STRATEGIES.map((s) => (
-              <option key={s} value={s}>
-                {s}
-              </option>
-            ))}
-          </select>
-        )}
-        <button
-          className={[
-            "mr-1 rounded p-0.5",
-            autoScroll
-              ? "text-accent hover:bg-highlight-bg"
-              : "text-muted-foreground hover:bg-muted",
-          ].join(" ")}
-          onClick={toggleAutoScroll}
-          title={autoScroll ? "Auto-scroll on" : "Auto-scroll off"}
-        >
-          <svg
-            className="h-4 w-4"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M12 5v14M19 12l-7 7-7-7" />
-          </svg>
-        </button>
+            <EllipsisVertical className="h-4 w-4" />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem
+              data-checked={autoScroll}
+              onSelect={(e) => {
+                e.preventDefault();
+                toggleAutoScroll();
+              }}
+            >
+              <Check
+                className={`mr-2 h-4 w-4 ${autoScroll ? "opacity-100" : "opacity-0"}`}
+              />
+              Auto-scroll
+            </DropdownMenuItem>
+            {!isAutoStrategy && (
+              <div className="px-2 py-1.5">
+                <label className="mb-1 block text-xs text-muted-foreground">
+                  Track alignment
+                </label>
+                <select
+                  className="w-full rounded border bg-background px-1 py-0.5 text-sm"
+                  value={forceStrategy ?? activeStrategy ?? ""}
+                  onChange={(e) =>
+                    setForceStrategy(
+                      (e.target.value as MergeStrategy) || undefined,
+                    )
+                  }
+                  title="Alignment strategy"
+                >
+                  {FALLBACK_STRATEGIES.map((s) => (
+                    <option key={s} value={s}>
+                      {s}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+            {videoMeta && (
+              <DropdownMenuItem onClick={handleExport}>
+                <Download className="mr-2 h-4 w-4" />
+                Export import.json
+              </DropdownMenuItem>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
       <CaptionList
         rows={rows}
