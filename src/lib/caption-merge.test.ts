@@ -67,6 +67,7 @@ describe("mergeStrict", () => {
       end: 2,
       text1: "안녕",
       text2: "hello",
+      cue1Indices: [0],
       cue2Indices: [0],
     });
     expect(result![1]).toEqual({
@@ -75,6 +76,7 @@ describe("mergeStrict", () => {
       end: 5,
       text1: "세상",
       text2: "world",
+      cue1Indices: [1],
       cue2Indices: [1],
     });
   });

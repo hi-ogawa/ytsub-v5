@@ -35,7 +35,9 @@ export interface MergedCaption {
   end: number;
   text1: string;
   text2: string;
-  /** Which cue2 indices were assigned to this row (for diagnostics) */
+  /** Which cue1 indices were merged into this row */
+  cue1Indices: number[];
+  /** Which cue2 indices were assigned to this row */
   cue2Indices: number[];
 }
 
@@ -57,6 +59,7 @@ export function mergeStrict(
     end: c1.end,
     text1: c1.text,
     text2: cues2[i].text,
+    cue1Indices: [i],
     cue2Indices: [i],
   }));
 }
@@ -110,6 +113,7 @@ export function mergeOverlap(
       end: c1.end,
       text1: c1.text,
       text2,
+      cue1Indices: [i],
       cue2Indices,
     };
   });
@@ -124,6 +128,7 @@ export function mergeOverlap(
         end: cues2[j].end,
         text1: "",
         text2: cues2[j].text,
+        cue1Indices: [],
         cue2Indices: [j],
       });
     }
@@ -167,6 +172,7 @@ export function mergeBestOverlap(
         end: c1.end,
         text1: c1.text,
         text2: cues2[bestJ].text,
+        cue1Indices: [i],
         cue2Indices: [bestJ],
       };
     }
@@ -176,6 +182,7 @@ export function mergeBestOverlap(
       end: c1.end,
       text1: c1.text,
       text2: "",
+      cue1Indices: [i],
       cue2Indices: [],
     };
   });
@@ -190,6 +197,7 @@ export function mergeBestOverlap(
         end: cues2[j].end,
         text1: "",
         text2: cues2[j].text,
+        cue1Indices: [],
         cue2Indices: [j],
       });
     }
@@ -244,6 +252,7 @@ export function mergePartition(
       end: drv.end,
       text1: cue1Drives ? drv.text : followerText,
       text2: cue1Drives ? followerText : drv.text,
+      cue1Indices: cue1Drives ? [d] : assigned,
       cue2Indices: cue1Drives ? assigned : [d],
     };
   });
@@ -294,6 +303,7 @@ export function mergeBidirectional(
       end: c1.end,
       text1: c1.text,
       text2,
+      cue1Indices: [i],
       cue2Indices: assigned,
     };
   });
@@ -323,6 +333,7 @@ export function mergeDTW(
       end: c.end,
       text1: c.text,
       text2: "",
+      cue1Indices: [i],
       cue2Indices: [],
     }));
   }
@@ -422,6 +433,7 @@ export function mergeDTW(
       end: c1.end,
       text1: c1.text,
       text2,
+      cue1Indices: [idx],
       cue2Indices: assigned,
     };
   });

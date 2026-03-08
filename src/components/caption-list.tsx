@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useRef } from "react";
 import type { YTPlayer } from "./youtube-player.tsx";
 
 type AlignedRow = {
@@ -6,31 +6,13 @@ type AlignedRow = {
   end: number;
   text1: string;
   text2: string;
+  cue1Indices?: number[];
   cue2Indices?: number[];
 };
 
-/** For each row, compute how many consecutive rows share the same cue2Indices. */
-function computeDupCounts(rows: AlignedRow[]): (number | undefined)[] {
-  const result: (number | undefined)[] = new Array(rows.length);
-  let i = 0;
-  while (i < rows.length) {
-    const indices = rows[i].cue2Indices;
-    if (!indices || indices.length === 0) {
-      result[i] = undefined;
-      i++;
-      continue;
-    }
-    const key = indices.join(",");
-    let j = i + 1;
-    while (j < rows.length && rows[j].cue2Indices?.join(",") === key) {
-      j++;
-    }
-    const count = j - i;
-    result[i] = count > 1 ? count : undefined;
-    for (let k = i + 1; k < j; k++) result[k] = undefined;
-    i = j;
-  }
-  return result;
+function MergeBadge({ count }: { count: number | undefined }) {
+  if (!count || count <= 1) return null;
+  return <span className="ml-1 text-xs text-muted-foreground">×{count}</span>;
 }
 
 function formatTimestamp(seconds: number): string {
@@ -52,7 +34,6 @@ export function CaptionList({
   player: YTPlayer | null;
   autoScroll?: boolean;
 }) {
-  const dupCounts = useMemo(() => computeDupCounts(rows), [rows]);
   const scrollRef = useRef<HTMLDivElement>(null);
   const prevScrollIndex = useRef<number | undefined>(undefined);
   const isManualScrollRef = useRef(false);
@@ -134,14 +115,13 @@ export function CaptionList({
               </span>
             </div>
             <div className="flex text-sm">
-              <div className="flex-1 border-r pr-2">{row.text1}</div>
+              <div className="flex-1 border-r pr-2">
+                {row.text1}
+                <MergeBadge count={row.cue1Indices?.length} />
+              </div>
               <div className="flex-1 pl-2">
                 {row.text2}
-                {dupCounts[i] != null && (
-                  <span className="ml-1 text-xs text-muted-foreground">
-                    ×{dupCounts[i]}
-                  </span>
-                )}
+                <MergeBadge count={row.cue2Indices?.length} />
               </div>
             </div>
           </div>
