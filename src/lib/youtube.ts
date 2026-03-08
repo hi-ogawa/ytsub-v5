@@ -47,7 +47,13 @@ interface CaptionCue {
 // === Page-context functions ===
 // Self-contained: no imports, no closures. Serialized by page.evaluate().
 
-/** Extract video metadata + caption track list from ytInitialPlayerResponse. */
+/**
+ * Extract video metadata + caption track list from ytInitialPlayerResponse.
+ * Useful for checking subtitle availability quickly (no API call),
+ * but the baseUrls are NOT usable for fetching — YouTube requires a POT
+ * (Proof of Origin Token) that only the player JS generates at runtime.
+ * Use fetchPlayerApi() to get usable baseUrls.
+ */
 export function extractVideoData(): YouTubeExtractionResult {
   const playerResponse = (
     window as unknown as { ytInitialPlayerResponse?: Record<string, unknown> }
