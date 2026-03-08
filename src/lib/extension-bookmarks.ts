@@ -37,11 +37,6 @@ export function addBookmark(
   return bookmark;
 }
 
-function deleteBookmark(youtubeId: string, bookmarkId: string): void {
-  const bookmarks = getBookmarks(youtubeId).filter((b) => b.id !== bookmarkId);
-  localStorage.setItem(storageKey(youtubeId), JSON.stringify(bookmarks));
-}
-
 // --- Text selection for bookmarking ---
 
 export interface BookmarkSelection {
