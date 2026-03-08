@@ -39,6 +39,7 @@ function App({ videoId }: { videoId: string }) {
     <div>
       {open && (
         <ResizablePanel
+          id="ytsub-root"
           style={{
             position: "fixed",
             right: "10px",
