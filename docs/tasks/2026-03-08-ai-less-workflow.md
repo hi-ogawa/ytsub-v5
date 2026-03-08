@@ -105,16 +105,27 @@ Depends on the unaligned viewer design direction. At minimum:
 - Handle cases where cue counts differ between languages
 - Manual bookmarking still works (uses `side` + `offset` into a specific cue)
 
-### 5. Optional: Server-side Alignment
+### 5. Algorithmic Alignment (without LLM)
 
-Lightweight algorithmic alignment as a best-effort step:
+The current `check-alignment.ts` is strict: same cue count + all timestamps within 0.5s tolerance, or fail. This means any count mismatch falls through to LLM. A smarter algorithm could handle most of these cases deterministically.
 
-- Greedy timestamp pairing (pair each ko cue with nearest en cue by begin time)
-- Tolerance-based 1:1 matching (current `check-alignment.ts` logic, relaxed)
-- N:M grouping by overlapping time ranges
-- Store alignment as metadata (which ko cues map to which en cues), not as merged rows
+**Why this matters:** Even if the viewer can display unaligned tracks (see unaligned-caption-viewer doc), aligned pairs are a better reading experience. The two approaches are complementary — better alignment algorithm reduces the cases where the viewer needs to fall back to unaligned display.
 
-This is optional — the viewer should work without it, but alignment improves the reading experience.
+**Approaches (increasing sophistication):**
+
+1. **Relaxed 1:1 matching** — keep the current approach but increase tolerance (e.g., 2s instead of 0.5s) and allow small count differences (skip unmatched cues at the end)
+
+2. **Greedy nearest-neighbor** — for each ko cue, pair with the en cue whose begin time is closest. Simple, handles count mismatches. Risk: can produce bad pairings when timing drifts significantly.
+
+3. **Overlap-based pairing** — pair cues whose time ranges overlap. Naturally produces N:M groupings (one ko cue overlaps two en cues, or vice versa). The viewer's time-banded grouping (option C in unaligned-caption-viewer) maps directly to this.
+
+4. **Dynamic time warping (DTW)** — standard technique for aligning two temporal sequences. Finds optimal global alignment minimizing total timestamp distance. Handles different cue counts, timing drift, and split/merge cases. Well-studied algorithm, easy to implement.
+
+5. **Split/merge detection** — detect when one language splits a cue into two (or merges two into one). Heuristic: if ko cue [0-5s] maps to en cues [0-2.5s] + [2.5-5s], merge the en text. Common with auto-generated vs manual subs.
+
+**What to store:** Alignment as metadata alongside raw cues, not as merged rows. E.g., an alignment map: `{ koCueIdx: number, enCueIdx: number, confidence: number }[]`. The viewer uses this for paired display but can fall back to temporal proximity when alignment is missing or low-confidence.
+
+**Testable:** Unlike LLM-based alignment, algorithmic alignment is fully deterministic and testable. Can run against the eval videos and compare output quality.
 
 ## What This Replaces
 
@@ -145,16 +156,18 @@ This is optional — the viewer should work without it, but alignment improves t
 - Schema change to support per-language cues
 - Adapt existing import upload UI to also accept raw json3 files (as a bridge before extension)
 
-### Phase 3: Unaligned Viewer
+### Phase 3: Algorithmic Alignment
 
-- New caption panel that handles two independent tracks
+- Upgrade from strict 1:1 matching to fuzzy alignment (DTW or overlap-based)
+- Store alignment as metadata alongside raw cues
+- Test against eval videos (`ytsub-eval` test set) — compare with current agent output
+- Goal: handle 80%+ of videos without LLM intervention
+
+### Phase 4: Viewer for Unaligned / Partially Aligned Captions
+
+- Viewer that uses alignment metadata when available, falls back to temporal proximity
 - See `2026-03-08-unaligned-caption-viewer.md` for design options
-
-### Phase 4: Polish
-
-- Server-side best-effort alignment
-- Caption inline editing
-- Refine UX based on real usage
+- Caption inline editing for remaining issues
 
 ### Future: Cloud AI as Optional Enhancement
 
