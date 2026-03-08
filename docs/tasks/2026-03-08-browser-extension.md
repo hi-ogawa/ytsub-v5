@@ -165,10 +165,9 @@ No new API endpoint needed. The existing import flow works as-is.
 
 ### Tech Stack
 
-- **WXT** — same as v4, WebExtension framework (handles Manifest V3 boilerplate, HMR in dev)
+- **Manual extension** — no WXT or framework. Raw `manifest.json` + content script. The extension is thin enough that a framework adds more complexity than it removes.
 - **Manifest V3** — required for Chrome Web Store
-- **TypeScript** — shared modules with ytsub-v5 app (same repo)
-- **React** — reuse app's UI framework for extension UI (enables sharing components later)
+- **Plain JS** — content script is a single bundled file. Shared logic from `src/lib/youtube.ts` is bundled in at build time.
 
 ### Permissions
 
@@ -194,31 +193,31 @@ The ytsub app has single-user auth. The extension needs the auth token to POST i
 - No extension involved — validates the approach with fast iteration
 - **Goal:** Confirm `ytInitialPlayerResponse` is accessible and json3 fetching works
 
-### Step 2: Alignment module
+### Step 2: Extension shell + import button
 
-- Port v4's `mergeCaptionEntryPairs` as a standalone module (shared code)
-- Unit-testable with fixture data (no browser needed)
-- Test against ytsub-eval videos (compare with agent-produced alignments)
-- Can develop in parallel with Step 1
-
-### Step 3: Extension shell + import button
-
-- WXT extension project under `extension/` in the repo
+- Manual extension under `extension/` — raw `manifest.json` + content script, no WXT
 - Content script: inject extraction script into main world, show "Import to ytsub" button
 - On click: extract → parse → align → POST to app API
 - Popup: configure app URL + auth token
 - **Note:** YouTube is an SPA — need to detect navigation between videos to show/hide the button. v4's `content/main.ts` handles this (reference for follow-up).
 
-### Step 4: Track selection UI
+### Step 3: Track selection UI
 
 - Show available subtitle tracks with manual/auto labels
 - Let user pick ko + en tracks (with sensible defaults)
 - Remember selections per channel or globally
 
+### Step 4: Alignment module
+
+- Start with simplest approach (overlap-based, see `2026-03-08-ai-less-workflow.md` for options)
+- v3/v4's algorithm is mediocre — consider DTW or bidirectional overlap
+- Unit-testable with fixture data (no browser needed)
+- Test against ytsub-eval videos (compare with agent-produced alignments)
+- Can iterate independently once extension is working
+
 ## Reference Files
 
 - `~/code/personal/ytsub-v4/src/utils/youtube.ts` — v4's YouTube API client (subtitle fetching, metadata, alignment)
-- `~/code/personal/ytsub-v4/wxt.config.ts` — v4's manifest config
 - `docs/skills/ytsub/SKILL.md` — current agent skill (shows scenarios A/B/C/D)
 - `docs/skills/ytsub/scripts/parse-json3.ts` — current json3 parser
 - `docs/skills/ytsub/scripts/check-alignment.ts` — current strict alignment
@@ -226,9 +225,10 @@ The ytsub app has single-user auth. The extension needs the auth token to POST i
 
 ## Decisions
 
-- **Monorepo** — extension lives in `extension/` within the ytsub-v5 repo. Shared modules (extraction, parsing, alignment) are imported directly.
+- **Monorepo** — extension lives in `extension/` within the ytsub-v5 repo. No WXT — raw manifest + content script. The extension is thin enough that a framework adds unnecessary complexity.
 - **Core logic is standalone** — extraction script, json3 parser, alignment are independent of extension APIs. Testable via Playwright `page.evaluate()` against real YouTube pages.
-- **Page data extraction first** — read `ytInitialPlayerResponse` from main world. Falls back to youtubei API if needed.
+- **fetchPlayerApi is the primary path** — `ytInitialPlayerResponse` is useful for quick subtitle availability checks (no API call), but its `baseUrl`s are blocked by POT. `fetchPlayerApi` (mobile client spoofing) returns usable `baseUrl`s.
+- **Alignment last** — get the extension working end-to-end first with a simple alignment, then iterate on algorithm quality.
 
 ## Open Questions
 
@@ -262,9 +262,9 @@ The ytsub app has single-user auth. The extension needs the auth token to POST i
 
 **Working extraction pipeline:** `page.evaluate(fetchPlayerApi, videoId)` → `pickTracks` → `page.evaluate(fetchTrackJson3, baseUrl)` → `parseJson3`
 
-**Hybrid approach:** Use `ytInitialPlayerResponse` for quick metadata (no API call needed), but use `fetchPlayerApi` for caption track URLs that actually work for fetching.
+**Note on extractVideoData:** `ytInitialPlayerResponse` works for metadata + checking subtitle availability (no API call needed), but its `baseUrl`s are blocked by POT. `fetchPlayerApi` is the only usable path for actually fetching subtitles.
 
 ## Status
 
-- **Phase:** Step 1 core extraction — working
-- **Next:** Step 2 — alignment module (port v4's `mergeCaptionEntryPairs`)
+- **Phase:** Step 1 complete
+- **Next:** Step 2 — extension shell + import button
