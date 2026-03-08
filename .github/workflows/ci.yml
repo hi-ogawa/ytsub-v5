@@ -23,7 +23,6 @@ jobs:
       - run: pnpm test
       - run: pnpm build
       - run: pnpm build-ext
-      - run: sed -i 's/"name": "ytsub"/"name": "ytsub-dev"/' dist/extension/manifest.json
       - uses: actions/upload-artifact@v4
         with:
           name: ytsub-extension

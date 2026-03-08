@@ -23,10 +23,15 @@ export default defineConfig({
     {
       name: "copy-manifest",
       async buildEnd() {
+        const raw = await this.fs.readFile("./src/extension/manifest.json");
+        const manifest = JSON.parse(new TextDecoder().decode(raw));
+        if (!process.env.CI) {
+          manifest.name = "ytsub-dev";
+        }
         this.emitFile({
           type: "asset",
           fileName: "manifest.json",
-          source: await this.fs.readFile("./src/extension/manifest.json"),
+          source: JSON.stringify(manifest, null, 2),
         });
       },
     },
