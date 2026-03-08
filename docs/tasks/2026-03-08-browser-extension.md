@@ -266,5 +266,5 @@ The ytsub app has single-user auth. The extension needs the auth token to POST i
 
 ## Status
 
-- **Phase:** Step 1 complete
-- **Next:** Step 2 — extension shell + import button
+- **Phase:** Step 1 complete, Step 2 POC done (extraction + JSON download works)
+- **Superseded by:** `2026-03-08-caption-viewer.md` — pivoted to extension-as-viewer with shared standalone app. This doc remains as reference for extraction findings (approach A/B/C, POT discovery).
