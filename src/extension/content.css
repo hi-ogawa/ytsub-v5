@@ -22,8 +22,12 @@
   color-scheme: dark;
   --background: #0f0f0f;
   --foreground: #f1f1f1;
+  --popover: #272727;
+  --popover-foreground: #f1f1f1;
   --muted: #272727;
   --muted-foreground: #aaa;
+  --accent: #3ea6ff;
+  --accent-foreground: #fff;
   --border: #3f3f3f;
   --ring: #3ea6ff;
   --input: #3f3f3f;
