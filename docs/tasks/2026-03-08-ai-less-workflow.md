@@ -36,14 +36,17 @@ Browser extension (on YouTube page)
 
 App server
   → Parses json3 → cue arrays (deterministic, port of parse-json3.ts)
-  → Stores raw cues per language in D1
+  → Algorithmic alignment → text1/text2 paired rows (same schema as today)
+  → Stores in D1
 
 Viewer (browser)
-  → Displays two subtitle tracks (see unaligned-caption-viewer task)
+  → Current viewer works as-is (aligned pairs)
   → Manual bookmarking via text selection (already built)
 ```
 
-Server-side algorithmic alignment pairs cues into text1/text2 rows (same format as today). For cases where alignment falls short, an unaligned viewer could handle the remainder (see `2026-03-08-unaligned-caption-viewer.md`).
+**Happy path:** If algorithmic alignment is good enough, no schema change and no viewer change needed. Current import format (text1/text2 rows) still works. The only new pieces are the browser extension and a smarter alignment algorithm.
+
+**Fallback:** If alignment can't cover enough cases, explore an unaligned viewer that handles two independent tracks (see `2026-03-08-unaligned-caption-viewer.md`). This would require a schema change.
 
 ## Components
 
@@ -54,7 +57,7 @@ Content script running on `youtube.com/*` that:
 - Reads video metadata from the page / YouTube player API
 - Fetches available subtitle tracks (YouTube exposes these via `timedtext` API from same origin)
 - Downloads ko + en (or auto-translated en) as json3
-- Sends to the app via `POST /api/importRaw`
+- Sends to the app via API
 
 This is the **biggest piece of new work** and the main blocker. Already in the backlog.
 
@@ -64,48 +67,7 @@ Key questions:
 - How does YouTube expose subtitle track list? (`ytInitialPlayerResponse.captions`)
 - Can we fetch json3 format directly, or need to convert from another format?
 
-### 2. Raw Import API Endpoint
-
-New endpoint: `POST /api/importRaw`
-
-Accepts:
-
-```ts
-{
-  video: { youtubeId, title, channelName, channelId, duration, language1, language2 },
-  subtitles: {
-    language1: CueRaw[],  // { begin, end, text }
-    language2: CueRaw[],
-  }
-}
-```
-
-Processing:
-
-- Upsert video (existing `createVideo` logic)
-- Store raw cues per language (new schema or adapted existing)
-- Optional: attempt lightweight alignment, store confidence score
-
-### 3. Data Model Change
-
-Current: `captions` table stores pre-aligned rows with `text1` + `text2`.
-
-New: store raw cues per language. Options:
-
-- **Add `language` column** to captions table, one row per cue per language
-- **Keep text1/text2 but allow nullable text2** — store primary language cues, fill text2 via display-time matching
-
-See `2026-03-08-unaligned-caption-viewer.md` for how the viewer would consume this.
-
-### 4. Viewer Updates
-
-Depends on the unaligned viewer design direction. At minimum:
-
-- Display two subtitle tracks synced to video time
-- Handle cases where cue counts differ between languages
-- Manual bookmarking still works (uses `side` + `offset` into a specific cue)
-
-### 5. Algorithmic Alignment (without LLM)
+### 2. Algorithmic Alignment (without LLM)
 
 The current `check-alignment.ts` is strict: same cue count + all timestamps within 0.5s tolerance, or fail. This means any count mismatch falls through to LLM. A smarter algorithm could handle most of these cases deterministically.
 
@@ -123,9 +85,9 @@ The current `check-alignment.ts` is strict: same cue count + all timestamps with
 
 5. **Split/merge detection** — detect when one language splits a cue into two (or merges two into one). Heuristic: if ko cue [0-5s] maps to en cues [0-2.5s] + [2.5-5s], merge the en text. Common with auto-generated vs manual subs.
 
-**What to store:** Alignment as metadata alongside raw cues, not as merged rows. E.g., an alignment map: `{ koCueIdx: number, enCueIdx: number, confidence: number }[]`. The viewer uses this for paired display but can fall back to temporal proximity when alignment is missing or low-confidence.
+**Output:** Aligned text1/text2 rows — same schema as today. For N:M cases (split/merge), concatenate the text of merged cues. This means no schema change needed for the happy path.
 
-**Testable:** Unlike LLM-based alignment, algorithmic alignment is fully deterministic and testable. Can run against the eval videos and compare output quality.
+**Testable:** Unlike LLM-based alignment, algorithmic alignment is fully deterministic and testable. Can run against the eval videos and compare output quality with current agent-produced alignments.
 
 ## What This Replaces
 
@@ -133,8 +95,8 @@ The current `check-alignment.ts` is strict: same cue count + all timestamps with
 | --------------------------------------- | ------------------------------------------------------------------ |
 | yt-dlp (local CLI)                      | Browser extension (same-origin)                                    |
 | parse-json3.ts (agent runs)             | Server-side parsing (same code)                                    |
-| check-alignment.ts (agent runs)         | Server-side or display-time alignment                              |
-| LLM caption alignment (scenarios B/C/D) | Algorithmic alignment + unaligned viewer                           |
+| check-alignment.ts (agent runs)         | Server-side fuzzy alignment (DTW or overlap-based)                 |
+| LLM caption alignment (scenarios B/C/D) | Algorithmic alignment (same output format)                         |
 | LLM Korean text fixing                  | Accept auto-gen quality or manual edit                             |
 | LLM translation (scenario C)            | YouTube auto-translate                                             |
 | LLM vocab extraction                    | Manual bookmarking (already built)                                 |
@@ -150,23 +112,18 @@ The current `check-alignment.ts` is strict: same cue count + all timestamps with
 - POST to app API
 - **This is the main blocker — everything else can be prototyped with existing import.json upload**
 
-### Phase 2: Raw Import + Schema
-
-- New API endpoint for raw subtitle import
-- Schema change to support per-language cues
-- Adapt existing import upload UI to also accept raw json3 files (as a bridge before extension)
-
-### Phase 3: Algorithmic Alignment
+### Phase 2: Algorithmic Alignment
 
 - Upgrade from strict 1:1 matching to fuzzy alignment (DTW or overlap-based)
-- Store alignment as metadata alongside raw cues
+- Output text1/text2 rows (same schema as today — no migration needed)
 - Test against eval videos (`ytsub-eval` test set) — compare with current agent output
-- Goal: handle 80%+ of videos without LLM intervention
+- Can prototype independently of Phase 1 using existing subtitle data
 
-### Phase 4 (if needed): Viewer for Unaligned / Partially Aligned Captions
+### Phase 3 (if needed): Unaligned Viewer + Schema Change
 
-- Only needed if Phase 3 alignment can't cover enough cases
-- Viewer that falls back to temporal proximity for unaligned cues
+- Only needed if Phase 2 alignment can't cover enough cases
+- Schema change to store raw per-language cues instead of pre-aligned rows
+- Viewer that handles two independent tracks with temporal proximity
 - See `2026-03-08-unaligned-caption-viewer.md` for design options
 - Caption inline editing for remaining issues
 
@@ -187,5 +144,5 @@ The current `check-alignment.ts` is strict: same cue count + all timestamps with
 ## Status
 
 - **Phase:** Planning / awaiting feedback
-- **Blocker:** Browser extension for subtitle fetching
-- **Next:** Decide on viewer design direction (unaligned-caption-viewer doc), then assess extension feasibility
+- **Blocker:** Browser extension for subtitle fetching (Phase 1)
+- **Next:** Assess extension feasibility; prototype alignment algorithm against eval data (Phase 2, can start independently)
