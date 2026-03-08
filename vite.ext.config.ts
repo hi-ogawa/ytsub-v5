@@ -28,7 +28,7 @@ export default defineConfig({
         });
         const manifest = JSON.parse(raw);
         if (!process.env.CI) {
-          manifest.name = "ytsub-dev";
+          manifest.name = "Zamak-dev";
         }
         this.emitFile({
           type: "asset",
