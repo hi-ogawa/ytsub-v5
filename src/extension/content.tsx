@@ -61,7 +61,7 @@ function App({ videoId }: { videoId: string }) {
           height: "48px",
           borderRadius: "50%",
           border: "none",
-          background: open ? "var(--ring)" : "var(--muted)",
+          background: open ? "var(--ring)" : "#1a3a5c",
           color: "var(--foreground)",
           cursor: "pointer",
           display: "flex",
