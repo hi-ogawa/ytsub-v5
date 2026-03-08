@@ -6,7 +6,7 @@ import { join } from "path";
 import sharp from "sharp";
 
 const SVG_PATH = join(import.meta.dirname!, "..", "public", "favicon.svg");
-const OUT_DIR = join(import.meta.dirname!, "..", "src", "extension", "icons");
+const OUT_DIR = join(import.meta.dirname!, "..", "public", "icons");
 mkdirSync(OUT_DIR, { recursive: true });
 
 const svg = readFileSync(SVG_PATH);

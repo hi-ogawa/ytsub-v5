@@ -1,10 +1,6 @@
-import { readFileSync } from "fs";
-import { join } from "path";
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
-
-const ICON_SIZES = [16, 48, 128];
 
 export default defineConfig({
   build: {
@@ -12,7 +8,7 @@ export default defineConfig({
     lib: {
       entry: "./src/extension/content.tsx",
       formats: ["iife"],
-      name: "ytsub",
+      name: "zamak",
       fileName: () => "content.js",
       cssFileName: "content",
     },
@@ -39,15 +35,6 @@ export default defineConfig({
           fileName: "manifest.json",
           source: JSON.stringify(manifest, null, 2),
         });
-        for (const size of ICON_SIZES) {
-          const name = `icon-${size}.png`;
-          const buf = readFileSync(join("src", "extension", "icons", name));
-          this.emitFile({
-            type: "asset",
-            fileName: `icons/${name}`,
-            source: buf,
-          });
-        }
       },
     },
   ],
