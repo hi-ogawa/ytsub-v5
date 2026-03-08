@@ -153,13 +153,13 @@ export function CaptionPanel({
   const sel2 = tracks.find((t) => t.vssId === selectedVssId2);
 
   const cues1Query = useQuery({
-    queryKey: ["cues", sel1?.vssId],
+    queryKey: ["cues", sel1?.baseUrl],
     queryFn: () => fetchCues(sel1!),
     enabled: !!sel1,
   });
 
   const cues2Query = useQuery({
-    queryKey: ["cues", sel2?.vssId],
+    queryKey: ["cues", sel2?.baseUrl],
     queryFn: () => fetchCues(sel2!),
     enabled: !!sel2,
   });

@@ -127,7 +127,13 @@ function addStyle(shadow: ShadowRoot, css: string) {
 
 // --- Injection ---
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 function isWatchPage() {
   return window.location.pathname === "/watch";
@@ -179,8 +185,8 @@ function remove() {
 function init() {
   if (isWatchPage()) inject();
 
+  document.addEventListener("yt-navigate-start", remove);
   document.addEventListener("yt-navigate-finish", () => {
-    remove();
     if (isWatchPage()) inject();
   });
 }
