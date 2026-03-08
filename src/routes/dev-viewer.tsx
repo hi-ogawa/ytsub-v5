@@ -64,16 +64,16 @@ export function DevViewerPage() {
       {/* YouTube embed + fake sidebar (mimics YouTube layout) */}
       <div className="flex gap-6">
         <div className="flex-1">
-          <div className="relative rounded border border-dashed border-muted-foreground pt-[56.2%]">
+          <div className="relative rounded pt-[56.2%]">
             <div className="absolute inset-0" ref={playerElRef} />
           </div>
         </div>
-        <div className="hidden w-[400px] flex-none rounded border border-dashed border-muted-foreground lg:block" />
+        <div className="hidden w-[400px] flex-none rounded lg:block" />
       </div>
 
       {/* Floating caption panel (same position as extension) */}
       {panelOpen && meta && (
-        <div className="fixed top-[65px] right-[10px] bottom-[80px] w-[400px] flex flex-col overflow-hidden rounded-lg border border-border bg-background">
+        <div className="fixed top-[65px] right-[10px] bottom-[80px] w-[400px] overflow-hidden rounded-lg border border-border bg-background">
           <CaptionPanel
             tracks={meta.captionTracks}
             fetchCues={(track) => fetchTrackFixture(videoId, track)}
