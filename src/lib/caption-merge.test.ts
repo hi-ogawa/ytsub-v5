@@ -13,33 +13,9 @@ import {
   mergeRelaxedStrict,
   mergeStrict,
 } from "./caption-merge";
+import { parseJson3 } from "./youtube";
 
 // === Helpers ===
-
-function parseJson3(data: {
-  events: Array<{
-    tStartMs: number;
-    dDurationMs: number;
-    segs?: Array<{ utf8: string }>;
-  }>;
-}): CaptionCue[] {
-  const cues: CaptionCue[] = [];
-  for (const event of data.events) {
-    if (!event.segs || !event.dDurationMs) continue;
-    const text = event.segs
-      .map((s) => s.utf8)
-      .join("")
-      .replace(/\n/g, " ")
-      .trim();
-    if (!text) continue;
-    cues.push({
-      begin: event.tStartMs / 1000,
-      end: (event.tStartMs + event.dDurationMs) / 1000,
-      text,
-    });
-  }
-  return cues;
-}
 
 function loadTrack(videoDir: string, filename: string): CaptionCue[] {
   const raw = JSON.parse(readFileSync(join(videoDir, filename), "utf-8"));
@@ -393,70 +369,70 @@ describe("strategy mapping stats", () => {
       expect({ ko: v2.ko.length, en: v2.en.length }).toMatchInlineSnapshot(`
         {
           "en": 40,
-          "ko": 85,
+          "ko": 385,
         }
       `);
     });
     it("overlap", () => {
       expect(mergeStats(mergeOverlap(v2.ko, v2.en), v2.en))
         .toMatchInlineSnapshot(`
-        {
-          "droppedCue2s": 0,
-          "emptyText2": 0,
-          "rows": 85,
-          "sharedCue2s": 39,
-          "withText1": 85,
-          "withText2": 85,
-        }
-      `);
+          {
+            "droppedCue2s": 0,
+            "emptyText2": 0,
+            "rows": 385,
+            "sharedCue2s": 40,
+            "withText1": 385,
+            "withText2": 385,
+          }
+        `);
     });
     it("best-overlap", () => {
       expect(mergeStats(mergeBestOverlap(v2.ko, v2.en), v2.en))
         .toMatchInlineSnapshot(`
-        {
-          "droppedCue2s": 0,
-          "emptyText2": 0,
-          "rows": 86,
-          "sharedCue2s": 32,
-          "withText1": 85,
-          "withText2": 86,
-        }
-      `);
+          {
+            "droppedCue2s": 0,
+            "emptyText2": 0,
+            "rows": 385,
+            "sharedCue2s": 40,
+            "withText1": 385,
+            "withText2": 385,
+          }
+        `);
     });
     it("partition", () => {
       expect(mergeStats(mergePartition(v2.ko, v2.en), v2.en))
         .toMatchInlineSnapshot(`
-        {
-          "droppedCue2s": 0,
-          "emptyText2": 0,
-          "rows": 40,
-          "sharedCue2s": 0,
-          "withText1": 39,
-          "withText2": 40,
-        }
-      `);
+          {
+            "droppedCue2s": 0,
+            "emptyText2": 0,
+            "rows": 40,
+            "sharedCue2s": 0,
+            "withText1": 40,
+            "withText2": 40,
+          }
+        `);
     });
     it("bidirectional", () => {
       expect(mergeStats(mergeBidirectional(v2.ko, v2.en), v2.en))
         .toMatchInlineSnapshot(`
-        {
-          "droppedCue2s": 0,
-          "emptyText2": 46,
-          "rows": 85,
-          "sharedCue2s": 0,
-          "withText1": 85,
-          "withText2": 39,
-        }
-      `);
+          {
+            "droppedCue2s": 0,
+            "emptyText2": 345,
+            "rows": 385,
+            "sharedCue2s": 0,
+            "withText1": 385,
+            "withText2": 40,
+          }
+        `);
     });
     it("dtw", () => {
       expect(mergeStats(mergeDTW(v2.ko, v2.en), v2.en)).toMatchInlineSnapshot(`
         {
           "droppedCue2s": 0,
-          "emptyText2": 45,
-          "rows": 85,
+          "emptyText2": 345,
+          "rows": 385,
           "sharedCue2s": 0,
-          "withText1": 85,
+          "withText1": 385,
           "withText2": 40,
         }
       `);

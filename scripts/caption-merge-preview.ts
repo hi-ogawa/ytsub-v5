@@ -22,27 +22,12 @@ import {
   mergeRelaxedStrict,
   mergeStrict,
 } from "../src/lib/caption-merge.ts";
+import { parseJson3 } from "../src/lib/youtube.ts";
 
 // --- helpers ---
 
-function parseJson3(path: string): CaptionCue[] {
-  const data = JSON.parse(readFileSync(path, "utf-8"));
-  const cues: CaptionCue[] = [];
-  for (const event of data.events) {
-    if (!event.segs || !event.dDurationMs) continue;
-    const text = event.segs
-      .map((s: { utf8: string }) => s.utf8)
-      .join("")
-      .replace(/\n/g, " ")
-      .trim();
-    if (!text) continue;
-    cues.push({
-      begin: event.tStartMs / 1000,
-      end: (event.tStartMs + event.dDurationMs) / 1000,
-      text,
-    });
-  }
-  return cues;
+function loadTrackFile(path: string): CaptionCue[] {
+  return parseJson3(JSON.parse(readFileSync(path, "utf-8")));
 }
 
 function fmt(seconds: number): string {
@@ -95,8 +80,8 @@ function main() {
     process.exit(1);
   }
 
-  const koCues = parseJson3(join(videoDir, koFile));
-  const enCues = parseJson3(join(videoDir, enFile));
+  const koCues = loadTrackFile(join(videoDir, koFile));
+  const enCues = loadTrackFile(join(videoDir, enFile));
 
   const { merged, usedStrategy } = runMerge(koCues, enCues, strategyName);
 
