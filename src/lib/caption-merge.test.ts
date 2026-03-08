@@ -4,10 +4,12 @@ import { describe, expect, it } from "vitest";
 import {
   type CaptionCue,
   type MergedCaption,
+  mergeBestOverlap,
   mergeBidirectional,
   mergeCaptions,
   mergeDTW,
   mergeOverlap,
+  mergePartition,
   mergeRelaxedStrict,
   mergeStrict,
 } from "./caption-merge";
@@ -293,6 +295,200 @@ function findTrackFile(
     files.find((f) => f.startsWith(`track-a.${langPrefix}`))
   );
 }
+
+function mergeStats(merged: MergedCaption[], enCues: CaptionCue[]) {
+  const rows = merged.length;
+  const withText2 = merged.filter((m) => m.text2.length > 0).length;
+  const withText1 = merged.filter((m) => m.text1.length > 0).length;
+  const emptyText2 = rows - withText2;
+
+  // Shared cue2s: how many cue2 indices are claimed by multiple rows
+  const cue2Claimants = new Map<number, number>();
+  for (const m of merged) {
+    for (const j of m.cue2Indices) {
+      cue2Claimants.set(j, (cue2Claimants.get(j) ?? 0) + 1);
+    }
+  }
+  const sharedCue2s = [...cue2Claimants.values()].filter((c) => c > 1).length;
+
+  // Dropped cue2s: not assigned to any row
+  const assignedCue2s = new Set<number>();
+  for (const m of merged) {
+    for (const j of m.cue2Indices) assignedCue2s.add(j);
+  }
+  const droppedCue2s = enCues.length - assignedCue2s.size;
+
+  return {
+    rows,
+    withText1,
+    withText2,
+    emptyText2,
+    sharedCue2s,
+    droppedCue2s,
+  };
+}
+
+function loadVideo(videoId: string) {
+  const videoDir = join(YOUTUBE_JSON_DIR, videoId);
+  const koFile = findTrackFile(videoDir, "ko")!;
+  const enFile = findTrackFile(videoDir, "en")!;
+  return { ko: loadTrack(videoDir, koFile), en: loadTrack(videoDir, enFile) };
+}
+
+describe("strategy mapping stats", () => {
+  const v1 = loadVideo("7GU_VQfgMT0");
+  const v2 = loadVideo("DtK-CkwNHSY");
+
+  describe("7GU_VQfgMT0", () => {
+    it("cue counts", () => {
+      expect({ ko: v1.ko.length, en: v1.en.length }).toMatchInlineSnapshot(`
+        {
+          "en": 56,
+          "ko": 62,
+        }
+      `);
+    });
+    it("overlap", () => {
+      expect(mergeStats(mergeOverlap(v1.ko, v1.en), v1.en))
+        .toMatchInlineSnapshot(`
+        {
+          "droppedCue2s": 0,
+          "emptyText2": 0,
+          "rows": 62,
+          "sharedCue2s": 42,
+          "withText1": 62,
+          "withText2": 62,
+        }
+      `);
+    });
+    it("best-overlap", () => {
+      expect(mergeStats(mergeBestOverlap(v1.ko, v1.en), v1.en))
+        .toMatchInlineSnapshot(`
+        {
+          "droppedCue2s": 0,
+          "emptyText2": 0,
+          "rows": 62,
+          "sharedCue2s": 5,
+          "withText1": 62,
+          "withText2": 62,
+        }
+      `);
+    });
+    it("partition", () => {
+      expect(mergeStats(mergePartition(v1.ko, v1.en), v1.en))
+        .toMatchInlineSnapshot(`
+        {
+          "droppedCue2s": 0,
+          "emptyText2": 0,
+          "rows": 56,
+          "sharedCue2s": 0,
+          "withText1": 56,
+          "withText2": 56,
+        }
+      `);
+    });
+    it("bidirectional", () => {
+      expect(mergeStats(mergeBidirectional(v1.ko, v1.en), v1.en))
+        .toMatchInlineSnapshot(`
+        {
+          "droppedCue2s": 0,
+          "emptyText2": 6,
+          "rows": 62,
+          "sharedCue2s": 0,
+          "withText1": 62,
+          "withText2": 56,
+        }
+      `);
+    });
+    it("dtw", () => {
+      expect(mergeStats(mergeDTW(v1.ko, v1.en), v1.en)).toMatchInlineSnapshot(`
+        {
+          "droppedCue2s": 0,
+          "emptyText2": 6,
+          "rows": 62,
+          "sharedCue2s": 0,
+          "withText1": 62,
+          "withText2": 56,
+        }
+      `);
+    });
+  });
+
+  describe("DtK-CkwNHSY", () => {
+    it("cue counts", () => {
+      expect({ ko: v2.ko.length, en: v2.en.length }).toMatchInlineSnapshot(`
+        {
+          "en": 40,
+          "ko": 85,
+        }
+      `);
+    });
+    it("overlap", () => {
+      expect(mergeStats(mergeOverlap(v2.ko, v2.en), v2.en))
+        .toMatchInlineSnapshot(`
+        {
+          "droppedCue2s": 0,
+          "emptyText2": 0,
+          "rows": 85,
+          "sharedCue2s": 39,
+          "withText1": 85,
+          "withText2": 85,
+        }
+      `);
+    });
+    it("best-overlap", () => {
+      expect(mergeStats(mergeBestOverlap(v2.ko, v2.en), v2.en))
+        .toMatchInlineSnapshot(`
+        {
+          "droppedCue2s": 0,
+          "emptyText2": 0,
+          "rows": 86,
+          "sharedCue2s": 32,
+          "withText1": 85,
+          "withText2": 86,
+        }
+      `);
+    });
+    it("partition", () => {
+      expect(mergeStats(mergePartition(v2.ko, v2.en), v2.en))
+        .toMatchInlineSnapshot(`
+        {
+          "droppedCue2s": 0,
+          "emptyText2": 0,
+          "rows": 40,
+          "sharedCue2s": 0,
+          "withText1": 39,
+          "withText2": 40,
+        }
+      `);
+    });
+    it("bidirectional", () => {
+      expect(mergeStats(mergeBidirectional(v2.ko, v2.en), v2.en))
+        .toMatchInlineSnapshot(`
+        {
+          "droppedCue2s": 0,
+          "emptyText2": 46,
+          "rows": 85,
+          "sharedCue2s": 0,
+          "withText1": 85,
+          "withText2": 39,
+        }
+      `);
+    });
+    it("dtw", () => {
+      expect(mergeStats(mergeDTW(v2.ko, v2.en), v2.en)).toMatchInlineSnapshot(`
+        {
+          "droppedCue2s": 0,
+          "emptyText2": 45,
+          "rows": 85,
+          "sharedCue2s": 0,
+          "withText1": 85,
+          "withText2": 40,
+        }
+      `);
+    });
+  });
+});
 
 describe("real YouTube data", () => {
   const videoIds = getVideoIds();
