@@ -1,14 +1,8 @@
 {
   "wireMagic": "pb3",
-  "pens": [
-    {}
-  ],
-  "wsWinStyles": [
-    {}
-  ],
-  "wpWinPositions": [
-    {}
-  ],
+  "pens": [{}],
+  "wsWinStyles": [{}],
+  "wpWinPositions": [{}],
   "events": [
     {
       "tStartMs": 1000,
