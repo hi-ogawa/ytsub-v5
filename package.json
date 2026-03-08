@@ -11,6 +11,7 @@
     "lint": "oxfmt && knip --fix",
     "lint-check": "oxfmt --check && knip",
     "test-e2e": "playwright test",
+    "test-youtube": "playwright test --config playwright.youtube.config.ts",
     "release": "wrangler deploy",
     "types": "wrangler types --no-include-runtime",
     "db:migrate": "CI=true wrangler d1 migrations apply DB --local",

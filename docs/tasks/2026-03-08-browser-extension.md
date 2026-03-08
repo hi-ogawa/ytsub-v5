@@ -46,12 +46,18 @@ ytsub-v4 (`~/code/personal/ytsub-v4`) is a full browser extension that embeds a 
 
 ## Design for v5 Extension
 
+### Key Principle: Shared Code, Extension as Thin Shell
+
+The extension lives inside the ytsub-v5 repo (monorepo). Core logic — subtitle extraction, json3 parsing, alignment — is written as **standalone modules** reusable by both the extension and the web app. The extension itself is a thin shell: inject the extraction script, add a UI button, POST the result.
+
+This also means the core logic (everything except the extension chrome) can share the same UI framework/components as the web app, enabling future reuse (e.g., embedding a caption preview in the extension).
+
 ### Scope
 
 Minimal extension — just a "send to ytsub" button on YouTube pages. All it does:
 
 1. Extract video metadata + subtitle tracks from the current YouTube page
-2. Parse and align subtitles (client-side)
+2. Parse and align subtitles (client-side, using shared modules)
 3. POST the result to the ytsub app API (same `importVideo` format as today)
 
 No embedded UI, no playback controls, no viewer. The web app handles everything after import.
@@ -59,39 +65,51 @@ No embedded UI, no playback controls, no viewer. The web app handles everything 
 ### Architecture
 
 ```
-YouTube page
-  ├── Content script (detects video, shows import button)
-  │     └── Reads ytInitialPlayerResponse or calls youtubei/v1/player
-  │         → Gets caption track list
-  │         → Fetches json3 for ko + en tracks
-  │         → Parses + aligns → text1/text2 rows
-  │         → POSTs import.json to ytsub app
-  │
-  └── Popup (optional, for settings)
-        └── Configure ytsub app URL, auth token
+Shared modules (used by extension + app + tests)
+  ├── YouTube extraction script
+  │     └── Reads ytInitialPlayerResponse from page context
+  │         → Returns video metadata + caption track URLs
+  ├── json3 parser → cue arrays
+  └── Alignment module → text1/text2 paired rows
+
+Extension (thin shell)
+  ├── Content script (injects extraction script into main world, shows import button)
+  │     └── On click: extract → parse → align → POST to ytsub app
+  └── Popup (settings: app URL, auth token)
+
+Testing (no extension needed)
+  └── Playwright navigates to YouTube → page.evaluate(extraction script)
+      → Validates extraction, parsing, alignment against real pages
 ```
 
 ### Subtitle Fetching Strategy
 
-Two approaches, in order of preference:
+**Approach A: Page data extraction via `ytInitialPlayerResponse`** (tried first, partially blocked)
 
-**Option 1: Page data extraction (simplest)**
+The YouTube watch page embeds caption track metadata in `ytInitialPlayerResponse` (a JS variable in the page). Reading metadata works, but **fetching subtitle content is blocked**.
 
-The YouTube watch page already contains caption track metadata in `ytInitialPlayerResponse`. A content script can read this directly from the page's JS context without any API calls.
+- `ytInitialPlayerResponse` is accessible from main world — video metadata + caption track list extraction works (tested via Playwright `page.evaluate()`)
+- Each track has a `baseUrl` for the `timedtext` API
+- **Problem:** The `timedtext` API now requires a `pot` (Proof of Origin Token) parameter. YouTube's player JS generates this token at runtime (likely via botguard/challenge). The `baseUrl` from `ytInitialPlayerResponse` lacks `pot`, so fetching returns 200 with empty body — even in headed mode, even in incognito. The real browser's player adds `&potc=1&pot=<token>` to every timedtext request.
+- Other YouTube APIs (`get_transcript`) also exist but use gzip-compressed protobuf bodies — harder to replicate.
 
-- Extract `ytInitialPlayerResponse.captions.playerCaptionsTracklistRenderer.captionTracks`
-- Each track has a `baseUrl` — fetch with `&fmt=json3` (same-origin, no CORS issues)
-- No client spoofing needed since we're on the YouTube page
+**Conclusion:** `ytInitialPlayerResponse` is useful for **metadata + track list** but not sufficient for **fetching subtitle content**.
 
-**Option 2: youtubei/v1/player API (v4 approach, fallback)**
-
-If page data extraction doesn't work reliably:
+**Approach B: `youtubei/v1/player` API with iOS client spoofing** (v4 approach, trying next)
 
 - Call the internal player API with spoofed iOS client headers
 - Requires extracting `visitorData` from the page first
-- More fragile (hardcoded client versions) but proven to work
+- Response includes caption track `baseUrl`s — these may work without `pot` since they're from the iOS client context
+- More fragile (hardcoded client versions) but proven to work in v4
 
-**Preference:** Start with Option 1. It's simpler and less fragile since it reads data YouTube already loaded. Fall back to Option 2 if needed.
+**Approach C: Network interception** (not yet tried)
+
+- Let YouTube's own player fetch subtitles (it generates the POT)
+- Intercept the timedtext responses via `page.route()` / service worker / fetch monkey-patching
+- Works for both Playwright tests and extension context
+- Requires triggering subtitle loading (e.g., CC button click)
+
+**Result:** Approach B works — iOS client `baseUrl`s bypass POT. This is the current working approach.
 
 ### Track Selection Logic
 
@@ -149,8 +167,8 @@ No new API endpoint needed. The existing import flow works as-is.
 
 - **WXT** — same as v4, WebExtension framework (handles Manifest V3 boilerplate, HMR in dev)
 - **Manifest V3** — required for Chrome Web Store
-- **TypeScript** — shared types with ytsub-v5 app
-- **Minimal UI** — no React needed if it's just a button + track selection dropdown. Could use vanilla DOM or a tiny framework.
+- **TypeScript** — shared modules with ytsub-v5 app (same repo)
+- **React** — reuse app's UI framework for extension UI (enables sharing components later)
 
 ### Permissions
 
@@ -167,26 +185,29 @@ The ytsub app has single-user auth. The extension needs the auth token to POST i
 
 ## Implementation Plan
 
-### Step 1: Subtitle extraction proof-of-concept
+### Step 1: Extraction script + Playwright tests
 
-- Minimal content script on YouTube
-- Extract `ytInitialPlayerResponse` from page
-- Log available caption tracks to console
-- Fetch one track as json3, parse to cue array
-- **Goal:** Validate that page data extraction works reliably
+- Write a standalone extraction script that runs in a YouTube page context:
+  - Read `ytInitialPlayerResponse` → video metadata + caption track list
+  - Fetch json3 for a given track URL → parse to cue array
+- Test via Playwright: navigate to YouTube video, `page.evaluate(script)`, assert output
+- No extension involved — validates the approach with fast iteration
+- **Goal:** Confirm `ytInitialPlayerResponse` is accessible and json3 fetching works
 
 ### Step 2: Alignment module
 
-- Port/adapt v4's alignment logic as a standalone module
+- Port v4's `mergeCaptionEntryPairs` as a standalone module (shared code)
+- Unit-testable with fixture data (no browser needed)
 - Test against ytsub-eval videos (compare with agent-produced alignments)
-- Can develop and test independently of the extension
+- Can develop in parallel with Step 1
 
-### Step 3: Import button + POST
+### Step 3: Extension shell + import button
 
-- Inject a small "Import to ytsub" button on YouTube watch pages
-- On click: fetch both tracks, align, POST to app API
-- Show success/error feedback
-- Handle auth (token in extension storage)
+- WXT extension project under `extension/` in the repo
+- Content script: inject extraction script into main world, show "Import to ytsub" button
+- On click: extract → parse → align → POST to app API
+- Popup: configure app URL + auth token
+- **Note:** YouTube is an SPA — need to detect navigation between videos to show/hide the button. v4's `content/main.ts` handles this (reference for follow-up).
 
 ### Step 4: Track selection UI
 
@@ -203,14 +224,47 @@ The ytsub app has single-user auth. The extension needs the auth token to POST i
 - `docs/skills/ytsub/scripts/check-alignment.ts` — current strict alignment
 - `docs/tasks/2026-03-08-ai-less-workflow.md` — parent task
 
+## Decisions
+
+- **Monorepo** — extension lives in `extension/` within the ytsub-v5 repo. Shared modules (extraction, parsing, alignment) are imported directly.
+- **Core logic is standalone** — extraction script, json3 parser, alignment are independent of extension APIs. Testable via Playwright `page.evaluate()` against real YouTube pages.
+- **Page data extraction first** — read `ytInitialPlayerResponse` from main world. Falls back to youtubei API if needed.
+
 ## Open Questions
 
-- Should this live in the ytsub-v5 repo (monorepo) or a separate repo?
-- Is `ytInitialPlayerResponse` reliably accessible from a content script, or does YouTube's CSP block it?
 - Does YouTube's auto-translate feature (fetching en translation of ko subs) work via the `baseUrl` params, or does it require the internal API?
 - Should the extension support Firefox, or Chrome-only for now?
 
+## Progress Log
+
+### Step 1: Extraction script + Playwright tests
+
+**Files created:**
+
+- `src/lib/youtube.ts` — extraction module (`extractVideoData`, `fetchTrackJson3`, `parseJson3`, `pickTracks`)
+- `e2e/youtube-extraction.spec.ts` — Playwright tests against real YouTube pages
+- `playwright.youtube.config.ts` — separate config (no dev server needed)
+- `package.json` — added `test-youtube` script
+
+**Results:**
+
+- `extractVideoData()` via `page.evaluate()` — **works**. Reads `ytInitialPlayerResponse`, returns video metadata + caption track list with correct fields.
+- `pickTracks()` — **works**. Finds ko + en tracks from the extraction result.
+- `fetchTrackJson3()` — **blocked**. The `timedtext` API returns 200 with empty body. YouTube now requires a `pot` (Proof of Origin Token) param generated by the player's JS at runtime. Confirmed in headed mode and with curl — not a headless detection issue, but a missing anti-bot token. Real browser (both logged-in and incognito) always includes `&potc=1&pot=<token>`.
+
+**Approach B result:** iOS client player API works. The `baseUrl`s from the iOS client response don't require POT — json3 fetching succeeds. All 5 Playwright tests pass:
+
+1. `extractVideoData` from `ytInitialPlayerResponse` — metadata + track list (**works**)
+2. `pickTracks` — finds ko + en tracks (**works**)
+3. `fetchPlayerApi` with iOS client — returns metadata + tracks (**works**)
+4. `fetchTrackJson3` with player API `baseUrl` — returns json3, parses to 62 ko cues (**works**)
+5. Fetch both ko + en tracks — 62 ko cues, 56 en cues (**works**)
+
+**Working extraction pipeline:** `page.evaluate(fetchPlayerApi, videoId)` → `pickTracks` → `page.evaluate(fetchTrackJson3, baseUrl)` → `parseJson3`
+
+**Hybrid approach:** Use `ytInitialPlayerResponse` for quick metadata (no API call needed), but use `fetchPlayerApi` for caption track URLs that actually work for fetching.
+
 ## Status
 
-- **Phase:** Planning / awaiting feedback
-- **Next:** Proof-of-concept for subtitle extraction from YouTube page data
+- **Phase:** Step 1 core extraction — working
+- **Next:** Step 2 — alignment module (port v4's `mergeCaptionEntryPairs`)
