@@ -1,5 +1,12 @@
 import { useQuery } from "@tanstack/react-query";
-import { Check, Download, EllipsisVertical } from "lucide-react";
+import {
+  Bookmark,
+  Check,
+  Download,
+  EllipsisVertical,
+  Loader2,
+  X,
+} from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   FALLBACK_STRATEGIES,
@@ -7,6 +14,11 @@ import {
   type MergedCaption,
   mergeCaptions,
 } from "../lib/caption-merge.ts";
+import {
+  type BookmarkSelection,
+  type ExtensionBookmark,
+  extractBookmarkSelection,
+} from "../lib/extension-bookmarks.ts";
 import {
   type CaptionCue,
   type YouTubeCaptionTrack,
@@ -193,11 +205,17 @@ export function CaptionPanel({
   fetchCues,
   player,
   videoMeta,
+  onCreateBookmark,
+  bookmarksByIndex,
 }: {
   tracks: YouTubeCaptionTrack[];
   fetchCues: (track: YouTubeCaptionTrack) => Promise<CaptionCue[]>;
   player: YTPlayer | null;
   videoMeta: VideoMeta;
+  onCreateBookmark?: (
+    sel: BookmarkSelection & { timestamp: number; context: string },
+  ) => void;
+  bookmarksByIndex?: Map<number, ExtensionBookmark[]>;
 }) {
   const [{ vssId1: selectedVssId1, vssId2: selectedVssId2 }, setSelectedPair] =
     useState(() => getInitialTracks(tracks, videoMeta.youtubeId));
@@ -250,8 +268,50 @@ export function CaptionPanel({
     });
   }
 
+  // --- Bookmark selection ---
+  const [bookmarkSelection, setBookmarkSelection] =
+    useState<BookmarkSelection>();
+  const [isCreating, setIsCreating] = useState(false);
+
+  useEffect(() => {
+    if (!onCreateBookmark) return;
+    const handler = () => {
+      const sel = document.getSelection() ?? undefined;
+      setBookmarkSelection(sel ? extractBookmarkSelection(sel) : undefined);
+    };
+    document.addEventListener("selectionchange", handler);
+    return () => document.removeEventListener("selectionchange", handler);
+  }, [onCreateBookmark]);
+
+  function onClickBookmark() {
+    if (!bookmarkSelection || !onCreateBookmark || !rows) return;
+    const row = rows[bookmarkSelection.captionIndex];
+    if (!row) return;
+    setIsCreating(true);
+    onCreateBookmark({
+      ...bookmarkSelection,
+      timestamp: row.begin,
+      context: bookmarkSelection.side === 0 ? row.text1 : row.text2,
+    });
+    document.getSelection()?.removeAllRanges();
+    setBookmarkSelection(undefined);
+    setIsCreating(false);
+  }
+
+  function onCancelBookmark() {
+    document.getSelection()?.removeAllRanges();
+    setBookmarkSelection(undefined);
+  }
+
   function handleExport() {
     if (!rows) return;
+    // Collect all bookmarks across all indices for export
+    const allBookmarks: ExtensionBookmark[] = [];
+    if (bookmarksByIndex) {
+      for (const bms of bookmarksByIndex.values()) {
+        allBookmarks.push(...bms);
+      }
+    }
     const data = {
       video: {
         youtubeId: videoMeta.youtubeId,
@@ -269,7 +329,15 @@ export function CaptionPanel({
         text1: r.text1,
         text2: r.text2,
       })),
-      bookmarks: [],
+      bookmarks: allBookmarks.map((b) => ({
+        text: b.text,
+        translation: "",
+        captionIdx: b.captionIndex,
+        side: b.side,
+        offset: b.offset,
+        context: b.context,
+        status: "manual",
+      })),
     };
     const blob = new Blob([JSON.stringify(data, null, 2)], {
       type: "application/json",
@@ -347,13 +415,45 @@ export function CaptionPanel({
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
-      {cueError ? (
-        <div className="flex h-full items-center justify-center text-sm text-destructive">
-          {String(cueError)}
-        </div>
-      ) : rows ? (
-        <CaptionViewer rows={rows} player={player} autoScroll={autoScroll} />
-      ) : null}
+      <div className="relative flex min-h-0 flex-[1_0_0] flex-col">
+        {cueError ? (
+          <div className="flex h-full items-center justify-center text-sm text-destructive">
+            {String(cueError)}
+          </div>
+        ) : rows ? (
+          <CaptionViewer
+            rows={rows}
+            player={player}
+            autoScroll={autoScroll}
+            bookmarksByIndex={bookmarksByIndex}
+          />
+        ) : null}
+
+        {/* Floating bookmark action buttons */}
+        {onCreateBookmark && (bookmarkSelection || isCreating) && (
+          <div className="absolute bottom-2 right-2 flex gap-2">
+            <button
+              className="flex h-10 w-10 items-center justify-center rounded-full bg-muted shadow hover:bg-muted/80"
+              onClick={onCancelBookmark}
+              title="Cancel"
+            >
+              <X className="h-5 w-5" />
+            </button>
+            <button
+              className="flex h-10 w-10 items-center justify-center rounded-full bg-accent text-accent-foreground shadow hover:bg-accent/90"
+              onClick={onClickBookmark}
+              disabled={isCreating}
+              title="Create bookmark"
+            >
+              {isCreating ? (
+                <Loader2 className="h-5 w-5 animate-spin" />
+              ) : (
+                <Bookmark className="h-5 w-5 fill-current" />
+              )}
+            </button>
+          </div>
+        )}
+      </div>
     </>
   );
 }
@@ -364,10 +464,12 @@ function CaptionViewer({
   rows,
   player,
   autoScroll,
+  bookmarksByIndex,
 }: {
   rows: MergedCaption[];
   player: YTPlayer | null;
   autoScroll: boolean;
+  bookmarksByIndex?: Map<number, ExtensionBookmark[]>;
 }) {
   const [currentIndex, setCurrentIndex] = useState<number>();
   const [isPlaying, setIsPlaying] = useState(false);
@@ -401,6 +503,7 @@ function CaptionViewer({
       isPlaying={isPlaying}
       player={player}
       autoScroll={autoScroll}
+      bookmarksByIndex={bookmarksByIndex}
     />
   );
 }
