@@ -132,26 +132,55 @@ export function ResizablePanel({
   );
 }
 
+const TRACKS_KEY = "zamak:selected-tracks";
 const LANGS_KEY = "zamak:preferred-langs";
 
-function getPreferredLangs(videoId: string): { lang1: string; lang2: string } {
+function getInitialTracks(
+  tracks: YouTubeCaptionTrack[],
+  videoId: string,
+): { vssId1?: string; vssId2?: string } {
   try {
-    // Try per-video preference first
-    const perVideo = localStorage.getItem(`${LANGS_KEY}:${videoId}`);
-    if (perVideo) return JSON.parse(perVideo);
-    // Fall back to global preference
-    const stored = localStorage.getItem(LANGS_KEY);
-    if (stored) return JSON.parse(stored);
+    // Per-video: restore exact track pair
+    const perVideo = localStorage.getItem(`${TRACKS_KEY}:${videoId}`);
+    if (perVideo) {
+      const { vssId1, vssId2 } = JSON.parse(perVideo);
+      // Validate that saved vssIds still exist in available tracks
+      const valid1 = tracks.some((t) => t.vssId === vssId1);
+      const valid2 = tracks.some((t) => t.vssId === vssId2);
+      if (valid1 && valid2) return { vssId1, vssId2 };
+    }
+    // Global: preferred languages → pickBestTrack
+    const globalPref = localStorage.getItem(LANGS_KEY);
+    if (globalPref) {
+      const { lang1, lang2 } = JSON.parse(globalPref);
+      return {
+        vssId1: pickBestTrack(tracks, lang1)?.vssId,
+        vssId2: pickBestTrack(tracks, lang2)?.vssId,
+      };
+    }
   } catch {}
-  return { lang1: "ko", lang2: "en" };
+  // No preference: first two tracks
+  return { vssId1: tracks[0]?.vssId, vssId2: tracks[1]?.vssId };
 }
 
-function savePreferredLangs(lang1: string, lang2: string, videoId: string) {
-  localStorage.setItem(LANGS_KEY, JSON.stringify({ lang1, lang2 }));
+function saveSelectedTracks(
+  tracks: YouTubeCaptionTrack[],
+  vssId1: string,
+  vssId2: string,
+  videoId: string,
+) {
   localStorage.setItem(
-    `${LANGS_KEY}:${videoId}`,
-    JSON.stringify({ lang1, lang2 }),
+    `${TRACKS_KEY}:${videoId}`,
+    JSON.stringify({ vssId1, vssId2 }),
   );
+  const t1 = tracks.find((t) => t.vssId === vssId1);
+  const t2 = tracks.find((t) => t.vssId === vssId2);
+  if (t1 && t2) {
+    localStorage.setItem(
+      LANGS_KEY,
+      JSON.stringify({ lang1: t1.languageCode, lang2: t2.languageCode }),
+    );
+  }
 }
 
 export function CaptionPanel({
@@ -165,16 +194,8 @@ export function CaptionPanel({
   player: YTPlayer | null;
   videoMeta: VideoMeta;
 }) {
-  const [selectedVssId1, setSelectedVssId1] = useState<string | undefined>(
-    () =>
-      pickBestTrack(tracks, getPreferredLangs(videoMeta.youtubeId).lang1)
-        ?.vssId,
-  );
-  const [selectedVssId2, setSelectedVssId2] = useState<string | undefined>(
-    () =>
-      pickBestTrack(tracks, getPreferredLangs(videoMeta.youtubeId).lang2)
-        ?.vssId,
-  );
+  const [{ vssId1: selectedVssId1, vssId2: selectedVssId2 }, setSelectedPair] =
+    useState(() => getInitialTracks(tracks, videoMeta.youtubeId));
   const [currentIndex, setCurrentIndex] = useState<number>();
   const [isPlaying, setIsPlaying] = useState(false);
   const [autoScroll, setAutoScroll] = useState(() => {
@@ -297,16 +318,9 @@ export function CaptionPanel({
             selectedVssId1={selectedVssId1}
             selectedVssId2={selectedVssId2}
             onSelect={(v1, v2) => {
-              setSelectedVssId1(v1);
-              setSelectedVssId2(v2);
-              const t1 = tracks.find((t) => t.vssId === v1);
-              const t2 = tracks.find((t) => t.vssId === v2);
-              if (t1 && t2)
-                savePreferredLangs(
-                  t1.languageCode,
-                  t2.languageCode,
-                  videoMeta.youtubeId,
-                );
+              setSelectedPair({ vssId1: v1, vssId2: v2 });
+              if (v1 && v2)
+                saveSelectedTracks(tracks, v1, v2, videoMeta.youtubeId);
             }}
           />
         </div>
