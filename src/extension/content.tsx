@@ -179,7 +179,6 @@ function inject() {
 
 function remove() {
   document.getElementById("ytsub-host")?.remove();
-  queryClient.clear();
 }
 
 // YouTube SPA navigation
