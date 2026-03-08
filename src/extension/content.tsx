@@ -238,7 +238,7 @@ function inject() {
     all: "initial",
     position: "fixed",
     inset: "0",
-    zIndex: "2100",
+    zIndex: "2147483647",
     pointerEvents: "none",
   });
   document.body.appendChild(host);
