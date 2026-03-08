@@ -35,6 +35,13 @@
   --input: #3f3f3f;
 }
 
+/* Radix portaled layers (dropdown, popover, dialog) inherit pointer-events:none
+   from the host element. With modal={false} Radix doesn't set pointer-events:auto
+   on its DismissableLayer, so we force it here. */
+[data-radix-popper-content-wrapper] {
+  pointer-events: auto;
+}
+
 #zamak-root {
   display: flex;
   flex-direction: column;
