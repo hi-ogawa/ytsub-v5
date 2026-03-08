@@ -70,10 +70,12 @@ A web app for language learning via YouTube subtitles. Watch videos with dual ca
 See ytsub-v4 for relevant technique.
 
 - [x] captions panel shouldn't cover YouTube's top-right profile popover
-- [ ] captions panel should be hidable (FAB at bottom-right, default closed)
-- [ ] captions panel width should be changeable.
+- [x] captions panel should be hidable (FAB at bottom-right, default closed)
+- [x] captions panel width should be changeable.
 - [x] align captions viewer experience with app video viewer (e.g. auto-scroll sensitivity)
 - [x] align/merge captions algorithm improvements
+- [x] release preview
+- [ ] release chrome store
 
 ## TODO: Backlog
 
