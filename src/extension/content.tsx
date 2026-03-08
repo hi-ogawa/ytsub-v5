@@ -127,7 +127,13 @@ function addStyle(shadow: ShadowRoot, css: string) {
 
 // --- Injection ---
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 function isWatchPage() {
   return window.location.pathname === "/watch";
@@ -173,6 +179,7 @@ function inject() {
 
 function remove() {
   document.getElementById("ytsub-host")?.remove();
+  queryClient.clear();
 }
 
 // YouTube SPA navigation
