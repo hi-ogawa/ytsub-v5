@@ -317,7 +317,7 @@ export function CaptionPanel({
             {!isAutoStrategy && (
               <div className="px-2 py-1.5">
                 <label className="mb-1 block text-xs text-muted-foreground">
-                  Alignment
+                  Track alignment
                 </label>
                 <select
                   className="w-full rounded border bg-background px-1 py-0.5 text-sm"
