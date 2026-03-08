@@ -14,9 +14,11 @@
   --text-lg--line-height: 28px;
 }
 
-/* Semantic color tokens matching YouTube's dark theme.
-   The shared @theme inline bridge (styles.css) references these
-   (e.g. --color-background: var(--background)).
+/* CSS custom properties for the shadow DOM theme.
+   Only custom properties go here — `all: initial` on the host element
+   doesn't reset them, but it does beat :host for regular properties
+   (inline styles win), so font-family, font-size, etc. are set as
+   inline styles in content.tsx instead.
    TODO: support light mode (detect YouTube's theme and switch) */
 :host {
   color-scheme: dark;

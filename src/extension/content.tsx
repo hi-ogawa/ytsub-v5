@@ -159,7 +159,10 @@ function inject() {
   const videoId = getVideoId();
   if (!videoId) return;
 
-  // Create shadow root for style isolation
+  // Create shadow root for style isolation.
+  // Inline styles here because `all: initial` resets everything and
+  // inline styles beat :host stylesheet rules. Use :host in content.css
+  // only for CSS custom properties (unaffected by `all: initial`).
   const host = document.createElement("div");
   host.id = "zamak-host";
   Object.assign(host.style, {
