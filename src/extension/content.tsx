@@ -91,6 +91,7 @@ function ExtensionViewer({ videoId }: { videoId: string }) {
           tracks={data.captionTracks}
           fetchCues={fetchCues}
           player={player}
+          videoMeta={data.video}
         />
       )}
     </div>
