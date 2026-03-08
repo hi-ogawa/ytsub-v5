@@ -168,6 +168,8 @@ function inject() {
     inset: "0",
     zIndex: "2147483647",
     pointerEvents: "none",
+    fontFamily: "'Roboto', 'Arial', sans-serif",
+    fontSize: "14px",
   });
   document.body.appendChild(host);
 
