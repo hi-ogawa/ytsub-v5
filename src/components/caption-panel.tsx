@@ -1,10 +1,30 @@
 import { useQuery } from "@tanstack/react-query";
+import { Captions } from "lucide-react";
 import { useEffect, useState } from "react";
 import { mergeCaptions } from "../lib/caption-merge.ts";
 import { type CaptionCue, type YouTubeCaptionTrack } from "../lib/youtube.ts";
 import { CaptionList } from "./caption-list.tsx";
 import { TrackPicker } from "./track-picker.tsx";
 import type { YTPlayer } from "./youtube-player.tsx";
+
+export function CaptionFab({
+  open,
+  onClick,
+}: {
+  open: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`fixed right-3 bottom-3 flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border-none text-foreground shadow-lg pointer-events-auto ${open ? "bg-ring" : "bg-[#1a3a5c]"}`}
+      title={open ? "Hide captions" : "Show captions"}
+    >
+      <Captions size={20} />
+    </button>
+  );
+}
 
 const LANGS_KEY = "ytsub:preferred-langs";
 
@@ -120,7 +140,7 @@ export function CaptionPanel({
   return (
     <>
       <div className="flex items-center border-b">
-        <div className="flex-1">
+        <div className="min-w-0 flex-1">
           <TrackPicker
             tracks={tracks}
             selectedVssId1={selectedVssId1}

@@ -2,7 +2,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useQuery } from "@tanstack/react-query";
 import { StrictMode, useState } from "react";
 import { createRoot } from "react-dom/client";
-import { CaptionPanel } from "../components/caption-panel.tsx";
+import { CaptionFab, CaptionPanel } from "../components/caption-panel.tsx";
 import type { YTPlayer } from "../components/youtube-player.tsx";
 import {
   type YouTubeCaptionTrack,
@@ -26,6 +26,31 @@ function getVideoPlayer(): YTPlayer | null {
     getPlayerState: () => (video.paused ? 2 : 1),
     destroy: () => {},
   };
+}
+
+function App({ videoId }: { videoId: string }) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <div>
+      {open && (
+        <div
+          id="ytsub-root"
+          style={{
+            position: "fixed",
+            right: "10px",
+            top: "65px",
+            bottom: "56px",
+            width: "400px",
+            pointerEvents: "auto",
+          }}
+        >
+          <ExtensionViewer videoId={videoId} />
+        </div>
+      )}
+      <CaptionFab open={open} onClick={() => setOpen((v) => !v)} />
+    </div>
+  );
 }
 
 function fetchCues(track: YouTubeCaptionTrack) {
@@ -121,11 +146,9 @@ function inject() {
   Object.assign(host.style, {
     all: "initial",
     position: "fixed",
-    right: "10px",
-    top: "65px",
-    bottom: "20px",
-    width: "400px",
-    zIndex: "2100",
+    inset: "0",
+    zIndex: "2147483647",
+    pointerEvents: "none",
   });
   document.body.appendChild(host);
 
@@ -134,13 +157,12 @@ function inject() {
   addStyle(shadow, contentCss);
 
   const container = document.createElement("div");
-  container.id = "ytsub-root";
   shadow.appendChild(container);
 
   createRoot(container).render(
     <StrictMode>
       <QueryClientProvider client={queryClient}>
-        <ExtensionViewer videoId={videoId} />
+        <App videoId={videoId} />
       </QueryClientProvider>
     </StrictMode>,
   );

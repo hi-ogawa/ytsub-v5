@@ -23,3 +23,12 @@ This approach is fragile — YouTube can break it by requiring SUBS POT for mobi
 ## Architecture
 
 The extension is a thin shell. Core logic (extraction, json3 parsing, alignment) lives in shared modules (`src/lib/youtube.ts`) reusable by both the extension and tests. See `docs/tasks/2026-03-08-browser-extension.md` for the implementation plan.
+
+## Dev-viewer for iteration without extension
+
+Loading/reloading a Chrome extension on every change is slow. The **dev-viewer** (`/dev-viewer/:videoId`) provides the same caption panel experience using local fixture data, so UI iteration happens via `pnpm dev` without touching the extension.
+
+- Shared components (`src/components/caption-panel.tsx`, `caption-list.tsx`, `track-picker.tsx`) are used by both the extension content script and the dev-viewer route
+- The dev-viewer reads pre-fetched YouTube metadata/tracks from `/scripts/youtube-json/` fixtures instead of calling YouTube APIs
+- UI features (FAB toggle, panel layout, auto-scroll) should be implemented in the shared components so both environments stay in sync
+- Extension-specific code (`src/extension/content.tsx`) should be a thin wrapper: Shadow DOM injection, `pointer-events` layering, and data fetching — delegating all UI to shared components

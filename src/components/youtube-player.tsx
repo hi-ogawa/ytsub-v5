@@ -7,6 +7,8 @@ declare let YT: {
     el: HTMLElement | string,
     options: {
       videoId: string;
+      width?: string;
+      height?: string;
       events?: { onReady?: () => void };
     },
   ) => YTPlayer;
@@ -48,6 +50,8 @@ export function useYouTubePlayer(youtubeId: string | undefined) {
     loadYoutubeIframeApi().then(() => {
       const p = new YT.Player(el, {
         videoId: youtubeId,
+        width: "100%",
+        height: "100%",
         events: {
           onReady: () => {
             playerRef.current = p;

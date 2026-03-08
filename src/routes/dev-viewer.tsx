@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
 import { useParams } from "react-router";
-import { CaptionPanel } from "../components/caption-panel.tsx";
+import { CaptionFab, CaptionPanel } from "../components/caption-panel.tsx";
 import { useYouTubePlayer } from "../components/youtube-player.tsx";
 import {
   type CaptionCue,
@@ -30,6 +31,7 @@ async function fetchTrackFixture(
 
 export function DevViewerPage() {
   const { videoId } = useParams<"videoId">();
+  const [panelOpen, setPanelOpen] = useState(false);
 
   const {
     data: meta,
@@ -58,28 +60,28 @@ export function DevViewerPage() {
     );
 
   return (
-    <div className="flex h-full w-full flex-col lg:flex-row lg:gap-2 lg:p-2">
-      {/* YouTube embed */}
-      <div className="flex-none lg:flex-1">
-        <div className="flex justify-center">
-          <div className="relative w-full max-w-xl lg:max-w-none">
-            <div className="relative pt-[56.2%]">
-              <div className="absolute top-0 h-full w-full" ref={playerElRef} />
-            </div>
+    <div className="h-full w-full p-6">
+      {/* YouTube embed + fake sidebar (mimics YouTube layout) */}
+      <div className="flex gap-6">
+        <div className="flex-1">
+          <div className="relative rounded pt-[56.2%]">
+            <div className="absolute inset-0" ref={playerElRef} />
           </div>
         </div>
+        <div className="hidden w-[400px] flex-none rounded lg:block" />
       </div>
 
-      {/* Caption panel */}
-      <div className="flex min-h-0 flex-[1_0_0] flex-col border-t lg:w-1/3 lg:flex-none lg:rounded lg:border">
-        {meta && (
+      {/* Floating caption panel (same position as extension) */}
+      {panelOpen && meta && (
+        <div className="fixed top-[65px] right-[10px] bottom-[56px] w-[400px] flex flex-col overflow-hidden rounded-lg border border-border bg-background">
           <CaptionPanel
             tracks={meta.captionTracks}
             fetchCues={(track) => fetchTrackFixture(videoId, track)}
             player={player}
           />
-        )}
-      </div>
+        </div>
+      )}
+      <CaptionFab open={panelOpen} onClick={() => setPanelOpen((v) => !v)} />
     </div>
   );
 }

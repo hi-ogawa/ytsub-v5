@@ -17,7 +17,7 @@
 | `docs/background/architecture.md` | Problem context, design decisions |
 | `docs/tasks/YYYY-MM-DD-*.md`      | Task-specific planning/notes      |
 
-Read `docs/prd.md` for the task list and `docs/background/architecture.md` for architecture context before implementing features.
+Read `docs/prd.md` for the task list and `docs/background/architecture.md` for architecture context before implementing features. For extension work, also read `docs/background/architecture-extension.md` — UI features should go in shared components (`src/components/`), not in extension-specific code, so they can be iterated via the dev-viewer without reloading the extension.
 
 ## Task Documents
 
