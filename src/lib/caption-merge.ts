@@ -13,6 +13,8 @@ export interface MergedCaption {
   end: number;
   text1: string;
   text2: string;
+  /** Which cue2 indices were assigned to this row (for diagnostics) */
+  cue2Indices: number[];
 }
 
 // === Strategy 1: Strict check (current v5 behavior) ===
@@ -33,6 +35,7 @@ export function mergeStrict(
     end: c1.end,
     text1: c1.text,
     text2: cues2[i].text,
+    cue2Indices: [i],
   }));
 }
 
@@ -62,17 +65,23 @@ export function mergeOverlap(
       .map((c2, j) => ({ c2, j, overlap: computeOverlap(c1, c2) }))
       .filter((o) => o.overlap > 0);
 
-    const candidates = overlaps.filter((o) => o.overlap >= 2);
     let text2 = "";
-    if (candidates.length > 0) {
-      text2 = candidates.map((o) => o.c2.text).join(" ");
-    } else if (overlaps.length > 0) {
-      // Pick best overlap
-      overlaps.sort((a, b) => b.overlap - a.overlap);
-      text2 = overlaps[0].c2.text;
+    let cue2Indices: number[] = [];
+    if (overlaps.length > 0) {
+      // Include all overlapping cue2s, sorted by start time
+      overlaps.sort((a, b) => a.c2.begin - b.c2.begin);
+      cue2Indices = overlaps.map((o) => o.j);
+      text2 = overlaps.map((o) => o.c2.text).join(" ");
     }
 
-    return { idx: i, begin: c1.begin, end: c1.end, text1: c1.text, text2 };
+    return {
+      idx: i,
+      begin: c1.begin,
+      end: c1.end,
+      text1: c1.text,
+      text2,
+      cue2Indices,
+    };
   });
 }
 
@@ -115,7 +124,14 @@ export function mergeBidirectional(
   return cues1.map((c1, i) => {
     const assigned = cue1ToCue2s.get(i) ?? [];
     const text2 = assigned.map((j) => cues2[j].text).join(" ");
-    return { idx: i, begin: c1.begin, end: c1.end, text1: c1.text, text2 };
+    return {
+      idx: i,
+      begin: c1.begin,
+      end: c1.end,
+      text1: c1.text,
+      text2,
+      cue2Indices: assigned,
+    };
   });
 }
 
@@ -143,6 +159,7 @@ export function mergeDTW(
       end: c.end,
       text1: c.text,
       text2: "",
+      cue2Indices: [],
     }));
   }
 
@@ -235,7 +252,14 @@ export function mergeDTW(
   return cues1.map((c1, idx) => {
     const assigned = assignments.get(idx) ?? [];
     const text2 = assigned.map((j) => cues2[j].text).join(" ");
-    return { idx, begin: c1.begin, end: c1.end, text1: c1.text, text2 };
+    return {
+      idx,
+      begin: c1.begin,
+      end: c1.end,
+      text1: c1.text,
+      text2,
+      cue2Indices: assigned,
+    };
   });
 }
 
