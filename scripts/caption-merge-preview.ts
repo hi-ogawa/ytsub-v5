@@ -1,7 +1,7 @@
 // Visual preview of caption merging against youtube-json test data.
 // Usage: npx tsx scripts/caption-merge-preview.ts <videoId> [strategy]
 //
-// Strategies: strict, relaxed, overlap, bidirectional, dtw, tiered (default)
+// Strategies: strict, relaxed, overlap, best-overlap, partition, bidirectional, dtw, tiered (default)
 //
 // Example:
 //   node scripts/caption-merge-preview.ts 7GU_VQfgMT0
@@ -13,10 +13,12 @@ import { join } from "path";
 import {
   type CaptionCue,
   type MergedCaption,
+  mergeBestOverlap,
   mergeBidirectional,
   mergeCaptions,
   mergeDTW,
   mergeOverlap,
+  mergePartition,
   mergeRelaxedStrict,
   mergeStrict,
 } from "../src/lib/caption-merge.ts";
@@ -72,7 +74,7 @@ function main() {
     );
     console.error(`\nAvailable videos: ${available.join(", ")}`);
     console.error(
-      "Strategies: strict, relaxed, overlap, bidirectional, dtw, tiered",
+      "Strategies: strict, relaxed, overlap, best-overlap, partition, bidirectional, dtw, tiered",
     );
     process.exit(1);
   }
@@ -138,6 +140,16 @@ function runMerge(
     }
     case "overlap":
       return { merged: mergeOverlap(koCues, enCues), usedStrategy: "overlap" };
+    case "best-overlap":
+      return {
+        merged: mergeBestOverlap(koCues, enCues),
+        usedStrategy: "best-overlap",
+      };
+    case "partition":
+      return {
+        merged: mergePartition(koCues, enCues),
+        usedStrategy: "partition",
+      };
     case "bidirectional":
       return {
         merged: mergeBidirectional(koCues, enCues),

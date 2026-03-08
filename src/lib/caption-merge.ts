@@ -8,6 +8,8 @@
 // | strict        | zip         | no         | —        | no    | Fails on count/timing mismatch |
 // | relaxed-strict| zip         | no         | —        | no    | Fails on count mismatch        |
 // | overlap       | cue1→cue2   | yes        | 100%     | no    | Greedy per-cue, orphan rescue  |
+// | best-overlap  | cue1→cue2   | yes        | 100%     | no    | Single best cue2 per cue1      |
+// | partition     | fewer→more  | no         | 100%     | no    | Midpoint assignment, no dupes  |
 // | bidirectional | cue2→cue1   | no         | ~45-90%  | yes   | Each cue2 assigned to one cue1 |
 // | dtw           | global DP   | no         | ~47-90%  | yes   | Globally optimal, monotonic    |
 //
@@ -133,6 +135,118 @@ export function mergeOverlap(
   const all = [...rows, ...orphans];
   all.sort((a, b) => a.begin - b.begin);
   return reindex(all);
+}
+
+// === Strategy 3b: Best-overlap ===
+// Like overlap but each cue1 picks only its single best-overlapping cue2.
+// Same cue2 can still be picked by multiple cue1s (allows duplication).
+// Produces clean single-sentence text2 per row.
+
+export function mergeBestOverlap(
+  cues1: CaptionCue[],
+  cues2: CaptionCue[],
+): MergedCaption[] {
+  const assignedCue2s = new Set<number>();
+
+  const rows: MergedCaption[] = cues1.map((c1, i) => {
+    let bestJ = -1;
+    let bestOverlap = 0;
+    for (let j = 0; j < cues2.length; j++) {
+      const ov = computeOverlap(c1, cues2[j]);
+      if (ov > bestOverlap) {
+        bestOverlap = ov;
+        bestJ = j;
+      }
+    }
+
+    if (bestJ >= 0) {
+      assignedCue2s.add(bestJ);
+      return {
+        idx: i,
+        begin: c1.begin,
+        end: c1.end,
+        text1: c1.text,
+        text2: cues2[bestJ].text,
+        cue2Indices: [bestJ],
+      };
+    }
+    return {
+      idx: i,
+      begin: c1.begin,
+      end: c1.end,
+      text1: c1.text,
+      text2: "",
+      cue2Indices: [],
+    };
+  });
+
+  // Orphan rescue (same as mergeOverlap)
+  const orphans: MergedCaption[] = [];
+  for (let j = 0; j < cues2.length; j++) {
+    if (!assignedCue2s.has(j)) {
+      orphans.push({
+        idx: -1,
+        begin: cues2[j].begin,
+        end: cues2[j].end,
+        text1: "",
+        text2: cues2[j].text,
+        cue2Indices: [j],
+      });
+    }
+  }
+
+  if (orphans.length === 0) return reindex(rows);
+
+  const all = [...rows, ...orphans];
+  all.sort((a, b) => a.begin - b.begin);
+  return reindex(all);
+}
+
+// === Strategy 3c: Partition ===
+// Uses the longer (fewer-cue) track as row boundaries.
+// Each cue from the shorter (more-cue) track is assigned to the boundary cue
+// whose midpoint is closest. No duplication on either side.
+
+export function mergePartition(
+  cues1: CaptionCue[],
+  cues2: CaptionCue[],
+): MergedCaption[] {
+  // Determine which track has fewer cues — that one drives row boundaries
+  const cue1Drives = cues1.length <= cues2.length;
+  const drivers = cue1Drives ? cues1 : cues2;
+  const followers = cue1Drives ? cues2 : cues1;
+
+  // Assign each follower to the driver whose midpoint is closest
+  const driverMids = drivers.map((c) => (c.begin + c.end) / 2);
+  const assignments = new Map<number, number[]>();
+
+  for (let f = 0; f < followers.length; f++) {
+    const fMid = (followers[f].begin + followers[f].end) / 2;
+    let bestD = 0;
+    let bestDist = Math.abs(fMid - driverMids[0]);
+    for (let d = 1; d < drivers.length; d++) {
+      const dist = Math.abs(fMid - driverMids[d]);
+      if (dist < bestDist) {
+        bestDist = dist;
+        bestD = d;
+      }
+    }
+    if (!assignments.has(bestD)) assignments.set(bestD, []);
+    assignments.get(bestD)!.push(f);
+  }
+
+  return drivers.map((drv, d) => {
+    const assigned = assignments.get(d) ?? [];
+    const followerText = assigned.map((f) => followers[f].text).join(" ");
+    return {
+      idx: d,
+      begin: drv.begin,
+      end: drv.end,
+      text1: cue1Drives ? drv.text : followerText,
+      text2: cue1Drives ? followerText : drv.text,
+      cue2Indices: cue1Drives ? assigned : [d],
+    };
+  });
 }
 
 // === Strategy 4: Bidirectional overlap ===
@@ -319,6 +433,8 @@ type MergeStrategy =
   | "strict"
   | "relaxed-strict"
   | "overlap"
+  | "best-overlap"
+  | "partition"
   | "bidirectional"
   | "dtw";
 
