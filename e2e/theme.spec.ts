@@ -15,7 +15,7 @@ test("theme toggle: cycle, persist, and system default", async ({ page }) => {
   await expect(theme).toHaveAttribute("data-theme", "system");
   await expect(theme).toHaveText(/system/i);
   expect(
-    await page.evaluate(() => localStorage.getItem("ytsub:theme")),
+    await page.evaluate(() => localStorage.getItem("zamak:theme")),
   ).toBeNull();
 
   // system → light → dark (dropdown stays open)
@@ -34,6 +34,6 @@ test("theme toggle: cycle, persist, and system default", async ({ page }) => {
   await theme.click();
   await expect(theme).toHaveAttribute("data-theme", "system");
   expect(
-    await page.evaluate(() => localStorage.getItem("ytsub:theme")),
+    await page.evaluate(() => localStorage.getItem("zamak:theme")),
   ).toBeNull();
 });
