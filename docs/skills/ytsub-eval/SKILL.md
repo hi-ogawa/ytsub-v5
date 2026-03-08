@@ -70,6 +70,7 @@ Record results here. Append new entries at the top.
   Captions: 224 pairs, script merge succeeded (0s max drift, no LLM fallback)
   Bookmarks: 64 (target ~47), offsets validated (0 errors)
   Cost: 259k tokens (220k cached + 39k new), 10k out, ~4 min
+  Note: via OpenClaw subagent (token count includes system prompt overhead; not comparable to local Claude Code runs)
 
 2026-03-06 | eNdOWsNPmf8 | Scenario A (both manual) | 11/11 PASS
   Captions: 70 pairs, Korean text natural, alignment good
