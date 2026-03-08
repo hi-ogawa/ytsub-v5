@@ -130,6 +130,12 @@ function ExtensionViewer({ videoId }: { videoId: string }) {
 
   return (
     <div className="flex h-full flex-col">
+      <div className="flex items-center gap-2 border-b px-2 py-1 text-xs text-muted-foreground">
+        <span>
+          idx:{currentIndex ?? "–"} playing:{String(isPlaying)} rows:
+          {rows.length} player:{player ? "ok" : "null"}
+        </span>
+      </div>
       <TrackPicker
         tracks={tracks}
         selectedVssId1={selectedVssId1}
@@ -147,6 +153,34 @@ function ExtensionViewer({ videoId }: { videoId: string }) {
       />
     </div>
   );
+}
+
+// --- Style injection ---
+
+// Inject CSS into shadow root, hoisting @property declarations to document head
+// because @property doesn't work inside Shadow DOM <style> elements.
+// https://github.com/tailwindlabs/tailwindcss/issues/15005#issuecomment-3891099776
+function addStyle(shadow: ShadowRoot, css: string) {
+  const processed = css.replaceAll(":root", ":host");
+
+  const propertyRules: string[] = [];
+  const shadowCss = processed.replace(
+    /@property\s+[^{]+\{[^}]*\}/g,
+    (match) => {
+      propertyRules.push(match);
+      return "";
+    },
+  );
+
+  if (propertyRules.length > 0) {
+    const propStyle = document.createElement("style");
+    propStyle.textContent = propertyRules.join("\n");
+    document.head.appendChild(propStyle);
+  }
+
+  const style = document.createElement("style");
+  style.textContent = shadowCss;
+  shadow.appendChild(style);
 }
 
 // --- Injection ---
@@ -181,10 +215,7 @@ function inject() {
 
   const shadow = host.attachShadow({ mode: "open" });
 
-  // Inject styles into shadow root
-  const style = document.createElement("style");
-  style.textContent = contentCss;
-  shadow.appendChild(style);
+  addStyle(shadow, contentCss);
 
   const container = document.createElement("div");
   container.id = "ytsub-root";
