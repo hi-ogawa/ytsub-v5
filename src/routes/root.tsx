@@ -32,7 +32,7 @@ export function RootLayout() {
     <div className="flex h-screen flex-col">
       <header className="flex h-10 flex-none items-center justify-between border-b px-3">
         <Link to="/" className="text-sm font-semibold">
-          zamak
+          Zamak
         </Link>
         <HeaderMenu authenticated={authenticated} />
       </header>

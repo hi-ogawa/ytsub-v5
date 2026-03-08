@@ -28,7 +28,11 @@ export function CaptionFab({
       className={`fixed right-3 bottom-3 flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border-none text-foreground shadow-lg pointer-events-auto ${open ? "bg-[#2563eb]" : "bg-[#1a3a5c]"}`}
       title={open ? "Hide captions" : "Show captions"}
     >
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        className="size-8"
+        viewBox="0 0 128 128"
+      >
         <path
           d="M28,36 h72 v12 l-52,32 h52 v12 h-72 v-12 l52,-32 h-52 z"
           fill="#ffffff"
