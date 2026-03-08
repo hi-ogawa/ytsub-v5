@@ -429,7 +429,7 @@ export function mergeDTW(
 
 // === Tiered merge: try strategies in order ===
 
-type MergeStrategy =
+export type MergeStrategy =
   | "strict"
   | "relaxed-strict"
   | "overlap"
@@ -443,10 +443,49 @@ interface MergeResult {
   captions: MergedCaption[];
 }
 
+export const FALLBACK_STRATEGIES: MergeStrategy[] = [
+  "overlap",
+  "best-overlap",
+  "partition",
+  "bidirectional",
+  "dtw",
+];
+
+function mergeWithStrategy(
+  cues1: CaptionCue[],
+  cues2: CaptionCue[],
+  strategy: MergeStrategy,
+): MergedCaption[] {
+  switch (strategy) {
+    case "strict":
+      return mergeStrict(cues1, cues2) ?? mergeOverlap(cues1, cues2);
+    case "relaxed-strict":
+      return mergeRelaxedStrict(cues1, cues2) ?? mergeOverlap(cues1, cues2);
+    case "overlap":
+      return mergeOverlap(cues1, cues2);
+    case "best-overlap":
+      return mergeBestOverlap(cues1, cues2);
+    case "partition":
+      return mergePartition(cues1, cues2);
+    case "bidirectional":
+      return mergeBidirectional(cues1, cues2);
+    case "dtw":
+      return mergeDTW(cues1, cues2);
+  }
+}
+
 export function mergeCaptions(
   cues1: CaptionCue[],
   cues2: CaptionCue[],
+  forceStrategy?: MergeStrategy,
 ): MergeResult {
+  if (forceStrategy) {
+    return {
+      strategy: forceStrategy,
+      captions: mergeWithStrategy(cues1, cues2, forceStrategy),
+    };
+  }
+
   // Try strict first
   const strict = mergeStrict(cues1, cues2);
   if (strict) return { strategy: "strict", captions: strict };

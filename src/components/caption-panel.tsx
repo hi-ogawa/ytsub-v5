@@ -1,7 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
 import { Captions } from "lucide-react";
 import { useEffect, useState } from "react";
-import { mergeCaptions } from "../lib/caption-merge.ts";
+import {
+  FALLBACK_STRATEGIES,
+  type MergeStrategy,
+  mergeCaptions,
+} from "../lib/caption-merge.ts";
 import { type CaptionCue, type YouTubeCaptionTrack } from "../lib/youtube.ts";
 import { CaptionList } from "./caption-list.tsx";
 import { TrackPicker } from "./track-picker.tsx";
@@ -73,6 +77,9 @@ export function CaptionPanel({
       return true;
     }
   });
+  const [forceStrategy, setForceStrategy] = useState<
+    MergeStrategy | undefined
+  >();
 
   const sel1 = tracks.find((t) => t.vssId === selectedVssId1);
   const sel2 = tracks.find((t) => t.vssId === selectedVssId2);
@@ -91,10 +98,15 @@ export function CaptionPanel({
 
   const cues1 = cues1Query.data ?? [];
   const cues2 = cues2Query.data ?? [];
-  const rows =
+  const mergeResult =
     cues1.length > 0 || cues2.length > 0
-      ? mergeCaptions(cues1, cues2).captions
-      : [];
+      ? mergeCaptions(cues1, cues2, forceStrategy)
+      : undefined;
+  const rows = mergeResult?.captions ?? [];
+  const activeStrategy = mergeResult?.strategy;
+  const isAutoStrategy =
+    !forceStrategy &&
+    (activeStrategy === "strict" || activeStrategy === "relaxed-strict");
 
   const cueError = cues1Query.error ?? cues2Query.error;
 
@@ -155,6 +167,22 @@ export function CaptionPanel({
             }}
           />
         </div>
+        {!isAutoStrategy && (
+          <select
+            className="mx-1 rounded border bg-background px-1 py-0.5 text-xs"
+            value={forceStrategy ?? activeStrategy ?? ""}
+            onChange={(e) =>
+              setForceStrategy((e.target.value as MergeStrategy) || undefined)
+            }
+            title="Merge strategy"
+          >
+            {FALLBACK_STRATEGIES.map((s) => (
+              <option key={s} value={s}>
+                {s}
+              </option>
+            ))}
+          </select>
+        )}
         <button
           className={[
             "mr-1 rounded p-0.5",
