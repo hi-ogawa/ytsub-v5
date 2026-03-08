@@ -82,7 +82,7 @@ export function DevViewerPage() {
             tracks={meta.captionTracks}
             fetchCues={(track) => fetchTrackFixture(videoId, track)}
             player={player}
-            videoId={videoId}
+            videoMeta={meta.video}
           />
         </ResizablePanel>
       )}
