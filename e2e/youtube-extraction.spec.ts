@@ -4,7 +4,7 @@ import {
   fetchPlayerApi,
   fetchTrackJson3,
   parseJson3,
-  pickTracks,
+  pickBestTrack,
 } from "../src/lib/youtube";
 
 // Billlie - cloud palace (known to have ko + en manual subs)
@@ -23,7 +23,8 @@ test("extractVideoData: metadata + pick tracks", async ({ page }) => {
     duration: 210,
   });
 
-  const { track1, track2 } = pickTracks(result.captionTracks);
+  const track1 = pickBestTrack(result.captionTracks, "ko");
+  const track2 = pickBestTrack(result.captionTracks, "en");
   expect(track1).toEqual(
     expect.objectContaining({ languageCode: "ko", kind: undefined }),
   );
@@ -47,7 +48,8 @@ test("fetchPlayerApi: metadata + fetch & parse both tracks", async ({
     duration: 210,
   });
 
-  const { track1, track2 } = pickTracks(result.captionTracks);
+  const track1 = pickBestTrack(result.captionTracks, "ko");
+  const track2 = pickBestTrack(result.captionTracks, "en");
   expect(track1).toEqual(
     expect.objectContaining({ languageCode: "ko", kind: undefined }),
   );
