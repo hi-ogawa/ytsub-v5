@@ -1,10 +1,10 @@
 import { StrictMode, useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
-import { type AlignedRow, CaptionList } from "../components/caption-list.tsx";
+import { CaptionList } from "../components/caption-list.tsx";
 import { TrackPicker } from "../components/track-picker.tsx";
 import type { YTPlayer } from "../components/youtube-player.tsx";
+import { type MergedCaption, mergeCaptions } from "../lib/caption-merge.ts";
 import {
-  type CaptionCue,
   type YouTubeCaptionTrack,
   fetchPlayerApi,
   fetchTrackJson3,
@@ -29,28 +29,11 @@ function getVideoPlayer(): YTPlayer | null {
   };
 }
 
-// Simple 1:1 alignment by index (placeholder)
-function alignByIndex(cues1: CaptionCue[], cues2: CaptionCue[]): AlignedRow[] {
-  const len = Math.max(cues1.length, cues2.length);
-  const rows: AlignedRow[] = [];
-  for (let i = 0; i < len; i++) {
-    const c1 = cues1[i];
-    const c2 = cues2[i];
-    rows.push({
-      begin: c1?.begin ?? c2?.begin ?? 0,
-      end: c1?.end ?? c2?.end ?? 0,
-      text1: c1?.text ?? "",
-      text2: c2?.text ?? "",
-    });
-  }
-  return rows;
-}
-
 function ExtensionViewer({ videoId }: { videoId: string }) {
   const [tracks, setTracks] = useState<YouTubeCaptionTrack[]>([]);
   const [selectedVssId1, setSelectedVssId1] = useState<string>();
   const [selectedVssId2, setSelectedVssId2] = useState<string>();
-  const [rows, setRows] = useState<AlignedRow[]>([]);
+  const [rows, setRows] = useState<MergedCaption[]>([]);
   const [currentIndex, setCurrentIndex] = useState<number>();
   const [isPlaying, setIsPlaying] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -85,7 +68,7 @@ function ExtensionViewer({ videoId }: { videoId: string }) {
       track1 ? fetchTrackJson3(track1.baseUrl).then(parseJson3) : [],
       track2 ? fetchTrackJson3(track2.baseUrl).then(parseJson3) : [],
     ])
-      .then(([cues1, cues2]) => setRows(alignByIndex(cues1, cues2)))
+      .then(([cues1, cues2]) => setRows(mergeCaptions(cues1, cues2).captions))
       .catch((err) => setError(String(err)));
   }, [tracks, selectedVssId1, selectedVssId2]);
 

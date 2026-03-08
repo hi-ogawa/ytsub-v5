@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router";
-import { type AlignedRow, CaptionList } from "../components/caption-list.tsx";
+import { CaptionList } from "../components/caption-list.tsx";
 import { TrackPicker } from "../components/track-picker.tsx";
 import { useYouTubePlayer } from "../components/youtube-player.tsx";
+import { type MergedCaption, mergeCaptions } from "../lib/caption-merge.ts";
 import {
   type CaptionCue,
   type YouTubeCaptionTrack,
@@ -31,29 +32,12 @@ async function fetchTrackFixture(
   return parseJson3(await res.json());
 }
 
-// Simple 1:1 alignment by index (placeholder)
-function alignByIndex(cues1: CaptionCue[], cues2: CaptionCue[]): AlignedRow[] {
-  const len = Math.max(cues1.length, cues2.length);
-  const rows: AlignedRow[] = [];
-  for (let i = 0; i < len; i++) {
-    const c1 = cues1[i];
-    const c2 = cues2[i];
-    rows.push({
-      begin: c1?.begin ?? c2?.begin ?? 0,
-      end: c1?.end ?? c2?.end ?? 0,
-      text1: c1?.text ?? "",
-      text2: c2?.text ?? "",
-    });
-  }
-  return rows;
-}
-
 export function DevViewerPage() {
   const { videoId } = useParams<"videoId">();
   const [tracks, setTracks] = useState<YouTubeCaptionTrack[]>([]);
   const [selectedVssId1, setSelectedVssId1] = useState<string>();
   const [selectedVssId2, setSelectedVssId2] = useState<string>();
-  const [rows, setRows] = useState<AlignedRow[]>([]);
+  const [rows, setRows] = useState<MergedCaption[]>([]);
   const [error, setError] = useState<string>();
   const [loading, setLoading] = useState(true);
   const [youtubeId, setYoutubeId] = useState<string>();
@@ -93,7 +77,7 @@ export function DevViewerPage() {
         ? fetchTrackFixture(videoId, selectedVssId2)
         : Promise.resolve([]),
     ])
-      .then(([cues1, cues2]) => setRows(alignByIndex(cues1, cues2)))
+      .then(([cues1, cues2]) => setRows(mergeCaptions(cues1, cues2).captions))
       .catch((err) => setError(String(err)));
   }, [videoId, selectedVssId1, selectedVssId2]);
 
