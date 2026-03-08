@@ -34,7 +34,7 @@ function App({ videoId }: { videoId: string }) {
   const [open, setOpen] = useState(false);
 
   return (
-    <>
+    <div>
       {open && (
         <div
           id="ytsub-root"
@@ -74,7 +74,7 @@ function App({ videoId }: { videoId: string }) {
       >
         <Captions size={24} />
       </button>
-    </>
+    </div>
   );
 }
 
