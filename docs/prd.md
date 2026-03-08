@@ -75,7 +75,9 @@ See ytsub-v4 for relevant technique.
 - [x] align captions viewer experience with app video viewer (e.g. auto-scroll sensitivity)
 - [x] align/merge captions algorithm improvements
 - [x] release preview
-- [ ] release chrome store (waiting for review)
+- [ ] release chrome store (submitted, waiting for review)
+  - [ ] add privacy policy (can be a simple GitHub gist or repo page stating no personal data collected, subtitle data sent only to YouTube's own API, preferences stored locally) — recommended even though no sensitive data is handled ([rationale](./tasks/2026-03-08-chrome-store-publish.md#data-use-rationale))
+  - [ ] if review rejected over data disclosures: update "Data use" answers in Developer Dashboard to acknowledge timedtext API requests
 - [ ] caption panel settings
   - virtical dot next to track picker
   - move alignment select and autoscroll toggle inside the dropdown

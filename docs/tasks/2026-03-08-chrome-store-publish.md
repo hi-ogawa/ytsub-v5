@@ -85,8 +85,21 @@ Take screenshots at 1280×800 showing:
   The content script injects a dual-language subtitle panel into YouTube watch pages. It reads the video's existing subtitle tracks via YouTube's in-page player API and displays them side by side for language learners. The script only runs on youtube.com and does not access any other hosts.
   ```
 - **Remote code**: No — all JS is bundled in the extension package, no external script tags, no eval(), no remote Wasm
-- **Data use disclosures**: No data collected, no data shared, no analytics, no remote servers contacted (except YouTube's own subtitle API from within the YouTube page)
-- **Privacy policy**: Not required for extensions that don't collect user data
+- **Data use disclosures**: The extension implicitly transmits user behavior data (video ID, selected language) to YouTube's own timedtext API when fetching subtitles. It also stores track selection in localStorage. No data is sent to any third-party or external server. No PII, analytics, or tracking.
+- **Privacy policy**: A minimal privacy policy stating the extension does not collect personal data is recommended. Per Chrome's [User Data FAQ](https://developer.chrome.com/docs/webstore/program-policies/user-data-faq), even extensions that don't handle sensitive data should explicitly state so.
+
+#### Data use rationale
+
+Chrome Web Store defines "user data" broadly as "information provided by a user or collected about a user or a user's use of the Product or Chrome Browser" ([Disclosure Requirements](https://developer.chrome.com/docs/webstore/program-policies/disclosure-requirements)). "Handle" means "collecting, transmitting, using, or sharing user data" ([User Data FAQ](https://developer.chrome.com/docs/webstore/program-policies/user-data-faq)).
+
+Zamak's data handling:
+
+1. **Fetches subtitle XML** from YouTube's timedtext API — this transmits the video ID and user-selected language code to YouTube's server. While YouTube already knows the user is on this video, the extension is the one initiating additional requests, which constitutes "transmitting information about a user's use of the Product" under Chrome's definition.
+2. **Stores track selection** in localStorage — user preference persistence, stays local, but still counts as handling user data (user's language choice)
+3. **Does not transmit** any data to third-party or external servers — only to YouTube's own domain that the user is already on
+4. **Does not collect** PII, browsing history, authentication info, or any of the sensitive categories listed in Chrome's [Privacy Policies](https://developer.chrome.com/docs/webstore/program-policies/privacy)
+
+This data handling is **closely related to the extension's single stated purpose** (displaying dual subtitles), which per the [Disclosure Requirements](https://developer.chrome.com/docs/webstore/program-policies/disclosure-requirements) means prominent in-product disclosure is not required — the store listing description already explains the functionality. However, a privacy policy explicitly stating what data is handled and that nothing goes to third parties is recommended per the [User Data FAQ](https://developer.chrome.com/docs/webstore/program-policies/user-data-faq).
 
 ### Additional Notes
 
