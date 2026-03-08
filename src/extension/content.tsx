@@ -209,7 +209,7 @@ function inject() {
     top: "65px",
     bottom: "20px",
     width: "400px",
-    zIndex: "100000",
+    zIndex: "2100",
   });
   document.body.appendChild(host);
 
