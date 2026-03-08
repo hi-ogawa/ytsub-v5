@@ -1,5 +1,4 @@
 import { useQuery } from "@tanstack/react-query";
-import { Captions } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   FALLBACK_STRATEGIES,
@@ -26,10 +25,38 @@ export function CaptionFab({
     <button
       type="button"
       onClick={onClick}
-      className={`fixed right-3 bottom-3 flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border-none text-foreground shadow-lg pointer-events-auto ${open ? "bg-ring" : "bg-[#1a3a5c]"}`}
+      className={`fixed right-3 bottom-3 flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border-none text-foreground shadow-lg pointer-events-auto ${open ? "bg-[#2563eb]" : "bg-[#1a3a5c]"}`}
       title={open ? "Hide captions" : "Show captions"}
     >
-      <Captions size={20} />
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width={38}
+        height={38}
+        viewBox="0 0 128 128"
+      >
+        <text
+          x="64"
+          y="68"
+          textAnchor="middle"
+          fontFamily="Arial,Helvetica,sans-serif"
+          fontWeight="bold"
+          fontSize="54"
+          fill="currentColor"
+        >
+          YT
+        </text>
+        <text
+          x="64"
+          y="98"
+          textAnchor="middle"
+          fontFamily="Arial,Helvetica,sans-serif"
+          fontWeight="bold"
+          fontSize="35"
+          fill="currentColor"
+        >
+          SUB
+        </text>
+      </svg>
     </button>
   );
 }
