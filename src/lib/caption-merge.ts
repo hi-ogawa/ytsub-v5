@@ -1,5 +1,25 @@
 // Caption merging: align two subtitle tracks into paired text1/text2 rows.
 // Implements multiple strategies with increasing sophistication.
+//
+// Strategy comparison (tested against real YouTube data):
+//
+// | Strategy      | Direction   | Duplicates | Coverage | Drops | Notes                          |
+// |---------------|-------------|------------|----------|-------|--------------------------------|
+// | strict        | zip         | no         | —        | no    | Fails on count/timing mismatch |
+// | relaxed-strict| zip         | no         | —        | no    | Fails on count mismatch        |
+// | overlap       | cue1→cue2   | yes        | 100%     | no    | Greedy per-cue, orphan rescue  |
+// | bidirectional | cue2→cue1   | no         | ~45-90%  | yes   | Each cue2 assigned to one cue1 |
+// | dtw           | global DP   | no         | ~47-90%  | yes   | Globally optimal, monotonic    |
+//
+// Why overlap is the best default for this use case:
+// - 100% coverage: every cue1 gets English text if any temporal overlap exists
+// - No drops: orphan cue2s (zero overlap) become rows with empty text1
+// - Duplicates are acceptable: the viewer shows ko/en pairs per row;
+//   seeing the same English line on adjacent Korean cues is fine for reading
+// - Simple and fast: O(n*m) greedy, no DP allocation
+// - Bidirectional/DTW trade coverage for dedup — not a useful tradeoff here
+//   since the reading experience degrades more from missing text than from
+//   occasional repetition
 
 export interface CaptionCue {
   begin: number;
@@ -319,6 +339,6 @@ export function mergeCaptions(
   const relaxed = mergeRelaxedStrict(cues1, cues2);
   if (relaxed) return { strategy: "relaxed-strict", captions: relaxed };
 
-  // Use DTW as default (globally optimal)
-  return { strategy: "dtw", captions: mergeDTW(cues1, cues2) };
+  // Use overlap as default (100% coverage, no drops)
+  return { strategy: "overlap", captions: mergeOverlap(cues1, cues2) };
 }
