@@ -43,7 +43,7 @@ Viewer (browser)
   → Manual bookmarking via text selection (already built)
 ```
 
-No alignment step at all if the viewer handles unaligned tracks natively (see `2026-03-08-unaligned-caption-viewer.md`). Or, a lightweight server-side alignment for best-effort pairing.
+Server-side algorithmic alignment pairs cues into text1/text2 rows (same format as today). For cases where alignment falls short, an unaligned viewer could handle the remainder (see `2026-03-08-unaligned-caption-viewer.md`).
 
 ## Components
 
@@ -163,9 +163,10 @@ The current `check-alignment.ts` is strict: same cue count + all timestamps with
 - Test against eval videos (`ytsub-eval` test set) — compare with current agent output
 - Goal: handle 80%+ of videos without LLM intervention
 
-### Phase 4: Viewer for Unaligned / Partially Aligned Captions
+### Phase 4 (if needed): Viewer for Unaligned / Partially Aligned Captions
 
-- Viewer that uses alignment metadata when available, falls back to temporal proximity
+- Only needed if Phase 3 alignment can't cover enough cases
+- Viewer that falls back to temporal proximity for unaligned cues
 - See `2026-03-08-unaligned-caption-viewer.md` for design options
 - Caption inline editing for remaining issues
 
