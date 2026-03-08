@@ -162,8 +162,8 @@ function getInitialTracks(
       };
     }
   } catch {}
-  // No preference: first two tracks
-  return { vssId1: tracks[0]?.vssId, vssId2: tracks[1]?.vssId };
+  // No preference initially
+  return {};
 }
 
 function saveSelectedTracks(
