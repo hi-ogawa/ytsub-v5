@@ -1,6 +1,6 @@
 {
   "entry": ["src/server/index.ts"],
   "project": ["src/**/*.{ts,tsx}", "e2e/**/*.ts"],
-  "ignore": ["docs/skills/**"],
+  "ignore": [],
   "ignoreDependencies": ["tailwindcss", "cloudflare"]
 }

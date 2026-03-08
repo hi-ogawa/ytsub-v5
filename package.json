@@ -9,6 +9,7 @@
     "preview": "vite preview",
     "dev-ext": "pnpm build-ext --watch",
     "build-ext": "vite build --config vite.ext.config.ts",
+    "zip-ext": "cd dist/extension && zip -r ../extension.zip .",
     "tsc": "tsc -b",
     "lint": "oxfmt && knip --fix",
     "lint-check": "oxfmt --check && knip",

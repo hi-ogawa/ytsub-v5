@@ -4,97 +4,98 @@
 
 The extension works locally via "Load unpacked" but isn't published to the Chrome Web Store yet. The `release chrome store` item in `docs/prd.md` tracks this.
 
-## Current State
+## What's Done
 
-- Extension builds to `dist/extension/` via `pnpm build-ext` (Vite IIFE bundle)
-- Manifest V3 with `activeTab` + `storage` permissions
-- Content script runs on `https://www.youtube.com/*` in MAIN world
-- No extension icons (missing from manifest and repo)
-- Build renames to `ytsub-dev` in non-CI builds (CI keeps `ytsub`)
-- No `.zip` packaging step exists yet
+- Extension icons created (16, 48, 128px PNG) in `src/extension/icons/`
+- Manifest updated with icons and descriptive text
+- Build config (`vite.ext.config.ts`) copies icons to `dist/extension/icons/`
+- `pnpm zip-ext` script packages `dist/extension/` into `dist/extension.zip`
+- Icon generation script at `scripts/generate-icons.ts` (requires `sharp` — install with `pnpm add -D sharp` if regenerating)
 
-## What Chrome Web Store Requires
+## Build & Package
 
-### Developer Account
-
-- One-time $5 registration at https://chrome.google.com/webstore/devconsole
-- Need to decide which Google account to register under
-
-### Store Listing Assets
-
-- **Extension icons** (required): 16x16, 48x48, 128x128 PNG
-- **Store icon**: 128x128 PNG (shown in store listing)
-- **Screenshots**: at least 1 screenshot, 1280x800 or 640x400
-- **Description**: detailed store description (longer than manifest description)
-- **Category**: select from Chrome Web Store categories
-
-### Manifest Updates
-
-Current manifest is minimal. Needs:
-
-```jsonc
-{
-  // add icons
-  "icons": {
-    "16": "icons/icon-16.png",
-    "48": "icons/icon-48.png",
-    "128": "icons/icon-128.png",
-  },
-}
+```sh
+CI=true pnpm build-ext   # build with production name "ytsub"
+pnpm zip-ext              # creates dist/extension.zip
 ```
 
-### Packaged `.zip`
+Upload `dist/extension.zip` to Chrome Web Store Developer Dashboard.
 
-Chrome Web Store accepts a `.zip` of the extension directory. Need a script to:
+## Chrome Web Store Submission Details
 
-1. Run `pnpm build-ext` (CI mode so name stays `ytsub`)
-2. Zip `dist/extension/` contents
+Use these when filling out the Developer Dashboard form:
 
-## Implementation Steps
+### Extension Name
 
-### 1. Create extension icons
+```
+ytsub — YouTube Dual Subtitles
+```
 
-- Design or generate simple icon (e.g. stylized "YS" or subtitle icon)
-- Export at 16, 48, 128px sizes as PNG
-- Place in `src/extension/icons/`
+### Summary (132 char limit)
 
-### 2. Update manifest.json
+```
+Watch YouTube with dual-language subtitles side by side. Click to seek, auto-scroll, resizable panel. For language learners.
+```
 
-- Add `icons` field pointing to the icon files
-- Review `description` — make it more descriptive for store listing
+### Description
 
-### 3. Update build to copy icons
+```
+ytsub adds a floating subtitle panel to YouTube that shows two languages side by side — perfect for language learners.
 
-- Update `vite.ext.config.ts` copy-manifest plugin (or add new plugin) to copy icon files to `dist/extension/icons/`
+Features:
+• Dual-language captions — see Korean + English (or any available pair) at the same time
+• Click any caption line to seek the video to that timestamp
+• Auto-scroll keeps the current caption visible as the video plays
+• Resizable panel — drag to adjust width
+• Floating action button to toggle the panel on/off
+• Works with both manual and auto-generated YouTube subtitles
+• No account required, no data collection — everything runs locally
 
-### 4. Add zip packaging script
+How it works:
+When you visit a YouTube video, ytsub fetches the available subtitle tracks and displays them in a side-by-side panel overlaid on the page. The panel syncs with video playback in real time.
 
-- Add `package.json` script: `"zip-ext": "cd dist/extension && zip -r ../extension.zip ."`
-- Or use a small node script if cross-platform needed
+Supported: Any YouTube video with subtitles in two or more languages.
+```
 
-### 5. Prepare store listing
+### Category
 
-- Write store description
-- Take screenshots of the extension in action on YouTube
-- Choose category (probably "Productivity" or "Education")
+```
+Education
+```
 
-### 6. Submit to Chrome Web Store
+### Language
 
-- Register developer account (if not already)
-- Upload `.zip` via Chrome Web Store Developer Dashboard
-- Fill in listing details, screenshots, description
-- Submit for review (typically 1-3 business days)
+```
+English
+```
 
-### 7. CI automation (optional, later)
+### Screenshots
 
-- GitHub Action to build + zip on tag/release
-- Auto-publish via Chrome Web Store API (`chrome-webstore-upload` npm package)
+Take screenshots at 1280×800 showing:
 
-## Reference
+1. The extension panel open on a YouTube video with dual subtitles visible
+2. Close-up of the caption panel showing two language columns
 
-- Chrome Web Store docs: https://developer.chrome.com/docs/webstore/publish
-- `chrome-webstore-upload` for CI: https://github.com/nicedoc/chrome-webstore-upload
+### Privacy
 
-## Status
+- **Single purpose description**: "Display dual-language subtitles on YouTube videos for language learning"
+- **Permissions justification**:
+  - `activeTab`: Access the current YouTube tab to read video metadata and subtitle data
+  - `storage`: Remember user preferences (panel width, open/closed state)
+- **Data use disclosures**: No data collected, no data shared, no analytics, no remote servers contacted (except YouTube's own subtitle API from within the YouTube page)
+- **Privacy policy**: Not required for extensions that don't collect user data
 
-- **Not started** — task doc created, awaiting feedback on approach
+### Additional Notes
+
+- Host permission pattern: `https://www.youtube.com/*` (content script match)
+- Content script runs in MAIN world to access YouTube's player APIs
+- No background/service worker
+- No remote code loading
+
+## What's Remaining
+
+- [ ] Register Chrome Web Store developer account ($5 one-time fee)
+- [ ] Take screenshots for store listing
+- [ ] Upload zip and fill out listing using details above
+- [ ] Submit for review (typically 1-3 business days)
+- [ ] (Optional) CI automation for publishing on tag/release
