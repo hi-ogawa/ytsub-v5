@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import {
   FALLBACK_STRATEGIES,
   type MergeStrategy,
+  type MergedCaption,
   mergeCaptions,
 } from "../lib/caption-merge.ts";
 import {
@@ -132,19 +133,60 @@ export function ResizablePanel({
   );
 }
 
+// --- Track preference persistence ---
+
+const TRACKS_KEY = "zamak:selected-tracks";
 const LANGS_KEY = "zamak:preferred-langs";
 
-function getPreferredLangs(): { lang1: string; lang2: string } {
+function getInitialTracks(
+  tracks: YouTubeCaptionTrack[],
+  videoId: string,
+): { vssId1?: string; vssId2?: string } {
   try {
-    const stored = localStorage.getItem(LANGS_KEY);
-    if (stored) return JSON.parse(stored);
+    // Per-video: restore exact track pair
+    const perVideo = localStorage.getItem(`${TRACKS_KEY}:${videoId}`);
+    if (perVideo) {
+      const { vssId1, vssId2 } = JSON.parse(perVideo);
+      // Validate that saved vssIds still exist in available tracks
+      const valid1 = tracks.some((t) => t.vssId === vssId1);
+      const valid2 = tracks.some((t) => t.vssId === vssId2);
+      if (valid1 && valid2) return { vssId1, vssId2 };
+    }
+    // Global: preferred languages → pickBestTrack
+    const globalPref = localStorage.getItem(LANGS_KEY);
+    if (globalPref) {
+      const { lang1, lang2 } = JSON.parse(globalPref);
+      return {
+        vssId1: pickBestTrack(tracks, lang1)?.vssId,
+        vssId2: pickBestTrack(tracks, lang2)?.vssId,
+      };
+    }
   } catch {}
-  return { lang1: "ko", lang2: "en" };
+  // No preference initially
+  return {};
 }
 
-function savePreferredLangs(lang1: string, lang2: string) {
-  localStorage.setItem(LANGS_KEY, JSON.stringify({ lang1, lang2 }));
+function saveSelectedTracks(
+  tracks: YouTubeCaptionTrack[],
+  vssId1: string,
+  vssId2: string,
+  videoId: string,
+) {
+  localStorage.setItem(
+    `${TRACKS_KEY}:${videoId}`,
+    JSON.stringify({ vssId1, vssId2 }),
+  );
+  const t1 = tracks.find((t) => t.vssId === vssId1);
+  const t2 = tracks.find((t) => t.vssId === vssId2);
+  if (t1 && t2) {
+    localStorage.setItem(
+      LANGS_KEY,
+      JSON.stringify({ lang1: t1.languageCode, lang2: t2.languageCode }),
+    );
+  }
 }
+
+// --- CaptionPanel: live mode (track selection + fetching + merge) ---
 
 export function CaptionPanel({
   tracks,
@@ -155,16 +197,10 @@ export function CaptionPanel({
   tracks: YouTubeCaptionTrack[];
   fetchCues: (track: YouTubeCaptionTrack) => Promise<CaptionCue[]>;
   player: YTPlayer | null;
-  videoMeta?: VideoMeta;
+  videoMeta: VideoMeta;
 }) {
-  const [selectedVssId1, setSelectedVssId1] = useState<string | undefined>(
-    () => pickBestTrack(tracks, getPreferredLangs().lang1)?.vssId,
-  );
-  const [selectedVssId2, setSelectedVssId2] = useState<string | undefined>(
-    () => pickBestTrack(tracks, getPreferredLangs().lang2)?.vssId,
-  );
-  const [currentIndex, setCurrentIndex] = useState<number>();
-  const [isPlaying, setIsPlaying] = useState(false);
+  const [{ vssId1: selectedVssId1, vssId2: selectedVssId2 }, setSelectedPair] =
+    useState(() => getInitialTracks(tracks, videoMeta.youtubeId));
   const [autoScroll, setAutoScroll] = useState(() => {
     try {
       const stored = localStorage.getItem("zamak:auto-scroll");
@@ -198,44 +234,13 @@ export function CaptionPanel({
     cues1.length > 0 || cues2.length > 0
       ? mergeCaptions(cues1, cues2, forceStrategy)
       : undefined;
-  const rows = mergeResult?.captions ?? [];
+  const rows = mergeResult?.captions;
   const activeStrategy = mergeResult?.strategy;
   const isAutoStrategy =
     !forceStrategy &&
     (activeStrategy === "strict" || activeStrategy === "relaxed-strict");
 
   const cueError = cues1Query.error ?? cues2Query.error;
-
-  // RAF loop — poll player time, update current entry
-  useEffect(() => {
-    if (!player || rows.length === 0) return;
-    let rafId: number;
-
-    const loop = () => {
-      const playing = player.getPlayerState() === 1;
-      setIsPlaying(playing);
-      if (playing) {
-        const time = player.getCurrentTime();
-        for (let i = rows.length - 1; i >= 0; i--) {
-          if (rows[i].begin <= time) {
-            setCurrentIndex(i);
-            break;
-          }
-        }
-      }
-      rafId = requestAnimationFrame(loop);
-    };
-    rafId = requestAnimationFrame(loop);
-    return () => cancelAnimationFrame(rafId);
-  }, [player, rows]);
-
-  if (cueError) {
-    return (
-      <div className="flex h-full items-center justify-center text-sm text-destructive">
-        {String(cueError)}
-      </div>
-    );
-  }
 
   function toggleAutoScroll() {
     setAutoScroll((prev) => {
@@ -246,7 +251,7 @@ export function CaptionPanel({
   }
 
   function handleExport() {
-    if (!videoMeta) return;
+    if (!rows) return;
     const data = {
       video: {
         youtubeId: videoMeta.youtubeId,
@@ -286,12 +291,9 @@ export function CaptionPanel({
             selectedVssId1={selectedVssId1}
             selectedVssId2={selectedVssId2}
             onSelect={(v1, v2) => {
-              setSelectedVssId1(v1);
-              setSelectedVssId2(v2);
-              const t1 = tracks.find((t) => t.vssId === v1);
-              const t2 = tracks.find((t) => t.vssId === v2);
-              if (t1 && t2)
-                savePreferredLangs(t1.languageCode, t2.languageCode);
+              setSelectedPair({ vssId1: v1, vssId2: v2 });
+              if (v1 && v2)
+                saveSelectedTracks(tracks, v1, v2, videoMeta.youtubeId);
             }}
           />
         </div>
@@ -338,22 +340,67 @@ export function CaptionPanel({
                 </select>
               </div>
             )}
-            {videoMeta && (
-              <DropdownMenuItem onClick={handleExport}>
-                <Download className="mr-2 h-4 w-4" />
-                Export import.json
-              </DropdownMenuItem>
-            )}
+            <DropdownMenuItem onClick={handleExport}>
+              <Download className="mr-2 h-4 w-4" />
+              Export import.json
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
-      <CaptionList
-        rows={rows}
-        currentIndex={currentIndex}
-        isPlaying={isPlaying}
-        player={player}
-        autoScroll={autoScroll}
-      />
+      {cueError ? (
+        <div className="flex h-full items-center justify-center text-sm text-destructive">
+          {String(cueError)}
+        </div>
+      ) : rows ? (
+        <CaptionViewer rows={rows} player={player} autoScroll={autoScroll} />
+      ) : null}
     </>
+  );
+}
+
+// --- CaptionViewer: playback-synced caption list ---
+
+function CaptionViewer({
+  rows,
+  player,
+  autoScroll,
+}: {
+  rows: MergedCaption[];
+  player: YTPlayer | null;
+  autoScroll: boolean;
+}) {
+  const [currentIndex, setCurrentIndex] = useState<number>();
+  const [isPlaying, setIsPlaying] = useState(false);
+
+  useEffect(() => {
+    if (!player || rows.length === 0) return;
+    let rafId: number;
+
+    const loop = () => {
+      const playing = player.getPlayerState() === 1;
+      setIsPlaying(playing);
+      if (playing) {
+        const time = player.getCurrentTime();
+        for (let i = rows.length - 1; i >= 0; i--) {
+          if (rows[i].begin <= time) {
+            setCurrentIndex(i);
+            break;
+          }
+        }
+      }
+      rafId = requestAnimationFrame(loop);
+    };
+    rafId = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(rafId);
+  }, [player, rows]);
+
+  return (
+    <CaptionList
+      rows={rows}
+      currentIndex={currentIndex}
+      isPlaying={isPlaying}
+      player={player}
+      autoScroll={autoScroll}
+    />
   );
 }

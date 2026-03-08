@@ -1,12 +1,6 @@
 import { useEffect, useRef } from "react";
+import type { MergedCaption } from "../lib/caption-merge.ts";
 import type { YTPlayer } from "./youtube-player.tsx";
-
-type AlignedRow = {
-  begin: number;
-  end: number;
-  text1: string;
-  text2: string;
-};
 
 function formatTimestamp(seconds: number): string {
   const m = Math.floor(seconds / 60);
@@ -21,7 +15,7 @@ export function CaptionList({
   player,
   autoScroll = true,
 }: {
-  rows: AlignedRow[];
+  rows: MergedCaption[];
   currentIndex: number | undefined;
   isPlaying: boolean;
   player: YTPlayer | null;
