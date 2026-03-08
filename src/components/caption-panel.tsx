@@ -119,32 +119,46 @@ export function ResizablePanel({
 
 const LANGS_KEY = "zamak:preferred-langs";
 
-function getPreferredLangs(): { lang1: string; lang2: string } {
+function getPreferredLangs(videoId?: string): { lang1: string; lang2: string } {
   try {
+    // Try per-video preference first
+    if (videoId) {
+      const perVideo = localStorage.getItem(`${LANGS_KEY}:${videoId}`);
+      if (perVideo) return JSON.parse(perVideo);
+    }
+    // Fall back to global preference
     const stored = localStorage.getItem(LANGS_KEY);
     if (stored) return JSON.parse(stored);
   } catch {}
   return { lang1: "ko", lang2: "en" };
 }
 
-function savePreferredLangs(lang1: string, lang2: string) {
+function savePreferredLangs(lang1: string, lang2: string, videoId?: string) {
   localStorage.setItem(LANGS_KEY, JSON.stringify({ lang1, lang2 }));
+  if (videoId) {
+    localStorage.setItem(
+      `${LANGS_KEY}:${videoId}`,
+      JSON.stringify({ lang1, lang2 }),
+    );
+  }
 }
 
 export function CaptionPanel({
   tracks,
   fetchCues,
   player,
+  videoId,
 }: {
   tracks: YouTubeCaptionTrack[];
   fetchCues: (track: YouTubeCaptionTrack) => Promise<CaptionCue[]>;
   player: YTPlayer | null;
+  videoId?: string;
 }) {
   const [selectedVssId1, setSelectedVssId1] = useState<string | undefined>(
-    () => pickBestTrack(tracks, getPreferredLangs().lang1)?.vssId,
+    () => pickBestTrack(tracks, getPreferredLangs(videoId).lang1)?.vssId,
   );
   const [selectedVssId2, setSelectedVssId2] = useState<string | undefined>(
-    () => pickBestTrack(tracks, getPreferredLangs().lang2)?.vssId,
+    () => pickBestTrack(tracks, getPreferredLangs(videoId).lang2)?.vssId,
   );
   const [currentIndex, setCurrentIndex] = useState<number>();
   const [isPlaying, setIsPlaying] = useState(false);
@@ -242,7 +256,7 @@ export function CaptionPanel({
               const t1 = tracks.find((t) => t.vssId === v1);
               const t2 = tracks.find((t) => t.vssId === v2);
               if (t1 && t2)
-                savePreferredLangs(t1.languageCode, t2.languageCode);
+                savePreferredLangs(t1.languageCode, t2.languageCode, videoId);
             }}
           />
         </div>
