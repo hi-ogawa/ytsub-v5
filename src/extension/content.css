@@ -20,6 +20,9 @@
    TODO: support light mode (detect YouTube's theme and switch) */
 :host {
   color-scheme: dark;
+  font-family: "Roboto", "Arial", sans-serif;
+  font-size: 14px;
+  color: var(--foreground);
   --background: #0f0f0f;
   --foreground: #f1f1f1;
   --popover: #272727;
@@ -41,6 +44,4 @@
   border: 1px solid var(--border);
   border-radius: 8px;
   overflow: hidden;
-  font-family: "Roboto", "Arial", sans-serif;
-  font-size: 14px;
 }
