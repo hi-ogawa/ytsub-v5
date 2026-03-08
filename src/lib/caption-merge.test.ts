@@ -163,11 +163,19 @@ describe("mergeOverlap", () => {
     expect(result[0].text2).toBe("part1 part2 part3");
   });
 
-  it("handles no overlap → empty text2", () => {
+  it("handles no overlap → orphan cue2 becomes extra row", () => {
     const cues1: CaptionCue[] = [{ begin: 0, end: 2, text: "a" }];
     const cues2: CaptionCue[] = [{ begin: 5, end: 7, text: "b" }];
     const result = mergeOverlap(cues1, cues2);
+    expect(result).toHaveLength(2);
+    // First row: cue1 with no match
+    expect(result[0].text1).toBe("a");
     expect(result[0].text2).toBe("");
+    // Second row: orphan cue2 with empty text1
+    expect(result[1].text1).toBe("");
+    expect(result[1].text2).toBe("b");
+    expect(result[1].begin).toBe(5);
+    expect(result[1].end).toBe(7);
   });
 });
 
@@ -311,11 +319,10 @@ describe("real YouTube data", () => {
 
       it("mergeCaptions produces output", () => {
         const result = mergeCaptions(koCues, enCues);
-        expect(result.captions.length).toBeGreaterThan(0);
-        expect(result.captions.length).toBe(koCues.length);
-        // Every row should have text1
+        expect(result.captions.length).toBeGreaterThanOrEqual(koCues.length);
+        // Every row should have at least text1 or text2
         for (const c of result.captions) {
-          expect(c.text1.length).toBeGreaterThan(0);
+          expect(c.text1.length + c.text2.length).toBeGreaterThan(0);
         }
       });
 

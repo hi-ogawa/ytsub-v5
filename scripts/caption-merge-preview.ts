@@ -6,6 +6,7 @@
 // Example:
 //   node scripts/caption-merge-preview.ts 7GU_VQfgMT0
 //   node scripts/caption-merge-preview.ts DtK-CkwNHSY overlap
+//   node scripts/caption-merge-preview.ts 7GU_VQfgMT0 overlap --json
 
 import { readdirSync, readFileSync } from "fs";
 import { join } from "path";
@@ -48,212 +49,223 @@ function fmt(seconds: number): string {
   return `${String(m).padStart(2, " ")}:${s}`;
 }
 
-function truncate(s: string, len: number): string {
-  return s.length > len ? s.slice(0, len - 1) + "…" : s;
-}
-
 // --- main ---
 
-const YOUTUBE_JSON_DIR = join(import.meta.dirname!, "../scripts/youtube-json");
-
-const videoId = process.argv[2];
-const strategyName = process.argv[3] ?? "tiered";
-
-if (!videoId) {
-  const available = readdirSync(YOUTUBE_JSON_DIR).filter(
-    (d) => !d.startsWith("."),
+function main() {
+  const YOUTUBE_JSON_DIR = join(
+    import.meta.dirname!,
+    "../scripts/youtube-json",
   );
-  console.error(
-    "Usage: npx tsx scripts/caption-merge-preview.ts <videoId> [strategy]",
-  );
-  console.error(`\nAvailable videos: ${available.join(", ")}`);
-  console.error(
-    "Strategies: strict, relaxed, overlap, bidirectional, dtw, tiered",
-  );
-  process.exit(1);
-}
 
-const videoDir = join(YOUTUBE_JSON_DIR, videoId);
-const files = readdirSync(videoDir);
+  const args = process.argv.slice(2);
+  const jsonMode = args.includes("--json");
+  const positional = args.filter((a) => !a.startsWith("--"));
+  const videoId = positional[0];
+  const strategyName = positional[1] ?? "tiered";
 
-const koFile =
-  files.find((f) => f.startsWith("track-.ko")) ??
-  files.find((f) => f.startsWith("track-a.ko"));
-const enFile =
-  files.find((f) => f.startsWith("track-.en")) ??
-  files.find((f) => f.startsWith("track-a.en"));
-
-if (!koFile || !enFile) {
-  console.error(`Missing ko or en track in ${videoDir}`);
-  console.error(`Files: ${files.join(", ")}`);
-  process.exit(1);
-}
-
-const koCues = parseJson3(join(videoDir, koFile));
-const enCues = parseJson3(join(videoDir, enFile));
-
-console.log(`Video: ${videoId}`);
-console.log(`Ko: ${koFile} (${koCues.length} cues)`);
-console.log(`En: ${enFile} (${enCues.length} cues)`);
-console.log(`Strategy: ${strategyName}`);
-console.log();
-
-let merged: MergedCaption[];
-let usedStrategy = strategyName;
-
-switch (strategyName) {
-  case "strict": {
-    const r = mergeStrict(koCues, enCues);
-    if (!r) {
-      console.error("Strict merge failed (count or timestamp mismatch)");
-      process.exit(1);
-    }
-    merged = r;
-    break;
-  }
-  case "relaxed": {
-    const r = mergeRelaxedStrict(koCues, enCues);
-    if (!r) {
-      console.error("Relaxed strict merge failed");
-      process.exit(1);
-    }
-    merged = r;
-    break;
-  }
-  case "overlap":
-    merged = mergeOverlap(koCues, enCues);
-    break;
-  case "bidirectional":
-    merged = mergeBidirectional(koCues, enCues);
-    break;
-  case "dtw":
-    merged = mergeDTW(koCues, enCues);
-    break;
-  case "tiered": {
-    const r = mergeCaptions(koCues, enCues);
-    merged = r.captions;
-    usedStrategy = r.strategy;
-    break;
-  }
-  default:
-    console.error(`Unknown strategy: ${strategyName}`);
+  if (!videoId) {
+    const available = readdirSync(YOUTUBE_JSON_DIR).filter(
+      (d) => !d.startsWith("."),
+    );
+    console.error(
+      "Usage: npx tsx scripts/caption-merge-preview.ts <videoId> [strategy] [--json]",
+    );
+    console.error(`\nAvailable videos: ${available.join(", ")}`);
+    console.error(
+      "Strategies: strict, relaxed, overlap, bidirectional, dtw, tiered",
+    );
     process.exit(1);
+  }
+
+  const videoDir = join(YOUTUBE_JSON_DIR, videoId);
+  const files = readdirSync(videoDir);
+
+  const koFile =
+    files.find((f) => f.startsWith("track-.ko")) ??
+    files.find((f) => f.startsWith("track-a.ko"));
+  const enFile =
+    files.find((f) => f.startsWith("track-.en")) ??
+    files.find((f) => f.startsWith("track-a.en"));
+
+  if (!koFile || !enFile) {
+    console.error(`Missing ko or en track in ${videoDir}`);
+    console.error(`Files: ${files.join(", ")}`);
+    process.exit(1);
+  }
+
+  const koCues = parseJson3(join(videoDir, koFile));
+  const enCues = parseJson3(join(videoDir, enFile));
+
+  const { merged, usedStrategy } = runMerge(koCues, enCues, strategyName);
+
+  if (jsonMode) {
+    console.log(JSON.stringify(merged, null, 2));
+    return;
+  }
+
+  console.log(`Video: ${videoId}`);
+  console.log(`Ko: ${koFile} (${koCues.length} cues)`);
+  console.log(`En: ${enFile} (${enCues.length} cues)`);
+  console.log(`Strategy: ${strategyName}`);
+  console.log();
+  console.log(`Result: ${usedStrategy}, ${merged.length} rows\n`);
+
+  printTable(merged);
+  printStats(merged, enCues);
 }
 
-console.log(`Result: ${usedStrategy}, ${merged.length} rows\n`);
-
-// --- build duplicate map: cue2 index → list of cue1 indices that claim it ---
-
-const cue2Claimants = new Map<number, number[]>();
-for (const row of merged) {
-  for (const j of row.cue2Indices) {
-    if (!cue2Claimants.has(j)) cue2Claimants.set(j, []);
-    cue2Claimants.get(j)!.push(row.idx);
+function runMerge(
+  koCues: CaptionCue[],
+  enCues: CaptionCue[],
+  strategyName: string,
+): { merged: MergedCaption[]; usedStrategy: string } {
+  switch (strategyName) {
+    case "strict": {
+      const r = mergeStrict(koCues, enCues);
+      if (!r) {
+        console.error("Strict merge failed (count or timestamp mismatch)");
+        process.exit(1);
+      }
+      return { merged: r, usedStrategy: "strict" };
+    }
+    case "relaxed": {
+      const r = mergeRelaxedStrict(koCues, enCues);
+      if (!r) {
+        console.error("Relaxed strict merge failed");
+        process.exit(1);
+      }
+      return { merged: r, usedStrategy: "relaxed" };
+    }
+    case "overlap":
+      return { merged: mergeOverlap(koCues, enCues), usedStrategy: "overlap" };
+    case "bidirectional":
+      return {
+        merged: mergeBidirectional(koCues, enCues),
+        usedStrategy: "bidirectional",
+      };
+    case "dtw":
+      return { merged: mergeDTW(koCues, enCues), usedStrategy: "dtw" };
+    case "tiered": {
+      const r = mergeCaptions(koCues, enCues);
+      return { merged: r.captions, usedStrategy: r.strategy };
+    }
+    default:
+      console.error(`Unknown strategy: ${strategyName}`);
+      process.exit(1);
   }
 }
 
-// Which cue2 indices are shared (claimed by >1 row)?
-const sharedCue2s = new Set<number>();
-for (const [j, claimants] of cue2Claimants) {
-  if (claimants.length > 1) sharedCue2s.add(j);
-}
-
-// For each row, check if any of its cue2s are shared
-function dupeMarker(row: MergedCaption): string {
-  if (row.cue2Indices.length === 0) return " ";
-  const shared = row.cue2Indices.filter((j) => sharedCue2s.has(j));
-  if (shared.length === 0) return " ";
-  // Show which other rows share these cue2s
-  const others = new Set<number>();
-  for (const j of shared) {
-    for (const claimant of cue2Claimants.get(j)!) {
-      if (claimant !== row.idx) others.add(claimant);
+function printTable(merged: MergedCaption[]) {
+  // Build duplicate map: cue2 index → list of row indices that claim it
+  const cue2Claimants = new Map<number, number[]>();
+  for (const row of merged) {
+    for (const j of row.cue2Indices) {
+      if (!cue2Claimants.has(j)) cue2Claimants.set(j, []);
+      cue2Claimants.get(j)!.push(row.idx);
     }
   }
-  return `= ${[...others].join(",")}`;
-}
 
-// --- build rows data ---
+  const sharedCue2s = new Set<number>();
+  for (const [j, claimants] of cue2Claimants) {
+    if (claimants.length > 1) sharedCue2s.add(j);
+  }
 
-interface Row {
-  idx: string;
-  time: string;
-  ko: string;
-  en: string;
-  cue2: string;
-  dupes: string;
-}
+  function dupeMarker(row: MergedCaption): string {
+    if (row.cue2Indices.length === 0) return "";
+    const shared = row.cue2Indices.filter((j) => sharedCue2s.has(j));
+    if (shared.length === 0) return "";
+    const others = new Set<number>();
+    for (const j of shared) {
+      for (const claimant of cue2Claimants.get(j)!) {
+        if (claimant !== row.idx) others.add(claimant);
+      }
+    }
+    return `= ${[...others].join(",")}`;
+  }
 
-const rows: Row[] = merged.map((row) => ({
-  idx: String(row.idx),
-  time: `${fmt(row.begin)}–${fmt(row.end)}`,
-  ko: row.text1,
-  en: row.text2 || "—",
-  cue2: row.cue2Indices.length > 0 ? row.cue2Indices.join(",") : "—",
-  dupes: dupeMarker(row),
-}));
+  interface Row {
+    idx: string;
+    time: string;
+    ko: string;
+    en: string;
+    cue2: string;
+    dupes: string;
+  }
 
-// --- compute column widths ---
+  const rows: Row[] = merged.map((row) => ({
+    idx: String(row.idx),
+    time: `${fmt(row.begin)}–${fmt(row.end)}`,
+    ko: row.text1,
+    en: row.text2 || "—",
+    cue2: row.cue2Indices.length > 0 ? row.cue2Indices.join(",") : "—",
+    dupes: dupeMarker(row),
+  }));
 
-const cols: (keyof Row)[] = ["idx", "time", "ko", "en", "cue2", "dupes"];
-const headers: Record<keyof Row, string> = {
-  idx: "#",
-  time: "time",
-  ko: "ko",
-  en: "en",
-  cue2: "cue2",
-  dupes: "dupes",
-};
+  const cols: (keyof Row)[] = ["idx", "time", "ko", "en", "cue2", "dupes"];
+  const headers: Record<keyof Row, string> = {
+    idx: "#",
+    time: "time",
+    ko: "ko",
+    en: "en",
+    cue2: "cue2",
+    dupes: "dupes",
+  };
 
-const widths: Record<string, number> = {};
-for (const col of cols) {
-  widths[col] = Math.max(
-    headers[col].length,
-    ...rows.map((r) => r[col].length),
-  );
-}
+  const widths: Record<string, number> = {};
+  for (const col of cols) {
+    widths[col] = Math.max(
+      headers[col].length,
+      ...rows.map((r) => r[col].length),
+    );
+  }
 
-// --- render markdown table ---
+  function pad(s: string, col: keyof Row): string {
+    return s.padEnd(widths[col]);
+  }
 
-function pad(s: string, col: keyof Row): string {
-  return s.padEnd(widths[col]);
-}
-
-const headerLine = `| ${cols.map((c) => pad(headers[c], c)).join(" | ")} |`;
-const sepLine = `| ${cols.map((c) => "-".repeat(widths[c])).join(" | ")} |`;
-
-console.log(headerLine);
-console.log(sepLine);
-for (const row of rows) {
-  console.log(`| ${cols.map((c) => pad(row[c], c)).join(" | ")} |`);
-}
-
-// --- stats ---
-
-const withEn = merged.filter((m) => m.text2.length > 0).length;
-const empty = merged.length - withEn;
-
-console.log();
-console.log(
-  `Coverage: ${withEn}/${merged.length} rows have English (${((withEn / merged.length) * 100).toFixed(1)}%)`,
-);
-console.log(`Empty:    ${empty} rows without English`);
-console.log(`Shared:   ${sharedCue2s.size} cue2s claimed by multiple rows`);
-
-// --- unassigned cue2s (dropped English) ---
-
-const assignedCue2s = new Set<number>();
-for (const row of merged) {
-  for (const j of row.cue2Indices) assignedCue2s.add(j);
-}
-const dropped: number[] = [];
-for (let j = 0; j < enCues.length; j++) {
-  if (!assignedCue2s.has(j)) dropped.push(j);
-}
-if (dropped.length > 0) {
-  console.log(`Dropped:  ${dropped.length} cue2s not assigned to any row\n`);
-  for (const j of dropped) {
-    const c = enCues[j];
-    console.log(`  cue2[${j}] ${fmt(c.begin)}–${fmt(c.end)}  ${c.text}`);
+  console.log(`| ${cols.map((c) => pad(headers[c], c)).join(" | ")} |`);
+  console.log(`| ${cols.map((c) => "-".repeat(widths[c])).join(" | ")} |`);
+  for (const row of rows) {
+    console.log(`| ${cols.map((c) => pad(row[c], c)).join(" | ")} |`);
   }
 }
+
+function printStats(merged: MergedCaption[], enCues: CaptionCue[]) {
+  const withEn = merged.filter((m) => m.text2.length > 0).length;
+  const empty = merged.length - withEn;
+
+  const assignedCue2s = new Set<number>();
+  const cue2Claimants = new Map<number, number[]>();
+  for (const row of merged) {
+    for (const j of row.cue2Indices) {
+      assignedCue2s.add(j);
+      if (!cue2Claimants.has(j)) cue2Claimants.set(j, []);
+      cue2Claimants.get(j)!.push(row.idx);
+    }
+  }
+
+  const sharedCount = [...cue2Claimants.values()].filter(
+    (c) => c.length > 1,
+  ).length;
+
+  console.log();
+  console.log(
+    `Coverage: ${withEn}/${merged.length} rows have English (${((withEn / merged.length) * 100).toFixed(1)}%)`,
+  );
+  console.log(`Empty:    ${empty} rows without English`);
+  console.log(`Shared:   ${sharedCount} cue2s claimed by multiple rows`);
+
+  const dropped: number[] = [];
+  for (let j = 0; j < enCues.length; j++) {
+    if (!assignedCue2s.has(j)) dropped.push(j);
+  }
+  if (dropped.length > 0) {
+    console.log(`Dropped:  ${dropped.length} cue2s not assigned to any row\n`);
+    for (const j of dropped) {
+      const c = enCues[j];
+      console.log(`  cue2[${j}] ${fmt(c.begin)}–${fmt(c.end)}  ${c.text}`);
+    }
+  }
+}
+
+main();

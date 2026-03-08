@@ -52,6 +52,10 @@ export function mergeRelaxedStrict(
 // For each cue in track1, find overlapping cues in track2.
 // 1:N merge — one track1 cue can absorb multiple track2 cues.
 
+function reindex(rows: MergedCaption[]): MergedCaption[] {
+  return rows.map((r, i) => ({ ...r, idx: i }));
+}
+
 function computeOverlap(a: CaptionCue, b: CaptionCue): number {
   return Math.max(0, Math.min(a.end, b.end) - Math.max(a.begin, b.begin));
 }
@@ -60,7 +64,10 @@ export function mergeOverlap(
   cues1: CaptionCue[],
   cues2: CaptionCue[],
 ): MergedCaption[] {
-  return cues1.map((c1, i) => {
+  // Track which cue2s get assigned to at least one cue1
+  const assignedCue2s = new Set<number>();
+
+  const rows: MergedCaption[] = cues1.map((c1, i) => {
     const overlaps = cues2
       .map((c2, j) => ({ c2, j, overlap: computeOverlap(c1, c2) }))
       .filter((o) => o.overlap > 0);
@@ -72,6 +79,7 @@ export function mergeOverlap(
       overlaps.sort((a, b) => a.c2.begin - b.c2.begin);
       cue2Indices = overlaps.map((o) => o.j);
       text2 = overlaps.map((o) => o.c2.text).join(" ");
+      for (const j of cue2Indices) assignedCue2s.add(j);
     }
 
     return {
@@ -83,6 +91,28 @@ export function mergeOverlap(
       cue2Indices,
     };
   });
+
+  // Collect orphan cue2s (no overlap with any cue1) as rows with empty text1
+  const orphans: MergedCaption[] = [];
+  for (let j = 0; j < cues2.length; j++) {
+    if (!assignedCue2s.has(j)) {
+      orphans.push({
+        idx: -1, // placeholder, will be reassigned below
+        begin: cues2[j].begin,
+        end: cues2[j].end,
+        text1: "",
+        text2: cues2[j].text,
+        cue2Indices: [j],
+      });
+    }
+  }
+
+  if (orphans.length === 0) return reindex(rows);
+
+  // Interleave orphans into rows by begin time
+  const all = [...rows, ...orphans];
+  all.sort((a, b) => a.begin - b.begin);
+  return reindex(all);
 }
 
 // === Strategy 4: Bidirectional overlap ===
