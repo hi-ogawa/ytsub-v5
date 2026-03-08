@@ -1,7 +1,21 @@
 import { DropdownMenu as DropdownMenuPrimitive } from "radix-ui";
 import type { ComponentProps } from "react";
+import { usePortalContainer } from "./portal-container.tsx";
 
-const DropdownMenu = DropdownMenuPrimitive.Root;
+function DropdownMenu({
+  modal,
+  ...props
+}: ComponentProps<typeof DropdownMenuPrimitive.Root>) {
+  const container = usePortalContainer();
+  // In extension (shadow DOM), modal must be false to avoid setting
+  // pointer-events:none and overflow:hidden on document.body.
+  return (
+    <DropdownMenuPrimitive.Root
+      modal={modal ?? (container ? false : undefined)}
+      {...props}
+    />
+  );
+}
 const DropdownMenuTrigger = DropdownMenuPrimitive.Trigger;
 
 function DropdownMenuContent({
@@ -9,8 +23,9 @@ function DropdownMenuContent({
   sideOffset = 4,
   ...props
 }: ComponentProps<typeof DropdownMenuPrimitive.Content>) {
+  const container = usePortalContainer();
   return (
-    <DropdownMenuPrimitive.Portal>
+    <DropdownMenuPrimitive.Portal container={container}>
       <DropdownMenuPrimitive.Content
         sideOffset={sideOffset}
         className={

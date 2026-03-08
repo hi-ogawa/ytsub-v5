@@ -14,19 +14,32 @@
   --text-lg--line-height: 28px;
 }
 
-/* Semantic color tokens matching YouTube's dark theme.
-   The shared @theme inline bridge (styles.css) references these
-   (e.g. --color-background: var(--background)).
+/* CSS custom properties for the shadow DOM theme.
+   Only custom properties go here — `all: initial` on the host element
+   doesn't reset them, but it does beat :host for regular properties
+   (inline styles win), so font-family, font-size, etc. are set as
+   inline styles in content.tsx instead.
    TODO: support light mode (detect YouTube's theme and switch) */
 :host {
   color-scheme: dark;
   --background: #0f0f0f;
   --foreground: #f1f1f1;
+  --popover: #272727;
+  --popover-foreground: #f1f1f1;
   --muted: #272727;
   --muted-foreground: #aaa;
+  --accent: #3ea6ff;
+  --accent-foreground: #fff;
   --border: #3f3f3f;
   --ring: #3ea6ff;
   --input: #3f3f3f;
+}
+
+/* Radix portaled layers (dropdown, popover, dialog) inherit pointer-events:none
+   from the host element. With modal={false} Radix doesn't set pointer-events:auto
+   on its DismissableLayer, so we force it here. */
+[data-radix-popper-content-wrapper] {
+  pointer-events: auto;
 }
 
 #zamak-root {
@@ -37,6 +50,4 @@
   border: 1px solid var(--border);
   border-radius: 8px;
   overflow: hidden;
-  font-family: "Roboto", "Arial", sans-serif;
-  font-size: 14px;
 }

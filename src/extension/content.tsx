@@ -7,6 +7,7 @@ import {
   CaptionPanel,
   ResizablePanel,
 } from "../components/caption-panel.tsx";
+import { PortalContainerProvider } from "../components/ui/portal-container.tsx";
 import type { YTPlayer } from "../components/youtube-player.tsx";
 import {
   type YouTubeCaptionTrack,
@@ -150,7 +151,10 @@ function inject() {
   const videoId = getVideoId();
   if (!videoId) return;
 
-  // Create shadow root for style isolation
+  // Create shadow root for style isolation.
+  // Inline styles here because `all: initial` resets everything and
+  // inline styles beat :host stylesheet rules. Use :host in content.css
+  // only for CSS custom properties (unaffected by `all: initial`).
   const host = document.createElement("div");
   host.id = "zamak-host";
   Object.assign(host.style, {
@@ -159,6 +163,8 @@ function inject() {
     inset: "0",
     zIndex: "2147483647",
     pointerEvents: "none",
+    fontFamily: "'Roboto', 'Arial', sans-serif",
+    fontSize: "14px",
   });
   document.body.appendChild(host);
 
@@ -171,9 +177,11 @@ function inject() {
 
   createRoot(container).render(
     <StrictMode>
-      <QueryClientProvider client={queryClient}>
-        <App videoId={videoId} />
-      </QueryClientProvider>
+      <PortalContainerProvider value={container}>
+        <QueryClientProvider client={queryClient}>
+          <App videoId={videoId} />
+        </QueryClientProvider>
+      </PortalContainerProvider>
     </StrictMode>,
   );
 }
