@@ -19,29 +19,60 @@ export function CaptionList({
   currentIndex,
   isPlaying,
   player,
+  autoScroll = true,
 }: {
   rows: AlignedRow[];
   currentIndex: number | undefined;
   isPlaying: boolean;
   player: YTPlayer | null;
+  autoScroll?: boolean;
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const prevScrollIndex = useRef<number | undefined>(undefined);
+  const isManualScrollRef = useRef(false);
+  const manualScrollTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Auto-scroll to current
+  function onManualScroll() {
+    isManualScrollRef.current = true;
+    if (manualScrollTimer.current !== null) {
+      clearTimeout(manualScrollTimer.current);
+    }
+    manualScrollTimer.current = setTimeout(() => {
+      isManualScrollRef.current = false;
+      manualScrollTimer.current = null;
+    }, 2000);
+  }
+
+  // Auto-scroll with threshold + manual scroll pause
   useEffect(() => {
     if (currentIndex === undefined || currentIndex === prevScrollIndex.current)
       return;
     prevScrollIndex.current = currentIndex;
-    const el = scrollRef.current?.querySelector(
-      `[data-index="${currentIndex}"]`,
-    );
-    el?.scrollIntoView({ behavior: "smooth", block: "center" });
+
+    if (!autoScroll || isManualScrollRef.current) return;
+
+    const scrollEl = scrollRef.current;
+    if (!scrollEl) return;
+
+    const el = scrollEl.querySelector(`[data-index="${currentIndex}"]`);
+    if (!el) return;
+
+    // Only scroll if item is far from viewport center
+    const { scrollTop, clientHeight } = scrollEl;
+    const currentCenter = scrollTop + clientHeight / 2;
+    const itemRect =
+      (el as HTMLElement).offsetTop + (el as HTMLElement).offsetHeight / 2;
+    const threshold = clientHeight / 6;
+
+    if (Math.abs(itemRect - currentCenter) > threshold) {
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
   }, [currentIndex]);
 
   function onClickRow(index: number) {
     if (!player) return;
     if (document.getSelection()?.toString()) return;
+    isManualScrollRef.current = false;
     if (index === currentIndex) {
       isPlaying ? player.pauseVideo() : player.playVideo();
     } else {
@@ -51,7 +82,12 @@ export function CaptionList({
   }
 
   return (
-    <div className="flex-[1_0_0] overflow-y-auto" ref={scrollRef}>
+    <div
+      className="flex-[1_0_0] overflow-y-auto"
+      ref={scrollRef}
+      onWheel={onManualScroll}
+      onTouchStart={onManualScroll}
+    >
       <div className="flex flex-col gap-1.5 p-1.5">
         {rows.map((row, i) => (
           <div
