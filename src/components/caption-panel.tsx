@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import {
   FALLBACK_STRATEGIES,
   type MergeStrategy,
+  type MergedCaption,
   mergeCaptions,
 } from "../lib/caption-merge.ts";
 import {
@@ -132,6 +133,8 @@ export function ResizablePanel({
   );
 }
 
+// --- Track preference persistence ---
+
 const TRACKS_KEY = "zamak:selected-tracks";
 const LANGS_KEY = "zamak:preferred-langs";
 
@@ -183,6 +186,8 @@ function saveSelectedTracks(
   }
 }
 
+// --- CaptionPanel: live mode (track selection + fetching + merge) ---
+
 export function CaptionPanel({
   tracks,
   fetchCues,
@@ -196,8 +201,6 @@ export function CaptionPanel({
 }) {
   const [{ vssId1: selectedVssId1, vssId2: selectedVssId2 }, setSelectedPair] =
     useState(() => getInitialTracks(tracks, videoMeta.youtubeId));
-  const [currentIndex, setCurrentIndex] = useState<number>();
-  const [isPlaying, setIsPlaying] = useState(false);
   const [autoScroll, setAutoScroll] = useState(() => {
     try {
       const stored = localStorage.getItem("zamak:auto-scroll");
@@ -231,44 +234,13 @@ export function CaptionPanel({
     cues1.length > 0 || cues2.length > 0
       ? mergeCaptions(cues1, cues2, forceStrategy)
       : undefined;
-  const rows = mergeResult?.captions ?? [];
+  const rows = mergeResult?.captions;
   const activeStrategy = mergeResult?.strategy;
   const isAutoStrategy =
     !forceStrategy &&
     (activeStrategy === "strict" || activeStrategy === "relaxed-strict");
 
   const cueError = cues1Query.error ?? cues2Query.error;
-
-  // RAF loop — poll player time, update current entry
-  useEffect(() => {
-    if (!player || rows.length === 0) return;
-    let rafId: number;
-
-    const loop = () => {
-      const playing = player.getPlayerState() === 1;
-      setIsPlaying(playing);
-      if (playing) {
-        const time = player.getCurrentTime();
-        for (let i = rows.length - 1; i >= 0; i--) {
-          if (rows[i].begin <= time) {
-            setCurrentIndex(i);
-            break;
-          }
-        }
-      }
-      rafId = requestAnimationFrame(loop);
-    };
-    rafId = requestAnimationFrame(loop);
-    return () => cancelAnimationFrame(rafId);
-  }, [player, rows]);
-
-  if (cueError) {
-    return (
-      <div className="flex h-full items-center justify-center text-sm text-destructive">
-        {String(cueError)}
-      </div>
-    );
-  }
 
   function toggleAutoScroll() {
     setAutoScroll((prev) => {
@@ -279,6 +251,7 @@ export function CaptionPanel({
   }
 
   function handleExport() {
+    if (!rows) return;
     const data = {
       video: {
         youtubeId: videoMeta.youtubeId,
@@ -374,13 +347,60 @@ export function CaptionPanel({
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
-      <CaptionList
-        rows={rows}
-        currentIndex={currentIndex}
-        isPlaying={isPlaying}
-        player={player}
-        autoScroll={autoScroll}
-      />
+      {cueError ? (
+        <div className="flex h-full items-center justify-center text-sm text-destructive">
+          {String(cueError)}
+        </div>
+      ) : rows ? (
+        <CaptionViewer rows={rows} player={player} autoScroll={autoScroll} />
+      ) : null}
     </>
+  );
+}
+
+// --- CaptionViewer: playback-synced caption list ---
+
+function CaptionViewer({
+  rows,
+  player,
+  autoScroll,
+}: {
+  rows: MergedCaption[];
+  player: YTPlayer | null;
+  autoScroll: boolean;
+}) {
+  const [currentIndex, setCurrentIndex] = useState<number>();
+  const [isPlaying, setIsPlaying] = useState(false);
+
+  useEffect(() => {
+    if (!player || rows.length === 0) return;
+    let rafId: number;
+
+    const loop = () => {
+      const playing = player.getPlayerState() === 1;
+      setIsPlaying(playing);
+      if (playing) {
+        const time = player.getCurrentTime();
+        for (let i = rows.length - 1; i >= 0; i--) {
+          if (rows[i].begin <= time) {
+            setCurrentIndex(i);
+            break;
+          }
+        }
+      }
+      rafId = requestAnimationFrame(loop);
+    };
+    rafId = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(rafId);
+  }, [player, rows]);
+
+  return (
+    <CaptionList
+      rows={rows}
+      currentIndex={currentIndex}
+      isPlaying={isPlaying}
+      player={player}
+      autoScroll={autoScroll}
+    />
   );
 }
