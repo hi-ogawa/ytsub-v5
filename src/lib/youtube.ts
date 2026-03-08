@@ -31,7 +31,7 @@ export interface YouTubeExtractionResult {
 interface Json3Event {
   tStartMs: number;
   dDurationMs: number;
-  segs?: { utf8: string }[];
+  segs?: { utf8: string; tOffsetMs?: number }[];
 }
 
 interface Json3File {
@@ -274,41 +274,64 @@ export async function fetchPlayerApi(
 // === Universal functions ===
 // Run anywhere (Node, browser, extension).
 
-/** Parse json3 subtitle data → cue array. */
+/** Parse json3 subtitle data → cue array.
+ * Produces word-level cues when segments have tOffsetMs timing,
+ * otherwise falls back to event-level cues. */
 export function parseJson3(data: Json3File): CaptionCue[] {
   const cues: CaptionCue[] = [];
   for (const event of data.events) {
     if (!event.segs || !event.dDurationMs) continue;
-    const text = event.segs
-      .map((s) => s.utf8)
-      .join("")
-      .replace(/\n/g, " ")
-      .trim();
-    if (!text) continue;
-    cues.push({
-      begin: event.tStartMs / 1000,
-      end: (event.tStartMs + event.dDurationMs) / 1000,
-      text,
-    });
+    const eventEnd = (event.tStartMs + event.dDurationMs) / 1000;
+    const hasOffsets = event.segs.some((s) => s.tOffsetMs != null);
+
+    if (hasOffsets) {
+      // Word-level: each segment with tOffsetMs becomes its own cue
+      for (let si = 0; si < event.segs.length; si++) {
+        const seg = event.segs[si];
+        const text = (seg.utf8 || "").replace(/\n/g, "").trim();
+        if (!text) continue;
+        const begin = (event.tStartMs + (seg.tOffsetMs ?? 0)) / 1000;
+        // End = next segment's begin, or event end
+        let end = eventEnd;
+        for (let sj = si + 1; sj < event.segs.length; sj++) {
+          const next = event.segs[sj];
+          if (next.tOffsetMs != null) {
+            end = (event.tStartMs + next.tOffsetMs) / 1000;
+            break;
+          }
+        }
+        cues.push({ begin, end, text });
+      }
+    } else {
+      // Event-level: join all segments into one cue
+      const text = event.segs
+        .map((s) => s.utf8)
+        .join("")
+        .replace(/\n/g, " ")
+        .trim();
+      if (!text) continue;
+      cues.push({ begin: event.tStartMs / 1000, end: eventEnd, text });
+    }
   }
   return cues;
 }
 
-/** Pick best caption tracks for ko + en from available tracks. */
-export function pickTracks(
+/** Pick best track for a language, with prefix fallback (e.g. "en" matches "en-US"). */
+export function pickBestTrack(
   tracks: YouTubeCaptionTrack[],
-  lang1 = "ko",
-  lang2 = "en",
-): {
-  track1: YouTubeCaptionTrack | undefined;
-  track2: YouTubeCaptionTrack | undefined;
-} {
-  function pickBest(lang: string) {
-    const forLang = tracks.filter((t) => t.languageCode === lang);
-    // Prefer manual (kind absent) over auto-generated (kind: "asr")
-    return (
-      forLang.find((t) => !t.kind) ?? forLang.find((t) => t.kind === "asr")
-    );
+  lang: string,
+): YouTubeCaptionTrack | undefined {
+  // Prefer manual (kind absent) over auto-generated (kind: "asr")
+  function bestOfKind(list: YouTubeCaptionTrack[]) {
+    return list.find((t) => !t.kind) ?? list.find((t) => t.kind === "asr");
   }
-  return { track1: pickBest(lang1), track2: pickBest(lang2) };
+  // Exact match first
+  const exact = tracks.filter((t) => t.languageCode === lang);
+  if (exact.length > 0) return bestOfKind(exact);
+  // Prefix fallback: "en" matches "en-US", "en-GB", etc.
+  const base = lang.split("-")[0];
+  const prefix = tracks.filter(
+    (t) => t.languageCode === base || t.languageCode.startsWith(base + "-"),
+  );
+  return bestOfKind(prefix);
 }

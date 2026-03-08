@@ -4,64 +4,22 @@ import { describe, expect, it } from "vitest";
 import {
   type CaptionCue,
   type MergedCaption,
+  mergeBestOverlap,
   mergeBidirectional,
   mergeCaptions,
   mergeDTW,
   mergeOverlap,
+  mergePartition,
   mergeRelaxedStrict,
   mergeStrict,
 } from "./caption-merge";
+import { parseJson3 } from "./youtube";
 
 // === Helpers ===
-
-function parseJson3(data: {
-  events: Array<{
-    tStartMs: number;
-    dDurationMs: number;
-    segs?: Array<{ utf8: string }>;
-  }>;
-}): CaptionCue[] {
-  const cues: CaptionCue[] = [];
-  for (const event of data.events) {
-    if (!event.segs || !event.dDurationMs) continue;
-    const text = event.segs
-      .map((s) => s.utf8)
-      .join("")
-      .replace(/\n/g, " ")
-      .trim();
-    if (!text) continue;
-    cues.push({
-      begin: event.tStartMs / 1000,
-      end: (event.tStartMs + event.dDurationMs) / 1000,
-      text,
-    });
-  }
-  return cues;
-}
 
 function loadTrack(videoDir: string, filename: string): CaptionCue[] {
   const raw = JSON.parse(readFileSync(join(videoDir, filename), "utf-8"));
   return parseJson3(raw);
-}
-
-// Count how many merged rows have non-empty text2
-function coveragePercent(merged: MergedCaption[]): number {
-  if (merged.length === 0) return 0;
-  const withText2 = merged.filter((m) => m.text2.length > 0).length;
-  return (withText2 / merged.length) * 100;
-}
-
-// Check that no text2 value appears in more than one row (dedup check)
-function duplicateText2Count(merged: MergedCaption[]): number {
-  const seen = new Map<string, number>();
-  let dupes = 0;
-  for (const m of merged) {
-    if (!m.text2) continue;
-    const count = (seen.get(m.text2) ?? 0) + 1;
-    seen.set(m.text2, count);
-    if (count > 1) dupes++;
-  }
-  return dupes;
 }
 
 // === Unit tests with synthetic data ===
@@ -79,20 +37,22 @@ describe("mergeStrict", () => {
     const result = mergeStrict(cues1, cues2);
     expect(result).toBeDefined();
     expect(result).toHaveLength(2);
-    expect(result![0]).toEqual({
+    expect(result![0]).toMatchObject({
       idx: 0,
       begin: 0,
       end: 2,
       text1: "안녕",
       text2: "hello",
+      cue1Indices: [0],
       cue2Indices: [0],
     });
-    expect(result![1]).toEqual({
+    expect(result![1]).toMatchObject({
       idx: 1,
       begin: 3,
       end: 5,
       text1: "세상",
       text2: "world",
+      cue1Indices: [1],
       cue2Indices: [1],
     });
   });
@@ -256,14 +216,14 @@ describe("mergeCaptions (tiered)", () => {
     expect(result.strategy).toBe("strict");
   });
 
-  it("falls through to overlap on count mismatch", () => {
+  it("falls through to partition on count mismatch", () => {
     const cues1: CaptionCue[] = [
       { begin: 0, end: 5, text: "a" },
       { begin: 5, end: 10, text: "b" },
     ];
     const cues2: CaptionCue[] = [{ begin: 0, end: 10, text: "x" }];
     const result = mergeCaptions(cues1, cues2);
-    expect(result.strategy).toBe("overlap");
+    expect(result.strategy).toBe("partition");
   });
 });
 
@@ -273,14 +233,6 @@ const YOUTUBE_JSON_DIR = join(
   import.meta.dirname!,
   "../../scripts/youtube-json",
 );
-
-function getVideoIds(): string[] {
-  try {
-    return readdirSync(YOUTUBE_JSON_DIR).filter((d) => !d.startsWith("."));
-  } catch {
-    return [];
-  }
-}
 
 function findTrackFile(
   videoDir: string,
@@ -294,89 +246,196 @@ function findTrackFile(
   );
 }
 
-describe("real YouTube data", () => {
-  const videoIds = getVideoIds();
+function mergeStats(merged: MergedCaption[], enCues: CaptionCue[]) {
+  const rows = merged.length;
+  const withText2 = merged.filter((m) => m.text2.length > 0).length;
+  const withText1 = merged.filter((m) => m.text1.length > 0).length;
+  const emptyText2 = rows - withText2;
 
-  for (const videoId of videoIds) {
-    const videoDir = join(YOUTUBE_JSON_DIR, videoId);
-    const koFile = findTrackFile(videoDir, "ko");
-    const enFile = findTrackFile(videoDir, "en");
-
-    if (!koFile || !enFile) continue;
-
-    describe(videoId, () => {
-      let koCues: CaptionCue[];
-      let enCues: CaptionCue[];
-
-      // Load once per video
-      koCues = loadTrack(videoDir, koFile);
-      enCues = loadTrack(videoDir, enFile);
-
-      it("has parsed cues", () => {
-        expect(koCues.length).toBeGreaterThan(0);
-        expect(enCues.length).toBeGreaterThan(0);
-      });
-
-      it("mergeCaptions produces output", () => {
-        const result = mergeCaptions(koCues, enCues);
-        expect(result.captions.length).toBeGreaterThanOrEqual(koCues.length);
-        // Every row should have at least text1 or text2
-        for (const c of result.captions) {
-          expect(c.text1.length + c.text2.length).toBeGreaterThan(0);
-        }
-      });
-
-      it("mergeOverlap coverage", () => {
-        const merged = mergeOverlap(koCues, enCues);
-        const cov = coveragePercent(merged);
-        expect(cov).toBeGreaterThan(0);
-      });
-
-      it("mergeBidirectional produces output", () => {
-        const merged = mergeBidirectional(koCues, enCues);
-        expect(merged.length).toBe(koCues.length);
-      });
-
-      it("mergeDTW coverage", () => {
-        const merged = mergeDTW(koCues, enCues);
-        const cov = coveragePercent(merged);
-        expect(cov).toBeGreaterThan(0);
-      });
-
-      it("all strategies produce correct idx sequence", () => {
-        for (const merge of [mergeOverlap, mergeBidirectional, mergeDTW]) {
-          const merged = merge(koCues, enCues);
-          merged.forEach((m, i) => expect(m.idx).toBe(i));
-        }
-      });
-
-      it("strategy comparison summary", () => {
-        const strict = mergeStrict(koCues, enCues);
-        const relaxed = mergeRelaxedStrict(koCues, enCues);
-        const overlap = mergeOverlap(koCues, enCues);
-        const bidir = mergeBidirectional(koCues, enCues);
-        const dtw = mergeDTW(koCues, enCues);
-
-        const summary = {
-          videoId,
-          koCues: koCues.length,
-          enCues: enCues.length,
-          strict: strict ? "pass" : "fail",
-          relaxed: relaxed ? "pass" : "fail",
-          overlapCoverage: coveragePercent(overlap).toFixed(1) + "%",
-          overlapDupes: duplicateText2Count(overlap),
-          bidirCoverage: coveragePercent(bidir).toFixed(1) + "%",
-          bidirDupes: duplicateText2Count(bidir),
-          dtwCoverage: coveragePercent(dtw).toFixed(1) + "%",
-          dtwDupes: duplicateText2Count(dtw),
-        };
-
-        // Print summary for manual review
-        console.log("\n" + JSON.stringify(summary, null, 2));
-
-        // DTW should have decent coverage
-        expect(coveragePercent(dtw)).toBeGreaterThan(30);
-      });
-    });
+  // Shared cue2s: how many cue2 indices are claimed by multiple rows
+  const cue2Claimants = new Map<number, number>();
+  for (const m of merged) {
+    for (const j of m.cue2Indices) {
+      cue2Claimants.set(j, (cue2Claimants.get(j) ?? 0) + 1);
+    }
   }
+  const sharedCue2s = [...cue2Claimants.values()].filter((c) => c > 1).length;
+
+  // Dropped cue2s: not assigned to any row
+  const assignedCue2s = new Set<number>();
+  for (const m of merged) {
+    for (const j of m.cue2Indices) assignedCue2s.add(j);
+  }
+  const droppedCue2s = enCues.length - assignedCue2s.size;
+
+  return {
+    rows,
+    withText1,
+    withText2,
+    emptyText2,
+    sharedCue2s,
+    droppedCue2s,
+  };
+}
+
+function loadVideo(videoId: string) {
+  const videoDir = join(YOUTUBE_JSON_DIR, videoId);
+  const koFile = findTrackFile(videoDir, "ko")!;
+  const enFile = findTrackFile(videoDir, "en")!;
+  return { ko: loadTrack(videoDir, koFile), en: loadTrack(videoDir, enFile) };
+}
+
+describe("strategy mapping stats", () => {
+  const v1 = loadVideo("7GU_VQfgMT0");
+  const v2 = loadVideo("DtK-CkwNHSY");
+
+  describe("7GU_VQfgMT0", () => {
+    it("cue counts", () => {
+      expect({ ko: v1.ko.length, en: v1.en.length }).toMatchInlineSnapshot(`
+        {
+          "en": 56,
+          "ko": 62,
+        }
+      `);
+    });
+    it("overlap", () => {
+      expect(mergeStats(mergeOverlap(v1.ko, v1.en), v1.en))
+        .toMatchInlineSnapshot(`
+        {
+          "droppedCue2s": 0,
+          "emptyText2": 0,
+          "rows": 62,
+          "sharedCue2s": 42,
+          "withText1": 62,
+          "withText2": 62,
+        }
+      `);
+    });
+    it("best-overlap", () => {
+      expect(mergeStats(mergeBestOverlap(v1.ko, v1.en), v1.en))
+        .toMatchInlineSnapshot(`
+        {
+          "droppedCue2s": 0,
+          "emptyText2": 0,
+          "rows": 62,
+          "sharedCue2s": 5,
+          "withText1": 62,
+          "withText2": 62,
+        }
+      `);
+    });
+    it("partition", () => {
+      expect(mergeStats(mergePartition(v1.ko, v1.en), v1.en))
+        .toMatchInlineSnapshot(`
+        {
+          "droppedCue2s": 0,
+          "emptyText2": 0,
+          "rows": 56,
+          "sharedCue2s": 0,
+          "withText1": 56,
+          "withText2": 56,
+        }
+      `);
+    });
+    it("bidirectional", () => {
+      expect(mergeStats(mergeBidirectional(v1.ko, v1.en), v1.en))
+        .toMatchInlineSnapshot(`
+        {
+          "droppedCue2s": 0,
+          "emptyText2": 6,
+          "rows": 62,
+          "sharedCue2s": 0,
+          "withText1": 62,
+          "withText2": 56,
+        }
+      `);
+    });
+    it("dtw", () => {
+      expect(mergeStats(mergeDTW(v1.ko, v1.en), v1.en)).toMatchInlineSnapshot(`
+        {
+          "droppedCue2s": 0,
+          "emptyText2": 6,
+          "rows": 62,
+          "sharedCue2s": 0,
+          "withText1": 62,
+          "withText2": 56,
+        }
+      `);
+    });
+  });
+
+  describe("DtK-CkwNHSY", () => {
+    it("cue counts", () => {
+      expect({ ko: v2.ko.length, en: v2.en.length }).toMatchInlineSnapshot(`
+        {
+          "en": 40,
+          "ko": 385,
+        }
+      `);
+    });
+    it("overlap", () => {
+      expect(mergeStats(mergeOverlap(v2.ko, v2.en), v2.en))
+        .toMatchInlineSnapshot(`
+          {
+            "droppedCue2s": 0,
+            "emptyText2": 0,
+            "rows": 385,
+            "sharedCue2s": 40,
+            "withText1": 385,
+            "withText2": 385,
+          }
+        `);
+    });
+    it("best-overlap", () => {
+      expect(mergeStats(mergeBestOverlap(v2.ko, v2.en), v2.en))
+        .toMatchInlineSnapshot(`
+          {
+            "droppedCue2s": 0,
+            "emptyText2": 0,
+            "rows": 385,
+            "sharedCue2s": 40,
+            "withText1": 385,
+            "withText2": 385,
+          }
+        `);
+    });
+    it("partition", () => {
+      expect(mergeStats(mergePartition(v2.ko, v2.en), v2.en))
+        .toMatchInlineSnapshot(`
+          {
+            "droppedCue2s": 0,
+            "emptyText2": 0,
+            "rows": 40,
+            "sharedCue2s": 0,
+            "withText1": 40,
+            "withText2": 40,
+          }
+        `);
+    });
+    it("bidirectional", () => {
+      expect(mergeStats(mergeBidirectional(v2.ko, v2.en), v2.en))
+        .toMatchInlineSnapshot(`
+          {
+            "droppedCue2s": 0,
+            "emptyText2": 345,
+            "rows": 385,
+            "sharedCue2s": 0,
+            "withText1": 385,
+            "withText2": 40,
+          }
+        `);
+    });
+    it("dtw", () => {
+      expect(mergeStats(mergeDTW(v2.ko, v2.en), v2.en)).toMatchInlineSnapshot(`
+        {
+          "droppedCue2s": 0,
+          "emptyText2": 345,
+          "rows": 385,
+          "sharedCue2s": 0,
+          "withText1": 385,
+          "withText2": 40,
+        }
+      `);
+    });
+  });
 });

@@ -8,18 +8,15 @@
 // | strict        | zip         | no         | —        | no    | Fails on count/timing mismatch |
 // | relaxed-strict| zip         | no         | —        | no    | Fails on count mismatch        |
 // | overlap       | cue1→cue2   | yes        | 100%     | no    | Greedy per-cue, orphan rescue  |
+// | best-overlap  | cue1→cue2   | yes        | 100%     | no    | Single best cue2 per cue1      |
+// | partition     | fewer→more  | no         | 100%     | no    | Midpoint assignment, no dupes  |
 // | bidirectional | cue2→cue1   | no         | ~45-90%  | yes   | Each cue2 assigned to one cue1 |
 // | dtw           | global DP   | no         | ~47-90%  | yes   | Globally optimal, monotonic    |
 //
-// Why overlap is the best default for this use case:
-// - 100% coverage: every cue1 gets English text if any temporal overlap exists
-// - No drops: orphan cue2s (zero overlap) become rows with empty text1
-// - Duplicates are acceptable: the viewer shows ko/en pairs per row;
-//   seeing the same English line on adjacent Korean cues is fine for reading
-// - Simple and fast: O(n*m) greedy, no DP allocation
-// - Bidirectional/DTW trade coverage for dedup — not a useful tradeoff here
-//   since the reading experience degrades more from missing text than from
-//   occasional repetition
+// Why partition is the default:
+// - 100% coverage, no drops, no duplication on either side
+// - Fewer-cue track drives row count, longer-cue track fragments get merged
+// - Clean 1:1 sentence pairs in the common case (manual en + auto ko)
 
 export interface CaptionCue {
   begin: number;
@@ -33,8 +30,13 @@ export interface MergedCaption {
   end: number;
   text1: string;
   text2: string;
-  /** Which cue2 indices were assigned to this row (for diagnostics) */
+  /** Which cue1 indices were merged into this row */
+  cue1Indices: number[];
+  /** Which cue2 indices were assigned to this row */
   cue2Indices: number[];
+  /** Individual text segments before joining (for rendering separators) */
+  text1Segments: string[];
+  text2Segments: string[];
 }
 
 // === Strategy 1: Strict check (current v5 behavior) ===
@@ -55,7 +57,10 @@ export function mergeStrict(
     end: c1.end,
     text1: c1.text,
     text2: cues2[i].text,
+    cue1Indices: [i],
     cue2Indices: [i],
+    text1Segments: [c1.text],
+    text2Segments: [cues2[i].text],
   }));
 }
 
@@ -92,13 +97,13 @@ export function mergeOverlap(
       .map((c2, j) => ({ c2, j, overlap: computeOverlap(c1, c2) }))
       .filter((o) => o.overlap > 0);
 
-    let text2 = "";
+    let text2Segments: string[] = [];
     let cue2Indices: number[] = [];
     if (overlaps.length > 0) {
       // Include all overlapping cue2s, sorted by start time
       overlaps.sort((a, b) => a.c2.begin - b.c2.begin);
       cue2Indices = overlaps.map((o) => o.j);
-      text2 = overlaps.map((o) => o.c2.text).join(" ");
+      text2Segments = overlaps.map((o) => o.c2.text);
       for (const j of cue2Indices) assignedCue2s.add(j);
     }
 
@@ -107,8 +112,11 @@ export function mergeOverlap(
       begin: c1.begin,
       end: c1.end,
       text1: c1.text,
-      text2,
+      text2: text2Segments.join(" "),
+      cue1Indices: [i],
       cue2Indices,
+      text1Segments: [c1.text],
+      text2Segments,
     };
   });
 
@@ -122,7 +130,10 @@ export function mergeOverlap(
         end: cues2[j].end,
         text1: "",
         text2: cues2[j].text,
+        cue1Indices: [],
         cue2Indices: [j],
+        text1Segments: [],
+        text2Segments: [cues2[j].text],
       });
     }
   }
@@ -133,6 +144,131 @@ export function mergeOverlap(
   const all = [...rows, ...orphans];
   all.sort((a, b) => a.begin - b.begin);
   return reindex(all);
+}
+
+// === Strategy 3b: Best-overlap ===
+// Like overlap but each cue1 picks only its single best-overlapping cue2.
+// Same cue2 can still be picked by multiple cue1s (allows duplication).
+// Produces clean single-sentence text2 per row.
+
+export function mergeBestOverlap(
+  cues1: CaptionCue[],
+  cues2: CaptionCue[],
+): MergedCaption[] {
+  const assignedCue2s = new Set<number>();
+
+  const rows: MergedCaption[] = cues1.map((c1, i) => {
+    let bestJ = -1;
+    let bestOverlap = 0;
+    for (let j = 0; j < cues2.length; j++) {
+      const ov = computeOverlap(c1, cues2[j]);
+      if (ov > bestOverlap) {
+        bestOverlap = ov;
+        bestJ = j;
+      }
+    }
+
+    if (bestJ >= 0) {
+      assignedCue2s.add(bestJ);
+      return {
+        idx: i,
+        begin: c1.begin,
+        end: c1.end,
+        text1: c1.text,
+        text2: cues2[bestJ].text,
+        cue1Indices: [i],
+        cue2Indices: [bestJ],
+        text1Segments: [c1.text],
+        text2Segments: [cues2[bestJ].text],
+      };
+    }
+    return {
+      idx: i,
+      begin: c1.begin,
+      end: c1.end,
+      text1: c1.text,
+      text2: "",
+      cue1Indices: [i],
+      cue2Indices: [],
+      text1Segments: [c1.text],
+      text2Segments: [],
+    };
+  });
+
+  // Orphan rescue (same as mergeOverlap)
+  const orphans: MergedCaption[] = [];
+  for (let j = 0; j < cues2.length; j++) {
+    if (!assignedCue2s.has(j)) {
+      orphans.push({
+        idx: -1,
+        begin: cues2[j].begin,
+        end: cues2[j].end,
+        text1: "",
+        text2: cues2[j].text,
+        cue1Indices: [],
+        cue2Indices: [j],
+        text1Segments: [],
+        text2Segments: [cues2[j].text],
+      });
+    }
+  }
+
+  if (orphans.length === 0) return reindex(rows);
+
+  const all = [...rows, ...orphans];
+  all.sort((a, b) => a.begin - b.begin);
+  return reindex(all);
+}
+
+// === Strategy 3c: Partition ===
+// Uses the longer (fewer-cue) track as row boundaries.
+// Each cue from the shorter (more-cue) track is assigned to the boundary cue
+// whose midpoint is closest. No duplication on either side.
+
+export function mergePartition(
+  cues1: CaptionCue[],
+  cues2: CaptionCue[],
+): MergedCaption[] {
+  // Determine which track has fewer cues — that one drives row boundaries
+  const cue1Drives = cues1.length <= cues2.length;
+  const drivers = cue1Drives ? cues1 : cues2;
+  const followers = cue1Drives ? cues2 : cues1;
+
+  // Assign each follower to the driver whose midpoint is closest
+  const driverMids = drivers.map((c) => (c.begin + c.end) / 2);
+  const assignments = new Map<number, number[]>();
+
+  for (let f = 0; f < followers.length; f++) {
+    const fMid = (followers[f].begin + followers[f].end) / 2;
+    let bestD = 0;
+    let bestDist = Math.abs(fMid - driverMids[0]);
+    for (let d = 1; d < drivers.length; d++) {
+      const dist = Math.abs(fMid - driverMids[d]);
+      if (dist < bestDist) {
+        bestDist = dist;
+        bestD = d;
+      }
+    }
+    if (!assignments.has(bestD)) assignments.set(bestD, []);
+    assignments.get(bestD)!.push(f);
+  }
+
+  return drivers.map((drv, d) => {
+    const assigned = assignments.get(d) ?? [];
+    const followerSegments = assigned.map((f) => followers[f].text);
+    const followerText = followerSegments.join(" ");
+    return {
+      idx: d,
+      begin: drv.begin,
+      end: drv.end,
+      text1: cue1Drives ? drv.text : followerText,
+      text2: cue1Drives ? followerText : drv.text,
+      cue1Indices: cue1Drives ? [d] : assigned,
+      cue2Indices: cue1Drives ? assigned : [d],
+      text1Segments: cue1Drives ? [drv.text] : followerSegments,
+      text2Segments: cue1Drives ? followerSegments : [drv.text],
+    };
+  });
 }
 
 // === Strategy 4: Bidirectional overlap ===
@@ -173,14 +309,17 @@ export function mergeBidirectional(
 
   return cues1.map((c1, i) => {
     const assigned = cue1ToCue2s.get(i) ?? [];
-    const text2 = assigned.map((j) => cues2[j].text).join(" ");
+    const text2Segments = assigned.map((j) => cues2[j].text);
     return {
       idx: i,
       begin: c1.begin,
       end: c1.end,
       text1: c1.text,
-      text2,
+      text2: text2Segments.join(" "),
+      cue1Indices: [i],
       cue2Indices: assigned,
+      text1Segments: [c1.text],
+      text2Segments,
     };
   });
 }
@@ -209,7 +348,10 @@ export function mergeDTW(
       end: c.end,
       text1: c.text,
       text2: "",
+      cue1Indices: [i],
       cue2Indices: [],
+      text1Segments: [c.text],
+      text2Segments: [],
     }));
   }
 
@@ -301,24 +443,29 @@ export function mergeDTW(
 
   return cues1.map((c1, idx) => {
     const assigned = assignments.get(idx) ?? [];
-    const text2 = assigned.map((j) => cues2[j].text).join(" ");
+    const text2Segments = assigned.map((j) => cues2[j].text);
     return {
       idx,
       begin: c1.begin,
       end: c1.end,
       text1: c1.text,
-      text2,
+      text2: text2Segments.join(" "),
+      cue1Indices: [idx],
       cue2Indices: assigned,
+      text1Segments: [c1.text],
+      text2Segments,
     };
   });
 }
 
 // === Tiered merge: try strategies in order ===
 
-type MergeStrategy =
+export type MergeStrategy =
   | "strict"
   | "relaxed-strict"
   | "overlap"
+  | "best-overlap"
+  | "partition"
   | "bidirectional"
   | "dtw";
 
@@ -327,10 +474,49 @@ interface MergeResult {
   captions: MergedCaption[];
 }
 
+export const FALLBACK_STRATEGIES: MergeStrategy[] = [
+  "partition",
+  "overlap",
+  "best-overlap",
+  "bidirectional",
+  "dtw",
+];
+
+function mergeWithStrategy(
+  cues1: CaptionCue[],
+  cues2: CaptionCue[],
+  strategy: MergeStrategy,
+): MergedCaption[] {
+  switch (strategy) {
+    case "strict":
+      return mergeStrict(cues1, cues2) ?? mergeOverlap(cues1, cues2);
+    case "relaxed-strict":
+      return mergeRelaxedStrict(cues1, cues2) ?? mergeOverlap(cues1, cues2);
+    case "overlap":
+      return mergeOverlap(cues1, cues2);
+    case "best-overlap":
+      return mergeBestOverlap(cues1, cues2);
+    case "partition":
+      return mergePartition(cues1, cues2);
+    case "bidirectional":
+      return mergeBidirectional(cues1, cues2);
+    case "dtw":
+      return mergeDTW(cues1, cues2);
+  }
+}
+
 export function mergeCaptions(
   cues1: CaptionCue[],
   cues2: CaptionCue[],
+  forceStrategy?: MergeStrategy,
 ): MergeResult {
+  if (forceStrategy) {
+    return {
+      strategy: forceStrategy,
+      captions: mergeWithStrategy(cues1, cues2, forceStrategy),
+    };
+  }
+
   // Try strict first
   const strict = mergeStrict(cues1, cues2);
   if (strict) return { strategy: "strict", captions: strict };
@@ -339,6 +525,6 @@ export function mergeCaptions(
   const relaxed = mergeRelaxedStrict(cues1, cues2);
   if (relaxed) return { strategy: "relaxed-strict", captions: relaxed };
 
-  // Use overlap as default (100% coverage, no drops)
-  return { strategy: "overlap", captions: mergeOverlap(cues1, cues2) };
+  // Use partition as default (100% coverage, no drops, no duplication)
+  return { strategy: "partition", captions: mergePartition(cues1, cues2) };
 }
