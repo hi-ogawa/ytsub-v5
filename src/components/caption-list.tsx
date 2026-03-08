@@ -6,29 +6,7 @@ type AlignedRow = {
   end: number;
   text1: string;
   text2: string;
-  text1Segments?: string[];
-  text2Segments?: string[];
 };
-
-function SegmentedText({
-  text,
-  segments,
-}: {
-  text: string;
-  segments?: string[];
-}) {
-  if (!segments || segments.length <= 1) return <>{text}</>;
-  return (
-    <>
-      {segments.map((seg, i) => (
-        <span key={i}>
-          {i > 0 && <span className="text-muted-foreground"> · </span>}
-          {seg}
-        </span>
-      ))}
-    </>
-  );
-}
 
 function formatTimestamp(seconds: number): string {
   const m = Math.floor(seconds / 60);
@@ -130,12 +108,8 @@ export function CaptionList({
               </span>
             </div>
             <div className="flex text-sm">
-              <div className="flex-1 border-r pr-2">
-                <SegmentedText text={row.text1} segments={row.text1Segments} />
-              </div>
-              <div className="flex-1 pl-2">
-                <SegmentedText text={row.text2} segments={row.text2Segments} />
-              </div>
+              <div className="flex-1 border-r pr-2">{row.text1}</div>
+              <div className="flex-1 pl-2">{row.text2}</div>
             </div>
           </div>
         ))}
