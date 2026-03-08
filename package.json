@@ -7,7 +7,7 @@
     "dev": "vite dev",
     "build": "vite build",
     "preview": "vite preview",
-    "dev-ext": "pnpm build-ext --watch",
+    "dev-ext": "vite build --config vite.ext.config.ts --watch",
     "build-ext": "vite build --config vite.ext.config.ts && cd dist/extension && zip -r ../extension.zip .",
     "tsc": "tsc -b",
     "lint": "oxfmt && knip --fix",
