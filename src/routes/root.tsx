@@ -32,7 +32,7 @@ export function RootLayout() {
     <div className="flex h-screen flex-col">
       <header className="flex h-10 flex-none items-center justify-between border-b px-3">
         <Link to="/" className="text-sm font-semibold">
-          ytsub
+          zamak
         </Link>
         <HeaderMenu authenticated={authenticated} />
       </header>
@@ -60,7 +60,7 @@ export function AuthLayout() {
 }
 
 type Theme = "light" | "dark" | "system";
-const THEME_KEY = "ytsub:theme";
+const THEME_KEY = "zamak:theme";
 const THEMES: Theme[] = ["light", "dark", "system"];
 
 function resolveTheme(theme: Theme): boolean {

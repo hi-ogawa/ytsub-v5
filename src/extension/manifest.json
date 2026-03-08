@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "ytsub",
+  "name": "zamak",
   "version": "0.1.0",
   "description": "Dual-language subtitle viewer for YouTube — learn languages by watching videos with side-by-side captions, click-to-seek, and auto-scroll.",
   "icons": {

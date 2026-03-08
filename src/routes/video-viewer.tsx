@@ -567,7 +567,7 @@ export function VideoViewerPage() {
   // Auto-scroll toggle (persisted)
   const [autoScroll, setAutoScroll] = useState(() => {
     try {
-      const stored = localStorage.getItem("ytsub:auto-scroll");
+      const stored = localStorage.getItem("zamak:auto-scroll");
       return stored !== null ? (JSON.parse(stored) as boolean) : true;
     } catch {
       return true;
@@ -576,7 +576,7 @@ export function VideoViewerPage() {
   function toggleAutoScroll() {
     setAutoScroll((prev) => {
       const next = !prev;
-      localStorage.setItem("ytsub:auto-scroll", JSON.stringify(next));
+      localStorage.setItem("zamak:auto-scroll", JSON.stringify(next));
       return next;
     });
   }

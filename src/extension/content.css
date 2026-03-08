@@ -28,7 +28,7 @@
   --input: #3f3f3f;
 }
 
-#ytsub-root {
+#zamak-root {
   display: flex;
   flex-direction: column;
   background-color: var(--background);
