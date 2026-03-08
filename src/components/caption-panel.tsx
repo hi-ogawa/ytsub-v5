@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { Captions } from "lucide-react";
 import { useEffect, useState } from "react";
 import { mergeCaptions } from "../lib/caption-merge.ts";
 import {
@@ -9,6 +10,41 @@ import {
 import { CaptionList } from "./caption-list.tsx";
 import { TrackPicker } from "./track-picker.tsx";
 import type { YTPlayer } from "./youtube-player.tsx";
+
+export function CaptionFab({
+  open,
+  onClick,
+}: {
+  open: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      style={{
+        position: "fixed",
+        bottom: "20px",
+        right: "20px",
+        width: "48px",
+        height: "48px",
+        borderRadius: "50%",
+        border: "none",
+        background: open ? "var(--color-ring, var(--ring))" : "#1a3a5c",
+        color: "var(--color-foreground, var(--foreground))",
+        cursor: "pointer",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        pointerEvents: "auto",
+        boxShadow: "0 2px 8px rgba(0,0,0,0.4)",
+      }}
+      title={open ? "Hide captions" : "Show captions"}
+    >
+      <Captions size={24} />
+    </button>
+  );
+}
 
 export function CaptionPanel({
   tracks,

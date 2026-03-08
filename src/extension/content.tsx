@@ -1,9 +1,8 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useQuery } from "@tanstack/react-query";
-import { Captions } from "lucide-react";
 import { StrictMode, useState } from "react";
 import { createRoot } from "react-dom/client";
-import { CaptionPanel } from "../components/caption-panel.tsx";
+import { CaptionFab, CaptionPanel } from "../components/caption-panel.tsx";
 import type { YTPlayer } from "../components/youtube-player.tsx";
 import {
   type YouTubeCaptionTrack,
@@ -49,30 +48,7 @@ function App({ videoId }: { videoId: string }) {
           <ExtensionViewer videoId={videoId} />
         </div>
       )}
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        style={{
-          position: "fixed",
-          bottom: "20px",
-          right: "20px",
-          width: "48px",
-          height: "48px",
-          borderRadius: "50%",
-          border: "none",
-          background: open ? "var(--ring)" : "#1a3a5c",
-          color: "var(--foreground)",
-          cursor: "pointer",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          pointerEvents: "auto",
-          boxShadow: "0 2px 8px rgba(0,0,0,0.4)",
-        }}
-        title={open ? "Hide captions" : "Show captions"}
-      >
-        <Captions size={24} />
-      </button>
+      <CaptionFab open={open} onClick={() => setOpen((v) => !v)} />
     </div>
   );
 }
