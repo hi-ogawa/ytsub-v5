@@ -56,30 +56,22 @@ test.describe("dev-viewer caption panel", () => {
     );
   });
 
-  test("settings menu opens and closes", async ({ page }) => {
-    await page.getByTitle("Show captions").click();
-    await expect(page.locator("[data-index='0']")).toBeVisible();
-
-    // Open settings menu
-    await page.getByTitle("Settings").click();
-    await expect(page.getByText("Auto-scroll")).toBeVisible();
-
-    // Close by pressing Escape
-    await page.keyboard.press("Escape");
-    await expect(page.getByText("Auto-scroll")).not.toBeVisible();
-  });
-
-  test("auto-scroll toggle via settings menu", async ({ page }) => {
+  test("settings menu with auto-scroll toggle", async ({ page }) => {
     await page.getByTitle("Show captions").click();
     await expect(page.locator("[data-index='0']")).toBeVisible();
 
     const autoScrollItem = page.locator("[data-checked]");
 
-    // Default: auto-scroll on
+    // Open settings menu
     await page.getByTitle("Settings").click();
     await expect(autoScrollItem).toHaveAttribute("data-checked", "true");
 
-    // Toggle off (menu stays open)
+    // Close by pressing Escape
+    await page.keyboard.press("Escape");
+    await expect(page.getByText("Auto-scroll")).not.toBeVisible();
+
+    // Reopen and toggle off (menu stays open)
+    await page.getByTitle("Settings").click();
     await page.getByText("Auto-scroll").click();
     await expect(autoScrollItem).toHaveAttribute("data-checked", "false");
 
