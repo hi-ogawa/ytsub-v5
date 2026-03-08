@@ -61,7 +61,7 @@ test.describe("dev-viewer caption panel", () => {
     await expect(page.locator("[data-index='0']")).toBeVisible();
 
     // Strategy dropdown should be visible (fixture falls back to partition)
-    const strategySelect = page.locator("select[title='Merge strategy']");
+    const strategySelect = page.locator("select[title='Alignment strategy']");
     await expect(strategySelect).toBeVisible();
     await expect(strategySelect).toHaveValue("partition");
 
