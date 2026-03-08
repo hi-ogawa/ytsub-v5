@@ -33,35 +33,27 @@ function getVideoPlayer(): YTPlayer | null {
   };
 }
 
-function App({
-  videoId,
-  portalContainer,
-}: {
-  videoId: string;
-  portalContainer: HTMLElement;
-}) {
+function App({ videoId }: { videoId: string }) {
   const [open, setOpen] = useState(false);
 
   return (
-    <PortalContainerProvider value={portalContainer}>
-      <div>
-        {open && (
-          <ResizablePanel
-            id="zamak-root"
-            style={{
-              position: "fixed",
-              right: "10px",
-              top: "65px",
-              bottom: "56px",
-              pointerEvents: "auto",
-            }}
-          >
-            <ExtensionViewer videoId={videoId} />
-          </ResizablePanel>
-        )}
-        <CaptionFab open={open} onClick={() => setOpen((v) => !v)} />
-      </div>
-    </PortalContainerProvider>
+    <div>
+      {open && (
+        <ResizablePanel
+          id="zamak-root"
+          style={{
+            position: "fixed",
+            right: "10px",
+            top: "65px",
+            bottom: "56px",
+            pointerEvents: "auto",
+          }}
+        >
+          <ExtensionViewer videoId={videoId} />
+        </ResizablePanel>
+      )}
+      <CaptionFab open={open} onClick={() => setOpen((v) => !v)} />
+    </div>
   );
 }
 
@@ -185,9 +177,11 @@ function inject() {
 
   createRoot(container).render(
     <StrictMode>
-      <QueryClientProvider client={queryClient}>
-        <App videoId={videoId} portalContainer={container} />
-      </QueryClientProvider>
+      <PortalContainerProvider value={container}>
+        <QueryClientProvider client={queryClient}>
+          <App videoId={videoId} />
+        </QueryClientProvider>
+      </PortalContainerProvider>
     </StrictMode>,
   );
 }
