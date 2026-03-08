@@ -2,7 +2,11 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useQuery } from "@tanstack/react-query";
 import { StrictMode, useState } from "react";
 import { createRoot } from "react-dom/client";
-import { CaptionFab, CaptionPanel } from "../components/caption-panel.tsx";
+import {
+  CaptionFab,
+  CaptionPanel,
+  ResizablePanel,
+} from "../components/caption-panel.tsx";
 import type { YTPlayer } from "../components/youtube-player.tsx";
 import {
   type YouTubeCaptionTrack,
@@ -34,19 +38,18 @@ function App({ videoId }: { videoId: string }) {
   return (
     <div>
       {open && (
-        <div
+        <ResizablePanel
           id="ytsub-root"
           style={{
             position: "fixed",
             right: "10px",
             top: "65px",
             bottom: "56px",
-            width: "400px",
             pointerEvents: "auto",
           }}
         >
           <ExtensionViewer videoId={videoId} />
-        </div>
+        </ResizablePanel>
       )}
       <CaptionFab open={open} onClick={() => setOpen((v) => !v)} />
     </div>

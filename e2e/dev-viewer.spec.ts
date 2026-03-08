@@ -56,6 +56,36 @@ test.describe("dev-viewer caption panel", () => {
     );
   });
 
+  test("panel left edge can be dragged to resize", async ({ page }) => {
+    await page.getByTitle("Show captions").click();
+    await expect(page.locator("[data-index='0']")).toBeVisible();
+
+    const panel = page.getByTestId("resizable-panel");
+    const initialBox = (await panel.boundingBox())!;
+    expect(initialBox.width).toBe(400);
+
+    const handle = page.getByTestId("resize-handle");
+    const handleBox = (await handle.boundingBox())!;
+
+    // Drag left edge 100px to the left → panel should widen
+    const startX = handleBox.x + handleBox.width / 2;
+    const startY = handleBox.y + handleBox.height / 2;
+    await page.mouse.move(startX, startY);
+    await page.mouse.down();
+    await page.mouse.move(startX - 100, startY, { steps: 5 });
+    await page.mouse.up();
+
+    const newBox = (await panel.boundingBox())!;
+    expect(newBox.width).toBe(500);
+
+    // Width persists after closing and reopening
+    await page.getByTitle("Hide captions").click();
+    await page.getByTitle("Show captions").click();
+    await expect(page.locator("[data-index='0']")).toBeVisible();
+    const reopenedBox = (await panel.boundingBox())!;
+    expect(reopenedBox.width).toBe(500);
+  });
+
   test("caption rows show timestamp and dual-column text", async ({ page }) => {
     await page.getByTitle("Show captions").click();
     await expect(page.locator("[data-index='0']")).toBeVisible();
