@@ -23,7 +23,7 @@ interface YouTubeCaptionTrack {
   vssId: string;
 }
 
-export interface YouTubeExtractionResult {
+interface YouTubeExtractionResult {
   video: YouTubeVideoData;
   captionTracks: YouTubeCaptionTrack[];
 }
