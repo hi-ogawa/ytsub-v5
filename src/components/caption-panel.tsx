@@ -18,10 +18,10 @@ export function CaptionFab({
     <button
       type="button"
       onClick={onClick}
-      className={`fixed right-5 bottom-5 flex h-12 w-12 cursor-pointer items-center justify-center rounded-full border-none text-foreground shadow-lg pointer-events-auto ${open ? "bg-ring" : "bg-[#1a3a5c]"}`}
+      className={`fixed right-3 bottom-3 flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border-none text-foreground shadow-lg pointer-events-auto ${open ? "bg-ring" : "bg-[#1a3a5c]"}`}
       title={open ? "Hide captions" : "Show captions"}
     >
-      <Captions size={24} />
+      <Captions size={20} />
     </button>
   );
 }

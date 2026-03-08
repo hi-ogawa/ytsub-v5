@@ -40,7 +40,7 @@ function App({ videoId }: { videoId: string }) {
             position: "fixed",
             right: "10px",
             top: "65px",
-            bottom: "80px",
+            bottom: "56px",
             width: "400px",
             pointerEvents: "auto",
           }}
