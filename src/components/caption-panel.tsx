@@ -1,29 +1,14 @@
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
+import { mergeCaptions } from "../lib/caption-merge.ts";
 import {
   type CaptionCue,
   type YouTubeCaptionTrack,
   pickTracks,
 } from "../lib/youtube.ts";
-import { type AlignedRow, CaptionList } from "./caption-list.tsx";
+import { CaptionList } from "./caption-list.tsx";
 import { TrackPicker } from "./track-picker.tsx";
 import type { YTPlayer } from "./youtube-player.tsx";
-
-function alignByIndex(cues1: CaptionCue[], cues2: CaptionCue[]): AlignedRow[] {
-  const len = Math.max(cues1.length, cues2.length);
-  const rows: AlignedRow[] = [];
-  for (let i = 0; i < len; i++) {
-    const c1 = cues1[i];
-    const c2 = cues2[i];
-    rows.push({
-      begin: c1?.begin ?? c2?.begin ?? 0,
-      end: c1?.end ?? c2?.end ?? 0,
-      text1: c1?.text ?? "",
-      text2: c2?.text ?? "",
-    });
-  }
-  return rows;
-}
 
 export function CaptionPanel({
   tracks,
@@ -62,7 +47,9 @@ export function CaptionPanel({
   const cues1 = cues1Query.data ?? [];
   const cues2 = cues2Query.data ?? [];
   const rows =
-    cues1.length > 0 || cues2.length > 0 ? alignByIndex(cues1, cues2) : [];
+    cues1.length > 0 || cues2.length > 0
+      ? mergeCaptions(cues1, cues2).captions
+      : [];
 
   const cueError = cues1Query.error ?? cues2Query.error;
 

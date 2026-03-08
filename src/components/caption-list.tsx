@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import type { YTPlayer } from "./youtube-player.tsx";
 
-export type AlignedRow = {
+type AlignedRow = {
   begin: number;
   end: number;
   text1: string;
