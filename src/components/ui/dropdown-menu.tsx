@@ -2,7 +2,12 @@ import { DropdownMenu as DropdownMenuPrimitive } from "radix-ui";
 import type { ComponentProps } from "react";
 import { usePortalContainer } from "./portal-container.tsx";
 
-const DropdownMenu = DropdownMenuPrimitive.Root;
+function DropdownMenu({
+  modal = false,
+  ...props
+}: ComponentProps<typeof DropdownMenuPrimitive.Root>) {
+  return <DropdownMenuPrimitive.Root modal={modal} {...props} />;
+}
 const DropdownMenuTrigger = DropdownMenuPrimitive.Trigger;
 
 function DropdownMenuContent({

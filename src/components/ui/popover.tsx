@@ -2,7 +2,12 @@ import { Popover as PopoverPrimitive } from "radix-ui";
 import type { ComponentProps } from "react";
 import { usePortalContainer } from "./portal-container.tsx";
 
-const Popover = PopoverPrimitive.Root;
+function Popover({
+  modal = false,
+  ...props
+}: ComponentProps<typeof PopoverPrimitive.Root>) {
+  return <PopoverPrimitive.Root modal={modal} {...props} />;
+}
 const PopoverTrigger = PopoverPrimitive.Trigger;
 
 function PopoverContent({
