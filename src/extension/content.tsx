@@ -171,11 +171,11 @@ function inject() {
   Object.assign(host.style, {
     all: "initial",
     position: "fixed",
-    right: "16px",
-    top: "64px",
-    bottom: "16px",
+    right: "10px",
+    top: "65px",
+    bottom: "20px",
     width: "400px",
-    zIndex: "9999",
+    zIndex: "100000",
   });
   document.body.appendChild(host);
 

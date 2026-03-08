@@ -1,5 +1,19 @@
 @import "tailwindcss";
 
+/* YouTube sets :root { font-size: 10px }, making all rem values 62.5% of expected.
+   Override Tailwind's rem-based spacing to use correct px values. */
+@theme inline {
+  --spacing: 4px;
+  --text-xs: 12px;
+  --text-xs--line-height: 16px;
+  --text-sm: 14px;
+  --text-sm--line-height: 20px;
+  --text-base: 16px;
+  --text-base--line-height: 24px;
+  --text-lg: 18px;
+  --text-lg--line-height: 28px;
+}
+
 :host {
   --background: #0f0f0f;
   --foreground: #f1f1f1;
