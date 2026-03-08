@@ -60,21 +60,15 @@ async function importVideo() {
       bookmarks: [],
     };
 
-    console.log("[ytsub] Import payload:", payload);
-    console.log(
-      `[ytsub] ${cues1.length} ko cues, ${cues2.length} en cues, ${captions.length} aligned rows`,
-    );
-
-    // TODO: POST to app API
-    // const res = await fetch(`${APP_URL}/api/import`, {
-    //   method: "POST",
-    //   headers: { "Content-Type": "application/json" },
-    //   body: JSON.stringify(payload),
-    // });
-
-    alert(
-      `ytsub: Extracted ${captions.length} caption rows. POST not yet wired up — check console.`,
-    );
+    // Download as JSON file for testing
+    const blob = new Blob([JSON.stringify(payload, null, 2)], {
+      type: "application/json",
+    });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `ytsub-import-${videoId}.json`;
+    a.click();
+    URL.revokeObjectURL(a.href);
   } catch (err) {
     console.error("[ytsub] Import failed:", err);
     alert(`ytsub: Import failed — ${err}`);
