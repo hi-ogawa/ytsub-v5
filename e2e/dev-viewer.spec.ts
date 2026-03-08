@@ -60,13 +60,11 @@ test.describe("dev-viewer caption panel", () => {
     await page.getByTitle("Show captions").click();
     await expect(page.locator("[data-index='0']")).toBeVisible();
 
-    // The ResizablePanel wrapper — fixed-position panel
-    const panel = page.locator(".fixed.flex.flex-col").first();
+    const panel = page.getByTestId("resizable-panel");
     const initialBox = (await panel.boundingBox())!;
     expect(initialBox.width).toBe(400);
 
-    // Drag handle is the leftmost 6px strip
-    const handle = panel.locator(".cursor-col-resize");
+    const handle = page.getByTestId("resize-handle");
     const handleBox = (await handle.boundingBox())!;
 
     // Drag left edge 100px to the left → panel should widen

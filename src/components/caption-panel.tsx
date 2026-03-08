@@ -89,9 +89,11 @@ export function ResizablePanel({
       id={id}
       className={className}
       style={{ ...style, width: `${width}px` }}
+      data-testid="resizable-panel"
     >
       <div
         className="absolute top-0 bottom-0 left-0 z-10 w-1.5 cursor-col-resize hover:bg-ring/50"
+        data-testid="resize-handle"
         onPointerDown={onPointerDown}
       />
       {children}
