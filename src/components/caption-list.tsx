@@ -19,11 +19,13 @@ export function CaptionList({
   currentIndex,
   isPlaying,
   player,
+  autoScroll = true,
 }: {
   rows: AlignedRow[];
   currentIndex: number | undefined;
   isPlaying: boolean;
   player: YTPlayer | null;
+  autoScroll?: boolean;
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const prevScrollIndex = useRef<number | undefined>(undefined);
@@ -47,7 +49,7 @@ export function CaptionList({
       return;
     prevScrollIndex.current = currentIndex;
 
-    if (isManualScrollRef.current) return;
+    if (!autoScroll || isManualScrollRef.current) return;
 
     const scrollEl = scrollRef.current;
     if (!scrollEl) return;

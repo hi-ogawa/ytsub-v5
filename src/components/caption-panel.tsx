@@ -28,6 +28,14 @@ export function CaptionPanel({
   );
   const [currentIndex, setCurrentIndex] = useState<number>();
   const [isPlaying, setIsPlaying] = useState(false);
+  const [autoScroll, setAutoScroll] = useState(() => {
+    try {
+      const stored = localStorage.getItem("ytsub:auto-scroll");
+      return stored !== null ? (JSON.parse(stored) as boolean) : true;
+    } catch {
+      return true;
+    }
+  });
 
   const sel1 = tracks.find((t) => t.vssId === selectedVssId1);
   const sel2 = tracks.find((t) => t.vssId === selectedVssId2);
@@ -84,22 +92,57 @@ export function CaptionPanel({
     );
   }
 
+  function toggleAutoScroll() {
+    setAutoScroll((prev) => {
+      const next = !prev;
+      localStorage.setItem("ytsub:auto-scroll", JSON.stringify(next));
+      return next;
+    });
+  }
+
   return (
     <>
-      <TrackPicker
-        tracks={tracks}
-        selectedVssId1={selectedVssId1}
-        selectedVssId2={selectedVssId2}
-        onSelect={(v1, v2) => {
-          setSelectedVssId1(v1);
-          setSelectedVssId2(v2);
-        }}
-      />
+      <div className="flex items-center border-b">
+        <div className="flex-1">
+          <TrackPicker
+            tracks={tracks}
+            selectedVssId1={selectedVssId1}
+            selectedVssId2={selectedVssId2}
+            onSelect={(v1, v2) => {
+              setSelectedVssId1(v1);
+              setSelectedVssId2(v2);
+            }}
+          />
+        </div>
+        <button
+          className={[
+            "mr-1 rounded p-0.5",
+            autoScroll
+              ? "text-accent hover:bg-highlight-bg"
+              : "text-muted-foreground hover:bg-muted",
+          ].join(" ")}
+          onClick={toggleAutoScroll}
+          title={autoScroll ? "Auto-scroll on" : "Auto-scroll off"}
+        >
+          <svg
+            className="h-4 w-4"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M12 5v14M19 12l-7 7-7-7" />
+          </svg>
+        </button>
+      </div>
       <CaptionList
         rows={rows}
         currentIndex={currentIndex}
         isPlaying={isPlaying}
         player={player}
+        autoScroll={autoScroll}
       />
     </>
   );

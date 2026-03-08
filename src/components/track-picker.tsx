@@ -17,7 +17,7 @@ export function TrackPicker({
   onSelect: (vssId1: string | undefined, vssId2: string | undefined) => void;
 }) {
   return (
-    <div className="flex flex-wrap items-center gap-2 border-b px-2 py-1.5 text-sm">
+    <div className="flex flex-wrap items-center gap-2 px-2 py-1.5 text-sm">
       <label className="flex items-center gap-1">
         <span className="text-muted-foreground">Track 1:</span>
         <select
