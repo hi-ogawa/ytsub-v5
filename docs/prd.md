@@ -72,8 +72,8 @@ See ytsub-v4 for relevant technique.
 - [x] captions panel shouldn't cover YouTube's top-right profile popover
 - [ ] captions panel should be hidable (FAB at bottom-right, default closed)
 - [ ] captions panel width should be changeable.
-- [ ] align captions viewer experience with app video viewer (e.g. auto-scroll sensitivity)
-- [ ] align/merge captions algorithm improvements
+- [x] align captions viewer experience with app video viewer (e.g. auto-scroll sensitivity)
+- [x] align/merge captions algorithm improvements
 
 ## TODO: Backlog
 
