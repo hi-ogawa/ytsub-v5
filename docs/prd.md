@@ -75,10 +75,11 @@ See ytsub-v4 for relevant technique.
 - [x] align captions viewer experience with app video viewer (e.g. auto-scroll sensitivity)
 - [x] align/merge captions algorithm improvements
 - [x] release preview
-- [ ] release chrome store
+- [ ] release chrome store (waiting for review)
 
 ## TODO: Backlog
 
+- [ ] chore: rename worker `ytsub-v5` → `zamak` — update `wrangler.jsonc` name, re-set secrets on new worker, delete old worker, update CI artifact name and docs
 - [ ] feat: bookmark approval flow — inline approve/reject buttons for `pending` bookmarks in viewer
 - [ ] feat: bookmark list page — browse/search all bookmarks across videos
 - [ ] Full-text search — search across captions and bookmarks (D1 FTS or LIKE)

@@ -1,4 +1,4 @@
-# ytsub-v5
+# Zamak
 
 A web app for language learning via YouTube subtitles. Watch videos with dual subtitle panel, bookmark words/phrases, and build vocabulary.
 
