@@ -106,13 +106,16 @@ Show a brief UI (popup or injected element) letting user confirm/override track 
 
 ### Alignment
 
-Port the alignment logic from the ai-less workflow doc. Start simple:
+v3 and v4 already have a proven alignment algorithm (`mergeCaptionEntryPairs` in `src/utils/youtube.ts`). Two-tier approach:
 
-1. Try strict 1:1 matching (same cue count, timestamps within tolerance)
-2. Fall back to overlap-based heuristic (v4's approach, adapted)
-3. Output: `{ idx, begin, end, text1, text2 }[]` — same format as current import
+1. **Simple path:** exact timestamp grouping → 1:1 pairs
+2. **Heuristic fallback:** overlap-based matching (≥ 2s overlap → concatenate, otherwise pick best overlap)
 
-The alignment code should be a standalone module, testable outside the extension context.
+Port this directly. It already handles count mismatches and timing drift for real YouTube subtitles.
+
+Output: `{ idx, begin, end, text1, text2 }[]` — same format as current import.
+
+The alignment code should be a standalone module, testable outside the extension context. See `2026-03-08-ai-less-workflow.md` for further improvement ideas (DTW, bidirectional overlap) if the v3/v4 algorithm proves insufficient.
 
 ### Import Payload
 

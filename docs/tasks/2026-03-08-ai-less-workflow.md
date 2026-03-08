@@ -75,17 +75,24 @@ The current `check-alignment.ts` is strict: same cue count + all timestamps with
 
 **Why this matters:** Even if the viewer can display unaligned tracks (see unaligned-caption-viewer doc), aligned pairs are a better reading experience. The two approaches are complementary — better alignment algorithm reduces the cases where the viewer needs to fall back to unaligned display.
 
-**Approaches (increasing sophistication):**
+**Prior art:** ytsub-v3 and v4 already have a two-tier alignment algorithm (`mergeTtmlEntries` / `mergeCaptionEntryPairs` in `utils/youtube.ts`):
 
-1. **Relaxed 1:1 matching** — keep the current approach but increase tolerance (e.g., 2s instead of 0.5s) and allow small count differences (skip unmatched cues at the end)
+1. **Simple path:** Group cues by exact `{begin, end}` timestamp. If every group has ≤1 cue per language → 1:1 pair. Otherwise bail out.
+2. **Heuristic fallback:** For each cue in track1, find all track2 cues with time overlap ≥ 2s → concatenate their text. If none meet threshold, pick the single best overlap.
 
-2. **Greedy nearest-neighbor** — for each ko cue, pair with the en cue whose begin time is closest. Simple, handles count mismatches. Risk: can produce bad pairings when timing drifts significantly.
+This handles count mismatches and timing drift well for most cases. It's 1:N (one track1 cue can absorb multiple track2 cues) but not truly bidirectional.
 
-3. **Overlap-based pairing** — pair cues whose time ranges overlap. Naturally produces N:M groupings (one ko cue overlaps two en cues, or vice versa). The viewer's time-banded grouping (option C in unaligned-caption-viewer) maps directly to this.
+**Approaches (building on v3/v4):**
 
-4. **Dynamic time warping (DTW)** — standard technique for aligning two temporal sequences. Finds optimal global alignment minimizing total timestamp distance. Handles different cue counts, timing drift, and split/merge cases. Well-studied algorithm, easy to implement.
+1. **Reuse v3/v4 overlap heuristic as-is** — port to v5 extension. Already proven to work with real YouTube subtitles. Start here.
 
-5. **Split/merge detection** — detect when one language splits a cue into two (or merges two into one). Heuristic: if ko cue [0-5s] maps to en cues [0-2.5s] + [2.5-5s], merge the en text. Common with auto-generated vs manual subs.
+2. **Relaxed simple path** — increase tolerance (e.g., 2s instead of exact match) before falling through to heuristic. Catches more cases in the fast path.
+
+3. **Bidirectional overlap** — v3/v4 iterates track1→track2 only. A track2 cue could be "claimed" by multiple track1 cues. Adding a reverse pass or deduplication could improve quality.
+
+4. **Dynamic time warping (DTW)** — standard technique for aligning two temporal sequences. Finds globally optimal alignment. Handles different cue counts, timing drift, and split/merge. More sophisticated than overlap heuristic but may not be needed if v3/v4's approach covers enough cases.
+
+5. **Split/merge detection** — detect when one language splits a cue into two (or merges two into one). v3/v4 already handles the 1:N case (concatenation). Could add N:1 (merge track1 cues when they map to the same track2 cue).
 
 **Output:** Aligned text1/text2 rows — same schema as today. For N:M cases (split/merge), concatenate the text of merged cues. This means no schema change needed for the happy path.
 
