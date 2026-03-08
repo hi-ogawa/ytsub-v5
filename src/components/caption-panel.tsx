@@ -134,13 +134,11 @@ export function ResizablePanel({
 
 const LANGS_KEY = "zamak:preferred-langs";
 
-function getPreferredLangs(videoId?: string): { lang1: string; lang2: string } {
+function getPreferredLangs(videoId: string): { lang1: string; lang2: string } {
   try {
     // Try per-video preference first
-    if (videoId) {
-      const perVideo = localStorage.getItem(`${LANGS_KEY}:${videoId}`);
-      if (perVideo) return JSON.parse(perVideo);
-    }
+    const perVideo = localStorage.getItem(`${LANGS_KEY}:${videoId}`);
+    if (perVideo) return JSON.parse(perVideo);
     // Fall back to global preference
     const stored = localStorage.getItem(LANGS_KEY);
     if (stored) return JSON.parse(stored);
@@ -148,14 +146,12 @@ function getPreferredLangs(videoId?: string): { lang1: string; lang2: string } {
   return { lang1: "ko", lang2: "en" };
 }
 
-function savePreferredLangs(lang1: string, lang2: string, videoId?: string) {
+function savePreferredLangs(lang1: string, lang2: string, videoId: string) {
   localStorage.setItem(LANGS_KEY, JSON.stringify({ lang1, lang2 }));
-  if (videoId) {
-    localStorage.setItem(
-      `${LANGS_KEY}:${videoId}`,
-      JSON.stringify({ lang1, lang2 }),
-    );
-  }
+  localStorage.setItem(
+    `${LANGS_KEY}:${videoId}`,
+    JSON.stringify({ lang1, lang2 }),
+  );
 }
 
 export function CaptionPanel({
@@ -167,16 +163,16 @@ export function CaptionPanel({
   tracks: YouTubeCaptionTrack[];
   fetchCues: (track: YouTubeCaptionTrack) => Promise<CaptionCue[]>;
   player: YTPlayer | null;
-  videoMeta?: VideoMeta;
+  videoMeta: VideoMeta;
 }) {
   const [selectedVssId1, setSelectedVssId1] = useState<string | undefined>(
     () =>
-      pickBestTrack(tracks, getPreferredLangs(videoMeta?.youtubeId).lang1)
+      pickBestTrack(tracks, getPreferredLangs(videoMeta.youtubeId).lang1)
         ?.vssId,
   );
   const [selectedVssId2, setSelectedVssId2] = useState<string | undefined>(
     () =>
-      pickBestTrack(tracks, getPreferredLangs(videoMeta?.youtubeId).lang2)
+      pickBestTrack(tracks, getPreferredLangs(videoMeta.youtubeId).lang2)
         ?.vssId,
   );
   const [currentIndex, setCurrentIndex] = useState<number>();
@@ -262,7 +258,6 @@ export function CaptionPanel({
   }
 
   function handleExport() {
-    if (!videoMeta) return;
     const data = {
       video: {
         youtubeId: videoMeta.youtubeId,
@@ -310,7 +305,7 @@ export function CaptionPanel({
                 savePreferredLangs(
                   t1.languageCode,
                   t2.languageCode,
-                  videoMeta?.youtubeId,
+                  videoMeta.youtubeId,
                 );
             }}
           />
@@ -358,12 +353,10 @@ export function CaptionPanel({
                 </select>
               </div>
             )}
-            {videoMeta && (
-              <DropdownMenuItem onClick={handleExport}>
-                <Download className="mr-2 h-4 w-4" />
-                Export import.json
-              </DropdownMenuItem>
-            )}
+            <DropdownMenuItem onClick={handleExport}>
+              <Download className="mr-2 h-4 w-4" />
+              Export import.json
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
