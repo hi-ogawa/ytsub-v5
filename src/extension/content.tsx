@@ -1,15 +1,14 @@
-import { StrictMode, useEffect, useState } from "react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
+import { StrictMode, useState } from "react";
 import { createRoot } from "react-dom/client";
-import { CaptionList } from "../components/caption-list.tsx";
-import { TrackPicker } from "../components/track-picker.tsx";
+import { CaptionPanel } from "../components/caption-panel.tsx";
 import type { YTPlayer } from "../components/youtube-player.tsx";
-import { type MergedCaption, mergeCaptions } from "../lib/caption-merge.ts";
 import {
   type YouTubeCaptionTrack,
   fetchPlayerApi,
   fetchTrackJson3,
   parseJson3,
-  pickTracks,
 } from "../lib/youtube.ts";
 import contentCss from "./content.css?inline";
 
@@ -29,73 +28,19 @@ function getVideoPlayer(): YTPlayer | null {
   };
 }
 
+function fetchCues(track: YouTubeCaptionTrack) {
+  return fetchTrackJson3(track.baseUrl).then(parseJson3);
+}
+
 function ExtensionViewer({ videoId }: { videoId: string }) {
-  const [tracks, setTracks] = useState<YouTubeCaptionTrack[]>([]);
-  const [selectedVssId1, setSelectedVssId1] = useState<string>();
-  const [selectedVssId2, setSelectedVssId2] = useState<string>();
-  const [rows, setRows] = useState<MergedCaption[]>([]);
-  const [currentIndex, setCurrentIndex] = useState<number>();
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string>();
   const [player] = useState<YTPlayer | null>(() => getVideoPlayer());
 
-  // Fetch metadata
-  useEffect(() => {
-    setLoading(true);
-    setError(undefined);
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["extension-metadata", videoId],
+    queryFn: () => fetchPlayerApi(videoId),
+  });
 
-    fetchPlayerApi(videoId)
-      .then((result) => {
-        setTracks(result.captionTracks);
-        const { track1, track2 } = pickTracks(result.captionTracks);
-        setSelectedVssId1(track1?.vssId);
-        setSelectedVssId2(track2?.vssId);
-      })
-      .catch((err) => setError(String(err)))
-      .finally(() => setLoading(false));
-  }, [videoId]);
-
-  // Fetch selected tracks
-  useEffect(() => {
-    if (tracks.length === 0) return;
-    setRows([]);
-
-    const track1 = tracks.find((t) => t.vssId === selectedVssId1);
-    const track2 = tracks.find((t) => t.vssId === selectedVssId2);
-
-    Promise.all([
-      track1 ? fetchTrackJson3(track1.baseUrl).then(parseJson3) : [],
-      track2 ? fetchTrackJson3(track2.baseUrl).then(parseJson3) : [],
-    ])
-      .then(([cues1, cues2]) => setRows(mergeCaptions(cues1, cues2).captions))
-      .catch((err) => setError(String(err)));
-  }, [tracks, selectedVssId1, selectedVssId2]);
-
-  // RAF loop — sync with page video element
-  useEffect(() => {
-    if (!player || rows.length === 0) return;
-    let rafId: number;
-
-    const loop = () => {
-      const playing = player.getPlayerState() === 1;
-      setIsPlaying(playing);
-      if (playing) {
-        const time = player.getCurrentTime();
-        for (let i = rows.length - 1; i >= 0; i--) {
-          if (rows[i].begin <= time) {
-            setCurrentIndex(i);
-            break;
-          }
-        }
-      }
-      rafId = requestAnimationFrame(loop);
-    };
-    rafId = requestAnimationFrame(loop);
-    return () => cancelAnimationFrame(rafId);
-  }, [player, rows]);
-
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex h-full items-center justify-center text-sm text-neutral-500">
         Loading subtitles…
@@ -106,34 +51,20 @@ function ExtensionViewer({ videoId }: { videoId: string }) {
   if (error) {
     return (
       <div className="flex h-full items-center justify-center text-sm text-red-500">
-        {error}
+        {String(error)}
       </div>
     );
   }
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex items-center gap-2 border-b px-2 py-1 text-xs text-muted-foreground">
-        <span>
-          idx:{currentIndex ?? "–"} playing:{String(isPlaying)} rows:
-          {rows.length} player:{player ? "ok" : "null"}
-        </span>
-      </div>
-      <TrackPicker
-        tracks={tracks}
-        selectedVssId1={selectedVssId1}
-        selectedVssId2={selectedVssId2}
-        onSelect={(v1, v2) => {
-          setSelectedVssId1(v1);
-          setSelectedVssId2(v2);
-        }}
-      />
-      <CaptionList
-        rows={rows}
-        currentIndex={currentIndex}
-        isPlaying={isPlaying}
-        player={player}
-      />
+      {data && (
+        <CaptionPanel
+          tracks={data.captionTracks}
+          fetchCues={fetchCues}
+          player={player}
+        />
+      )}
     </div>
   );
 }
@@ -167,6 +98,8 @@ function addStyle(shadow: ShadowRoot, css: string) {
 }
 
 // --- Injection ---
+
+const queryClient = new QueryClient();
 
 function isWatchPage() {
   return window.location.pathname === "/watch";
@@ -206,7 +139,9 @@ function inject() {
 
   createRoot(container).render(
     <StrictMode>
-      <ExtensionViewer videoId={videoId} />
+      <QueryClientProvider client={queryClient}>
+        <ExtensionViewer videoId={videoId} />
+      </QueryClientProvider>
     </StrictMode>,
   );
 }
