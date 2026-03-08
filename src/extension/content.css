@@ -1,0 +1,40 @@
+@import "tailwindcss";
+
+:host {
+  --background: #0f0f0f;
+  --foreground: #f1f1f1;
+  --muted: #272727;
+  --muted-foreground: #aaa;
+  --border: #3f3f3f;
+  --ring: #3ea6ff;
+  --input: #3f3f3f;
+}
+
+#ytsub-root {
+  height: 100%;
+  background-color: var(--background);
+  color: var(--foreground);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  font-family: "Roboto", "Arial", sans-serif;
+  font-size: 14px;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+}
+
+@layer base {
+  *,
+  ::after,
+  ::before {
+    border-color: var(--color-border);
+  }
+}
