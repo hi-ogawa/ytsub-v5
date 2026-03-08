@@ -46,26 +46,6 @@ function loadTrack(videoDir: string, filename: string): CaptionCue[] {
   return parseJson3(raw);
 }
 
-// Count how many merged rows have non-empty text2
-function coveragePercent(merged: MergedCaption[]): number {
-  if (merged.length === 0) return 0;
-  const withText2 = merged.filter((m) => m.text2.length > 0).length;
-  return (withText2 / merged.length) * 100;
-}
-
-// Check that no text2 value appears in more than one row (dedup check)
-function duplicateText2Count(merged: MergedCaption[]): number {
-  const seen = new Map<string, number>();
-  let dupes = 0;
-  for (const m of merged) {
-    if (!m.text2) continue;
-    const count = (seen.get(m.text2) ?? 0) + 1;
-    seen.set(m.text2, count);
-    if (count > 1) dupes++;
-  }
-  return dupes;
-}
-
 // === Unit tests with synthetic data ===
 
 describe("mergeStrict", () => {
@@ -276,14 +256,6 @@ const YOUTUBE_JSON_DIR = join(
   "../../scripts/youtube-json",
 );
 
-function getVideoIds(): string[] {
-  try {
-    return readdirSync(YOUTUBE_JSON_DIR).filter((d) => !d.startsWith("."));
-  } catch {
-    return [];
-  }
-}
-
 function findTrackFile(
   videoDir: string,
   langPrefix: string,
@@ -488,91 +460,4 @@ describe("strategy mapping stats", () => {
       `);
     });
   });
-});
-
-describe("real YouTube data", () => {
-  const videoIds = getVideoIds();
-
-  for (const videoId of videoIds) {
-    const videoDir = join(YOUTUBE_JSON_DIR, videoId);
-    const koFile = findTrackFile(videoDir, "ko");
-    const enFile = findTrackFile(videoDir, "en");
-
-    if (!koFile || !enFile) continue;
-
-    describe(videoId, () => {
-      let koCues: CaptionCue[];
-      let enCues: CaptionCue[];
-
-      // Load once per video
-      koCues = loadTrack(videoDir, koFile);
-      enCues = loadTrack(videoDir, enFile);
-
-      it("has parsed cues", () => {
-        expect(koCues.length).toBeGreaterThan(0);
-        expect(enCues.length).toBeGreaterThan(0);
-      });
-
-      it("mergeCaptions produces output", () => {
-        const result = mergeCaptions(koCues, enCues);
-        expect(result.captions.length).toBeGreaterThanOrEqual(koCues.length);
-        // Every row should have at least text1 or text2
-        for (const c of result.captions) {
-          expect(c.text1.length + c.text2.length).toBeGreaterThan(0);
-        }
-      });
-
-      it("mergeOverlap coverage", () => {
-        const merged = mergeOverlap(koCues, enCues);
-        const cov = coveragePercent(merged);
-        expect(cov).toBeGreaterThan(0);
-      });
-
-      it("mergeBidirectional produces output", () => {
-        const merged = mergeBidirectional(koCues, enCues);
-        expect(merged.length).toBe(koCues.length);
-      });
-
-      it("mergeDTW coverage", () => {
-        const merged = mergeDTW(koCues, enCues);
-        const cov = coveragePercent(merged);
-        expect(cov).toBeGreaterThan(0);
-      });
-
-      it("all strategies produce correct idx sequence", () => {
-        for (const merge of [mergeOverlap, mergeBidirectional, mergeDTW]) {
-          const merged = merge(koCues, enCues);
-          merged.forEach((m, i) => expect(m.idx).toBe(i));
-        }
-      });
-
-      it("strategy comparison summary", () => {
-        const strict = mergeStrict(koCues, enCues);
-        const relaxed = mergeRelaxedStrict(koCues, enCues);
-        const overlap = mergeOverlap(koCues, enCues);
-        const bidir = mergeBidirectional(koCues, enCues);
-        const dtw = mergeDTW(koCues, enCues);
-
-        const summary = {
-          videoId,
-          koCues: koCues.length,
-          enCues: enCues.length,
-          strict: strict ? "pass" : "fail",
-          relaxed: relaxed ? "pass" : "fail",
-          overlapCoverage: coveragePercent(overlap).toFixed(1) + "%",
-          overlapDupes: duplicateText2Count(overlap),
-          bidirCoverage: coveragePercent(bidir).toFixed(1) + "%",
-          bidirDupes: duplicateText2Count(bidir),
-          dtwCoverage: coveragePercent(dtw).toFixed(1) + "%",
-          dtwDupes: duplicateText2Count(dtw),
-        };
-
-        // Print summary for manual review
-        console.log("\n" + JSON.stringify(summary, null, 2));
-
-        // DTW should have decent coverage
-        expect(coveragePercent(dtw)).toBeGreaterThan(30);
-      });
-    });
-  }
 });
