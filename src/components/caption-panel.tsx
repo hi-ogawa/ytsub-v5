@@ -304,6 +304,7 @@ export function CaptionPanel({
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuItem
+              data-checked={autoScroll}
               onSelect={(e) => {
                 e.preventDefault();
                 toggleAutoScroll();

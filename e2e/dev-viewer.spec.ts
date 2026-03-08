@@ -73,28 +73,22 @@ test.describe("dev-viewer caption panel", () => {
     await page.getByTitle("Show captions").click();
     await expect(page.locator("[data-index='0']")).toBeVisible();
 
-    // Auto-scroll defaults to on
-    let stored = await page.evaluate(() =>
-      localStorage.getItem("zamak:auto-scroll"),
-    );
-    expect(stored).toBeNull(); // default = true, not yet stored
+    const autoScrollItem = page.locator("[data-checked]");
 
-    // Open settings menu and toggle auto-scroll off (menu stays open)
+    // Default: auto-scroll on
     await page.getByTitle("Settings").click();
-    await page.getByText("Auto-scroll").click();
+    await expect(autoScrollItem).toHaveAttribute("data-checked", "true");
 
-    // Verify localStorage updated
-    stored = await page.evaluate(() =>
-      localStorage.getItem("zamak:auto-scroll"),
-    );
-    expect(stored).toBe("false");
-
-    // Toggle back on
+    // Toggle off (menu stays open)
     await page.getByText("Auto-scroll").click();
-    stored = await page.evaluate(() =>
-      localStorage.getItem("zamak:auto-scroll"),
-    );
-    expect(stored).toBe("true");
+    await expect(autoScrollItem).toHaveAttribute("data-checked", "false");
+
+    // Reload and verify it persists as off
+    await page.reload();
+    await page.getByTitle("Show captions").click();
+    await expect(page.locator("[data-index='0']")).toBeVisible();
+    await page.getByTitle("Settings").click();
+    await expect(autoScrollItem).toHaveAttribute("data-checked", "false");
   });
 
   test("strategy dropdown switches merge strategy", async ({ page }) => {
@@ -140,8 +134,7 @@ test.describe("dev-viewer caption panel", () => {
       page.getByText("Export import.json").click(),
     ]);
 
-    // Verify download filename
-    expect(download.suggestedFilename()).toMatch(/^import-.*\.json$/);
+    expect(download.suggestedFilename()).toBe("import-7GU_VQfgMT0.json");
 
     // Read and validate exported JSON
     const content = await (
@@ -151,18 +144,33 @@ test.describe("dev-viewer caption panel", () => {
       .then((chunks) => Buffer.concat(chunks).toString());
     const data = JSON.parse(content);
 
-    // Must match importVideo schema shape
-    expect(data.video).toBeDefined();
-    expect(data.video.youtubeId).toBeTruthy();
-    expect(data.video.title).toBeTruthy();
-    expect(data.captions).toBeInstanceOf(Array);
-    expect(data.captions.length).toBeGreaterThan(0);
-    expect(data.captions[0]).toHaveProperty("idx");
-    expect(data.captions[0]).toHaveProperty("begin");
-    expect(data.captions[0]).toHaveProperty("end");
-    expect(data.captions[0]).toHaveProperty("text1");
-    expect(data.captions[0]).toHaveProperty("text2");
-    expect(data.bookmarks).toEqual([]);
+    expect(data).toMatchObject({
+      video: {
+        youtubeId: "7GU_VQfgMT0",
+        title: "Billlie | 'cloud palace' 𝐁efore sunrise live",
+        channelName: "Billlie",
+        channelId: "UCyc9sUCxELTDK9vELO5Fzeg",
+        duration: 210,
+        language1: "ko",
+        language2: "en",
+      },
+      bookmarks: [],
+    });
+    expect(data.captions).toHaveLength(56);
+    expect(data.captions[0]).toEqual({
+      idx: 0,
+      begin: 25.714,
+      end: 29.621,
+      text1: "꼬집어 봐 뜬 꿈인 것 같아",
+      text2: "am I awake? or am I still dreaming",
+    });
+    expect(data.captions[55]).toEqual({
+      idx: 55,
+      begin: 197.448,
+      end: 201.542,
+      text1: "날 부른 이름 듣고 있으니까",
+      text2: "I\u2019m hearing my name you left in the wind",
+    });
   });
 
   test("panel left edge can be dragged to resize", async ({ page }) => {
