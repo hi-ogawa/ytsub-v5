@@ -17,41 +17,31 @@ export function TrackPicker({
   onSelect: (vssId1: string | undefined, vssId2: string | undefined) => void;
 }) {
   return (
-    <div className="flex flex-wrap items-center gap-2 px-2 py-1.5 text-sm">
-      <label className="flex items-center gap-1">
-        <span className="text-muted-foreground">Track 1:</span>
-        <select
-          className="rounded border bg-background px-1 py-0.5 text-sm"
-          value={selectedVssId1 ?? ""}
-          onChange={(e) =>
-            onSelect(e.target.value || undefined, selectedVssId2)
-          }
-        >
-          <option value="">None</option>
-          {tracks.map((t) => (
-            <option key={t.vssId} value={t.vssId}>
-              {trackLabel(t)}
-            </option>
-          ))}
-        </select>
-      </label>
-      <label className="flex items-center gap-1">
-        <span className="text-muted-foreground">Track 2:</span>
-        <select
-          className="rounded border bg-background px-1 py-0.5 text-sm"
-          value={selectedVssId2 ?? ""}
-          onChange={(e) =>
-            onSelect(selectedVssId1, e.target.value || undefined)
-          }
-        >
-          <option value="">None</option>
-          {tracks.map((t) => (
-            <option key={t.vssId} value={t.vssId}>
-              {trackLabel(t)}
-            </option>
-          ))}
-        </select>
-      </label>
+    <div className="flex items-center gap-1 px-2 py-1.5 text-sm">
+      <select
+        className="min-w-0 flex-1 rounded border bg-background px-1 py-0.5 text-sm"
+        value={selectedVssId1 ?? ""}
+        onChange={(e) => onSelect(e.target.value || undefined, selectedVssId2)}
+      >
+        <option value="">None</option>
+        {tracks.map((t) => (
+          <option key={t.vssId} value={t.vssId}>
+            {trackLabel(t)}
+          </option>
+        ))}
+      </select>
+      <select
+        className="min-w-0 flex-1 rounded border bg-background px-1 py-0.5 text-sm"
+        value={selectedVssId2 ?? ""}
+        onChange={(e) => onSelect(selectedVssId1, e.target.value || undefined)}
+      >
+        <option value="">None</option>
+        {tracks.map((t) => (
+          <option key={t.vssId} value={t.vssId}>
+            {trackLabel(t)}
+          </option>
+        ))}
+      </select>
     </div>
   );
 }
