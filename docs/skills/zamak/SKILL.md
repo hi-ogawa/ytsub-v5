@@ -15,6 +15,12 @@ Tasks for AI browser extensions running on a zamak page with `window.__zamak` av
 | [Fill Bookmarks](#task-fill-bookmarks)   | User has selected bookmarks, needs metadata filled |
 | [Pick Vocabulary](#task-pick-vocabulary) | User wants vocab suggestions from the caption list |
 
+## Model Notes
+
+These tasks are structured language work (translation, correction, lookup) — not complex reasoning. Haiku or Sonnet is sufficient and faster for the interactive loop. Opus is overkill.
+
+Claude for Chrome uses whatever model Anthropic assigns (no user choice). Model selection becomes relevant if invoking via API directly (userscript, MCP, etc.).
+
 ## API Reference
 
 ```js
