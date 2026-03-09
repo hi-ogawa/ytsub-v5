@@ -26,11 +26,15 @@ Fixture data in `scripts/youtube-json/`. Each covers a different scenario.
 
 ## Smoke Test (before running evals)
 
-Verify Claude for Chrome can call the API at all. Step through one at a time. Add **"Do not try to fix anything"** to prevent rabbit holes.
+Verify Claude for Chrome can call the API. Paste this single prompt:
 
-1. `Run window.__zamak.getVideoContext() and show me the raw result. Do not try to fix anything.`
-2. `Run window.__zamak.getCaptions() and show me the first 3 entries. Do not try to fix anything.`
-3. `Run window.__zamak.getSkillPrompt() and summarize what it says. Do not try to fix anything.`
+```
+Run these 3 commands one at a time on this page. After each one, show me the raw result (or error). Do not try to fix or work around any errors — just report exactly what happened and stop.
+
+1. window.__zamak.getVideoContext()
+2. window.__zamak.getCaptions().slice(0, 3)
+3. window.__zamak.getSkillPrompt().slice(0, 200)
+```
 
 If any step errors, stop and debug before proceeding to evals.
 
