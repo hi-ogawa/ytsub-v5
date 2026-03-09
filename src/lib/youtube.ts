@@ -143,6 +143,7 @@ export async function fetchTrackJson3(baseUrl: string): Promise<Json3File> {
  */
 export async function fetchPlayerApi(
   videoId: string,
+  userLangs?: string[],
 ): Promise<YouTubeExtractionResult> {
   // Mobile clients that don't require JS player or SUBS POT
   const clients = {
@@ -266,30 +267,36 @@ export async function fetchPlayerApi(
     };
   });
 
-  // Generate translated virtual tracks for translatable sources.
-  // Inlined here because page.evaluate can't call external functions.
-  const translationTargets: Record<string, string[]> = {
-    ko: ["en", "ja"],
-  };
-  const coveredLangs = new Set(captionTracks.map((t) => t.languageCode));
-  for (const [srcLang, targets] of Object.entries(translationTargets)) {
-    const candidates = captionTracks.filter((t) => t.languageCode === srcLang);
+  // Generate translated virtual tracks for user languages not already covered.
+  // Uses the best available source track (manual preferred over ASR).
+  if (userLangs && userLangs.length > 0) {
+    const coveredLangs = new Set(
+      captionTracks.map((t) => t.languageCode.split("-")[0]),
+    );
+    // Dedupe user langs to base codes, preserving order
+    const targetLangs: string[] = [];
+    for (const lang of userLangs) {
+      const base = lang.split("-")[0];
+      if (!targetLangs.includes(base)) targetLangs.push(base);
+    }
+    // Find best translation source: prefer manual, then ASR
     const source =
-      candidates.find((t) => !t.kind) ??
-      candidates.find((t) => t.kind === "asr");
-    if (!source) continue;
-    for (const tlang of targets) {
-      if (coveredLangs.has(tlang)) continue;
-      const tUrl = new URL(source.baseUrl);
-      tUrl.searchParams.set("tlang", tlang);
-      captionTracks.push({
-        baseUrl: tUrl.toString(),
-        languageCode: tlang,
-        kind: "asr",
-        name: `${tlang} (auto-translated from ${srcLang})`,
-        vssId: `${source.vssId}.t.${tlang}`,
-      });
-      coveredLangs.add(tlang);
+      captionTracks.find((t) => !t.kind) ??
+      captionTracks.find((t) => t.kind === "asr");
+    if (source) {
+      for (const tlang of targetLangs) {
+        if (coveredLangs.has(tlang)) continue;
+        const tUrl = new URL(source.baseUrl);
+        tUrl.searchParams.set("tlang", tlang);
+        captionTracks.push({
+          baseUrl: tUrl.toString(),
+          languageCode: tlang,
+          kind: "asr",
+          name: `${tlang} (auto-translated from ${source.languageCode})`,
+          vssId: `${source.vssId}.t.${tlang}`,
+        });
+        coveredLangs.add(tlang);
+      }
     }
   }
 
