@@ -235,7 +235,15 @@ export function useCaptionSession({
   );
 
   const addBookmark = useCallback(
-    (sel: BookmarkSelection & { timestamp: number; context: string }) => {
+    (
+      sel: BookmarkSelection & {
+        timestamp: number;
+        context: string;
+        translation?: string;
+        etymology?: string;
+        notes?: string;
+      },
+    ) => {
       addBookmarkToStorage(youtubeId, {
         text: sel.text,
         side: sel.side,
@@ -243,6 +251,9 @@ export function useCaptionSession({
         captionIndex: sel.captionIndex,
         timestamp: sel.timestamp,
         context: sel.context,
+        translation: sel.translation,
+        etymology: sel.etymology,
+        notes: sel.notes,
       });
       const updated = getBookmarks(youtubeId);
       setBookmarks(updated);

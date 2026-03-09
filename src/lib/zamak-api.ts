@@ -49,12 +49,21 @@ interface ZamakLog {
   bookmarks(): void;
 }
 
+interface ZamakAddBookmarkEntry {
+  captionIndex: number;
+  text: string;
+  translation?: string;
+  etymology?: string;
+  notes?: string;
+}
+
 interface ZamakApi {
   log: ZamakLog;
   getSkillPrompt(): string;
   getCaptions(): ZamakCaption[];
   updateCaptions(entries: ZamakCaptionUpdate[]): void;
   getBookmarks(): ZamakBookmark[];
+  addBookmarks(entries: ZamakAddBookmarkEntry[]): void;
   fillBookmarks(entries: ZamakFillEntry[]): void;
   getVideoContext(): {
     youtubeId: string;
@@ -102,6 +111,7 @@ function createStubApi(): ZamakApi {
     getCaptions: () => notReady("getCaptions"),
     updateCaptions: () => notReady("updateCaptions"),
     getBookmarks: () => notReady("getBookmarks"),
+    addBookmarks: () => notReady("addBookmarks"),
     fillBookmarks: () => notReady("fillBookmarks"),
     getVideoContext: () => notReady("getVideoContext"),
   };
@@ -198,6 +208,40 @@ export function useZamakApi({
             notes: bm.notes,
           };
         });
+      },
+
+      addBookmarks(entries) {
+        const currentRows = rowsRef.current;
+        if (!currentRows) return;
+        const warnings: string[] = [];
+        for (const { captionIndex, text, ...metadata } of entries) {
+          const row = currentRows[captionIndex];
+          if (!row) {
+            warnings.push(
+              `captionIndex ${captionIndex} out of range, skipped "${text}"`,
+            );
+            continue;
+          }
+          const offset = row.text1.indexOf(text);
+          if (offset === -1) {
+            warnings.push(
+              `"${text}" not found in caption ${captionIndex}: "${row.text1}", skipped`,
+            );
+            continue;
+          }
+          sessionRef.current.onCreateBookmark({
+            captionIndex,
+            text,
+            side: 0,
+            offset,
+            timestamp: row.begin,
+            context: row.text1,
+            ...metadata,
+          });
+        }
+        if (warnings.length > 0) {
+          console.warn("ZAMAK:addBookmarks warnings\n" + warnings.join("\n"));
+        }
       },
 
       fillBookmarks(entries) {

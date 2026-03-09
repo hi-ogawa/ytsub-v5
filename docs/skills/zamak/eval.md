@@ -24,44 +24,11 @@ Fixture data in `scripts/youtube-json/`. Each covers a different scenario.
 | `DtK-CkwNHSY` | B: Ko auto + En manual | auto    | manual (en-US)       | `/dev/youtube/DtK-CkwNHSY` (tripleS, variety) |
 | `aK8Yh3RTBUY` | C: Ko auto only        | auto    | auto-translated (en) | `/dev/youtube/aK8Yh3RTBUY`                    |
 
-## Extension Findings
+## Extension-specific notes
 
-Observations from testing with Claude for Chrome. This section tracks what works, what doesn't, and why — to inform prompt design.
+See `extensions/` for per-extension gotchas (output sanitizer, console.log quirks, behavioral fallback). These informed the `log.*` API design and the `## Rules` section in SKILL.md.
 
-### Output sanitizer blocks string results (2026-03-10)
-
-Claude for Chrome's JS tool has a built-in output filter that scans return values for patterns resembling cookies (`key=value; key2=value2`) or URL query strings (`?param=value&other=value`). When triggered, the result is replaced with `[BLOCKED: Cookie/query string data]`.
-
-`getSkillPrompt()` returns the full SKILL.md content — a long string containing `?`, `;`, `=`, and `key: "value"` patterns throughout. This reliably trips the filter. The call succeeds, but Claude never sees the result.
-
-**Trigger:** The `?` in TypeScript optional fields (`translation?, etymology?`) inside code fences, plus `;` and `=` patterns. Purely a false positive — nothing sensitive.
-
-**Object wrapping doesn't help.** Returning `{ prompt: window.__zamak.getSkillPrompt() }` still gets blocked — the filter recurses into object properties and redacts individual string values while keeping the object skeleton intact. This is value-level inspection, not a naive top-level regex.
-
-**Workaround: `console.log()` bypass.** The filter operates on JS tool **return values** only. `console.log()` returns `undefined` (passes filter) and writes to the browser console buffer instead. Claude reads that buffer via a separate `read_console_messages` tool which has different (looser) filtering. Confirmed working: `console.log(window.__zamak.getSkillPrompt())` successfully delivers the full prompt text.
-
-**Implication:** `console.log()` is the only confirmed bypass. The sanitizer is thorough on return values — wrapping, restructuring, or nesting won't help. For any result that might contain `?`, `;`, `=` patterns, route through `console.log()`.
-
-**Unknown:** Whether large `getCaptions()` results also trip the filter (unlikely for JSON arrays, but untested at scale).
-
-### console.log with objects unreadable (2026-03-10)
-
-`read_console_messages` cannot read object arguments passed to `console.log()`. `console.log("tag", { key: "value" })` comes through as something like `tag [object Object]`. Must stringify: `console.log("tag " + JSON.stringify(obj))`. String arguments (like `skillPrompt`) are fine as-is.
-
-**Mitigation:** `log.*` methods use `JSON.stringify()` for object/array results, string concatenation with the `ZAMAK:` prefix (not comma-separated arguments).
-
-### Behavioral fallback on error (2026-03-10)
-
-When a JS call returns unexpected results (blocked, undefined, error), Claude escalates to its other tools — screenshots, clicking, DOM reading, typing — to try to accomplish the goal. This is counterproductive for an API-driven workflow where DOM interaction is never correct.
-
-**Mitigation:** Eval prompts must include hard constraints upfront:
-
-```
-Use ONLY window.__zamak.* methods. No screenshots, no clicking, no typing, no DOM interaction.
-If any call fails or returns unexpected results: STOP and report what happened. Do not retry or work around.
-```
-
-Both the positive constraint ("only \_\_zamak") and negative enumeration ("no screenshots, no clicking...") are needed — one without the other is insufficient.
+- [Claude for Chrome](extensions/claude-for-chrome.md)
 
 ---
 
@@ -94,10 +61,8 @@ The common end-to-end flow: scan captions → suggest vocab → user selects →
 Run window.__zamak.log.skillPrompt() and read the console output. Follow the "Pick & Fill" task. If any API call errors, stop and report — do not try to fix it.
 ```
 
-3. Review suggestions — are they interesting, intermediate+ words?
-4. Select the ones you want as bookmarks in the caption panel
-5. Tell Claude to fill the bookmarks
-6. Review filled bookmarks, export
+3. Review bookmarks created — are they interesting, intermediate+ words?
+4. Review filled metadata, export
 
 ### What to check
 

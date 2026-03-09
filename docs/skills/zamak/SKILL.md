@@ -13,7 +13,8 @@ Tasks for AI browser extensions on a zamak page with `window.__zamak` available.
 
 - Use ONLY `window.__zamak.*` methods. No screenshots, no clicking, no typing, no DOM interaction — ever.
 - If any API call fails or returns unexpected results: **STOP and report** what happened. Do not retry, work around, or fall back to other tools.
-- To read data, use `window.__zamak.log.*` methods and read the console output. The browser extension's JS tool has an output sanitizer that blocks return values matching cookie/query-string patterns. The `log.*` methods bypass this by writing to the console buffer with a `ZAMAK:` prefix instead of returning values.
+- To read data, use `window.__zamak.log.*` methods and read the console output. The browser extension's JS tool has an output sanitizer that blocks return values matching cookie/query-string patterns. The `log.*` methods bypass this by writing to the console buffer instead of returning values.
+- All console output is prefixed with `ZAMAK:` (e.g. `ZAMAK:captions`, `ZAMAK:bookmarks`, `ZAMAK:addBookmarks warnings`). Filter console messages by `ZAMAK:` to find relevant output.
 
 ## API
 
@@ -30,6 +31,7 @@ window.__zamak.getCaptions()
 window.__zamak.getBookmarks()
 
 // Write
+window.__zamak.addBookmarks([{ captionIndex, text }, ...])
 window.__zamak.fillBookmarks([{ id, translation?, etymology?, notes? }, ...])
 window.__zamak.updateCaptions([{ idx, text1?, text2? }, ...])
 ```
@@ -58,33 +60,22 @@ Scan `text1` (Korean). Pick words that are:
 
 Target: ~1 per 10s of video duration.
 
-### Step 3: Present (don't write)
-
-List picks for user review:
-
-```
-1. 헷갈리다 (caption 4: "아직 좀 헷갈리기는 해") — to be confused
-2. ...
-```
-
-User selects bookmarks manually in the caption panel.
-
-### Step 4: Fill metadata
-
-Once user has created bookmarks:
+### Step 3: Create bookmarks with metadata (one shot)
 
 ```js
-window.__zamak.log.bookmarks();
-```
-
-Read the console output, then fill:
-
-```js
-window.__zamak.fillBookmarks([
-  { id: "...", translation: "...", etymology: "...", notes: "..." },
+window.__zamak.addBookmarks([
+  {
+    captionIndex: 4,
+    text: "헷갈리다",
+    translation: "to be confused",
+    etymology: "",
+    notes: "Conjugated as 헷갈리기는 해 (softened).",
+  },
   // ...
 ]);
 ```
+
+Read console after calling. Warnings (`ZAMAK:addBookmarks warnings`) indicate bookmarks skipped because `text` wasn't found in the caption. Fix the `text` or `captionIndex` and retry the skipped entries.
 
 **Fields:**
 
@@ -93,14 +84,6 @@ window.__zamak.fillBookmarks([
 - `notes` — usage tips: formality, collocations, gotchas. 1-2 sentences max. Empty if nothing notable.
 
 Use caption context to disambiguate. Be concise — flashcard-style. Contextual meaning over generic dictionary.
-
-### Step 5: Verify
-
-```js
-window.__zamak.log.bookmarks();
-```
-
-Report: how many filled, any skipped/uncertain.
 
 ---
 

@@ -30,15 +30,15 @@ export function addBookmark(
   data: Omit<
     ExtensionBookmark,
     "id" | "createdAt" | "translation" | "etymology" | "notes"
-  >,
+  > & { translation?: string; etymology?: string; notes?: string },
 ): ExtensionBookmark {
   const bookmark: ExtensionBookmark = {
-    ...data,
+    id: crypto.randomUUID(),
+    createdAt: new Date().toISOString(),
     translation: "",
     etymology: "",
     notes: "",
-    id: crypto.randomUUID(),
-    createdAt: new Date().toISOString(),
+    ...data,
   };
   const bookmarks = getBookmarks(youtubeId);
   bookmarks.push(bookmark);
