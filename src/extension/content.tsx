@@ -15,12 +15,7 @@ import {
   addBookmark,
   getBookmarks,
 } from "../lib/extension-bookmarks.ts";
-import {
-  type YouTubeCaptionTrack,
-  fetchPlayerApi,
-  fetchTrackJson3,
-  parseJson3,
-} from "../lib/youtube.ts";
+import { fetchPlayerApi, fetchTrackJson3 } from "../lib/youtube.ts";
 import contentCss from "./content.css?inline";
 
 // Adapter: wrap the page's <video> element as YTPlayer
@@ -63,8 +58,17 @@ function App({ videoId }: { videoId: string }) {
   );
 }
 
-function fetchCues(track: YouTubeCaptionTrack) {
-  return fetchTrackJson3(track.baseUrl).then(parseJson3);
+function getUserLangs(): string[] {
+  const langs = [...navigator.languages];
+  try {
+    const pref = localStorage.getItem("zamak:preferred-langs");
+    if (pref) {
+      const { lang1, lang2 } = JSON.parse(pref);
+      if (lang1 && !langs.includes(lang1)) langs.push(lang1);
+      if (lang2 && !langs.includes(lang2)) langs.push(lang2);
+    }
+  } catch {}
+  return langs;
 }
 
 function ExtensionViewer({ videoId }: { videoId: string }) {
@@ -100,7 +104,7 @@ function ExtensionViewer({ videoId }: { videoId: string }) {
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["extension-metadata", videoId],
-    queryFn: () => fetchPlayerApi(videoId),
+    queryFn: () => fetchPlayerApi({ videoId, userLangs: getUserLangs() }),
   });
 
   if (isLoading) {
@@ -124,7 +128,7 @@ function ExtensionViewer({ videoId }: { videoId: string }) {
       {data && (
         <CaptionPanel
           tracks={data.captionTracks}
-          fetchCues={fetchCues}
+          fetchJson3={(track) => fetchTrackJson3(track.baseUrl)}
           player={player}
           videoMeta={data.video}
           onCreateBookmark={onCreateBookmark}

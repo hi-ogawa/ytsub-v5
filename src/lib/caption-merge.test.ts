@@ -2,7 +2,6 @@ import { readdirSync, readFileSync } from "fs";
 import { join } from "path";
 import { describe, expect, it } from "vitest";
 import {
-  type CaptionCue,
   type MergedCaption,
   mergeBestOverlap,
   mergeBidirectional,
@@ -13,13 +12,16 @@ import {
   mergeRelaxedStrict,
   mergeStrict,
 } from "./caption-merge";
-import { parseJson3 } from "./youtube";
+import { type CaptionCue, type Json3File, parseJson3 } from "./youtube";
 
 // === Helpers ===
 
+function loadJson3(videoDir: string, filename: string): Json3File {
+  return JSON.parse(readFileSync(join(videoDir, filename), "utf-8"));
+}
+
 function loadTrack(videoDir: string, filename: string): CaptionCue[] {
-  const raw = JSON.parse(readFileSync(join(videoDir, filename), "utf-8"));
-  return parseJson3(raw);
+  return parseJson3(loadJson3(videoDir, filename));
 }
 
 // === Unit tests with synthetic data ===
@@ -208,21 +210,42 @@ describe("mergeDTW", () => {
   });
 });
 
+/** Helper: wrap cues as a minimal Json3File for mergeCaptions TrackInput. */
+function cuesToJson3(
+  cues: { begin: number; end: number; text: string }[],
+): Json3File {
+  return {
+    events: cues.map((c) => ({
+      tStartMs: c.begin * 1000,
+      dDurationMs: (c.end - c.begin) * 1000,
+      segs: [{ utf8: c.text }],
+    })),
+  };
+}
+
 describe("mergeCaptions (tiered)", () => {
   it("uses strict when timestamps match exactly", () => {
-    const cues1: CaptionCue[] = [{ begin: 0, end: 2, text: "a" }];
-    const cues2: CaptionCue[] = [{ begin: 0, end: 2, text: "x" }];
-    const result = mergeCaptions(cues1, cues2);
+    const result = mergeCaptions(
+      { json3: cuesToJson3([{ begin: 0, end: 2, text: "a" }]), vssId: ".ko" },
+      { json3: cuesToJson3([{ begin: 0, end: 2, text: "x" }]), vssId: ".en" },
+    );
     expect(result.strategy).toBe("strict");
   });
 
   it("falls through to partition on count mismatch", () => {
-    const cues1: CaptionCue[] = [
-      { begin: 0, end: 5, text: "a" },
-      { begin: 5, end: 10, text: "b" },
-    ];
-    const cues2: CaptionCue[] = [{ begin: 0, end: 10, text: "x" }];
-    const result = mergeCaptions(cues1, cues2);
+    const result = mergeCaptions(
+      {
+        json3: cuesToJson3([
+          { begin: 0, end: 5, text: "a" },
+          { begin: 5, end: 10, text: "b" },
+        ]),
+        vssId: ".ko",
+      },
+      {
+        json3: cuesToJson3([{ begin: 0, end: 10, text: "x" }]),
+        vssId: ".en",
+      },
+    );
     expect(result.strategy).toBe("partition");
   });
 });
@@ -364,12 +387,49 @@ describe("strategy mapping stats", () => {
     });
   });
 
+  describe("aK8Yh3RTBUY (auto-translated)", () => {
+    const videoDir = join(YOUTUBE_JSON_DIR, "aK8Yh3RTBUY");
+    const ko = loadTrack(videoDir, "track-a.ko.json");
+    const en = loadTrack(videoDir, "track-a.ko.t.en.json");
+
+    it("cue counts", () => {
+      expect({ ko: ko.length, en: en.length }).toMatchInlineSnapshot(`
+        {
+          "en": 182,
+          "ko": 215,
+        }
+      `);
+    });
+    it("partition", () => {
+      expect(mergeStats(mergePartition(ko, en), en)).toMatchInlineSnapshot(`
+        {
+          "droppedCue2s": 0,
+          "emptyText2": 0,
+          "rows": 182,
+          "sharedCue2s": 0,
+          "withText1": 182,
+          "withText2": 182,
+        }
+      `);
+    });
+    it("mergeCaptions detects translated pair → partition (count mismatch)", () => {
+      const koJson3 = loadJson3(videoDir, "track-a.ko.json");
+      const enJson3 = loadJson3(videoDir, "track-a.ko.t.en.json");
+      const result = mergeCaptions(
+        { json3: koJson3, vssId: "a.ko" },
+        { json3: enJson3, vssId: "a.ko.t.en" },
+      );
+      expect(result.strategy).toBe("partition");
+      expect(result.captions.length).toBe(182);
+    });
+  });
+
   describe("DtK-CkwNHSY", () => {
     it("cue counts", () => {
       expect({ ko: v2.ko.length, en: v2.en.length }).toMatchInlineSnapshot(`
         {
           "en": 40,
-          "ko": 385,
+          "ko": 85,
         }
       `);
     });
@@ -379,10 +439,10 @@ describe("strategy mapping stats", () => {
           {
             "droppedCue2s": 0,
             "emptyText2": 0,
-            "rows": 385,
-            "sharedCue2s": 40,
-            "withText1": 385,
-            "withText2": 385,
+            "rows": 85,
+            "sharedCue2s": 39,
+            "withText1": 85,
+            "withText2": 85,
           }
         `);
     });
@@ -392,10 +452,10 @@ describe("strategy mapping stats", () => {
           {
             "droppedCue2s": 0,
             "emptyText2": 0,
-            "rows": 385,
-            "sharedCue2s": 40,
-            "withText1": 385,
-            "withText2": 385,
+            "rows": 86,
+            "sharedCue2s": 32,
+            "withText1": 85,
+            "withText2": 86,
           }
         `);
     });
@@ -407,7 +467,7 @@ describe("strategy mapping stats", () => {
             "emptyText2": 0,
             "rows": 40,
             "sharedCue2s": 0,
-            "withText1": 40,
+            "withText1": 39,
             "withText2": 40,
           }
         `);
@@ -417,11 +477,11 @@ describe("strategy mapping stats", () => {
         .toMatchInlineSnapshot(`
           {
             "droppedCue2s": 0,
-            "emptyText2": 345,
-            "rows": 385,
+            "emptyText2": 46,
+            "rows": 85,
             "sharedCue2s": 0,
-            "withText1": 385,
-            "withText2": 40,
+            "withText1": 85,
+            "withText2": 39,
           }
         `);
     });
@@ -429,10 +489,10 @@ describe("strategy mapping stats", () => {
       expect(mergeStats(mergeDTW(v2.ko, v2.en), v2.en)).toMatchInlineSnapshot(`
         {
           "droppedCue2s": 0,
-          "emptyText2": 345,
-          "rows": 385,
+          "emptyText2": 45,
+          "rows": 85,
           "sharedCue2s": 0,
-          "withText1": 385,
+          "withText1": 85,
           "withText2": 40,
         }
       `);

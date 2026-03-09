@@ -38,7 +38,9 @@ test("fetchPlayerApi: metadata + fetch & parse both tracks", async ({
 }) => {
   await page.goto(`https://www.youtube.com/watch?v=${TEST_VIDEO_ID}`);
 
-  const result = await page.evaluate(fetchPlayerApi, TEST_VIDEO_ID);
+  const result = await page.evaluate(fetchPlayerApi, {
+    videoId: TEST_VIDEO_ID,
+  });
 
   expect(result.video).toEqual({
     youtubeId: TEST_VIDEO_ID,

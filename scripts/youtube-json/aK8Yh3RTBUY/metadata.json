@@ -1,0 +1,32 @@
+{
+  "video": {
+    "youtubeId": "aK8Yh3RTBUY",
+    "title": "260302 타이베이콘서트를 마무리하며. | 유연 코스모 라이브 | YooYeon Cosmo LIVE",
+    "channelName": "주주",
+    "channelId": "UC5CR5fN2QtsKMnGXqr0UgVA",
+    "duration": 683
+  },
+  "captionTracks": [
+    {
+      "baseUrl": "https://www.youtube.com/api/timedtext?v=aK8Yh3RTBUY&ei=Tluuaeg665a9wA-VpYX5BQ&caps=asr&opi=112496729&xoaf=5&xowf=1&xospf=1&hl=en&ip=0.0.0.0&ipbits=0&expire=1773059518&sparams=ip,ipbits,expire,v,ei,caps,opi,xoaf&signature=ACA7CAF447B23D68A0FE5427194A352DE0CEDAF3.B5DCC56B81DF808DB9F78F620B499B32A9ABB04D&key=yt8&kind=asr&lang=ko&fmt=srv3",
+      "languageCode": "ko",
+      "kind": "asr",
+      "name": "Korean (auto-generated)",
+      "vssId": "a.ko"
+    },
+    {
+      "baseUrl": "https://www.youtube.com/api/timedtext?v=aK8Yh3RTBUY&ei=Tluuaeg665a9wA-VpYX5BQ&caps=asr&opi=112496729&xoaf=5&xowf=1&xospf=1&hl=en&ip=0.0.0.0&ipbits=0&expire=1773059518&sparams=ip%2Cipbits%2Cexpire%2Cv%2Cei%2Ccaps%2Copi%2Cxoaf&signature=ACA7CAF447B23D68A0FE5427194A352DE0CEDAF3.B5DCC56B81DF808DB9F78F620B499B32A9ABB04D&key=yt8&kind=asr&lang=ko&fmt=srv3&tlang=en",
+      "languageCode": "en",
+      "kind": "asr",
+      "name": "en (auto-translated from ko)",
+      "vssId": "a.ko.t.en"
+    },
+    {
+      "baseUrl": "https://www.youtube.com/api/timedtext?v=aK8Yh3RTBUY&ei=Tluuaeg665a9wA-VpYX5BQ&caps=asr&opi=112496729&xoaf=5&xowf=1&xospf=1&hl=en&ip=0.0.0.0&ipbits=0&expire=1773059518&sparams=ip%2Cipbits%2Cexpire%2Cv%2Cei%2Ccaps%2Copi%2Cxoaf&signature=ACA7CAF447B23D68A0FE5427194A352DE0CEDAF3.B5DCC56B81DF808DB9F78F620B499B32A9ABB04D&key=yt8&kind=asr&lang=ko&fmt=srv3&tlang=ja",
+      "languageCode": "ja",
+      "kind": "asr",
+      "name": "ja (auto-translated from ko)",
+      "vssId": "a.ko.t.ja"
+    }
+  ]
+}
