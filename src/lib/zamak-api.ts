@@ -203,9 +203,9 @@ export function useZamakApi({
             text: bm.text,
             context: bm.context,
             captionContext,
-            translation: bm.translation,
-            etymology: bm.etymology,
-            notes: bm.notes,
+            translation: bm.translation ?? "",
+            etymology: bm.etymology ?? "",
+            notes: bm.notes ?? "",
           };
         });
       },
