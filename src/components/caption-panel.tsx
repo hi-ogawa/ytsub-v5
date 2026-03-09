@@ -1,17 +1,21 @@
-import { useQuery } from "@tanstack/react-query";
-import { Check, Download, EllipsisVertical } from "lucide-react";
+import {
+  Bookmark,
+  Check,
+  Download,
+  EllipsisVertical,
+  Loader2,
+  Trash2,
+  X,
+} from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import type { MergeStrategy, MergedCaption } from "../lib/caption-merge.ts";
+import type { CaptionSessionManager } from "../lib/caption-session.ts";
 import {
-  FALLBACK_STRATEGIES,
-  type MergeStrategy,
-  type MergedCaption,
-  mergeCaptions,
-} from "../lib/caption-merge.ts";
-import {
-  type Json3File,
-  type YouTubeCaptionTrack,
-  pickBestTrack,
-} from "../lib/youtube.ts";
+  type BookmarkSelection,
+  type ExtensionBookmark,
+  extractBookmarkSelection,
+} from "../lib/extension-bookmarks.ts";
+import type { YouTubeCaptionTrack } from "../lib/youtube.ts";
 import { CaptionList } from "./caption-list.tsx";
 import { TrackPicker } from "./track-picker.tsx";
 import {
@@ -21,14 +25,6 @@ import {
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu.tsx";
 import type { YTPlayer } from "./youtube-player.tsx";
-
-interface VideoMeta {
-  youtubeId: string;
-  title: string;
-  channelName?: string;
-  channelId?: string;
-  duration?: number;
-}
 
 export function CaptionFab({
   open,
@@ -133,74 +129,35 @@ export function ResizablePanel({
   );
 }
 
-// --- Track preference persistence ---
-
-const TRACKS_KEY = "zamak:selected-tracks";
-const LANGS_KEY = "zamak:preferred-langs";
-
-function getInitialTracks(
-  tracks: YouTubeCaptionTrack[],
-  videoId: string,
-): { vssId1?: string; vssId2?: string } {
-  try {
-    // Per-video: restore exact track pair
-    const perVideo = localStorage.getItem(`${TRACKS_KEY}:${videoId}`);
-    if (perVideo) {
-      const { vssId1, vssId2 } = JSON.parse(perVideo);
-      // Validate that saved vssIds still exist in available tracks
-      const valid1 = tracks.some((t) => t.vssId === vssId1);
-      const valid2 = tracks.some((t) => t.vssId === vssId2);
-      if (valid1 && valid2) return { vssId1, vssId2 };
-    }
-    // Global: preferred languages → pickBestTrack
-    const globalPref = localStorage.getItem(LANGS_KEY);
-    if (globalPref) {
-      const { lang1, lang2 } = JSON.parse(globalPref);
-      return {
-        vssId1: pickBestTrack(tracks, lang1)?.vssId,
-        vssId2: pickBestTrack(tracks, lang2)?.vssId,
-      };
-    }
-  } catch {}
-  // No preference initially
-  return {};
-}
-
-function saveSelectedTracks(
-  tracks: YouTubeCaptionTrack[],
-  vssId1: string,
-  vssId2: string,
-  videoId: string,
-) {
-  localStorage.setItem(
-    `${TRACKS_KEY}:${videoId}`,
-    JSON.stringify({ vssId1, vssId2 }),
-  );
-  const t1 = tracks.find((t) => t.vssId === vssId1);
-  const t2 = tracks.find((t) => t.vssId === vssId2);
-  if (t1 && t2) {
-    localStorage.setItem(
-      LANGS_KEY,
-      JSON.stringify({ lang1: t1.languageCode, lang2: t2.languageCode }),
-    );
-  }
-}
-
-// --- CaptionPanel: live mode (track selection + fetching + merge) ---
+// --- CaptionPanel: display component ---
 
 export function CaptionPanel({
   tracks,
-  fetchJson3,
   player,
-  videoMeta,
+  session,
 }: {
   tracks: YouTubeCaptionTrack[];
-  fetchJson3: (track: YouTubeCaptionTrack) => Promise<Json3File>;
   player: YTPlayer | null;
-  videoMeta: VideoMeta;
+  session: CaptionSessionManager;
 }) {
-  const [{ vssId1: selectedVssId1, vssId2: selectedVssId2 }, setSelectedPair] =
-    useState(() => getInitialTracks(tracks, videoMeta.youtubeId));
+  const {
+    selectedVssId1,
+    selectedVssId2,
+    onSelectTracks,
+    tracksLocked,
+    rows,
+    error,
+    activeStrategy,
+    isAutoStrategy,
+    forceStrategy,
+    onSetForceStrategy,
+    fallbackStrategies,
+    bookmarksByIndex,
+    onCreateBookmark,
+    onClearBookmarks,
+    hasBookmarks,
+    onExport,
+  } = session;
   const [autoScroll, setAutoScroll] = useState(() => {
     try {
       const stored = localStorage.getItem("zamak:auto-scroll");
@@ -209,42 +166,6 @@ export function CaptionPanel({
       return true;
     }
   });
-  const [forceStrategy, setForceStrategy] = useState<
-    MergeStrategy | undefined
-  >();
-
-  const sel1 = tracks.find((t) => t.vssId === selectedVssId1);
-  const sel2 = tracks.find((t) => t.vssId === selectedVssId2);
-
-  const json3Query1 = useQuery({
-    queryKey: ["json3", sel1?.vssId],
-    queryFn: () => fetchJson3(sel1!),
-    enabled: !!sel1,
-  });
-
-  const json3Query2 = useQuery({
-    queryKey: ["json3", sel2?.vssId],
-    queryFn: () => fetchJson3(sel2!),
-    enabled: !!sel2,
-  });
-
-  const json3_1 = json3Query1.data;
-  const json3_2 = json3Query2.data;
-  const mergeResult =
-    json3_1 && json3_2 && sel1 && sel2
-      ? mergeCaptions(
-          { json3: json3_1, vssId: sel1.vssId },
-          { json3: json3_2, vssId: sel2.vssId },
-          forceStrategy,
-        )
-      : undefined;
-  const rows = mergeResult?.captions;
-  const activeStrategy = mergeResult?.strategy;
-  const isAutoStrategy =
-    !forceStrategy &&
-    (activeStrategy === "strict" || activeStrategy === "relaxed-strict");
-
-  const cueError = json3Query1.error ?? json3Query2.error;
 
   function toggleAutoScroll() {
     setAutoScroll((prev) => {
@@ -254,51 +175,67 @@ export function CaptionPanel({
     });
   }
 
-  function handleExport() {
-    if (!rows) return;
-    const data = {
-      video: {
-        youtubeId: videoMeta.youtubeId,
-        title: videoMeta.title,
-        channelName: videoMeta.channelName ?? "",
-        channelId: videoMeta.channelId ?? "",
-        duration: videoMeta.duration ?? 0,
-        language1: sel1?.languageCode ?? "ko",
-        language2: sel2?.languageCode ?? "en",
-      },
-      captions: rows.map((r, i) => ({
-        idx: i,
-        begin: r.begin,
-        end: r.end,
-        text1: r.text1,
-        text2: r.text2,
-      })),
-      bookmarks: [],
+  // --- Bookmark selection ---
+  const [bookmarkSelection, setBookmarkSelection] =
+    useState<BookmarkSelection>();
+  const [isCreating, setIsCreating] = useState(false);
+  const panelRef = useRef<HTMLDivElement>(null);
+
+  // Shadow DOM requires getSelection() on the shadow root, not document
+  const getSelection = useCallback((): Selection | null => {
+    const root = panelRef.current?.getRootNode();
+    if (root && "getSelection" in root) {
+      return (
+        root as unknown as { getSelection(): Selection | null }
+      ).getSelection();
+    }
+    return document.getSelection();
+  }, []);
+
+  useEffect(() => {
+    const handler = () => {
+      const sel = getSelection() ?? undefined;
+      setBookmarkSelection(sel ? extractBookmarkSelection(sel) : undefined);
     };
-    const blob = new Blob([JSON.stringify(data, null, 2)], {
-      type: "application/json",
+    document.addEventListener("selectionchange", handler);
+    return () => document.removeEventListener("selectionchange", handler);
+  }, [getSelection]);
+
+  function onClickBookmark() {
+    if (!bookmarkSelection || !rows) return;
+    const row = rows[bookmarkSelection.captionIndex];
+    if (!row) return;
+    setIsCreating(true);
+    onCreateBookmark({
+      ...bookmarkSelection,
+      timestamp: row.begin,
+      context: bookmarkSelection.side === 0 ? row.text1 : row.text2,
     });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `import-${videoMeta.youtubeId}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
+    getSelection()?.removeAllRanges();
+    setBookmarkSelection(undefined);
+    setIsCreating(false);
+  }
+
+  function onCancelBookmark() {
+    getSelection()?.removeAllRanges();
+    setBookmarkSelection(undefined);
+  }
+
+  function handleClearBookmarks() {
+    if (!confirm("Clear all bookmarks for this video?")) return;
+    onClearBookmarks();
   }
 
   return (
-    <>
+    <div ref={panelRef} className="flex h-full flex-col">
       <div className="flex items-center border-b">
         <div className="min-w-0 flex-1">
           <TrackPicker
             tracks={tracks}
             selectedVssId1={selectedVssId1}
             selectedVssId2={selectedVssId2}
-            onSelect={(v1, v2) => {
-              setSelectedPair({ vssId1: v1, vssId2: v2 });
-              if (v1 && v2)
-                saveSelectedTracks(tracks, v1, v2, videoMeta.youtubeId);
-            }}
+            onSelect={onSelectTracks}
+            disabled={tracksLocked}
           />
         </div>
         <DropdownMenu>
@@ -327,16 +264,21 @@ export function CaptionPanel({
                   Track alignment
                 </label>
                 <select
-                  className="w-full rounded border bg-background px-1 py-0.5 text-sm"
+                  className={`w-full rounded border bg-background px-1 py-0.5 text-sm ${tracksLocked ? "cursor-not-allowed opacity-50" : ""}`}
                   value={forceStrategy ?? activeStrategy ?? ""}
                   onChange={(e) =>
-                    setForceStrategy(
+                    onSetForceStrategy(
                       (e.target.value as MergeStrategy) || undefined,
                     )
                   }
-                  title="Alignment strategy"
+                  title={
+                    tracksLocked
+                      ? "Cannot change while bookmarks exist"
+                      : "Alignment strategy"
+                  }
+                  disabled={tracksLocked}
                 >
-                  {FALLBACK_STRATEGIES.map((s) => (
+                  {fallbackStrategies.map((s) => (
                     <option key={s} value={s}>
                       {s}
                     </option>
@@ -344,21 +286,60 @@ export function CaptionPanel({
                 </select>
               </div>
             )}
-            <DropdownMenuItem onClick={handleExport}>
+            <DropdownMenuItem onClick={onExport}>
               <Download className="mr-2 h-4 w-4" />
               Export import.json
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={handleClearBookmarks}
+              disabled={!hasBookmarks}
+            >
+              <Trash2 className="mr-2 h-4 w-4" />
+              Clear bookmarks
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
-      {cueError ? (
-        <div className="flex h-full items-center justify-center text-sm text-destructive">
-          {String(cueError)}
-        </div>
-      ) : rows ? (
-        <CaptionViewer rows={rows} player={player} autoScroll={autoScroll} />
-      ) : null}
-    </>
+      <div className="relative flex min-h-0 flex-[1_0_0] flex-col">
+        {error ? (
+          <div className="flex h-full items-center justify-center text-sm text-destructive">
+            {String(error)}
+          </div>
+        ) : rows ? (
+          <CaptionViewer
+            rows={rows}
+            player={player}
+            autoScroll={autoScroll}
+            bookmarksByIndex={bookmarksByIndex}
+          />
+        ) : null}
+
+        {/* Floating bookmark action buttons */}
+        {(bookmarkSelection || isCreating) && (
+          <div className="absolute bottom-2 right-2 flex gap-2">
+            <button
+              className="flex h-10 w-10 items-center justify-center rounded-full bg-muted shadow hover:bg-muted/80"
+              onClick={onCancelBookmark}
+              title="Cancel"
+            >
+              <X className="h-5 w-5" />
+            </button>
+            <button
+              className="flex h-10 w-10 items-center justify-center rounded-full bg-accent text-accent-foreground shadow hover:bg-accent/90"
+              onClick={onClickBookmark}
+              disabled={isCreating}
+              title="Create bookmark"
+            >
+              {isCreating ? (
+                <Loader2 className="h-5 w-5 animate-spin" />
+              ) : (
+                <Bookmark className="h-5 w-5 fill-current" />
+              )}
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
 
@@ -368,10 +349,12 @@ function CaptionViewer({
   rows,
   player,
   autoScroll,
+  bookmarksByIndex,
 }: {
   rows: MergedCaption[];
   player: YTPlayer | null;
   autoScroll: boolean;
+  bookmarksByIndex?: Map<number, ExtensionBookmark[]>;
 }) {
   const [currentIndex, setCurrentIndex] = useState<number>();
   const [isPlaying, setIsPlaying] = useState(false);
@@ -405,6 +388,7 @@ function CaptionViewer({
       isPlaying={isPlaying}
       player={player}
       autoScroll={autoScroll}
+      bookmarksByIndex={bookmarksByIndex}
     />
   );
 }

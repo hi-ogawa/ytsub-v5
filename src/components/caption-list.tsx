@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import type { MergedCaption } from "../lib/caption-merge.ts";
+import type { ExtensionBookmark } from "../lib/extension-bookmarks.ts";
 import type { YTPlayer } from "./youtube-player.tsx";
 
 function formatTimestamp(seconds: number): string {
@@ -8,18 +9,56 @@ function formatTimestamp(seconds: number): string {
   return `${m}:${String(s).padStart(2, "0")}`;
 }
 
+function highlightText(
+  text: string,
+  marks: { offset: number; length: number }[],
+) {
+  if (marks.length === 0) return <span data-offset={0}>{text}</span>;
+  const sorted = [...marks].sort((a, b) => a.offset - b.offset);
+  const parts: React.ReactNode[] = [];
+  let cursor = 0;
+  for (const m of sorted) {
+    if (m.offset > cursor)
+      parts.push(
+        <span key={`t${cursor}`} data-offset={cursor}>
+          {text.slice(cursor, m.offset)}
+        </span>,
+      );
+    const end = m.offset + m.length;
+    parts.push(
+      <span
+        key={`h${m.offset}`}
+        data-offset={m.offset}
+        className="border-b-2 border-highlight-border bg-highlight-bg"
+      >
+        {text.slice(m.offset, end)}
+      </span>,
+    );
+    cursor = end;
+  }
+  if (cursor < text.length)
+    parts.push(
+      <span key={`t${cursor}`} data-offset={cursor}>
+        {text.slice(cursor)}
+      </span>,
+    );
+  return <>{parts}</>;
+}
+
 export function CaptionList({
   rows,
   currentIndex,
   isPlaying,
   player,
   autoScroll = true,
+  bookmarksByIndex,
 }: {
   rows: MergedCaption[];
   currentIndex: number | undefined;
   isPlaying: boolean;
   player: YTPlayer | null;
   autoScroll?: boolean;
+  bookmarksByIndex?: Map<number, ExtensionBookmark[]>;
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const prevScrollIndex = useRef<number | undefined>(undefined);
@@ -65,7 +104,14 @@ export function CaptionList({
 
   function onClickRow(index: number) {
     if (!player) return;
-    if (document.getSelection()?.toString()) return;
+    const root = scrollRef.current?.getRootNode();
+    const sel =
+      root && "getSelection" in root
+        ? (
+            root as unknown as { getSelection(): Selection | null }
+          ).getSelection()
+        : document.getSelection();
+    if (sel?.toString()) return;
     isManualScrollRef.current = false;
     if (index === currentIndex) {
       isPlaying ? player.pauseVideo() : player.playVideo();
@@ -83,30 +129,44 @@ export function CaptionList({
       onTouchStart={onManualScroll}
     >
       <div className="flex flex-col gap-1.5 p-1.5">
-        {rows.map((row, i) => (
-          <div
-            key={i}
-            data-index={i}
-            className={[
-              "flex w-full cursor-pointer flex-col gap-1 border p-1 px-2 hover:bg-muted",
-              i === currentIndex && isPlaying && "ring-2 ring-ring",
-              i === currentIndex ? "border-ring" : "border-border",
-            ]
-              .filter(Boolean)
-              .join(" ")}
-            onClick={() => onClickRow(i)}
-          >
-            <div className="text-xs text-muted-foreground">
-              <span className="ml-auto">
-                {formatTimestamp(row.begin)} – {formatTimestamp(row.end)}
-              </span>
+        {rows.map((row, i) => {
+          const rowBookmarks = bookmarksByIndex?.get(i);
+          const text1Marks = rowBookmarks
+            ?.filter((b) => b.side === 0)
+            .map((b) => ({ offset: b.offset, length: b.text.length }));
+          const text2Marks = rowBookmarks
+            ?.filter((b) => b.side === 1)
+            .map((b) => ({ offset: b.offset, length: b.text.length }));
+
+          return (
+            <div
+              key={i}
+              data-index={i}
+              className={[
+                "flex w-full cursor-pointer flex-col gap-1 border p-1 px-2 hover:bg-muted",
+                i === currentIndex && isPlaying && "ring-2 ring-ring",
+                i === currentIndex ? "border-ring" : "border-border",
+              ]
+                .filter(Boolean)
+                .join(" ")}
+              onClick={() => onClickRow(i)}
+            >
+              <div className="text-xs text-muted-foreground">
+                <span className="ml-auto">
+                  {formatTimestamp(row.begin)} – {formatTimestamp(row.end)}
+                </span>
+              </div>
+              <div className="flex text-sm">
+                <div className="flex-1 border-r pr-2" data-side="0">
+                  {highlightText(row.text1, text1Marks ?? [])}
+                </div>
+                <div className="flex-1 pl-2" data-side="1">
+                  {highlightText(row.text2, text2Marks ?? [])}
+                </div>
+              </div>
             </div>
-            <div className="flex text-sm">
-              <div className="flex-1 border-r pr-2">{row.text1}</div>
-              <div className="flex-1 pl-2">{row.text2}</div>
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

@@ -1,3 +1,4 @@
+import { execSync } from "node:child_process";
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
@@ -16,6 +17,11 @@ export default defineConfig({
   },
   define: {
     "process.env.NODE_ENV": JSON.stringify("production"),
+    __BUILD_TIME__: JSON.stringify(new Date().toISOString()),
+    __GIT_REV__: JSON.stringify(
+      execSync("git rev-parse --short HEAD").toString().trim() +
+        (execSync("git status --porcelain").toString().trim() ? "-dirty" : ""),
+    ),
   },
   plugins: [
     react(),

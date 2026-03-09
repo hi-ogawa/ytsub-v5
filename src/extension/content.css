@@ -33,6 +33,14 @@
   --border: #3f3f3f;
   --ring: #3ea6ff;
   --input: #3f3f3f;
+
+  /* Bookmark highlights */
+  --highlight: var(--color-sky-900);
+  --highlight-bg: var(--color-sky-950);
+  --highlight-border: var(--color-sky-500);
+  --highlight-foreground: var(--color-sky-300);
+  --highlight-alt-bg: var(--color-amber-950);
+  --highlight-alt-border: var(--color-amber-500);
 }
 
 /* Radix portaled layers (dropdown, popover, dialog) inherit pointer-events:none

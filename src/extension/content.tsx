@@ -9,8 +9,14 @@ import {
 } from "../components/caption-panel.tsx";
 import { PortalContainerProvider } from "../components/ui/portal-container.tsx";
 import type { YTPlayer } from "../components/youtube-player.tsx";
+import { useCaptionSession } from "../lib/caption-session.ts";
+import type { YouTubeExtractionResult } from "../lib/youtube.ts";
 import { fetchPlayerApi, fetchTrackJson3 } from "../lib/youtube.ts";
 import contentCss from "./content.css?inline";
+
+declare const __BUILD_TIME__: string;
+declare const __GIT_REV__: string;
+console.log(`[zamak] build: ${__BUILD_TIME__} (${__GIT_REV__})`);
 
 // Adapter: wrap the page's <video> element as YTPlayer
 function getVideoPlayer(): YTPlayer | null {
@@ -92,14 +98,34 @@ function ExtensionViewer({ videoId }: { videoId: string }) {
   return (
     <div className="flex h-full flex-col">
       {data && (
-        <CaptionPanel
-          tracks={data.captionTracks}
-          fetchJson3={(track) => fetchTrackJson3(track.baseUrl)}
-          player={player}
-          videoMeta={data.video}
-        />
+        <ExtensionSession videoId={videoId} data={data} player={player} />
       )}
     </div>
+  );
+}
+
+function ExtensionSession({
+  videoId,
+  data,
+  player,
+}: {
+  videoId: string;
+  data: YouTubeExtractionResult;
+  player: YTPlayer | null;
+}) {
+  const session = useCaptionSession({
+    youtubeId: videoId,
+    tracks: data.captionTracks,
+    fetchJson3: (track) => fetchTrackJson3(track.baseUrl),
+    videoMeta: data.video,
+  });
+
+  return (
+    <CaptionPanel
+      tracks={data.captionTracks}
+      player={player}
+      session={session}
+    />
   );
 }
 
