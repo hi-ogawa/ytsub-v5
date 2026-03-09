@@ -26,7 +26,6 @@ window.__zamak.getCaptions()
 window.__zamak.getBookmarks()
 // → [{ id, text, context, captionContext, translation, etymology, notes }, ...]
 
-window.__zamak.fillBookmark(id, { translation?, etymology?, notes? })
 window.__zamak.fillBookmarks([{ id, translation?, etymology?, notes? }, ...])
 ```
 

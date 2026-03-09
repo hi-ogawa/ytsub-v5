@@ -38,7 +38,6 @@ interface ZamakCaption {
 interface ZamakApi {
   getCaptions(): ZamakCaption[];
   getBookmarks(): ZamakBookmark[];
-  fillBookmark(id: string, data: Omit<ZamakFillEntry, "id">): void;
   fillBookmarks(entries: ZamakFillEntry[]): void;
   getVideoContext(): {
     youtubeId: string;
@@ -119,10 +118,6 @@ export function useZamakApi({
             notes: bm.notes,
           };
         });
-      },
-
-      fillBookmark(id, data) {
-        sessionRef.current.onUpdateBookmark(id, data);
       },
 
       fillBookmarks(entries) {
