@@ -24,6 +24,16 @@ Fixture data in `scripts/youtube-json/`. Each covers a different scenario.
 | `DtK-CkwNHSY` | B: Ko auto + En manual | auto    | manual (en-US)       | `/dev/youtube/DtK-CkwNHSY` (tripleS, variety) |
 | `aK8Yh3RTBUY` | C: Ko auto only        | auto    | auto-translated (en) | `/dev/youtube/aK8Yh3RTBUY`                    |
 
+## Smoke Test (before running evals)
+
+Verify Claude for Chrome can call the API at all. Step through one at a time. Add **"Do not try to fix anything"** to prevent rabbit holes.
+
+1. `Run window.__zamak.getVideoContext() and show me the raw result. Do not try to fix anything.`
+2. `Run window.__zamak.getCaptions() and show me the first 3 entries. Do not try to fix anything.`
+3. `Run window.__zamak.getSkillPrompt() and summarize what it says. Do not try to fix anything.`
+
+If any step errors, stop and debug before proceeding to evals.
+
 ## Eval 1: Pick & Fill (main workflow)
 
 The common end-to-end flow: scan captions → suggest vocab → user selects → AI fills.
