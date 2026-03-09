@@ -52,10 +52,6 @@ function App({ videoId }: { videoId: string }) {
   );
 }
 
-function fetchJson3(track: { baseUrl: string }) {
-  return fetchTrackJson3(track.baseUrl);
-}
-
 function ExtensionViewer({ videoId }: { videoId: string }) {
   const [player] = useState<YTPlayer | null>(() => getVideoPlayer());
 
@@ -85,7 +81,7 @@ function ExtensionViewer({ videoId }: { videoId: string }) {
       {data && (
         <CaptionPanel
           tracks={data.captionTracks}
-          fetchJson3={fetchJson3}
+          fetchJson3={(track) => fetchTrackJson3(track.baseUrl)}
           player={player}
           videoMeta={data.video}
         />

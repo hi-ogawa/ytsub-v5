@@ -217,13 +217,13 @@ export function CaptionPanel({
   const sel2 = tracks.find((t) => t.vssId === selectedVssId2);
 
   const json3Query1 = useQuery({
-    queryKey: ["json3", sel1?.baseUrl],
+    queryKey: ["json3", sel1?.vssId],
     queryFn: () => fetchJson3(sel1!),
     enabled: !!sel1,
   });
 
   const json3Query2 = useQuery({
-    queryKey: ["json3", sel2?.baseUrl],
+    queryKey: ["json3", sel2?.vssId],
     queryFn: () => fetchJson3(sel2!),
     enabled: !!sel2,
   });
