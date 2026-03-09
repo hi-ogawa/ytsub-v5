@@ -8,6 +8,7 @@ import {
 import { useYouTubePlayer } from "../components/youtube-player.tsx";
 import { useCaptionSession } from "../lib/caption-session.ts";
 import type { Json3File, YouTubeExtractionResult } from "../lib/youtube.ts";
+import { useZamakApi } from "../lib/zamak-api.ts";
 
 const metadataModules = import.meta.glob<YouTubeExtractionResult>(
   "/scripts/youtube-json/*/metadata.json",
@@ -79,6 +80,21 @@ function DevViewerSession({
       return mod.default;
     },
     videoMeta: meta.video,
+  });
+
+  const sel1 = meta.captionTracks.find(
+    (t) => t.vssId === session.selectedVssId1,
+  );
+  const sel2 = meta.captionTracks.find(
+    (t) => t.vssId === session.selectedVssId2,
+  );
+
+  useZamakApi({
+    session,
+    rows: session.rows,
+    videoMeta: meta.video,
+    language1: sel1?.languageCode ?? "ko",
+    language2: sel2?.languageCode ?? "en",
   });
 
   return (

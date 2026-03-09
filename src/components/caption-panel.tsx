@@ -1,6 +1,7 @@
 import {
   Bookmark,
   Check,
+  Copy,
   Download,
   EllipsisVertical,
   Loader2,
@@ -125,6 +126,65 @@ export function ResizablePanel({
         onPointerDown={onPointerDown}
       />
       {children}
+    </div>
+  );
+}
+
+// --- AI prompt copy (inline dropdown widget) ---
+
+const AI_PROMPTS: { label: string; task: string }[] = [
+  { label: "Pick & Fill", task: "Pick & Fill" },
+  { label: "Fill Bookmarks", task: "Fill Bookmarks" },
+  { label: "Fix Korean ASR", task: "Fix Korean ASR" },
+];
+
+function makePrompt(task: string): string {
+  return `Run window.__zamak.log.skillPrompt() and read the console output. Follow the "${task}" task. If any API call errors, stop and report — do not try to fix it.`;
+}
+
+function AiPromptCopy() {
+  const [selected, setSelected] = useState(AI_PROMPTS[0].task);
+  const [copied, setCopied] = useState(false);
+
+  function copyPrompt(task: string) {
+    navigator.clipboard.writeText(makePrompt(task));
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  }
+
+  return (
+    <div className="px-2 py-1.5">
+      <label className="mb-1 block text-xs text-muted-foreground">
+        AI prompt
+      </label>
+      <div className="flex gap-1">
+        <select
+          className="min-w-0 flex-1 rounded border bg-background px-1 py-0.5 text-sm"
+          value={selected}
+          onChange={(e) => {
+            setSelected(e.target.value);
+            copyPrompt(e.target.value);
+          }}
+        >
+          {AI_PROMPTS.map((p) => (
+            <option key={p.task} value={p.task}>
+              {p.label}
+            </option>
+          ))}
+        </select>
+        <button
+          type="button"
+          className="shrink-0 rounded p-0.5 text-muted-foreground hover:bg-muted"
+          title="Copy prompt"
+          onClick={() => copyPrompt(selected)}
+        >
+          {copied ? (
+            <Check className="h-4 w-4 text-green-500" />
+          ) : (
+            <Copy className="h-4 w-4" />
+          )}
+        </button>
+      </div>
     </div>
   );
 }
@@ -286,6 +346,7 @@ export function CaptionPanel({
                 </select>
               </div>
             )}
+            <AiPromptCopy />
             <DropdownMenuItem onClick={onExport}>
               <Download className="mr-2 h-4 w-4" />
               Export import.json

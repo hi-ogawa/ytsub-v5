@@ -17,6 +17,7 @@ import {
   type ExtensionBookmark,
   addBookmark as addBookmarkToStorage,
   getBookmarks,
+  updateBookmark as updateBookmarkInStorage,
 } from "./extension-bookmarks.ts";
 import {
   type Json3File,
@@ -143,11 +144,15 @@ export function useCaptionSession({
   });
 
   // Merge — either from hydrated session or fresh fetch
-  let rows: MergedCaption[] | undefined;
+  const [captionOverrides, setCaptionOverrides] = useState<
+    Map<number, { text1?: string; text2?: string }>
+  >(new Map());
+
+  let mergedRows: MergedCaption[] | undefined;
   let activeStrategy: MergeStrategy | undefined;
 
   if (isHydrated) {
-    rows = hydrated.captions;
+    mergedRows = hydrated.captions;
     activeStrategy = undefined; // strategy was already applied
   } else {
     const json3_1 = json3Query1.data;
@@ -160,9 +165,23 @@ export function useCaptionSession({
             forceStrategy,
           )
         : undefined;
-    rows = mergeResult?.captions;
+    mergedRows = mergeResult?.captions;
     activeStrategy = mergeResult?.strategy;
   }
+
+  // Apply caption overrides
+  const rows = useMemo(() => {
+    if (!mergedRows || captionOverrides.size === 0) return mergedRows;
+    return mergedRows.map((r) => {
+      const override = captionOverrides.get(r.idx);
+      if (!override) return r;
+      return {
+        ...r,
+        ...(override.text1 !== undefined && { text1: override.text1 }),
+        ...(override.text2 !== undefined && { text2: override.text2 }),
+      };
+    });
+  }, [mergedRows, captionOverrides]);
 
   const isAutoStrategy =
     !isHydrated &&
@@ -216,7 +235,15 @@ export function useCaptionSession({
   );
 
   const addBookmark = useCallback(
-    (sel: BookmarkSelection & { timestamp: number; context: string }) => {
+    (
+      sel: BookmarkSelection & {
+        timestamp: number;
+        context: string;
+        translation?: string;
+        etymology?: string;
+        notes?: string;
+      },
+    ) => {
       addBookmarkToStorage(youtubeId, {
         text: sel.text,
         side: sel.side,
@@ -224,12 +251,43 @@ export function useCaptionSession({
         captionIndex: sel.captionIndex,
         timestamp: sel.timestamp,
         context: sel.context,
+        translation: sel.translation,
+        etymology: sel.etymology,
+        notes: sel.notes,
       });
       const updated = getBookmarks(youtubeId);
       setBookmarks(updated);
       persistSession(updated);
     },
     [youtubeId, persistSession],
+  );
+
+  const updateBookmark = useCallback(
+    (
+      id: string,
+      data: Partial<
+        Pick<ExtensionBookmark, "translation" | "etymology" | "notes">
+      >,
+    ) => {
+      updateBookmarkInStorage(youtubeId, id, data);
+      const updated = getBookmarks(youtubeId);
+      setBookmarks(updated);
+      persistSession(updated);
+    },
+    [youtubeId, persistSession],
+  );
+
+  const updateCaptions = useCallback(
+    (entries: { idx: number; text1?: string; text2?: string }[]) => {
+      setCaptionOverrides((prev) => {
+        const next = new Map(prev);
+        for (const { idx, ...data } of entries) {
+          next.set(idx, { ...next.get(idx), ...data });
+        }
+        return next;
+      });
+    },
+    [],
   );
 
   const clearBookmarks = useCallback(() => {
@@ -306,12 +364,15 @@ export function useCaptionSession({
 
     // Caption data
     rows,
+    onUpdateCaptions: updateCaptions,
     error,
     loading: hydrated === null, // still checking IndexedDB
 
     // Bookmarks
+    bookmarks,
     bookmarksByIndex,
     onCreateBookmark: addBookmark,
+    onUpdateBookmark: updateBookmark,
     onClearBookmarks: clearBookmarks,
     hasBookmarks,
 
