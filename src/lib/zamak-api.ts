@@ -27,7 +27,16 @@ interface ZamakFillEntry {
   notes?: string;
 }
 
+interface ZamakCaption {
+  idx: number;
+  begin: number;
+  end: number;
+  text1: string;
+  text2: string;
+}
+
 interface ZamakApi {
+  getCaptions(): ZamakCaption[];
   getBookmarks(): ZamakBookmark[];
   fillBookmark(id: string, data: Omit<ZamakFillEntry, "id">): void;
   fillBookmarks(entries: ZamakFillEntry[]): void;
@@ -69,6 +78,18 @@ export function useZamakApi({
 
   useEffect(() => {
     window.__zamak = {
+      getCaptions(): ZamakCaption[] {
+        const currentRows = rowsRef.current;
+        if (!currentRows) return [];
+        return currentRows.map((r, i) => ({
+          idx: i,
+          begin: r.begin,
+          end: r.end,
+          text1: r.text1,
+          text2: r.text2,
+        }));
+      },
+
       getBookmarks(): ZamakBookmark[] {
         const { bookmarks } = sessionRef.current;
         const currentRows = rowsRef.current;
