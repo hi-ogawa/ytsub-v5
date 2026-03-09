@@ -27,7 +27,7 @@ export default defineConfig({
     react(),
     tailwindcss(),
     {
-      name: "copy-manifest-and-icons",
+      name: "copy-extension-assets",
       async buildEnd() {
         const raw = await this.fs.readFile("./src/extension/manifest.json", {
           encoding: "utf8",
@@ -41,6 +41,19 @@ export default defineConfig({
           fileName: "manifest.json",
           source: JSON.stringify(manifest, null, 2),
         });
+
+        // Copy plain JS + HTML files for the extension
+        for (const file of [
+          "relay.js",
+          "background.js",
+          "bookmarks.html",
+          "bookmarks-page.js",
+        ]) {
+          const source = await this.fs.readFile(`./src/extension/${file}`, {
+            encoding: "utf8",
+          });
+          this.emitFile({ type: "asset", fileName: file, source });
+        }
       },
     },
   ],

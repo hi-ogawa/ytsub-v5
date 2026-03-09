@@ -18,6 +18,7 @@ import {
   addBookmark as addBookmarkToStorage,
   getBookmarks,
 } from "./extension-bookmarks.ts";
+import { removeFromVideoIndex, updateVideoIndex } from "./video-index.ts";
 import {
   type Json3File,
   type YouTubeCaptionTrack,
@@ -215,6 +216,22 @@ export function useCaptionSession({
     [youtubeId, rows, sel1, sel2],
   );
 
+  const syncVideoIndex = useCallback(
+    (bookmarkCount: number) => {
+      if (bookmarkCount > 0) {
+        updateVideoIndex(
+          youtubeId,
+          videoMeta.title,
+          videoMeta.channelName ?? "",
+          bookmarkCount,
+        );
+      } else {
+        removeFromVideoIndex(youtubeId);
+      }
+    },
+    [youtubeId, videoMeta.title, videoMeta.channelName],
+  );
+
   const addBookmark = useCallback(
     (sel: BookmarkSelection & { timestamp: number; context: string }) => {
       addBookmarkToStorage(youtubeId, {
@@ -228,8 +245,9 @@ export function useCaptionSession({
       const updated = getBookmarks(youtubeId);
       setBookmarks(updated);
       persistSession(updated);
+      syncVideoIndex(updated.length);
     },
-    [youtubeId, persistSession],
+    [youtubeId, persistSession, syncVideoIndex],
   );
 
   const clearBookmarks = useCallback(() => {
@@ -237,7 +255,8 @@ export function useCaptionSession({
     setBookmarks([]);
     deleteSession(youtubeId);
     setHydrated(undefined);
-  }, [youtubeId]);
+    syncVideoIndex(0);
+  }, [youtubeId, syncVideoIndex]);
 
   const setTracks = useCallback(
     (v1: string | undefined, v2: string | undefined) => {
