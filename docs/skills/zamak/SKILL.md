@@ -2,7 +2,7 @@
 name: zamak
 description: >-
   AI browser extension tasks for zamak (Korean language learning from YouTube).
-  Correct ASR captions, fill bookmark metadata, pick vocabulary — all via window.__zamak.
+  Pick vocabulary, fill bookmark metadata, fix ASR — all via window.__zamak.
 ---
 
 # zamak skill
@@ -18,100 +18,24 @@ window.__zamak.getCaptions()       // → [{ idx, begin, end, text1, text2 }, ..
 window.__zamak.getBookmarks()      // → [{ id, text, context, captionContext, translation, etymology, notes }, ...]
 
 // Write
-window.__zamak.updateCaptions([{ idx, text1?, text2? }, ...])
 window.__zamak.fillBookmarks([{ id, translation?, etymology?, notes? }, ...])
+window.__zamak.updateCaptions([{ idx, text1?, text2? }, ...])
 ```
 
 ---
 
-## Task: Fix Korean ASR
+## Task: Pick & Fill (main workflow)
 
-Fix auto-generated Korean subtitle text using the English manual translation as reference.
+Scan captions, suggest vocabulary, then fill metadata after user selects bookmarks. This is the common end-to-end workflow.
 
-### Step 1: Read
-
-```js
-const captions = window.__zamak.getCaptions();
-```
-
-### Step 2: Fix
-
-Scan `text1` (Korean ASR) against `text2` (English manual). Fix:
-
-- Misheard syllables — use English + surrounding context to decode
-- Wrong spacing — natural Korean word boundaries
-- `>>` speaker markers — remove
-- Truncated words at cue boundaries — complete
-- Repeated fragments — deduplicate
-
-**English is your anchor.** Fix only what's wrong — don't rephrase correct Korean. Preserve filler words and informal speech. When unsure, leave it and flag to user.
-
-### Step 3: Write
-
-```js
-window.__zamak.updateCaptions([
-  { idx: 3, text1: "두바이 쿠키 먹어봤어?" },
-  // ... only rows that need fixing
-]);
-```
-
-### Step 4: Report
-
-How many corrected, any uncertain, summary of issues found.
-
----
-
-## Task: Fill Bookmarks
-
-Fill translation, etymology, and notes for existing bookmarks.
-
-### Step 1: Read
-
-```js
-const bookmarks = window.__zamak.getBookmarks();
-```
-
-Each bookmark has `text`, `context`, `captionContext` (surrounding rows with `text1`/`text2`).
-
-### Step 2: Fill & write
-
-```js
-window.__zamak.fillBookmarks([
-  { id: "...", translation: "...", etymology: "...", notes: "..." },
-  // ...
-]);
-```
-
-**Fields:**
-
-- `translation` — contextual English meaning for **this caption**, not a dictionary dump. Concise.
-- `etymology` — Hanja breakdown if it aids memorization (e.g. `非現實的; 비(non) + 현실(reality) + 적(adj)`). Empty for native Korean words.
-- `notes` — usage tips: formality, collocations, gotchas. 1-2 sentences max. Empty if nothing notable.
-
-Use caption context to disambiguate. Be concise — flashcard-style. Contextual meaning over generic dictionary.
-
-### Step 3: Verify
-
-```js
-window.__zamak.getBookmarks();
-```
-
-Report: how many filled, any skipped/uncertain.
-
----
-
-## Task: Pick Vocabulary
-
-Scan captions and suggest notable vocabulary.
-
-### Step 1: Read
+### Step 1: Read captions
 
 ```js
 const captions = window.__zamak.getCaptions();
 const video = window.__zamak.getVideoContext();
 ```
 
-### Step 2: Pick
+### Step 2: Pick notable vocab
 
 Scan `text1` (Korean). Pick words that are:
 
@@ -131,4 +55,65 @@ List picks for user review:
 2. ...
 ```
 
-User selects bookmarks manually in the caption panel, then run Fill Bookmarks.
+User selects bookmarks manually in the caption panel.
+
+### Step 4: Fill metadata
+
+Once user has created bookmarks:
+
+```js
+const bookmarks = window.__zamak.getBookmarks();
+window.__zamak.fillBookmarks([
+  { id: "...", translation: "...", etymology: "...", notes: "..." },
+  // ...
+]);
+```
+
+**Fields:**
+
+- `translation` — contextual English meaning for **this caption**, not a dictionary dump. Concise.
+- `etymology` — Hanja breakdown if it aids memorization (e.g. `非現實的; 비(non) + 현실(reality) + 적(adj)`). Empty for native Korean words.
+- `notes` — usage tips: formality, collocations, gotchas. 1-2 sentences max. Empty if nothing notable.
+
+Use caption context to disambiguate. Be concise — flashcard-style. Contextual meaning over generic dictionary.
+
+### Step 5: Verify
+
+```js
+window.__zamak.getBookmarks();
+```
+
+Report: how many filled, any skipped/uncertain.
+
+---
+
+## Task: Fill Bookmarks
+
+Fill metadata for bookmarks the user has already created. Same as Step 4-5 above, run standalone.
+
+```js
+const bookmarks = window.__zamak.getBookmarks();
+// fill translation/etymology/notes per bookmark
+window.__zamak.fillBookmarks([...]);
+```
+
+---
+
+## Task: Fix Korean ASR
+
+Fix auto-generated Korean subtitle text using the English manual translation as reference.
+
+```js
+const captions = window.__zamak.getCaptions();
+```
+
+Scan `text1` (Korean ASR) against `text2` (English manual). Fix misheard syllables, wrong spacing, `>>` markers, truncated words, repeated fragments.
+
+**English is your anchor.** Fix only what's wrong — don't rephrase correct Korean. Preserve filler words and informal speech. When unsure, leave it and flag to user.
+
+```js
+window.__zamak.updateCaptions([
+  { idx: 3, text1: "두바이 쿠키 먹어봤어?" },
+  // ... only rows that need fixing
+]);
+```
