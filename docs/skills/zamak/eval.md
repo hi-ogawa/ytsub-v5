@@ -48,7 +48,7 @@ The common end-to-end flow: scan captions → suggest vocab → user selects →
 2. In Claude for Chrome, paste:
 
 ```
-Read window.__zamak.getSkillPrompt() and run the "Pick & Fill" task.
+Read window.__zamak.getSkillPrompt() and run the "Pick & Fill" task. If any API call errors, stop and report — do not try to fix it.
 ```
 
 3. Review suggestions — are they interesting, intermediate+ words?
@@ -102,7 +102,7 @@ When bookmarks already exist and just need metadata filled.
 3. In Claude for Chrome, paste:
 
 ```
-Read window.__zamak.getSkillPrompt() and run the "Fill Bookmarks" task.
+Read window.__zamak.getSkillPrompt() and run the "Fill Bookmarks" task. If any API call errors, stop and report — do not try to fix it.
 ```
 
 4. Review — same checklist as Eval 1 filling section
@@ -117,7 +117,7 @@ Best tested with scenario B or C (auto-generated Korean).
 2. In Claude for Chrome, paste:
 
 ```
-Read window.__zamak.getSkillPrompt() and run the "Fix Korean ASR" task.
+Read window.__zamak.getSkillPrompt() and run the "Fix Korean ASR" task. If any API call errors, stop and report — do not try to fix it.
 ```
 
 3. Review Claude's report and the corrected captions in the panel
