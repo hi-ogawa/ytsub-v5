@@ -14,7 +14,7 @@ Claude for Chrome uses whatever model Anthropic assigns (no user choice). Model 
 - Claude for Chrome extension installed
 - Dev-viewer open at `http://localhost:5173/dev/youtube/<videoId>`
 
-## Test videos
+## Test Videos
 
 Fixture data in `scripts/youtube-json/`. Each covers a different scenario.
 
@@ -24,73 +24,45 @@ Fixture data in `scripts/youtube-json/`. Each covers a different scenario.
 | `DtK-CkwNHSY` | B: Ko auto + En manual | auto    | manual (en-US)       | `/dev/youtube/DtK-CkwNHSY` (tripleS, variety) |
 | `aK8Yh3RTBUY` | C: Ko auto only        | auto    | auto-translated (en) | `/dev/youtube/aK8Yh3RTBUY`                    |
 
-## Eval 1: Fix Korean ASR
+## Eval 1: Pick & Fill (main workflow)
 
-Best tested with scenario B or C (auto-generated Korean).
+The common end-to-end flow: scan captions → suggest vocab → user selects → AI fills.
 
 ### Steps
 
-1. Open dev-viewer for `DtK-CkwNHSY`, open panel, select `a.ko` + `.en-US`
+1. Open dev-viewer for any video, open panel, select tracks
 2. In Claude for Chrome, paste:
 
 ```
-This page has a zamak caption viewer with auto-generated Korean subtitles.
-Run window.__zamak.getCaptions() and fix the Korean ASR text.
-Use the English (text2) as reference. Call window.__zamak.updateCaptions()
-with only the rows that need fixing. See docs/skills/zamak/SKILL.md
-"Task: Fix Korean ASR" for guidelines.
+Scan the captions on this page and suggest notable Korean vocabulary
+for language learning. Run window.__zamak.getCaptions() and
+window.__zamak.getVideoContext(). List your picks with caption index
+and brief meaning. See docs/skills/zamak/SKILL.md "Task: Pick & Fill".
 ```
 
-3. Review Claude's report and the corrected captions in the panel
+3. Review suggestions — are they interesting, intermediate+ words?
+4. Select the ones you want as bookmarks in the caption panel
+5. Ask Claude to fill metadata:
+
+```
+Now run window.__zamak.getBookmarks() and call window.__zamak.fillBookmarks()
+with translation, etymology, and notes for each one.
+```
+
+6. Review filled bookmarks, export
 
 ### What to check
 
-| Check                | How                                                          |
-| -------------------- | ------------------------------------------------------------ |
-| Corrections applied  | Scan captions panel — Korean text should read more naturally |
-| No over-correction   | Correct Korean wasn't rephrased                              |
-| `>>` markers removed | No `>>` prefixes remaining                                   |
-| Spacing fixed        | Words spaced naturally                                       |
-| Uncertain flagged    | Claude reported which ones it wasn't sure about              |
-| Count reasonable     | Not 0 fixes (something is always wrong), not 100% of rows    |
+**Picking:**
 
-### Verify via console
+| Check             | How                                                       |
+| ----------------- | --------------------------------------------------------- |
+| Level appropriate | Not basic (하다, 가다) or too obscure                     |
+| Count reasonable  | ~1 per 10s of video duration                              |
+| Variety           | Mix of Hanja words, slang, expressions — not all one type |
+| Context provided  | Each suggestion references the caption where it appears   |
 
-```js
-// Before: save original
-const before = window.__zamak.getCaptions().map((c) => c.text1);
-
-// After Claude runs, compare
-const after = window.__zamak.getCaptions().map((c) => c.text1);
-const changed = before
-  .map((t, i) =>
-    t !== after[i] ? { idx: i, before: t, after: after[i] } : null,
-  )
-  .filter(Boolean);
-console.table(changed);
-```
-
-## Eval 2: Fill Bookmarks
-
-Best tested with scenario A (both manual, clean text).
-
-### Steps
-
-1. Open dev-viewer for `7GU_VQfgMT0`, open panel, select `.ko` + `.en`
-2. Create 5-10 bookmarks by selecting Korean words in the caption panel
-3. In Claude for Chrome, paste:
-
-```
-This page has Korean vocabulary bookmarks that need metadata filled.
-Run window.__zamak.getBookmarks() to see them, then call
-window.__zamak.fillBookmarks() with translation, etymology, and notes
-for each one. See docs/skills/zamak/SKILL.md "Task: Fill Bookmarks"
-for field guidelines.
-```
-
-4. Review Claude's output and the filled bookmarks
-
-### What to check
+**Filling:**
 
 | Check                | How                                                       |
 | -------------------- | --------------------------------------------------------- |
@@ -114,64 +86,70 @@ console.table(
 );
 ```
 
-## Eval 3: Pick Vocabulary
+## Eval 2: Fill Bookmarks (standalone)
+
+When bookmarks already exist and just need metadata filled.
 
 ### Steps
 
-1. Open dev-viewer for any video, open panel, select tracks
+1. Open dev-viewer for `7GU_VQfgMT0`, open panel, select `.ko` + `.en`
+2. Create 5-10 bookmarks by selecting Korean words in the caption panel
+3. In Claude for Chrome, paste:
+
+```
+This page has Korean vocabulary bookmarks that need metadata filled.
+Run window.__zamak.getBookmarks() to see them, then call
+window.__zamak.fillBookmarks() with translation, etymology, and notes
+for each one. See docs/skills/zamak/SKILL.md "Task: Fill Bookmarks".
+```
+
+4. Review — same checklist as Eval 1 filling section
+
+## Eval 3: Fix Korean ASR (optional)
+
+Best tested with scenario B or C (auto-generated Korean).
+
+### Steps
+
+1. Open dev-viewer for `DtK-CkwNHSY`, open panel, select `a.ko` + `.en-US`
 2. In Claude for Chrome, paste:
 
 ```
-Scan the captions on this page and suggest notable Korean vocabulary
-for language learning. Run window.__zamak.getCaptions() and
-window.__zamak.getVideoContext(). List your picks with caption index
-and brief meaning. See docs/skills/zamak/SKILL.md "Task: Pick Vocabulary".
+This page has a zamak caption viewer with auto-generated Korean subtitles.
+Run window.__zamak.getCaptions() and fix the Korean ASR text.
+Use the English (text2) as reference. Call window.__zamak.updateCaptions()
+with only the rows that need fixing. See docs/skills/zamak/SKILL.md
+"Task: Fix Korean ASR".
 ```
 
-3. Review Claude's suggestions — are they interesting, intermediate+ words?
-4. Select the ones you want as bookmarks in the caption panel
-5. Then run Eval 2 (Fill Bookmarks) on the selected bookmarks
+3. Review Claude's report and the corrected captions in the panel
 
 ### What to check
 
-| Check             | How                                                       |
-| ----------------- | --------------------------------------------------------- |
-| Level appropriate | Not basic (하다, 가다) or too obscure                     |
-| Count reasonable  | ~1 per 10s of video duration                              |
-| Variety           | Mix of Hanja words, slang, expressions — not all one type |
-| Context provided  | Each suggestion references the caption where it appears   |
+| Check               | How                                                          |
+| ------------------- | ------------------------------------------------------------ |
+| Corrections applied | Scan captions panel — Korean text should read more naturally |
+| No over-correction  | Correct Korean wasn't rephrased                              |
+| Uncertain flagged   | Claude reported which ones it wasn't sure about              |
+| Count reasonable    | Not 0 fixes (something is always wrong), not 100% of rows    |
 
-## Eval 4: Full Pipeline (ASR fix → Pick → Fill)
-
-Combined workflow for scenario B/C videos.
-
-1. Open `DtK-CkwNHSY` dev-viewer
-2. Ask Claude to fix ASR (Eval 1)
-3. Ask Claude to pick vocabulary (Eval 3)
-4. Select bookmarks manually
-5. Ask Claude to fill metadata (Eval 2)
-6. Export import.json
-7. Compare with ytsub agent skill output in `docs/skills/ytsub/data/DtK-CkwNHSY/` (if available)
-
-## Examples
-
-### ASR fix
-
-**Before:**
-
-```json
-{
-  "idx": 3,
-  "text1": "두정 먹어봤어?",
-  "text2": "Have you tried Dubai cookies?"
-}
-```
-
-**After:**
+### Verify via console
 
 ```js
-window.__zamak.updateCaptions([{ idx: 3, text1: "두바이 쿠키 먹어봤어?" }]);
+// Before: save original
+const before = window.__zamak.getCaptions().map((c) => c.text1);
+
+// After Claude runs, compare
+const after = window.__zamak.getCaptions().map((c) => c.text1);
+const changed = before
+  .map((t, i) =>
+    t !== after[i] ? { idx: i, before: t, after: after[i] } : null,
+  )
+  .filter(Boolean);
+console.table(changed);
 ```
+
+## Examples
 
 ### Bookmark fill
 
@@ -198,16 +176,13 @@ window.__zamak.updateCaptions([{ idx: 3, text1: "두바이 쿠키 먹어봤어?"
 
 **Output:** `{ translation: "surreal, unrealistic", etymology: "非現實的; 비(non) + 현실(reality) + 적(adj)", notes: "" }`
 
+### ASR fix
+
+**Before:** `{ idx: 3, text1: "두정 먹어봤어?", text2: "Have you tried Dubai cookies?" }`
+
+**After:** `window.__zamak.updateCaptions([{ idx: 3, text1: "두바이 쿠키 먹어봤어?" }])`
+
 ## Quality Checklists
-
-### ASR Correction
-
-| Dimension    | Good                           | Bad                                 |
-| ------------ | ------------------------------ | ----------------------------------- |
-| Accuracy     | Matches what was actually said | Invented plausible but wrong Korean |
-| Restraint    | Only changed broken text       | Rewrote correct casual speech       |
-| Completeness | Found all garbled words        | Missed obvious errors               |
-| Uncertainty  | Flagged unclear cases          | Guessed silently                    |
 
 ### Bookmark Fill
 
@@ -220,6 +195,15 @@ window.__zamak.updateCaptions([{ idx: 3, text1: "두바이 쿠키 먹어봤어?"
 | Notes relevance         | Formality, usage pattern, common confusion | Restating the translation or obvious grammar        |
 | Notes restraint         | Empty when translation says it all         | Filler notes for every single bookmark              |
 | Completion              | All bookmarks addressed                    | Silently skipped some                               |
+
+### ASR Correction
+
+| Dimension    | Good                           | Bad                                 |
+| ------------ | ------------------------------ | ----------------------------------- |
+| Accuracy     | Matches what was actually said | Invented plausible but wrong Korean |
+| Restraint    | Only changed broken text       | Rewrote correct casual speech       |
+| Completeness | Found all garbled words        | Missed obvious errors               |
+| Uncertainty  | Flagged unclear cases          | Guessed silently                    |
 
 ## Eval Log
 
