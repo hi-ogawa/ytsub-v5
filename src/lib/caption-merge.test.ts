@@ -278,6 +278,11 @@ function mergeStats(merged: MergedCaption[], enCues: CaptionCue[]) {
   };
 }
 
+function loadTrackEventLevel(videoDir: string, filename: string): CaptionCue[] {
+  const raw = JSON.parse(readFileSync(join(videoDir, filename), "utf-8"));
+  return parseJson3(raw, { eventLevel: true });
+}
+
 function loadVideo(videoId: string) {
   const videoDir = join(YOUTUBE_JSON_DIR, videoId);
   const koFile = findTrackFile(videoDir, "ko")!;
@@ -361,6 +366,38 @@ describe("strategy mapping stats", () => {
           "withText2": 56,
         }
       `);
+    });
+  });
+
+  describe("aK8Yh3RTBUY (auto-translated, event-level)", () => {
+    const videoDir = join(YOUTUBE_JSON_DIR, "aK8Yh3RTBUY");
+    const ko = loadTrackEventLevel(videoDir, "track-a.ko.json");
+    const en = loadTrackEventLevel(videoDir, "track-a.ko.t.en.json");
+
+    it("cue counts", () => {
+      expect({ ko: ko.length, en: en.length }).toMatchInlineSnapshot(`
+        {
+          "en": 182,
+          "ko": 215,
+        }
+      `);
+    });
+    it("partition", () => {
+      expect(mergeStats(mergePartition(ko, en), en)).toMatchInlineSnapshot(`
+        {
+          "droppedCue2s": 0,
+          "emptyText2": 0,
+          "rows": 182,
+          "sharedCue2s": 0,
+          "withText1": 182,
+          "withText2": 182,
+        }
+      `);
+    });
+    it("mergeCaptions auto-selects partition", () => {
+      const result = mergeCaptions(ko, en);
+      expect(result.strategy).toBe("partition");
+      expect(result.captions.length).toBe(182);
     });
   });
 
