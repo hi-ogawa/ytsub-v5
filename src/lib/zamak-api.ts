@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import skillPrompt from "../../docs/skills/zamak/SKILL.md?raw";
 import type { MergedCaption } from "./caption-merge.ts";
 import type { CaptionSessionManager } from "./caption-session.ts";
 
@@ -42,6 +43,7 @@ interface ZamakCaptionUpdate {
 }
 
 interface ZamakApi {
+  getSkillPrompt(): string;
   getCaptions(): ZamakCaption[];
   updateCaptions(entries: ZamakCaptionUpdate[]): void;
   getBookmarks(): ZamakBookmark[];
@@ -84,6 +86,10 @@ export function useZamakApi({
 
   useEffect(() => {
     window.__zamak = {
+      getSkillPrompt() {
+        return skillPrompt;
+      },
+
       getCaptions(): ZamakCaption[] {
         const currentRows = rowsRef.current;
         if (!currentRows) return [];

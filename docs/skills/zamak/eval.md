@@ -34,21 +34,12 @@ The common end-to-end flow: scan captions → suggest vocab → user selects →
 2. In Claude for Chrome, paste:
 
 ```
-Scan the captions on this page and suggest notable Korean vocabulary
-for language learning. Run window.__zamak.getCaptions() and
-window.__zamak.getVideoContext(). List your picks with caption index
-and brief meaning. See docs/skills/zamak/SKILL.md "Task: Pick & Fill".
+Read window.__zamak.getSkillPrompt() and run the "Pick & Fill" task.
 ```
 
 3. Review suggestions — are they interesting, intermediate+ words?
 4. Select the ones you want as bookmarks in the caption panel
-5. Ask Claude to fill metadata:
-
-```
-Now run window.__zamak.getBookmarks() and call window.__zamak.fillBookmarks()
-with translation, etymology, and notes for each one.
-```
-
+5. Tell Claude to fill the bookmarks
 6. Review filled bookmarks, export
 
 ### What to check
@@ -97,10 +88,7 @@ When bookmarks already exist and just need metadata filled.
 3. In Claude for Chrome, paste:
 
 ```
-This page has Korean vocabulary bookmarks that need metadata filled.
-Run window.__zamak.getBookmarks() to see them, then call
-window.__zamak.fillBookmarks() with translation, etymology, and notes
-for each one. See docs/skills/zamak/SKILL.md "Task: Fill Bookmarks".
+Read window.__zamak.getSkillPrompt() and run the "Fill Bookmarks" task.
 ```
 
 4. Review — same checklist as Eval 1 filling section
@@ -115,11 +103,7 @@ Best tested with scenario B or C (auto-generated Korean).
 2. In Claude for Chrome, paste:
 
 ```
-This page has a zamak caption viewer with auto-generated Korean subtitles.
-Run window.__zamak.getCaptions() and fix the Korean ASR text.
-Use the English (text2) as reference. Call window.__zamak.updateCaptions()
-with only the rows that need fixing. See docs/skills/zamak/SKILL.md
-"Task: Fix Korean ASR".
+Read window.__zamak.getSkillPrompt() and run the "Fix Korean ASR" task.
 ```
 
 3. Review Claude's report and the corrected captions in the panel
