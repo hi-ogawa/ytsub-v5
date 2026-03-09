@@ -95,11 +95,21 @@ Fill metadata for bookmarks the user has already created. Same as Step 4-5 above
 window.__zamak.log.bookmarks();
 ```
 
-Read the console output, then fill:
+Read the console output to get bookmark `id`s, then fill:
 
 ```js
-window.__zamak.fillBookmarks([...]);
+window.__zamak.fillBookmarks([
+  {
+    id: "abc-123",
+    translation: "to be confused",
+    etymology: "",
+    notes: "Conjugated as 헷갈리기는 해 (softened).",
+  },
+  // ...
+]);
 ```
+
+Same field guidelines as Pick & Fill Step 3. The difference: `fillBookmarks` targets existing bookmarks by `id`, while `addBookmarks` creates new ones by `captionIndex`.
 
 ---
 
