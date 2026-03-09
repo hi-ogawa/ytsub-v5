@@ -27,7 +27,7 @@ export function TrackPicker({
       }
     >
       <select
-        className="min-w-0 flex-1 rounded border bg-background px-1 py-0.5 text-sm"
+        className={`min-w-0 flex-1 rounded border bg-background px-1 py-0.5 text-sm ${disabled ? "cursor-not-allowed opacity-50" : ""}`}
         value={selectedVssId1 ?? ""}
         onChange={(e) => onSelect(e.target.value || undefined, selectedVssId2)}
         disabled={disabled}
@@ -40,7 +40,7 @@ export function TrackPicker({
         ))}
       </select>
       <select
-        className="min-w-0 flex-1 rounded border bg-background px-1 py-0.5 text-sm"
+        className={`min-w-0 flex-1 rounded border bg-background px-1 py-0.5 text-sm ${disabled ? "cursor-not-allowed opacity-50" : ""}`}
         value={selectedVssId2 ?? ""}
         onChange={(e) => onSelect(selectedVssId1, e.target.value || undefined)}
         disabled={disabled}

@@ -252,7 +252,7 @@ export function CaptionPanel({
                   Track alignment
                 </label>
                 <select
-                  className="w-full rounded border bg-background px-1 py-0.5 text-sm"
+                  className={`w-full rounded border bg-background px-1 py-0.5 text-sm ${tracksLocked ? "cursor-not-allowed opacity-50" : ""}`}
                   value={forceStrategy ?? activeStrategy ?? ""}
                   onChange={(e) =>
                     onSetForceStrategy(
