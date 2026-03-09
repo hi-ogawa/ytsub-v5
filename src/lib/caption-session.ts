@@ -144,11 +144,15 @@ export function useCaptionSession({
   });
 
   // Merge — either from hydrated session or fresh fetch
-  let rows: MergedCaption[] | undefined;
+  const [captionOverrides, setCaptionOverrides] = useState<
+    Map<number, { text1?: string; text2?: string }>
+  >(new Map());
+
+  let mergedRows: MergedCaption[] | undefined;
   let activeStrategy: MergeStrategy | undefined;
 
   if (isHydrated) {
-    rows = hydrated.captions;
+    mergedRows = hydrated.captions;
     activeStrategy = undefined; // strategy was already applied
   } else {
     const json3_1 = json3Query1.data;
@@ -161,9 +165,23 @@ export function useCaptionSession({
             forceStrategy,
           )
         : undefined;
-    rows = mergeResult?.captions;
+    mergedRows = mergeResult?.captions;
     activeStrategy = mergeResult?.strategy;
   }
+
+  // Apply caption overrides
+  const rows = useMemo(() => {
+    if (!mergedRows || captionOverrides.size === 0) return mergedRows;
+    return mergedRows.map((r) => {
+      const override = captionOverrides.get(r.idx);
+      if (!override) return r;
+      return {
+        ...r,
+        ...(override.text1 !== undefined && { text1: override.text1 }),
+        ...(override.text2 !== undefined && { text2: override.text2 }),
+      };
+    });
+  }, [mergedRows, captionOverrides]);
 
   const isAutoStrategy =
     !isHydrated &&
@@ -248,6 +266,19 @@ export function useCaptionSession({
     [youtubeId, persistSession],
   );
 
+  const updateCaptions = useCallback(
+    (entries: { idx: number; text1?: string; text2?: string }[]) => {
+      setCaptionOverrides((prev) => {
+        const next = new Map(prev);
+        for (const { idx, ...data } of entries) {
+          next.set(idx, { ...next.get(idx), ...data });
+        }
+        return next;
+      });
+    },
+    [],
+  );
+
   const clearBookmarks = useCallback(() => {
     localStorage.removeItem(`zamak:bookmarks:${youtubeId}`);
     setBookmarks([]);
@@ -322,6 +353,7 @@ export function useCaptionSession({
 
     // Caption data
     rows,
+    onUpdateCaptions: updateCaptions,
     error,
     loading: hydrated === null, // still checking IndexedDB
 

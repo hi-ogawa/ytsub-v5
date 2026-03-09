@@ -35,8 +35,15 @@ interface ZamakCaption {
   text2: string;
 }
 
+interface ZamakCaptionUpdate {
+  idx: number;
+  text1?: string;
+  text2?: string;
+}
+
 interface ZamakApi {
   getCaptions(): ZamakCaption[];
+  updateCaptions(entries: ZamakCaptionUpdate[]): void;
   getBookmarks(): ZamakBookmark[];
   fillBookmarks(entries: ZamakFillEntry[]): void;
   getVideoContext(): {
@@ -87,6 +94,10 @@ export function useZamakApi({
           text1: r.text1,
           text2: r.text2,
         }));
+      },
+
+      updateCaptions(entries) {
+        sessionRef.current.onUpdateCaptions(entries);
       },
 
       getBookmarks(): ZamakBookmark[] {

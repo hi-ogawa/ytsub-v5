@@ -1,22 +1,24 @@
 ---
 name: zamak
 description: >-
-  Enrich Korean vocabulary bookmarks with translation, etymology, and notes
-  via the window.__zamak browser API. Can also scan captions to pick new bookmarks.
+  AI browser extension tasks for zamak (Korean language learning from YouTube).
+  Correct ASR captions, fill bookmark metadata, pick vocabulary — all via window.__zamak.
 ---
 
 # zamak skill
 
-Enrich Korean vocabulary bookmarks on a zamak page. You run as an AI browser extension on a page with `window.__zamak` available.
+Tasks for AI browser extensions running on a zamak page with `window.__zamak` available. Each task can be invoked independently.
 
-Two modes:
-
-1. **Fill** — user has already selected bookmarks, you fill translation/etymology/notes
-2. **Pick + Fill** — you scan the full caption list, pick notable vocab, and fill metadata
+| Task                                     | When                                               |
+| ---------------------------------------- | -------------------------------------------------- |
+| [Fix Korean ASR](#task-fix-korean-asr)   | Korean captions are auto-generated (garbled/noisy) |
+| [Fill Bookmarks](#task-fill-bookmarks)   | User has selected bookmarks, needs metadata filled |
+| [Pick Vocabulary](#task-pick-vocabulary) | User wants vocab suggestions from the caption list |
 
 ## API Reference
 
 ```js
+// Read
 window.__zamak.getVideoContext()
 // → { youtubeId, title, language1, language2 }
 
@@ -26,10 +28,72 @@ window.__zamak.getCaptions()
 window.__zamak.getBookmarks()
 // → [{ id, text, context, captionContext, translation, etymology, notes }, ...]
 
+// Write
+window.__zamak.updateCaptions([{ idx, text1?, text2? }, ...])
 window.__zamak.fillBookmarks([{ id, translation?, etymology?, notes? }, ...])
 ```
 
-## Mode 1: Fill Existing Bookmarks
+---
+
+## Task: Fix Korean ASR
+
+Fix auto-generated Korean subtitle text using the English manual translation as reference.
+
+### When to use
+
+When `text1` (Korean) is auto-generated (ASR) and `text2` (English) is manual. The Korean has typical ASR artifacts: misheard syllables, wrong spacing, `>>` speaker markers, truncated words at cue boundaries.
+
+### Step 1: Read captions
+
+```js
+const captions = window.__zamak.getCaptions();
+const video = window.__zamak.getVideoContext();
+```
+
+### Step 2: Identify and fix issues
+
+Scan each caption's `text1` (Korean ASR) against `text2` (English manual). Look for:
+
+| Issue                | Example                          | Fix                    |
+| -------------------- | -------------------------------- | ---------------------- |
+| Misheard syllables   | "두정" → should be "두바이 쿠키" | Use English + context  |
+| Wrong spacing        | "악몽꽃" → "악몽 꿨어"           | Natural Korean spacing |
+| `>>` speaker markers | ">> 안녕하세요"                  | Remove `>>`            |
+| Truncated words      | "안녕하" (cut off at cue edge)   | Complete the word      |
+| Repeated fragments   | Same phrase duplicated           | Deduplicate            |
+
+### Guidelines
+
+- **English is your anchor.** The manual English translation tells you what was actually said. Use it to decode garbled Korean.
+- **Fix only what's wrong.** Don't rephrase correct Korean — preserve the original wording. ASR often gets common words right.
+- **Preserve natural speech.** Keep filler words (어, 아, 음), contractions, and informal speech patterns — they're part of the content.
+- **When unsure, leave it.** If you can't confidently determine the correct Korean from context, leave the original. Flag it to the user.
+
+### Step 3: Write corrections
+
+```js
+window.__zamak.updateCaptions([
+  { idx: 3, text1: "두바이 쿠키 먹어봤어?" },
+  { idx: 7, text1: "악몽 꿨어 어젯밤에" },
+  // ... only the rows that need fixing
+]);
+```
+
+Only include rows that actually need changes.
+
+### Step 4: Report
+
+Tell the user:
+
+- How many captions were corrected out of total
+- Any captions you flagged as uncertain
+- Summary of common issues found (e.g. "mostly spacing fixes, 3 misheard words")
+
+---
+
+## Task: Fill Bookmarks
+
+Fill translation, etymology, and notes for existing bookmarks.
 
 ### Step 1: Read
 
@@ -64,9 +128,11 @@ window.__zamak.getBookmarks();
 
 Report: how many filled, any skipped/uncertain.
 
-## Mode 2: Pick + Fill from Captions
+---
 
-When the user asks you to pick vocabulary from the captions (no existing bookmarks, or wants more).
+## Task: Pick Vocabulary
+
+Scan captions and suggest notable vocabulary for the user to bookmark.
 
 ### Step 1: Read captions
 
@@ -77,7 +143,7 @@ const video = window.__zamak.getVideoContext();
 
 ### Step 2: Pick notable vocab
 
-Scan through `text1` (Korean) of each caption. Pick words/phrases that are:
+Scan `text1` (Korean) of each caption. Pick words/phrases that are:
 
 - **Intermediate level or above** — skip basic greetings, particles, ultra-common verbs (하다/가다/오다)
 - **Slang, colloquial, internet-speak** that textbooks don't teach
@@ -88,7 +154,7 @@ Target: ~1 bookmark per 10 seconds of video duration. Err on over-picking — us
 
 ### Step 3: Present to user
 
-**Do not call fillBookmarks yet.** Present your picks as a list for user review:
+**Do not call any write API.** Present your picks as a list for user review:
 
 ```
 Found N notable words in [video title]:
@@ -97,10 +163,12 @@ Found N notable words in [video title]:
 2. 비현실적 (caption 12: "너무 비현실적이야 이게") — surreal
 3. ...
 
-Should I proceed to fill these? You can also tell me to add/remove specific words.
+Should I proceed? You can add/remove words, then select them in the caption panel.
 ```
 
-The user creates bookmarks manually (text selection in the caption panel). Once they've selected their picks, switch to Mode 1 to fill the metadata.
+The user creates bookmarks manually (text selection in the caption panel). Once selected, switch to Fill Bookmarks task.
+
+---
 
 ## Field Guidelines
 
@@ -118,9 +186,29 @@ The user creates bookmarks manually (text selection in the caption panel). Once 
 - **Etymology for memorization.** `약속(約束); 약(promise) + 속(bind)` is useful. Don't force it for native words.
 - **Notes for gaps.** Things a dictionary won't say: "informal, only among close friends", "often confused with X".
 
+---
+
 ## Examples
 
-### Fill example
+### ASR fix example
+
+**Before:**
+
+```json
+{
+  "idx": 3,
+  "text1": "두정 먹어봤어?",
+  "text2": "Have you tried Dubai cookies?"
+}
+```
+
+**After:**
+
+```js
+window.__zamak.updateCaptions([{ idx: 3, text1: "두바이 쿠키 먹어봤어?" }]);
+```
+
+### Bookmark fill example
 
 **Input:**
 
@@ -148,7 +236,7 @@ The user creates bookmarks manually (text selection in the caption panel). Once 
 }
 ```
 
-### Fill example (Hanja word)
+### Bookmark fill example (Hanja word)
 
 **Input:**
 
@@ -176,7 +264,20 @@ The user creates bookmarks manually (text selection in the caption panel). Once 
 }
 ```
 
+---
+
 ## Eval Checklist
+
+### ASR Correction
+
+| Dimension    | Good                           | Bad                                 |
+| ------------ | ------------------------------ | ----------------------------------- |
+| Accuracy     | Matches what was actually said | Invented plausible but wrong Korean |
+| Restraint    | Only changed broken text       | Rewrote correct casual speech       |
+| Completeness | Found all garbled words        | Missed obvious errors               |
+| Uncertainty  | Flagged unclear cases          | Guessed silently                    |
+
+### Bookmark Fill
 
 | Dimension               | Good                                       | Bad                                                 |
 | ----------------------- | ------------------------------------------ | --------------------------------------------------- |
