@@ -7,6 +7,9 @@
  * Output:
  *   scripts/youtube-json/<videoId>/metadata.json   — YouTubeExtractionResult
  *   scripts/youtube-json/<videoId>/track-<vssId>.json    — json3 for each track
+ *
+ * Auto-translated tracks are generated for configured target languages
+ * via fetchPlayerApi's userLangs parameter.
  */
 
 import { mkdir, writeFile } from "node:fs/promises";
@@ -15,6 +18,9 @@ import { chromium } from "@playwright/test";
 import { fetchPlayerApi, fetchTrackJson3 } from "../src/lib/youtube.ts";
 
 const FIXTURES_DIR = join(import.meta.dirname, "youtube-json");
+
+/** Languages to generate translations for when not natively available. */
+const USER_LANGS = ["ko", "en", "ja"];
 
 async function scrape(videoId: string) {
   const browser = await chromium.launch();
@@ -25,24 +31,33 @@ async function scrape(videoId: string) {
       waitUntil: "domcontentloaded",
     });
 
-    const result = await page.evaluate(fetchPlayerApi, videoId);
+    // fetchPlayerApi generates translated virtual tracks for userLangs
+    const result = await page.evaluate(fetchPlayerApi, {
+      videoId,
+      userLangs: USER_LANGS,
+    });
     const dir = join(FIXTURES_DIR, videoId);
     await mkdir(dir, { recursive: true });
+
+    // Fetch all tracks (native + translated)
+    for (const track of result.captionTracks) {
+      try {
+        const json3 = await page.evaluate(fetchTrackJson3, track.baseUrl);
+        const filename = `track-${track.vssId}.json`;
+        await writeFile(join(dir, filename), JSON.stringify(json3, null, 2));
+        console.log(
+          `[${videoId}] ${track.vssId} (${track.languageCode}): ${json3.events?.length ?? 0} events`,
+        );
+      } catch (e) {
+        console.warn(`[${videoId}] ${track.vssId}: fetch failed — ${e}`);
+      }
+    }
 
     await writeFile(
       join(dir, "metadata.json"),
       JSON.stringify(result, null, 2),
     );
     console.log(`[${videoId}] metadata: ${result.captionTracks.length} tracks`);
-
-    for (const track of result.captionTracks) {
-      const json3 = await page.evaluate(fetchTrackJson3, track.baseUrl);
-      const filename = `track-${track.vssId}.json`;
-      await writeFile(join(dir, filename), JSON.stringify(json3, null, 2));
-      console.log(
-        `[${videoId}] ${track.vssId} (${track.languageCode}): ${json3.events?.length ?? 0} events`,
-      );
-    }
   } finally {
     await browser.close();
   }

@@ -7,5 +7,5 @@
     "partitionByNewline": true,
     "groups": [["builtin"], ["external"]],
   },
-  "ignorePatterns": ["worker-configuration.d.ts"],
+  "ignorePatterns": ["worker-configuration.d.ts", "scripts/**/*.json"],
 }

@@ -18,11 +18,7 @@
 // - Fewer-cue track drives row count, longer-cue track fragments get merged
 // - Clean 1:1 sentence pairs in the common case (manual en + auto ko)
 
-export interface CaptionCue {
-  begin: number;
-  end: number;
-  text: string;
-}
+import { type CaptionCue, type Json3File, parseJson3 } from "./youtube.ts";
 
 export interface MergedCaption {
   idx: number;
@@ -505,16 +501,44 @@ function mergeWithStrategy(
   }
 }
 
+interface TrackInput {
+  json3: Json3File;
+  vssId: string;
+}
+
+/** Detect if two vssIds form a translated pair (one is prefix of the other + ".t."). */
+function isTranslatedPair(vssId1: string, vssId2: string): boolean {
+  return vssId2.startsWith(`${vssId1}.t.`) || vssId1.startsWith(`${vssId2}.t.`);
+}
+
+/**
+ * Merge two caption tracks. Parses JSON3 internally and selects strategy
+ * based on vssId relationship:
+ * - Translated pair → strict (shared tStartMs)
+ * - Same count + close timestamps → strict / relaxed-strict
+ * - Otherwise → partition
+ */
 export function mergeCaptions(
-  cues1: CaptionCue[],
-  cues2: CaptionCue[],
+  track1: TrackInput,
+  track2: TrackInput,
   forceStrategy?: MergeStrategy,
 ): MergeResult {
+  const cues1 = parseJson3(track1.json3);
+  const cues2 = parseJson3(track2.json3);
+
   if (forceStrategy) {
     return {
       strategy: forceStrategy,
       captions: mergeWithStrategy(cues1, cues2, forceStrategy),
     };
+  }
+
+  // Translated pair: events share tStartMs, strict should work
+  if (isTranslatedPair(track1.vssId, track2.vssId)) {
+    const strict = mergeStrict(cues1, cues2, 0.5);
+    if (strict) return { strategy: "strict", captions: strict };
+    // Fallback to partition if strict fails (count mismatch from dropped events)
+    return { strategy: "partition", captions: mergePartition(cues1, cues2) };
   }
 
   // Try strict first

@@ -8,7 +8,7 @@ import {
   mergeCaptions,
 } from "../lib/caption-merge.ts";
 import {
-  type CaptionCue,
+  type Json3File,
   type YouTubeCaptionTrack,
   pickBestTrack,
 } from "../lib/youtube.ts";
@@ -190,12 +190,12 @@ function saveSelectedTracks(
 
 export function CaptionPanel({
   tracks,
-  fetchCues,
+  fetchJson3,
   player,
   videoMeta,
 }: {
   tracks: YouTubeCaptionTrack[];
-  fetchCues: (track: YouTubeCaptionTrack) => Promise<CaptionCue[]>;
+  fetchJson3: (track: YouTubeCaptionTrack) => Promise<Json3File>;
   player: YTPlayer | null;
   videoMeta: VideoMeta;
 }) {
@@ -216,23 +216,27 @@ export function CaptionPanel({
   const sel1 = tracks.find((t) => t.vssId === selectedVssId1);
   const sel2 = tracks.find((t) => t.vssId === selectedVssId2);
 
-  const cues1Query = useQuery({
-    queryKey: ["cues", sel1?.baseUrl],
-    queryFn: () => fetchCues(sel1!),
+  const json3Query1 = useQuery({
+    queryKey: ["json3", sel1?.vssId],
+    queryFn: () => fetchJson3(sel1!),
     enabled: !!sel1,
   });
 
-  const cues2Query = useQuery({
-    queryKey: ["cues", sel2?.baseUrl],
-    queryFn: () => fetchCues(sel2!),
+  const json3Query2 = useQuery({
+    queryKey: ["json3", sel2?.vssId],
+    queryFn: () => fetchJson3(sel2!),
     enabled: !!sel2,
   });
 
-  const cues1 = cues1Query.data ?? [];
-  const cues2 = cues2Query.data ?? [];
+  const json3_1 = json3Query1.data;
+  const json3_2 = json3Query2.data;
   const mergeResult =
-    cues1.length > 0 || cues2.length > 0
-      ? mergeCaptions(cues1, cues2, forceStrategy)
+    json3_1 && json3_2 && sel1 && sel2
+      ? mergeCaptions(
+          { json3: json3_1, vssId: sel1.vssId },
+          { json3: json3_2, vssId: sel2.vssId },
+          forceStrategy,
+        )
       : undefined;
   const rows = mergeResult?.captions;
   const activeStrategy = mergeResult?.strategy;
@@ -240,7 +244,7 @@ export function CaptionPanel({
     !forceStrategy &&
     (activeStrategy === "strict" || activeStrategy === "relaxed-strict");
 
-  const cueError = cues1Query.error ?? cues2Query.error;
+  const cueError = json3Query1.error ?? json3Query2.error;
 
   function toggleAutoScroll() {
     setAutoScroll((prev) => {

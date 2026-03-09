@@ -6,16 +6,16 @@ import {
   ResizablePanel,
 } from "../components/caption-panel.tsx";
 import { useYouTubePlayer } from "../components/youtube-player.tsx";
-import { type YouTubeExtractionResult, parseJson3 } from "../lib/youtube.ts";
+import type { Json3File, YouTubeExtractionResult } from "../lib/youtube.ts";
 
 const metadataModules = import.meta.glob<YouTubeExtractionResult>(
   "/scripts/youtube-json/*/metadata.json",
   { eager: true, import: "default" },
 );
 
-const trackModules = import.meta.glob<{
-  default: Parameters<typeof parseJson3>[0];
-}>("/scripts/youtube-json/*/track-*.json");
+const trackModules = import.meta.glob<{ default: Json3File }>(
+  "/scripts/youtube-json/*/track-*.json",
+);
 
 export function DevViewerPage() {
   const { videoId } = useParams<"videoId">();
@@ -52,13 +52,13 @@ export function DevViewerPage() {
         <ResizablePanel className="fixed top-[65px] right-[10px] bottom-[56px] flex flex-col overflow-hidden rounded-lg border border-border bg-background">
           <CaptionPanel
             tracks={meta.captionTracks}
-            fetchCues={async (track) => {
+            fetchJson3={async (track) => {
               const key = `/scripts/youtube-json/${videoId}/track-${track.vssId}.json`;
               const loader = trackModules[key];
               if (!loader)
                 throw new Error(`No track fixture for ${track.vssId}`);
               const mod = await loader();
-              return parseJson3(mod.default);
+              return mod.default;
             }}
             player={player}
             videoMeta={meta.video}
