@@ -55,3 +55,9 @@ When a JS call returns unexpected results (blocked, undefined, error), Claude es
 - Explicit exit: "If any call fails, STOP and report"
 
 One without the other is insufficient. These are embedded in `SKILL.md` under `## Rules`.
+
+## Console message accumulation
+
+`read_console_messages` returns all messages since last clear. Without clearing, output from previous `log.*` calls accumulates and gets re-read on every subsequent call — wasteful for tokens, especially `skillPrompt` which is the largest payload.
+
+**Mitigation:** Use `clear: true` when calling `read_console_messages` after each read. Read `skillPrompt` only once per session. SKILL.md instructs the agent to do this.
