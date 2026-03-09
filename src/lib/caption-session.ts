@@ -320,4 +320,4 @@ export function useCaptionSession({
   };
 }
 
-export type CaptionSession = ReturnType<typeof useCaptionSession>;
+export type CaptionSessionManager = ReturnType<typeof useCaptionSession>;

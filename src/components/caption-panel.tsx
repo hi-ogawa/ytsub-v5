@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { MergeStrategy, MergedCaption } from "../lib/caption-merge.ts";
-import type { CaptionSession } from "../lib/caption-session.ts";
+import type { CaptionSessionManager } from "../lib/caption-session.ts";
 import {
   type BookmarkSelection,
   type ExtensionBookmark,
@@ -138,7 +138,7 @@ export function CaptionPanel({
 }: {
   tracks: YouTubeCaptionTrack[];
   player: YTPlayer | null;
-  session: CaptionSession;
+  session: CaptionSessionManager;
 }) {
   const {
     selectedVssId1,
