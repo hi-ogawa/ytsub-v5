@@ -2,6 +2,12 @@
 
 Manual evaluation workflow for the `window.__zamak` API + Claude for Chrome.
 
+## Model Notes
+
+These tasks are structured language work (translation, correction, lookup) — not complex reasoning. Haiku or Sonnet is sufficient and faster for the interactive loop. Opus is overkill.
+
+Claude for Chrome uses whatever model Anthropic assigns (no user choice). Model selection becomes relevant if invoking via API directly (userscript, MCP, etc.).
+
 ## Prerequisites
 
 - `pnpm dev` running
@@ -146,6 +152,74 @@ Combined workflow for scenario B/C videos.
 5. Ask Claude to fill metadata (Eval 2)
 6. Export import.json
 7. Compare with ytsub agent skill output in `docs/skills/ytsub/data/DtK-CkwNHSY/` (if available)
+
+## Examples
+
+### ASR fix
+
+**Before:**
+
+```json
+{
+  "idx": 3,
+  "text1": "두정 먹어봤어?",
+  "text2": "Have you tried Dubai cookies?"
+}
+```
+
+**After:**
+
+```js
+window.__zamak.updateCaptions([{ idx: 3, text1: "두바이 쿠키 먹어봤어?" }]);
+```
+
+### Bookmark fill
+
+**Input:**
+
+```json
+{
+  "id": "abc-123",
+  "text": "헷갈리다",
+  "context": "아직 좀 헷갈리기는 해",
+  "captionContext": [
+    { "text1": "이게 현실인지 꿈인지", "text2": "Is this real or a dream?" },
+    { "text1": "아직 좀 헷갈리기는 해", "text2": "I'm still a bit confused" },
+    { "text1": "그래도 기분은 좋아", "text2": "But I feel good" }
+  ]
+}
+```
+
+**Output:** `{ translation: "to be confused", etymology: "", notes: "Conjugated as 헷갈리기는 해 (softened). Common in spoken Korean." }`
+
+### Bookmark fill (Hanja word)
+
+**Input:** `{ text: "비현실적", context: "너무 비현실적이야 이게" }`
+
+**Output:** `{ translation: "surreal, unrealistic", etymology: "非現實的; 비(non) + 현실(reality) + 적(adj)", notes: "" }`
+
+## Quality Checklists
+
+### ASR Correction
+
+| Dimension    | Good                           | Bad                                 |
+| ------------ | ------------------------------ | ----------------------------------- |
+| Accuracy     | Matches what was actually said | Invented plausible but wrong Korean |
+| Restraint    | Only changed broken text       | Rewrote correct casual speech       |
+| Completeness | Found all garbled words        | Missed obvious errors               |
+| Uncertainty  | Flagged unclear cases          | Guessed silently                    |
+
+### Bookmark Fill
+
+| Dimension               | Good                                       | Bad                                                 |
+| ----------------------- | ------------------------------------------ | --------------------------------------------------- |
+| Translation accuracy    | Matches the specific context               | Generic dictionary definition                       |
+| Translation conciseness | "to get confused"                          | "1. to be confused 2. to mix up 3. to be ambiguous" |
+| Etymology usefulness    | Hanja breakdown that aids memorization     | Repeating the translation in etymology field        |
+| Etymology restraint     | Empty for native Korean words              | Forced/invented etymology for every word            |
+| Notes relevance         | Formality, usage pattern, common confusion | Restating the translation or obvious grammar        |
+| Notes restraint         | Empty when translation says it all         | Filler notes for every single bookmark              |
+| Completion              | All bookmarks addressed                    | Silently skipped some                               |
 
 ## Eval Log
 
