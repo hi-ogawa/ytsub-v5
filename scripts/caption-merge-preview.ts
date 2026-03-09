@@ -11,7 +11,6 @@
 import { readdirSync, readFileSync } from "fs";
 import { join } from "path";
 import {
-  type CaptionCue,
   type MergedCaption,
   mergeBestOverlap,
   mergeBidirectional,
@@ -22,12 +21,20 @@ import {
   mergeRelaxedStrict,
   mergeStrict,
 } from "../src/lib/caption-merge.ts";
-import { parseJson3 } from "../src/lib/youtube.ts";
+import {
+  type CaptionCue,
+  type Json3File,
+  parseJson3,
+} from "../src/lib/youtube.ts";
 
 // --- helpers ---
 
+function loadJson3File(path: string): Json3File {
+  return JSON.parse(readFileSync(path, "utf-8"));
+}
+
 function loadTrackFile(path: string): CaptionCue[] {
-  return parseJson3(JSON.parse(readFileSync(path, "utf-8")));
+  return parseJson3(loadJson3File(path));
 }
 
 function fmt(seconds: number): string {
@@ -80,10 +87,20 @@ function main() {
     process.exit(1);
   }
 
-  const koCues = loadTrackFile(join(videoDir, koFile));
-  const enCues = loadTrackFile(join(videoDir, enFile));
+  const koPath = join(videoDir, koFile);
+  const enPath = join(videoDir, enFile);
+  const koCues = loadTrackFile(koPath);
+  const enCues = loadTrackFile(enPath);
+  // Derive vssId from filename: "track-<vssId>.json" → "<vssId>"
+  const koVssId = koFile.replace(/^track-/, "").replace(/\.json$/, "");
+  const enVssId = enFile.replace(/^track-/, "").replace(/\.json$/, "");
 
-  const { merged, usedStrategy } = runMerge(koCues, enCues, strategyName);
+  const { merged, usedStrategy } = runMerge(koCues, enCues, strategyName, {
+    koJson3: loadJson3File(koPath),
+    enJson3: loadJson3File(enPath),
+    koVssId,
+    enVssId,
+  });
 
   if (jsonMode) {
     console.log(JSON.stringify(merged, null, 2));
@@ -105,6 +122,12 @@ function runMerge(
   koCues: CaptionCue[],
   enCues: CaptionCue[],
   strategyName: string,
+  raw: {
+    koJson3: Json3File;
+    enJson3: Json3File;
+    koVssId: string;
+    enVssId: string;
+  },
 ): { merged: MergedCaption[]; usedStrategy: string } {
   switch (strategyName) {
     case "strict": {
@@ -143,7 +166,10 @@ function runMerge(
     case "dtw":
       return { merged: mergeDTW(koCues, enCues), usedStrategy: "dtw" };
     case "tiered": {
-      const r = mergeCaptions(koCues, enCues);
+      const r = mergeCaptions(
+        { json3: raw.koJson3, vssId: raw.koVssId },
+        { json3: raw.enJson3, vssId: raw.enVssId },
+      );
       return { merged: r.captions, usedStrategy: r.strategy };
     }
     default:

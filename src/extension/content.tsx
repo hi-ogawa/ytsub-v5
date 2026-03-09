@@ -9,12 +9,7 @@ import {
 } from "../components/caption-panel.tsx";
 import { PortalContainerProvider } from "../components/ui/portal-container.tsx";
 import type { YTPlayer } from "../components/youtube-player.tsx";
-import {
-  type YouTubeCaptionTrack,
-  fetchPlayerApi,
-  fetchTrackJson3,
-  parseJson3,
-} from "../lib/youtube.ts";
+import { fetchPlayerApi, fetchTrackJson3 } from "../lib/youtube.ts";
 import contentCss from "./content.css?inline";
 
 // Adapter: wrap the page's <video> element as YTPlayer
@@ -57,13 +52,8 @@ function App({ videoId }: { videoId: string }) {
   );
 }
 
-function fetchCues(
-  track: YouTubeCaptionTrack,
-  opts?: { eventLevel?: boolean },
-) {
-  return fetchTrackJson3(track.baseUrl).then((json3) =>
-    parseJson3(json3, opts),
-  );
+function fetchJson3(track: { baseUrl: string }) {
+  return fetchTrackJson3(track.baseUrl);
 }
 
 function ExtensionViewer({ videoId }: { videoId: string }) {
@@ -95,7 +85,7 @@ function ExtensionViewer({ videoId }: { videoId: string }) {
       {data && (
         <CaptionPanel
           tracks={data.captionTracks}
-          fetchCues={fetchCues}
+          fetchJson3={fetchJson3}
           player={player}
           videoMeta={data.video}
         />

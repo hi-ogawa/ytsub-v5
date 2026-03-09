@@ -1,7 +1,7 @@
-import { type YouTubeCaptionTrack, isTranslatedTrack } from "../lib/youtube.ts";
+import type { YouTubeCaptionTrack } from "../lib/youtube.ts";
 
 function trackLabel(track: YouTubeCaptionTrack): string {
-  if (isTranslatedTrack(track)) return `${track.languageCode} (translated)`;
+  if (track.vssId.includes(".t.")) return `${track.languageCode} (translated)`;
   const kind = track.kind === "asr" ? " (auto)" : "";
   return `${track.name} [${track.languageCode}]${kind}`;
 }

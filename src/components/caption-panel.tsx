@@ -8,9 +8,8 @@ import {
   mergeCaptions,
 } from "../lib/caption-merge.ts";
 import {
-  type CaptionCue,
+  type Json3File,
   type YouTubeCaptionTrack,
-  isTranslatedTrack,
   pickBestTrack,
 } from "../lib/youtube.ts";
 import { CaptionList } from "./caption-list.tsx";
@@ -191,15 +190,12 @@ function saveSelectedTracks(
 
 export function CaptionPanel({
   tracks,
-  fetchCues,
+  fetchJson3,
   player,
   videoMeta,
 }: {
   tracks: YouTubeCaptionTrack[];
-  fetchCues: (
-    track: YouTubeCaptionTrack,
-    opts?: { eventLevel?: boolean },
-  ) => Promise<CaptionCue[]>;
+  fetchJson3: (track: YouTubeCaptionTrack) => Promise<Json3File>;
   player: YTPlayer | null;
   videoMeta: VideoMeta;
 }) {
@@ -220,28 +216,27 @@ export function CaptionPanel({
   const sel1 = tracks.find((t) => t.vssId === selectedVssId1);
   const sel2 = tracks.find((t) => t.vssId === selectedVssId2);
 
-  // When either track is a translation, parse both at event level so
-  // their event boundaries align for merging.
-  const useEventLevel =
-    (sel1 && isTranslatedTrack(sel1)) || (sel2 && isTranslatedTrack(sel2));
-
-  const cues1Query = useQuery({
-    queryKey: ["cues", sel1?.baseUrl, useEventLevel],
-    queryFn: () => fetchCues(sel1!, { eventLevel: useEventLevel }),
+  const json3Query1 = useQuery({
+    queryKey: ["json3", sel1?.baseUrl],
+    queryFn: () => fetchJson3(sel1!),
     enabled: !!sel1,
   });
 
-  const cues2Query = useQuery({
-    queryKey: ["cues", sel2?.baseUrl, useEventLevel],
-    queryFn: () => fetchCues(sel2!, { eventLevel: useEventLevel }),
+  const json3Query2 = useQuery({
+    queryKey: ["json3", sel2?.baseUrl],
+    queryFn: () => fetchJson3(sel2!),
     enabled: !!sel2,
   });
 
-  const cues1 = cues1Query.data ?? [];
-  const cues2 = cues2Query.data ?? [];
+  const json3_1 = json3Query1.data;
+  const json3_2 = json3Query2.data;
   const mergeResult =
-    cues1.length > 0 || cues2.length > 0
-      ? mergeCaptions(cues1, cues2, forceStrategy)
+    json3_1 && json3_2 && sel1 && sel2
+      ? mergeCaptions(
+          { json3: json3_1, vssId: sel1.vssId },
+          { json3: json3_2, vssId: sel2.vssId },
+          forceStrategy,
+        )
       : undefined;
   const rows = mergeResult?.captions;
   const activeStrategy = mergeResult?.strategy;
@@ -249,7 +244,7 @@ export function CaptionPanel({
     !forceStrategy &&
     (activeStrategy === "strict" || activeStrategy === "relaxed-strict");
 
-  const cueError = cues1Query.error ?? cues2Query.error;
+  const cueError = json3Query1.error ?? json3Query2.error;
 
   function toggleAutoScroll() {
     setAutoScroll((prev) => {

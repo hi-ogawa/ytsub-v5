@@ -34,14 +34,21 @@ interface Json3Event {
   segs?: { utf8: string; tOffsetMs?: number }[];
 }
 
-interface Json3File {
+export interface Json3File {
   events: Json3Event[];
+}
+
+export interface CaptionWord {
+  text: string;
+  begin: number;
+  end: number;
 }
 
 export interface CaptionCue {
   begin: number;
   end: number;
   text: string;
+  words?: CaptionWord[];
 }
 
 // === Page-context functions ===
@@ -302,57 +309,46 @@ export async function fetchPlayerApi(
 // Run anywhere (Node, browser, extension).
 
 /** Parse json3 subtitle data → cue array.
- * By default produces word-level cues when segments have tOffsetMs timing.
- * Pass `eventLevel: true` to always produce one cue per event (joining segments).
- * Use event-level for translated tracks — they share event boundaries with
- * the source track, so event-level cues merge cleanly. */
-export function parseJson3(
-  data: Json3File,
-  opts?: { eventLevel?: boolean },
-): CaptionCue[] {
-  const forceEventLevel = opts?.eventLevel ?? false;
+ * Always produces one cue per JSON3 event (event-level).
+ * Word-level timing from tOffsetMs is preserved as nested `words` data. */
+export function parseJson3(data: Json3File): CaptionCue[] {
   const cues: CaptionCue[] = [];
   for (const event of data.events) {
     if (!event.segs || !event.dDurationMs) continue;
+    const eventBegin = event.tStartMs / 1000;
     const eventEnd = (event.tStartMs + event.dDurationMs) / 1000;
-    const hasOffsets =
-      !forceEventLevel && event.segs.some((s) => s.tOffsetMs != null);
 
-    if (hasOffsets) {
-      // Word-level: each segment with tOffsetMs becomes its own cue
+    // Event-level: join all segments into one cue
+    const text = event.segs
+      .map((s) => s.utf8)
+      .join("")
+      .replace(/\n/g, " ")
+      .trim();
+    if (!text) continue;
+
+    // Preserve word-level timing as nested data when available
+    let words: CaptionWord[] | undefined;
+    if (event.segs.some((s) => s.tOffsetMs != null)) {
+      words = [];
       for (let si = 0; si < event.segs.length; si++) {
         const seg = event.segs[si];
-        const text = (seg.utf8 || "").replace(/\n/g, "").trim();
-        if (!text) continue;
+        const wordText = (seg.utf8 || "").replace(/\n/g, "").trim();
+        if (!wordText) continue;
         const begin = (event.tStartMs + (seg.tOffsetMs ?? 0)) / 1000;
-        // End = next segment's begin, or event end
         let end = eventEnd;
         for (let sj = si + 1; sj < event.segs.length; sj++) {
-          const next = event.segs[sj];
-          if (next.tOffsetMs != null) {
-            end = (event.tStartMs + next.tOffsetMs) / 1000;
+          if (event.segs[sj].tOffsetMs != null) {
+            end = (event.tStartMs + event.segs[sj].tOffsetMs!) / 1000;
             break;
           }
         }
-        cues.push({ begin, end, text });
+        words.push({ text: wordText, begin, end });
       }
-    } else {
-      // Event-level: join all segments into one cue
-      const text = event.segs
-        .map((s) => s.utf8)
-        .join("")
-        .replace(/\n/g, " ")
-        .trim();
-      if (!text) continue;
-      cues.push({ begin: event.tStartMs / 1000, end: eventEnd, text });
     }
+
+    cues.push({ begin: eventBegin, end: eventEnd, text, words });
   }
   return cues;
-}
-
-/** Check if a track is an auto-translated virtual track (vssId contains ".t."). */
-export function isTranslatedTrack(track: YouTubeCaptionTrack): boolean {
-  return track.vssId.includes(".t.");
 }
 
 /** Pick best track for a language, with prefix fallback (e.g. "en" matches "en-US"). */
