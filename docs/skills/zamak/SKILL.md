@@ -1,5 +1,5 @@
 ---
-name: zamak-fill
+name: zamak
 description: >-
   Fill translation, etymology, and notes for Korean vocabulary bookmarks
   via the window.__zamak browser API.
