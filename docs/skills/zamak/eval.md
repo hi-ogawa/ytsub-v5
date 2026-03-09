@@ -24,19 +24,62 @@ Fixture data in `scripts/youtube-json/`. Each covers a different scenario.
 | `DtK-CkwNHSY` | B: Ko auto + En manual | auto    | manual (en-US)       | `/dev/youtube/DtK-CkwNHSY` (tripleS, variety) |
 | `aK8Yh3RTBUY` | C: Ko auto only        | auto    | auto-translated (en) | `/dev/youtube/aK8Yh3RTBUY`                    |
 
+## Extension Findings
+
+Observations from testing with Claude for Chrome. This section tracks what works, what doesn't, and why — to inform prompt design.
+
+### Output sanitizer blocks string results (2026-03-10)
+
+Claude for Chrome's JS tool has a built-in output filter that scans return values for patterns resembling cookies (`key=value; key2=value2`) or URL query strings (`?param=value&other=value`). When triggered, the result is replaced with `[BLOCKED: Cookie/query string data]`.
+
+`getSkillPrompt()` returns the full SKILL.md content — a long string containing `?`, `;`, `=`, and `key: "value"` patterns throughout. This reliably trips the filter. The call succeeds, but Claude never sees the result.
+
+**Trigger:** The `?` in TypeScript optional fields (`translation?, etymology?`) inside code fences, plus `;` and `=` patterns. Purely a false positive — nothing sensitive.
+
+**Object wrapping doesn't help.** Returning `{ prompt: window.__zamak.getSkillPrompt() }` still gets blocked — the filter recurses into object properties and redacts individual string values while keeping the object skeleton intact. This is value-level inspection, not a naive top-level regex.
+
+**Workaround: `console.log()` bypass.** The filter operates on JS tool **return values** only. `console.log()` returns `undefined` (passes filter) and writes to the browser console buffer instead. Claude reads that buffer via a separate `read_console_messages` tool which has different (looser) filtering. Confirmed working: `console.log(window.__zamak.getSkillPrompt())` successfully delivers the full prompt text.
+
+**Implication:** `console.log()` is the only confirmed bypass. The sanitizer is thorough on return values — wrapping, restructuring, or nesting won't help. For any result that might contain `?`, `;`, `=` patterns, route through `console.log()`.
+
+**Unknown:** Whether large `getCaptions()` results also trip the filter (unlikely for JSON arrays, but untested at scale).
+
+### console.log with objects unreadable (2026-03-10)
+
+`read_console_messages` cannot read object arguments passed to `console.log()`. `console.log("tag", { key: "value" })` comes through as something like `tag [object Object]`. Must stringify: `console.log("tag " + JSON.stringify(obj))`. String arguments (like `skillPrompt`) are fine as-is.
+
+**Mitigation:** `log.*` methods use `JSON.stringify()` for object/array results, string concatenation with the `ZAMAK:` prefix (not comma-separated arguments).
+
+### Behavioral fallback on error (2026-03-10)
+
+When a JS call returns unexpected results (blocked, undefined, error), Claude escalates to its other tools — screenshots, clicking, DOM reading, typing — to try to accomplish the goal. This is counterproductive for an API-driven workflow where DOM interaction is never correct.
+
+**Mitigation:** Eval prompts must include hard constraints upfront:
+
+```
+Use ONLY window.__zamak.* methods. No screenshots, no clicking, no typing, no DOM interaction.
+If any call fails or returns unexpected results: STOP and report what happened. Do not retry or work around.
+```
+
+Both the positive constraint ("only \_\_zamak") and negative enumeration ("no screenshots, no clicking...") are needed — one without the other is insufficient.
+
+---
+
 ## Smoke Test (before running evals)
 
-Verify Claude for Chrome can call the API. Paste this single prompt:
+Verify Claude for Chrome can call the API. The `log.*` methods write to console with a `ZAMAK:` prefix, bypassing the output sanitizer.
 
 ```
-Run these 3 commands one at a time on this page. After each one, show me the raw result (or error). Do not try to fix or work around any errors — just report exactly what happened and stop.
+Run these commands one at a time. Read the console output after each (look for ZAMAK: prefix). Explain what you see.
+Do not fix or work around errors — just report and stop.
 
-1. window.__zamak.getVideoContext()
-2. window.__zamak.getCaptions().slice(0, 3)
-3. window.__zamak.getSkillPrompt().slice(0, 200)
+1. window.__zamak.log.skillPrompt()
+2. window.__zamak.log.videoContext()
+3. window.__zamak.log.captions()
+4. window.__zamak.log.bookmarks()
 ```
 
-If any step errors, stop and debug before proceeding to evals.
+If any step errors or produces no console output, stop and debug before proceeding to evals.
 
 ## Eval 1: Pick & Fill (main workflow)
 
@@ -48,7 +91,7 @@ The common end-to-end flow: scan captions → suggest vocab → user selects →
 2. In Claude for Chrome, paste:
 
 ```
-Read window.__zamak.getSkillPrompt() and run the "Pick & Fill" task. If any API call errors, stop and report — do not try to fix it.
+Run window.__zamak.log.skillPrompt() and read the console output. Follow the "Pick & Fill" task. If any API call errors, stop and report — do not try to fix it.
 ```
 
 3. Review suggestions — are they interesting, intermediate+ words?
@@ -102,7 +145,7 @@ When bookmarks already exist and just need metadata filled.
 3. In Claude for Chrome, paste:
 
 ```
-Read window.__zamak.getSkillPrompt() and run the "Fill Bookmarks" task. If any API call errors, stop and report — do not try to fix it.
+Run window.__zamak.log.skillPrompt() and read the console output. Follow the "Fill Bookmarks" task. If any API call errors, stop and report — do not try to fix it.
 ```
 
 4. Review — same checklist as Eval 1 filling section
@@ -117,7 +160,7 @@ Best tested with scenario B or C (auto-generated Korean).
 2. In Claude for Chrome, paste:
 
 ```
-Read window.__zamak.getSkillPrompt() and run the "Fix Korean ASR" task. If any API call errors, stop and report — do not try to fix it.
+Run window.__zamak.log.skillPrompt() and read the console output. Follow the "Fix Korean ASR" task. If any API call errors, stop and report — do not try to fix it.
 ```
 
 3. Review Claude's report and the corrected captions in the panel

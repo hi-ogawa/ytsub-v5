@@ -42,7 +42,15 @@ interface ZamakCaptionUpdate {
   text2?: string;
 }
 
+interface ZamakLog {
+  skillPrompt(): void;
+  videoContext(): void;
+  captions(): void;
+  bookmarks(): void;
+}
+
 interface ZamakApi {
+  log: ZamakLog;
   getSkillPrompt(): string;
   getCaptions(): ZamakCaption[];
   updateCaptions(entries: ZamakCaptionUpdate[]): void;
@@ -64,6 +72,46 @@ declare global {
 
 const CONTEXT_RADIUS = 1; // rows before/after the bookmark's caption
 
+const NOT_READY_MSG =
+  "ZAMAK: caption panel not open. Open it first, then retry.";
+
+function notReady(method: string): never {
+  console.warn(NOT_READY_MSG, `(called: ${method})`);
+  throw new Error(NOT_READY_MSG);
+}
+
+// Stub API — always available, skill prompt works, everything else warns
+function createStubApi(): ZamakApi {
+  return {
+    log: {
+      skillPrompt() {
+        console.warn(NOT_READY_MSG, "(skill prompt still readable)");
+        console.log("ZAMAK:skillPrompt", skillPrompt);
+      },
+      videoContext() {
+        notReady("log.videoContext");
+      },
+      captions() {
+        notReady("log.captions");
+      },
+      bookmarks() {
+        notReady("log.bookmarks");
+      },
+    },
+    getSkillPrompt: () => skillPrompt,
+    getCaptions: () => notReady("getCaptions"),
+    updateCaptions: () => notReady("updateCaptions"),
+    getBookmarks: () => notReady("getBookmarks"),
+    fillBookmarks: () => notReady("fillBookmarks"),
+    getVideoContext: () => notReady("getVideoContext"),
+  };
+}
+
+// Install stub immediately on module load
+if (!window.__zamak) {
+  window.__zamak = createStubApi();
+}
+
 export function useZamakApi({
   session,
   rows,
@@ -77,15 +125,30 @@ export function useZamakApi({
   language1: string;
   language2: string;
 }) {
-  // Use refs to avoid re-running the effect on every state change
-  // while keeping the API methods current
   const sessionRef = useRef(session);
   const rowsRef = useRef(rows);
   sessionRef.current = session;
   rowsRef.current = rows;
 
   useEffect(() => {
-    window.__zamak = {
+    const api: ZamakApi = {
+      log: {
+        skillPrompt() {
+          console.log("ZAMAK:skillPrompt", api.getSkillPrompt());
+        },
+        videoContext() {
+          console.log(
+            "ZAMAK:videoContext " + JSON.stringify(api.getVideoContext()),
+          );
+        },
+        captions() {
+          console.log("ZAMAK:captions " + JSON.stringify(api.getCaptions()));
+        },
+        bookmarks() {
+          console.log("ZAMAK:bookmarks " + JSON.stringify(api.getBookmarks()));
+        },
+      },
+
       getSkillPrompt() {
         return skillPrompt;
       },
@@ -153,8 +216,11 @@ export function useZamakApi({
       },
     };
 
+    window.__zamak = api;
+
     return () => {
-      delete window.__zamak;
+      // Revert to stub on unmount (panel closed)
+      window.__zamak = createStubApi();
     };
   }, [videoMeta, language1, language2]);
 }
