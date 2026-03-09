@@ -8,25 +8,25 @@
   },
   "captionTracks": [
     {
-      "baseUrl": "https://www.youtube.com/api/timedtext?v=DtK-CkwNHSY&ei=nQutad2uAvSv2roPi-bWiAo&caps=asr&opi=112496729&xoaf=5&xowf=1&xospf=1&hl=en&ip=0.0.0.0&ipbits=0&expire=1772973581&sparams=ip,ipbits,expire,v,ei,caps,opi,xoaf&signature=7EA7EA0C52F13533731D104300D197155330B052.7DB6C72BAF47EBB23C9C7F1FEB96AB43EAAB492B&key=yt8&lang=zh&fmt=srv3",
+      "baseUrl": "https://www.youtube.com/api/timedtext?v=DtK-CkwNHSY&ei=X1uuabarGPWA2roP19mhwQ4&caps=asr&opi=112496729&xoaf=5&xowf=1&xospf=1&hl=en&ip=0.0.0.0&ipbits=0&expire=1773059535&sparams=ip,ipbits,expire,v,ei,caps,opi,xoaf&signature=7FB754D290BBFA982C72DD07421A6CC4B8147DC1.E55C99F0D3FD420C4B5A3B66EF5E287C17298A85&key=yt8&lang=zh&fmt=srv3",
       "languageCode": "zh",
       "name": "Chinese",
       "vssId": ".zh"
     },
     {
-      "baseUrl": "https://www.youtube.com/api/timedtext?v=DtK-CkwNHSY&ei=nQutad2uAvSv2roPi-bWiAo&caps=asr&opi=112496729&xoaf=5&xowf=1&xospf=1&hl=en&ip=0.0.0.0&ipbits=0&expire=1772973581&sparams=ip,ipbits,expire,v,ei,caps,opi,xoaf&signature=7EA7EA0C52F13533731D104300D197155330B052.7DB6C72BAF47EBB23C9C7F1FEB96AB43EAAB492B&key=yt8&lang=en-US&fmt=srv3",
+      "baseUrl": "https://www.youtube.com/api/timedtext?v=DtK-CkwNHSY&ei=X1uuabarGPWA2roP19mhwQ4&caps=asr&opi=112496729&xoaf=5&xowf=1&xospf=1&hl=en&ip=0.0.0.0&ipbits=0&expire=1773059535&sparams=ip,ipbits,expire,v,ei,caps,opi,xoaf&signature=7FB754D290BBFA982C72DD07421A6CC4B8147DC1.E55C99F0D3FD420C4B5A3B66EF5E287C17298A85&key=yt8&lang=en-US&fmt=srv3",
       "languageCode": "en-US",
       "name": "English (United States)",
       "vssId": ".en-US"
     },
     {
-      "baseUrl": "https://www.youtube.com/api/timedtext?v=DtK-CkwNHSY&ei=nQutad2uAvSv2roPi-bWiAo&caps=asr&opi=112496729&xoaf=5&xowf=1&xospf=1&hl=en&ip=0.0.0.0&ipbits=0&expire=1772973581&sparams=ip,ipbits,expire,v,ei,caps,opi,xoaf&signature=7EA7EA0C52F13533731D104300D197155330B052.7DB6C72BAF47EBB23C9C7F1FEB96AB43EAAB492B&key=yt8&lang=ja&fmt=srv3",
+      "baseUrl": "https://www.youtube.com/api/timedtext?v=DtK-CkwNHSY&ei=X1uuabarGPWA2roP19mhwQ4&caps=asr&opi=112496729&xoaf=5&xowf=1&xospf=1&hl=en&ip=0.0.0.0&ipbits=0&expire=1773059535&sparams=ip,ipbits,expire,v,ei,caps,opi,xoaf&signature=7FB754D290BBFA982C72DD07421A6CC4B8147DC1.E55C99F0D3FD420C4B5A3B66EF5E287C17298A85&key=yt8&lang=ja&fmt=srv3",
       "languageCode": "ja",
       "name": "Japanese",
       "vssId": ".ja"
     },
     {
-      "baseUrl": "https://www.youtube.com/api/timedtext?v=DtK-CkwNHSY&ei=nQutad2uAvSv2roPi-bWiAo&caps=asr&opi=112496729&xoaf=5&xowf=1&xospf=1&hl=en&ip=0.0.0.0&ipbits=0&expire=1772973581&sparams=ip,ipbits,expire,v,ei,caps,opi,xoaf&signature=7EA7EA0C52F13533731D104300D197155330B052.7DB6C72BAF47EBB23C9C7F1FEB96AB43EAAB492B&key=yt8&kind=asr&lang=ko&fmt=srv3",
+      "baseUrl": "https://www.youtube.com/api/timedtext?v=DtK-CkwNHSY&ei=X1uuabarGPWA2roP19mhwQ4&caps=asr&opi=112496729&xoaf=5&xowf=1&xospf=1&hl=en&ip=0.0.0.0&ipbits=0&expire=1773059535&sparams=ip,ipbits,expire,v,ei,caps,opi,xoaf&signature=7FB754D290BBFA982C72DD07421A6CC4B8147DC1.E55C99F0D3FD420C4B5A3B66EF5E287C17298A85&key=yt8&kind=asr&lang=ko&fmt=srv3",
       "languageCode": "ko",
       "kind": "asr",
       "name": "Korean (auto-generated)",

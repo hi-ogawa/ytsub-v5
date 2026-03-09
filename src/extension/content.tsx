@@ -70,7 +70,7 @@ function ExtensionViewer({ videoId }: { videoId: string }) {
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["extension-metadata", videoId],
-    queryFn: () => fetchPlayerApi(videoId, getUserLangs()),
+    queryFn: () => fetchPlayerApi({ videoId, userLangs: getUserLangs() }),
   });
 
   if (isLoading) {

@@ -141,10 +141,11 @@ export async function fetchTrackJson3(baseUrl: string): Promise<Json3File> {
  * Client configs synced from yt-dlp (see docs/skills/yt-dlp/SKILL.md).
  * Inlined in function body so page.evaluate() serialization works.
  */
-export async function fetchPlayerApi(
-  videoId: string,
-  userLangs?: string[],
-): Promise<YouTubeExtractionResult> {
+export async function fetchPlayerApi(options: {
+  videoId: string;
+  userLangs?: string[];
+}): Promise<YouTubeExtractionResult> {
+  const { videoId, userLangs } = options;
   // Mobile clients that don't require JS player or SUBS POT
   const clients = {
     // yt-dlp's current default — simplest client, no POT policies at all
