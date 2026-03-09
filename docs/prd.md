@@ -83,12 +83,9 @@ See ytsub-v4 for relevant technique.
   - move alignment select and autoscroll toggle inside the dropdown
   - export `import.json` to be imported on main app
 - [x] fix: store selected track pair storage per video. not only globally.
-- [ ] support manual bookmark (in progress — [task doc](./tasks/2026-03-08-extension-manual-bookmarks.md))
-  - [x] basic bookmark creation + highlight + export
-  - [ ] dev-viewer parity (same experience as extension)
-  - [ ] track change guard (warn + clear bookmarks when switching tracks)
-  - [ ] bookmark-track binding (persist track metadata alongside bookmarks)
+- [x] support manual bookmark
 - [ ] caption panel bookmark list tab — match server viewer's captions/bookmarks tab UI in shared `CaptionPanel` (extension + dev-viewer)
+- [ ] extension page to list all videos with bookmarks (need own storage?)
 - [ ] consolidate extension/content.css theme with styles.app.css — currently extension `:host` duplicates dark theme variables manually, causing new tokens to be missed; consider reusing `.dark` class or shared partial
 - [ ] adapt to youtube dark/light theme (currently style hard-coded for dark)
 
