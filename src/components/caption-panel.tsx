@@ -278,12 +278,13 @@ export function CaptionPanel({
               <Download className="mr-2 h-4 w-4" />
               Export import.json
             </DropdownMenuItem>
-            {hasBookmarks && (
-              <DropdownMenuItem onClick={handleClearBookmarks}>
-                <Trash2 className="mr-2 h-4 w-4" />
-                Clear bookmarks
-              </DropdownMenuItem>
-            )}
+            <DropdownMenuItem
+              onClick={handleClearBookmarks}
+              disabled={!hasBookmarks}
+            >
+              <Trash2 className="mr-2 h-4 w-4" />
+              Clear bookmarks
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>

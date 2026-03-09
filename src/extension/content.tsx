@@ -14,6 +14,10 @@ import type { YouTubeExtractionResult } from "../lib/youtube.ts";
 import { fetchPlayerApi, fetchTrackJson3 } from "../lib/youtube.ts";
 import contentCss from "./content.css?inline";
 
+declare const __BUILD_TIME__: string;
+declare const __GIT_REV__: string;
+console.log(`[zamak] build: ${__BUILD_TIME__} (${__GIT_REV__})`);
+
 // Adapter: wrap the page's <video> element as YTPlayer
 function getVideoPlayer(): YTPlayer | null {
   const video = document.querySelector("video");
