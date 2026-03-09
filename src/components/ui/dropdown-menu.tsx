@@ -45,7 +45,7 @@ function DropdownMenuItem({
   return (
     <DropdownMenuPrimitive.Item
       className={
-        "flex w-full cursor-default items-center rounded-sm px-2 py-1.5 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground" +
+        "flex w-full cursor-default items-center rounded-sm px-2 py-1.5 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50" +
         (className ? ` ${className}` : "")
       }
       {...props}

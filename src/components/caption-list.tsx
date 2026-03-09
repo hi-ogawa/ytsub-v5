@@ -104,7 +104,14 @@ export function CaptionList({
 
   function onClickRow(index: number) {
     if (!player) return;
-    if (document.getSelection()?.toString()) return;
+    const root = scrollRef.current?.getRootNode();
+    const sel =
+      root && "getSelection" in root
+        ? (
+            root as unknown as { getSelection(): Selection | null }
+          ).getSelection()
+        : document.getSelection();
+    if (sel?.toString()) return;
     isManualScrollRef.current = false;
     if (index === currentIndex) {
       isPlaying ? player.pauseVideo() : player.playVideo();

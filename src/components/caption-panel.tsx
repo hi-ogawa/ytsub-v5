@@ -179,15 +179,27 @@ export function CaptionPanel({
   const [bookmarkSelection, setBookmarkSelection] =
     useState<BookmarkSelection>();
   const [isCreating, setIsCreating] = useState(false);
+  const panelRef = useRef<HTMLDivElement>(null);
+
+  // Shadow DOM requires getSelection() on the shadow root, not document
+  const getSelection = useCallback((): Selection | null => {
+    const root = panelRef.current?.getRootNode();
+    if (root && "getSelection" in root) {
+      return (
+        root as unknown as { getSelection(): Selection | null }
+      ).getSelection();
+    }
+    return document.getSelection();
+  }, []);
 
   useEffect(() => {
     const handler = () => {
-      const sel = document.getSelection() ?? undefined;
+      const sel = getSelection() ?? undefined;
       setBookmarkSelection(sel ? extractBookmarkSelection(sel) : undefined);
     };
     document.addEventListener("selectionchange", handler);
     return () => document.removeEventListener("selectionchange", handler);
-  }, []);
+  }, [getSelection]);
 
   function onClickBookmark() {
     if (!bookmarkSelection || !rows) return;
@@ -199,13 +211,13 @@ export function CaptionPanel({
       timestamp: row.begin,
       context: bookmarkSelection.side === 0 ? row.text1 : row.text2,
     });
-    document.getSelection()?.removeAllRanges();
+    getSelection()?.removeAllRanges();
     setBookmarkSelection(undefined);
     setIsCreating(false);
   }
 
   function onCancelBookmark() {
-    document.getSelection()?.removeAllRanges();
+    getSelection()?.removeAllRanges();
     setBookmarkSelection(undefined);
   }
 
@@ -215,7 +227,7 @@ export function CaptionPanel({
   }
 
   return (
-    <>
+    <div ref={panelRef} className="flex h-full flex-col">
       <div className="flex items-center border-b">
         <div className="min-w-0 flex-1">
           <TrackPicker
@@ -327,7 +339,7 @@ export function CaptionPanel({
           </div>
         )}
       </div>
-    </>
+    </div>
   );
 }
 
