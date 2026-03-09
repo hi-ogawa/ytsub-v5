@@ -17,6 +17,7 @@ import {
   type ExtensionBookmark,
   addBookmark as addBookmarkToStorage,
   getBookmarks,
+  updateBookmark as updateBookmarkInStorage,
 } from "./extension-bookmarks.ts";
 import {
   type Json3File,
@@ -232,6 +233,21 @@ export function useCaptionSession({
     [youtubeId, persistSession],
   );
 
+  const updateBookmark = useCallback(
+    (
+      id: string,
+      data: Partial<
+        Pick<ExtensionBookmark, "translation" | "etymology" | "notes">
+      >,
+    ) => {
+      updateBookmarkInStorage(youtubeId, id, data);
+      const updated = getBookmarks(youtubeId);
+      setBookmarks(updated);
+      persistSession(updated);
+    },
+    [youtubeId, persistSession],
+  );
+
   const clearBookmarks = useCallback(() => {
     localStorage.removeItem(`zamak:bookmarks:${youtubeId}`);
     setBookmarks([]);
@@ -310,8 +326,10 @@ export function useCaptionSession({
     loading: hydrated === null, // still checking IndexedDB
 
     // Bookmarks
+    bookmarks,
     bookmarksByIndex,
     onCreateBookmark: addBookmark,
+    onUpdateBookmark: updateBookmark,
     onClearBookmarks: clearBookmarks,
     hasBookmarks,
 

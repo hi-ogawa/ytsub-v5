@@ -46,6 +46,19 @@ export function addBookmark(
   return bookmark;
 }
 
+export function updateBookmark(
+  youtubeId: string,
+  id: string,
+  data: Partial<Pick<ExtensionBookmark, "translation" | "etymology" | "notes">>,
+): ExtensionBookmark | undefined {
+  const bookmarks = getBookmarks(youtubeId);
+  const idx = bookmarks.findIndex((b) => b.id === id);
+  if (idx === -1) return;
+  bookmarks[idx] = { ...bookmarks[idx], ...data };
+  localStorage.setItem(storageKey(youtubeId), JSON.stringify(bookmarks));
+  return bookmarks[idx];
+}
+
 // --- Text selection for bookmarking ---
 
 export interface BookmarkSelection {
