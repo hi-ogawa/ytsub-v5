@@ -13,10 +13,9 @@ const metadataModules = import.meta.glob<YouTubeExtractionResult>(
   { eager: true, import: "default" },
 );
 
-const trackModules = import.meta.glob<Parameters<typeof parseJson3>[0]>(
-  "/scripts/youtube-json/*/track-*.json",
-  { eager: true, import: "default" },
-);
+const trackModules = import.meta.glob<{
+  default: Parameters<typeof parseJson3>[0];
+}>("/scripts/youtube-json/*/track-*.json");
 
 export function DevViewerPage() {
   const { videoId } = useParams<"videoId">();
@@ -55,9 +54,11 @@ export function DevViewerPage() {
             tracks={meta.captionTracks}
             fetchCues={async (track) => {
               const key = `/scripts/youtube-json/${videoId}/track-${track.vssId}.json`;
-              const raw = trackModules[key];
-              if (!raw) throw new Error(`No track fixture for ${track.vssId}`);
-              return parseJson3(raw);
+              const loader = trackModules[key];
+              if (!loader)
+                throw new Error(`No track fixture for ${track.vssId}`);
+              const mod = await loader();
+              return parseJson3(mod.default);
             }}
             player={player}
             videoMeta={meta.video}
