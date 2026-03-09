@@ -53,37 +53,48 @@ const onCreateBookmark = useCallback((sel) => {
 
 Problem: bookmarks store `captionIndex` tied to the merged rows array. Changing tracks produces a different merge, making all indices invalid. Currently bookmarks silently point to wrong rows or disappear.
 
-Solution: **warn + clear**. In `CaptionPanel`, when tracks change and bookmarks exist:
+Solution: **disable + clear action**.
 
-- Show a confirmation: "Changing tracks will discard N bookmarks. Continue?"
-- If confirmed: clear bookmarks for this video, proceed with track change
-- If cancelled: revert track selection
+- When bookmarks exist, disable track picker and alignment strategy select
+- Show hover title: "Cannot be changed while bookmarks exist"
+- Add "Clear bookmarks" item in the settings dropdown (with confirmation)
+- Clearing bookmarks re-enables track/alignment selection
 
-This requires a new optional callback prop on `CaptionPanel`:
+New optional callback prop on `CaptionPanel`:
 
 ```ts
-onClearBookmarks?: () => void; // called when tracks change and bookmarks need clearing
+onClearBookmarks?: () => void; // called from dropdown "Clear bookmarks" action
 ```
 
-The track picker `onSelect` handler checks `bookmarksByIndex?.size > 0` before applying the change.
+`TrackPicker` and alignment `<select>` check `bookmarksByIndex?.size > 0` to determine disabled state.
 
-### C. Bookmark-track binding
+### C. Persist captions + bookmarks together
 
-Problem: bookmarks are stored in `zamak:bookmarks:{videoId}` but there's no record of which tracks were active. On reload, if tracks resolve differently (e.g., YouTube changes available tracks, or user's language preferences changed), bookmarks become stale with no detection.
+Problem: bookmarks reference `captionIndex` into merged captions, but captions are re-fetched and re-merged on every load. If tracks resolve differently, bookmarks become stale with no way to recover.
 
-Solution: store a fingerprint alongside bookmarks:
+Solution: **persist merged captions alongside bookmarks**. Once bookmarks are created, the persisted captions become the source of truth — no re-fetch or re-merge needed on reload.
+
+Use IndexedDB (merged captions for a video can be 100KB+). One record per video session:
 
 ```ts
-// In extension-bookmarks.ts, change storage shape:
-type BookmarkStore = {
-  trackKey: { vssId1: string; vssId2: string }; // tracks active when bookmarks were created
+// IndexedDB store: zamak-captions
+type CaptionSession = {
+  youtubeId: string;
+  vssId1: string;
+  vssId2: string;
+  captions: MergedCaption[];  // locked in when first bookmark is created
   bookmarks: ExtensionBookmark[];
 };
 ```
 
-On load, compare stored `trackKey` against current selected tracks. If mismatch → warn user and clear bookmarks.
+Behavior:
+- On first bookmark creation: persist current merged captions + track pair into IndexedDB
+- On reload: if a session exists for this video, hydrate from IndexedDB (skip fetch/merge)
+- Track picker stays disabled as long as session exists (integrates with B)
+- "Clear bookmarks" also clears the persisted session, re-enables track selection
+- Future: caption editing mutates the persisted data directly
 
-This naturally integrates with (B): the same guard logic applies both to explicit track changes and stale-on-reload detection.
+This eliminates staleness entirely — `captionIndex` always references the stored captions, not a volatile re-merge. Also makes export trivial since all data is already co-located.
 
 ## Data Model
 
@@ -93,32 +104,35 @@ This naturally integrates with (B): the same guard logic applies both to explici
 // DB bookmarks table columns:
 // id, videoId, captionId, text, side, offset, translation, context, timestamp, etymology, notes, status, createdAt
 
-// src/lib/extension-bookmarks.ts — client-only subset
+// src/lib/extension-bookmarks.ts
 type ExtensionBookmark = {
-  id: string;            // crypto.randomUUID() (DB uses int autoincrement, but string UUID is fine for localStorage)
+  id: string;            // crypto.randomUUID() (DB uses int autoincrement)
   text: string;          // = DB text
   side: number;          // = DB side
   offset: number;        // = DB offset
-  captionIndex: number;  // maps to DB captionId (index in merged rows → resolved to caption FK on import)
+  captionIndex: number;  // maps to DB captionId (resolved on import)
   timestamp: number;     // = DB timestamp
   context: string;       // = DB context
+  translation: string;   // = DB translation (default "")
+  etymology: string;     // = DB etymology (default "")
+  notes: string;         // = DB notes (default "")
   createdAt: string;     // = DB createdAt (ISO string)
 };
 // localStorage key: zamak:bookmarks:{youtubeId}
 ```
 
-Fields intentionally omitted from client model (server-only concerns): `videoId` (implicit from storage key), `captionId` (resolved on import from captionIndex), `translation`, `etymology`, `notes`, `status`.
+Fields omitted from client model (server-only concerns): `videoId` (implicit from storage key), `captionId` (resolved on import from captionIndex), `status` (inferred as "manual" on export).
 
 ## Reference Files
 
 | File                               | Role                                            |
 | ---------------------------------- | ----------------------------------------------- |
-| `src/lib/extension-bookmarks.ts`   | localStorage CRUD + selection extraction         |
-| `src/components/caption-list.tsx`  | Shared caption rendering with highlight support  |
-| `src/components/caption-panel.tsx` | Selection handling, FABs, export, track picker   |
-| `src/extension/content.tsx`        | Extension wiring (done)                          |
-| `src/routes/dev-viewer.tsx`        | Dev-viewer wiring (needs bookmark props)         |
-| `src/routes/video-viewer.tsx`      | Reference: server-backed bookmark system         |
+| `src/lib/extension-bookmarks.ts`   | localStorage CRUD + selection extraction        |
+| `src/components/caption-list.tsx`  | Shared caption rendering with highlight support |
+| `src/components/caption-panel.tsx` | Selection handling, FABs, export, track picker  |
+| `src/extension/content.tsx`        | Extension wiring (done)                         |
+| `src/routes/dev-viewer.tsx`        | Dev-viewer wiring (needs bookmark props)        |
+| `src/routes/video-viewer.tsx`      | Reference: server-backed bookmark system        |
 
 ## Future: Unify Extension ↔ Server
 
@@ -139,6 +153,4 @@ Not blocking current work — tracked in prd.md.
   1. Dev-viewer must have same bookmark experience as extension
   2. Track change after bookmarks breaks alignment — need UX guard
   3. Persisted bookmarks need track metadata binding to detect staleness
-- 2026-03-09: User feedback — design direction:
-  4. ExtensionBookmark should align with DB bookmarks schema for future unification
-  5. Server viewer's caption/bookmark tabs should come to extension/dev-viewer too (follow-up)
+- 2026-03-09: User feedback — design direction: 4. ExtensionBookmark should align with DB bookmarks schema for future unification 5. Server viewer's caption/bookmark tabs should come to extension/dev-viewer too (follow-up)

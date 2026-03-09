@@ -335,7 +335,9 @@ export function CaptionPanel({
       })),
       bookmarks: allBookmarks.map((b) => ({
         text: b.text,
-        translation: "",
+        translation: b.translation,
+        etymology: b.etymology,
+        notes: b.notes,
         captionIdx: b.captionIndex,
         side: b.side,
         offset: b.offset,

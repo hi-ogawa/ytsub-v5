@@ -6,6 +6,9 @@ export type ExtensionBookmark = {
   captionIndex: number;
   timestamp: number;
   context: string;
+  translation: string;
+  etymology: string;
+  notes: string;
   createdAt: string;
 };
 
@@ -24,10 +27,16 @@ export function getBookmarks(youtubeId: string): ExtensionBookmark[] {
 
 export function addBookmark(
   youtubeId: string,
-  data: Omit<ExtensionBookmark, "id" | "createdAt">,
+  data: Omit<
+    ExtensionBookmark,
+    "id" | "createdAt" | "translation" | "etymology" | "notes"
+  >,
 ): ExtensionBookmark {
   const bookmark: ExtensionBookmark = {
     ...data,
+    translation: "",
+    etymology: "",
+    notes: "",
     id: crypto.randomUUID(),
     createdAt: new Date().toISOString(),
   };
