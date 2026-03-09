@@ -6,6 +6,7 @@ import {
   ResizablePanel,
 } from "../components/caption-panel.tsx";
 import { useYouTubePlayer } from "../components/youtube-player.tsx";
+import { useCaptionSession } from "../lib/caption-session.ts";
 import type { Json3File, YouTubeExtractionResult } from "../lib/youtube.ts";
 
 const metadataModules = import.meta.glob<YouTubeExtractionResult>(
@@ -48,24 +49,43 @@ export function DevViewerPage() {
       </div>
 
       {/* Floating caption panel (same position as extension) */}
-      {panelOpen && meta && (
+      {panelOpen && (
         <ResizablePanel className="fixed top-[65px] right-[10px] bottom-[56px] flex flex-col overflow-hidden rounded-lg border border-border bg-background">
-          <CaptionPanel
-            tracks={meta.captionTracks}
-            fetchJson3={async (track) => {
-              const key = `/scripts/youtube-json/${videoId}/track-${track.vssId}.json`;
-              const loader = trackModules[key];
-              if (!loader)
-                throw new Error(`No track fixture for ${track.vssId}`);
-              const mod = await loader();
-              return mod.default;
-            }}
-            player={player}
-            videoMeta={meta.video}
-          />
+          <DevViewerSession videoId={videoId} meta={meta} player={player} />
         </ResizablePanel>
       )}
       <CaptionFab open={panelOpen} onClick={() => setPanelOpen((v) => !v)} />
     </div>
+  );
+}
+
+function DevViewerSession({
+  videoId,
+  meta,
+  player,
+}: {
+  videoId: string;
+  meta: YouTubeExtractionResult;
+  player: ReturnType<typeof useYouTubePlayer>["player"];
+}) {
+  const session = useCaptionSession({
+    youtubeId: videoId,
+    tracks: meta.captionTracks,
+    fetchJson3: async (track) => {
+      const key = `/scripts/youtube-json/${videoId}/track-${track.vssId}.json`;
+      const loader = trackModules[key];
+      if (!loader) throw new Error(`No track fixture for ${track.vssId}`);
+      const mod = await loader();
+      return mod.default;
+    },
+    videoMeta: meta.video,
+  });
+
+  return (
+    <CaptionPanel
+      tracks={meta.captionTracks}
+      player={player}
+      session={session}
+    />
   );
 }

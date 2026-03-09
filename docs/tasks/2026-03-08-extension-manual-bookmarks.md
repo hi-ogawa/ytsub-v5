@@ -25,6 +25,7 @@ Steps 1-6 (basic bookmark creation) are implemented. Remaining:
 ### Problem with current `caption-panel.tsx`
 
 `CaptionPanel` (203-465) mixes too many concerns:
+
 - Track selection state + localStorage persistence (L148-199)
 - Fetching json3 via `useQuery` (L237-247)
 - Merging captions (L251-263)
@@ -68,7 +69,7 @@ function useCaptionSession(opts: {
   selectedVssId1: string | undefined;
   selectedVssId2: string | undefined;
   setTracks: (v1: string | undefined, v2: string | undefined) => void;
-  tracksLocked: boolean;  // true when bookmarks exist
+  tracksLocked: boolean; // true when bookmarks exist
 
   // Caption data
   rows: MergedCaption[] | undefined;
@@ -81,8 +82,10 @@ function useCaptionSession(opts: {
   // Bookmarks
   bookmarks: ExtensionBookmark[];
   bookmarksByIndex: Map<number, ExtensionBookmark[]>;
-  addBookmark: (sel: BookmarkSelection & { timestamp: number; context: string }) => void;
-  clearBookmarks: () => void;  // clears bookmarks + persisted session, unlocks tracks
+  addBookmark: (
+    sel: BookmarkSelection & { timestamp: number; context: string },
+  ) => void;
+  clearBookmarks: () => void; // clears bookmarks + persisted session, unlocks tracks
 
   // Export
   exportSession: (videoMeta: VideoMeta) => void;
@@ -127,6 +130,7 @@ function useCaptionSession(opts: {
 ### What changes per file
 
 **New: `src/lib/caption-session.ts`**
+
 - `CaptionSession` type
 - `useCaptionSession()` hook
 - IndexedDB helpers (thin wrapper — `idb-keyval` or raw `indexedDB`)
@@ -134,6 +138,7 @@ function useCaptionSession(opts: {
 - Absorbs bookmark CRUD from `extension-bookmarks.ts` (or calls it internally)
 
 **`src/components/caption-panel.tsx`** — simplifies dramatically:
+
 - Remove: track selection state, `useQuery` for json3, `mergeCaptions`, bookmark state, export logic
 - Keep: UI rendering (toolbar, dropdown, FABs, `CaptionViewer`)
 - New props: receive everything from `useCaptionSession` return value
@@ -154,7 +159,9 @@ interface CaptionPanelProps {
   forceStrategy: MergeStrategy | undefined;
   onSetForceStrategy: (s: MergeStrategy | undefined) => void;
   bookmarksByIndex: Map<number, ExtensionBookmark[]>;
-  onCreateBookmark?: (sel: BookmarkSelection & { timestamp: number; context: string }) => void;
+  onCreateBookmark?: (
+    sel: BookmarkSelection & { timestamp: number; context: string },
+  ) => void;
   onClearBookmarks?: () => void;
   onExport?: () => void;
   // Kept
@@ -163,14 +170,17 @@ interface CaptionPanelProps {
 ```
 
 **`src/extension/content.tsx`** — simplifies:
+
 - Remove: bookmark state, `useMemo` for bookmarksByIndex, `useCallback` for onCreateBookmark
 - Add: `useCaptionSession()` call, spread results to `CaptionPanel`
 
 **`src/routes/dev-viewer.tsx`** — same pattern as content.tsx:
+
 - Add: `useCaptionSession()` call, spread results to `CaptionPanel`
 - Solves A (dev-viewer parity) automatically
 
 **`src/components/track-picker.tsx`**:
+
 - Add `disabled` prop, apply to both `<select>` elements + title attribute
 
 ### IndexedDB approach
@@ -216,17 +226,17 @@ Solved by the hook — `tracksLocked` is `true` when `bookmarks.length > 0`. `Ca
 
 // src/lib/extension-bookmarks.ts
 type ExtensionBookmark = {
-  id: string;            // crypto.randomUUID() (DB uses int autoincrement)
-  text: string;          // = DB text
-  side: number;          // = DB side
-  offset: number;        // = DB offset
-  captionIndex: number;  // maps to DB captionId (resolved on import)
-  timestamp: number;     // = DB timestamp
-  context: string;       // = DB context
-  translation: string;   // = DB translation (default "")
-  etymology: string;     // = DB etymology (default "")
-  notes: string;         // = DB notes (default "")
-  createdAt: string;     // = DB createdAt (ISO string)
+  id: string; // crypto.randomUUID() (DB uses int autoincrement)
+  text: string; // = DB text
+  side: number; // = DB side
+  offset: number; // = DB offset
+  captionIndex: number; // maps to DB captionId (resolved on import)
+  timestamp: number; // = DB timestamp
+  context: string; // = DB context
+  translation: string; // = DB translation (default "")
+  etymology: string; // = DB etymology (default "")
+  notes: string; // = DB notes (default "")
+  createdAt: string; // = DB createdAt (ISO string)
 };
 ```
 
@@ -234,16 +244,16 @@ Fields omitted from client model (server-only concerns): `videoId` (implicit fro
 
 ## Reference Files
 
-| File                              | Role                                            |
-| --------------------------------- | ----------------------------------------------- |
-| `src/lib/extension-bookmarks.ts`  | localStorage CRUD + selection extraction         |
-| `src/lib/caption-merge.ts`        | `MergedCaption` type, `mergeCaptions()`          |
-| `src/components/caption-list.tsx`  | Shared caption rendering with highlight support  |
-| `src/components/caption-panel.tsx` | Selection handling, FABs, export, track picker   |
-| `src/components/track-picker.tsx`  | Track selection dropdowns                        |
-| `src/extension/content.tsx`        | Extension wiring                                 |
-| `src/routes/dev-viewer.tsx`        | Dev-viewer wiring                                |
-| `src/routes/video-viewer.tsx`      | Reference: server-backed bookmark system         |
+| File                               | Role                                            |
+| ---------------------------------- | ----------------------------------------------- |
+| `src/lib/extension-bookmarks.ts`   | localStorage CRUD + selection extraction        |
+| `src/lib/caption-merge.ts`         | `MergedCaption` type, `mergeCaptions()`         |
+| `src/components/caption-list.tsx`  | Shared caption rendering with highlight support |
+| `src/components/caption-panel.tsx` | Selection handling, FABs, export, track picker  |
+| `src/components/track-picker.tsx`  | Track selection dropdowns                       |
+| `src/extension/content.tsx`        | Extension wiring                                |
+| `src/routes/dev-viewer.tsx`        | Dev-viewer wiring                               |
+| `src/routes/video-viewer.tsx`      | Reference: server-backed bookmark system        |
 
 ## Future: Unify Extension ↔ Server
 
@@ -263,7 +273,5 @@ The server app's video-viewer has two tabs in the caption panel: **Captions** an
   1. Dev-viewer must have same bookmark experience as extension
   2. Track change after bookmarks breaks alignment — need UX guard
   3. Persisted bookmarks need track metadata binding to detect staleness
-- 2026-03-09: User feedback — design direction:
-  4. ExtensionBookmark should align with DB bookmarks schema for future unification
-  5. Server viewer's caption/bookmark tabs should come to extension/dev-viewer too (follow-up)
+- 2026-03-09: User feedback — design direction: 4. ExtensionBookmark should align with DB bookmarks schema for future unification 5. Server viewer's caption/bookmark tabs should come to extension/dev-viewer too (follow-up)
 - 2026-03-09: User feedback — persist captions alongside bookmarks (IndexedDB), support future caption editing. Architect C first since caption-panel.tsx is already messy.

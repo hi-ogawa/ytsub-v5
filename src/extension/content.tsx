@@ -1,6 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useQuery } from "@tanstack/react-query";
-import { StrictMode, useCallback, useMemo, useState } from "react";
+import { StrictMode, useState } from "react";
 import { createRoot } from "react-dom/client";
 import {
   CaptionFab,
@@ -9,12 +9,8 @@ import {
 } from "../components/caption-panel.tsx";
 import { PortalContainerProvider } from "../components/ui/portal-container.tsx";
 import type { YTPlayer } from "../components/youtube-player.tsx";
-import {
-  type BookmarkSelection,
-  type ExtensionBookmark,
-  addBookmark,
-  getBookmarks,
-} from "../lib/extension-bookmarks.ts";
+import { useCaptionSession } from "../lib/caption-session.ts";
+import type { YouTubeExtractionResult } from "../lib/youtube.ts";
 import { fetchPlayerApi, fetchTrackJson3 } from "../lib/youtube.ts";
 import contentCss from "./content.css?inline";
 
@@ -73,34 +69,6 @@ function getUserLangs(): string[] {
 
 function ExtensionViewer({ videoId }: { videoId: string }) {
   const [player] = useState<YTPlayer | null>(() => getVideoPlayer());
-  const [bookmarks, setBookmarks] = useState<ExtensionBookmark[]>(() =>
-    getBookmarks(videoId),
-  );
-
-  const bookmarksByIndex = useMemo(() => {
-    const map = new Map<number, ExtensionBookmark[]>();
-    for (const bm of bookmarks) {
-      const list = map.get(bm.captionIndex);
-      if (list) list.push(bm);
-      else map.set(bm.captionIndex, [bm]);
-    }
-    return map;
-  }, [bookmarks]);
-
-  const onCreateBookmark = useCallback(
-    (sel: BookmarkSelection & { timestamp: number; context: string }) => {
-      addBookmark(videoId, {
-        text: sel.text,
-        side: sel.side,
-        offset: sel.offset,
-        captionIndex: sel.captionIndex,
-        timestamp: sel.timestamp,
-        context: sel.context,
-      });
-      setBookmarks(getBookmarks(videoId));
-    },
-    [videoId],
-  );
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["extension-metadata", videoId],
@@ -126,16 +94,34 @@ function ExtensionViewer({ videoId }: { videoId: string }) {
   return (
     <div className="flex h-full flex-col">
       {data && (
-        <CaptionPanel
-          tracks={data.captionTracks}
-          fetchJson3={(track) => fetchTrackJson3(track.baseUrl)}
-          player={player}
-          videoMeta={data.video}
-          onCreateBookmark={onCreateBookmark}
-          bookmarksByIndex={bookmarksByIndex}
-        />
+        <ExtensionSession videoId={videoId} data={data} player={player} />
       )}
     </div>
+  );
+}
+
+function ExtensionSession({
+  videoId,
+  data,
+  player,
+}: {
+  videoId: string;
+  data: YouTubeExtractionResult;
+  player: YTPlayer | null;
+}) {
+  const session = useCaptionSession({
+    youtubeId: videoId,
+    tracks: data.captionTracks,
+    fetchJson3: (track) => fetchTrackJson3(track.baseUrl),
+    videoMeta: data.video,
+  });
+
+  return (
+    <CaptionPanel
+      tracks={data.captionTracks}
+      player={player}
+      session={session}
+    />
   );
 }
 
