@@ -78,14 +78,17 @@ See ytsub-v4 for relevant technique.
 - [ ] release chrome store (submitted, waiting for review)
   - [ ] add privacy policy (can be a simple GitHub gist or repo page stating no personal data collected, subtitle data sent only to YouTube's own API, preferences stored locally) — recommended even though no sensitive data is handled ([rationale](./tasks/2026-03-08-chrome-store-publish.md#data-use-rationale))
   - [ ] if review rejected over data disclosures: update "Data use" answers in Developer Dashboard to acknowledge timedtext API requests
-- [ ] caption panel settings
+- [x] caption panel settings
   - virtical dot next to track picker
   - move alignment select and autoscroll toggle inside the dropdown
   - export `import.json` to be imported on main app
-- [ ] fix: store selected track pair storage per video. not only globally.
-- [ ] support manual bookmark
-  - use local storage
-  - also include them in export `import.json`
+- [x] fix: store selected track pair storage per video. not only globally.
+- [ ] support manual bookmark (in progress — [task doc](./tasks/2026-03-08-extension-manual-bookmarks.md))
+  - [x] basic bookmark creation + highlight + export
+  - [ ] dev-viewer parity (same experience as extension)
+  - [ ] track change guard (warn + clear bookmarks when switching tracks)
+  - [ ] bookmark-track binding (persist track metadata alongside bookmarks)
+- [ ] caption panel bookmark list tab — match server viewer's captions/bookmarks tab UI in shared `CaptionPanel` (extension + dev-viewer)
 - [ ] adapt to youtube dark/light theme (currently style hard-coded for dark)
 
 ## TODO: Backlog
@@ -99,3 +102,7 @@ See ytsub-v4 for relevant technique.
 - [x] Browser extension as data source (content script fetches subs from YouTube same-origin)
 - [ ] Authentication (multi users)
 - [ ] Typing practice (v3/v4 had this)
+- [ ] feat: extension bookmark editor + AI extension integration
+  - expose `window.__zamak` API (e.g. `getPendingBookmarks()`, `fillBookmark(id, data)`) so AI browser extensions (Claude etc.) can read bookmark context and fill translation/etymology/notes
+  - extension bookmark editor UI to review/edit AI-filled fields before export
+  - no API keys or server proxy needed — AI extension brings its own capability
