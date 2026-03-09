@@ -215,4 +215,160 @@ test.describe("dev-viewer caption panel", () => {
     await expect(cols.nth(0)).not.toHaveText("");
     await expect(cols.nth(1)).not.toHaveText("");
   });
+
+  test("manual bookmark: create, highlight, and export", async ({ page }) => {
+    await openPanelWithTracks(page);
+
+    // Select "꼬집어" in first row (chars 0-3 in "꼬집어 봐 뜬 꿈인 것 같아")
+    await page.evaluate(() => {
+      const sideEl = document
+        .querySelector("[data-index='0']")!
+        .querySelector("[data-side='0']")!;
+      const textSpan = sideEl.querySelector("[data-offset]")!;
+      const textNode = textSpan.firstChild!;
+      const range = document.createRange();
+      range.setStart(textNode, 0);
+      range.setEnd(textNode, 3);
+      const selection = document.getSelection()!;
+      selection.removeAllRanges();
+      selection.addRange(range);
+    });
+
+    // FAB appears → create bookmark
+    await expect(
+      page.getByRole("button", { name: "Create bookmark" }),
+    ).toBeVisible();
+    await page.getByRole("button", { name: "Create bookmark" }).click();
+
+    // FAB disappears, highlight appears
+    await expect(
+      page.getByRole("button", { name: "Create bookmark" }),
+    ).not.toBeVisible();
+    const highlight = page.locator("[data-index='0'] .bg-highlight-bg").first();
+    await expect(highlight).toBeVisible();
+    await expect(highlight).toHaveText("꼬집어");
+
+    // Export includes the bookmark
+    await page.getByTitle("Settings").click();
+    const [download] = await Promise.all([
+      page.waitForEvent("download"),
+      page.getByText("Export import.json").click(),
+    ]);
+    const content = await (
+      await download.createReadStream()
+    )
+      .toArray()
+      .then((chunks) => Buffer.concat(chunks).toString());
+    const data = JSON.parse(content);
+    expect(data.bookmarks).toHaveLength(1);
+    expect(data.bookmarks[0]).toMatchObject({
+      text: "꼬집어",
+      captionIdx: 0,
+      side: 0,
+      offset: 0,
+      status: "manual",
+    });
+  });
+
+  test("track picker locks when bookmarks exist", async ({ page }) => {
+    await openPanelWithTracks(page);
+
+    // Create a bookmark first
+    await page.evaluate(() => {
+      const sideEl = document
+        .querySelector("[data-index='0']")!
+        .querySelector("[data-side='0']")!;
+      const textSpan = sideEl.querySelector("[data-offset]")!;
+      const textNode = textSpan.firstChild!;
+      const range = document.createRange();
+      range.setStart(textNode, 0);
+      range.setEnd(textNode, 3);
+      const selection = document.getSelection()!;
+      selection.removeAllRanges();
+      selection.addRange(range);
+    });
+    await page.getByRole("button", { name: "Create bookmark" }).click();
+
+    // Track selects should be disabled
+    const selects = page.locator("select");
+    await expect(selects.nth(0)).toBeDisabled();
+    await expect(selects.nth(1)).toBeDisabled();
+
+    // Clear bookmarks via settings menu
+    await page.getByTitle("Settings").click();
+    page.on("dialog", (d) => d.accept());
+    await page.getByText("Clear bookmarks").click();
+
+    // Track selects should be re-enabled
+    await expect(selects.nth(0)).toBeEnabled();
+    await expect(selects.nth(1)).toBeEnabled();
+
+    // Highlight should be gone
+    await expect(
+      page.locator("[data-index='0'] .bg-highlight-bg"),
+    ).not.toBeVisible();
+  });
+
+  test("bookmarks persist across panel close/reopen", async ({ page }) => {
+    await openPanelWithTracks(page);
+
+    // Create a bookmark
+    await page.evaluate(() => {
+      const sideEl = document
+        .querySelector("[data-index='0']")!
+        .querySelector("[data-side='0']")!;
+      const textSpan = sideEl.querySelector("[data-offset]")!;
+      const textNode = textSpan.firstChild!;
+      const range = document.createRange();
+      range.setStart(textNode, 0);
+      range.setEnd(textNode, 3);
+      const selection = document.getSelection()!;
+      selection.removeAllRanges();
+      selection.addRange(range);
+    });
+    await page.getByRole("button", { name: "Create bookmark" }).click();
+    await expect(
+      page.locator("[data-index='0'] .bg-highlight-bg"),
+    ).toBeVisible();
+
+    // Close and reopen panel
+    await page.getByTitle("Hide captions").click();
+    await page.getByTitle("Show captions").click();
+
+    // Bookmark highlight should still be there (hydrated from IndexedDB)
+    await expect(page.locator("[data-index='0']")).toBeVisible();
+    await expect(
+      page.locator("[data-index='0'] .bg-highlight-bg"),
+    ).toBeVisible();
+    await expect(
+      page.locator("[data-index='0'] .bg-highlight-bg").first(),
+    ).toHaveText("꼬집어");
+  });
+
+  test("cancel text selection hides FAB", async ({ page }) => {
+    await openPanelWithTracks(page);
+
+    // Select text
+    await page.evaluate(() => {
+      const sideEl = document
+        .querySelector("[data-index='0']")!
+        .querySelector("[data-side='0']")!;
+      const textSpan = sideEl.querySelector("[data-offset]")!;
+      const textNode = textSpan.firstChild!;
+      const range = document.createRange();
+      range.setStart(textNode, 0);
+      range.setEnd(textNode, 3);
+      const selection = document.getSelection()!;
+      selection.removeAllRanges();
+      selection.addRange(range);
+    });
+
+    await expect(page.getByRole("button", { name: "Cancel" })).toBeVisible();
+
+    // Cancel
+    await page.getByRole("button", { name: "Cancel" }).click();
+    await expect(
+      page.getByRole("button", { name: "Create bookmark" }),
+    ).not.toBeVisible();
+  });
 });
