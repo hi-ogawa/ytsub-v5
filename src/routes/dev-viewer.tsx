@@ -25,12 +25,13 @@ async function fetchMetadata(
 async function fetchTrackFixture(
   videoId: string,
   track: YouTubeCaptionTrack,
+  opts?: { eventLevel?: boolean },
 ): Promise<CaptionCue[]> {
   const res = await fetch(
     `/scripts/youtube-json/${videoId}/track-${track.vssId}.json`,
   );
   if (!res.ok) throw new Error(`No track fixture for ${track.vssId}`);
-  return parseJson3(await res.json());
+  return parseJson3(await res.json(), opts);
 }
 
 export function DevViewerPage() {
@@ -80,7 +81,7 @@ export function DevViewerPage() {
         <ResizablePanel className="fixed top-[65px] right-[10px] bottom-[56px] flex flex-col overflow-hidden rounded-lg border border-border bg-background">
           <CaptionPanel
             tracks={meta.captionTracks}
-            fetchCues={(track) => fetchTrackFixture(videoId, track)}
+            fetchCues={(track, opts) => fetchTrackFixture(videoId, track, opts)}
             player={player}
             videoMeta={meta.video}
           />

@@ -57,8 +57,13 @@ function App({ videoId }: { videoId: string }) {
   );
 }
 
-function fetchCues(track: YouTubeCaptionTrack) {
-  return fetchTrackJson3(track.baseUrl).then(parseJson3);
+function fetchCues(
+  track: YouTubeCaptionTrack,
+  opts?: { eventLevel?: boolean },
+) {
+  return fetchTrackJson3(track.baseUrl).then((json3) =>
+    parseJson3(json3, opts),
+  );
 }
 
 function ExtensionViewer({ videoId }: { videoId: string }) {

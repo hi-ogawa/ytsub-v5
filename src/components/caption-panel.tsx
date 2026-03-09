@@ -10,6 +10,7 @@ import {
 import {
   type CaptionCue,
   type YouTubeCaptionTrack,
+  isTranslatedTrack,
   pickBestTrack,
 } from "../lib/youtube.ts";
 import { CaptionList } from "./caption-list.tsx";
@@ -195,7 +196,10 @@ export function CaptionPanel({
   videoMeta,
 }: {
   tracks: YouTubeCaptionTrack[];
-  fetchCues: (track: YouTubeCaptionTrack) => Promise<CaptionCue[]>;
+  fetchCues: (
+    track: YouTubeCaptionTrack,
+    opts?: { eventLevel?: boolean },
+  ) => Promise<CaptionCue[]>;
   player: YTPlayer | null;
   videoMeta: VideoMeta;
 }) {
@@ -216,15 +220,20 @@ export function CaptionPanel({
   const sel1 = tracks.find((t) => t.vssId === selectedVssId1);
   const sel2 = tracks.find((t) => t.vssId === selectedVssId2);
 
+  // When either track is a translation, parse both at event level so
+  // their event boundaries align for merging.
+  const useEventLevel =
+    (sel1 && isTranslatedTrack(sel1)) || (sel2 && isTranslatedTrack(sel2));
+
   const cues1Query = useQuery({
-    queryKey: ["cues", sel1?.baseUrl],
-    queryFn: () => fetchCues(sel1!),
+    queryKey: ["cues", sel1?.baseUrl, useEventLevel],
+    queryFn: () => fetchCues(sel1!, { eventLevel: useEventLevel }),
     enabled: !!sel1,
   });
 
   const cues2Query = useQuery({
-    queryKey: ["cues", sel2?.baseUrl],
-    queryFn: () => fetchCues(sel2!),
+    queryKey: ["cues", sel2?.baseUrl, useEventLevel],
+    queryFn: () => fetchCues(sel2!, { eventLevel: useEventLevel }),
     enabled: !!sel2,
   });
 

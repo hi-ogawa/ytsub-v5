@@ -50,6 +50,7 @@ To continue in fresh session: `Read docs/tasks/YYYY-MM-DD-<topic>.md and continu
 
 - File names: kebab-case
 - Minimize file splits (multiple components per file when related)
+- Run `.ts` scripts with `node` (not `tsx`/`ts-node`) — Node natively supports TypeScript stripping
 
 ## Agent Rules
 
