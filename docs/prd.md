@@ -89,6 +89,7 @@ See ytsub-v4 for relevant technique.
   - [ ] track change guard (warn + clear bookmarks when switching tracks)
   - [ ] bookmark-track binding (persist track metadata alongside bookmarks)
 - [ ] caption panel bookmark list tab — match server viewer's captions/bookmarks tab UI in shared `CaptionPanel` (extension + dev-viewer)
+- [ ] consolidate extension/content.css theme with styles.app.css — currently extension `:host` duplicates dark theme variables manually, causing new tokens to be missed; consider reusing `.dark` class or shared partial
 - [ ] adapt to youtube dark/light theme (currently style hard-coded for dark)
 
 ## TODO: Backlog
