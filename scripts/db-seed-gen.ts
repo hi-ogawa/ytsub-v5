@@ -3,6 +3,7 @@
 // Creates a seed user and assigns all data to it.
 
 import { readFileSync } from "fs";
+import { hashPassword } from "../src/lib/password.ts";
 
 interface ImportData {
   video: {
@@ -36,33 +37,6 @@ interface ImportData {
 
 function esc(s: string): string {
   return s.replace(/'/g, "''");
-}
-
-// PBKDF2 hash of "devpassword" (pre-computed for seed user)
-// To regenerate: node -e "import('./src/server/auth.ts').then(m => m.hashPassword('devpassword').then(console.log))"
-let DEV_PASSWORD_HASH: string;
-
-async function computeDevHash(): Promise<string> {
-  const password = "devpassword";
-  // Use a fixed salt for deterministic seed SQL
-  const salt = new Uint8Array(16).fill(0);
-  const key = await crypto.subtle.importKey(
-    "raw",
-    new TextEncoder().encode(password),
-    "PBKDF2",
-    false,
-    ["deriveBits"],
-  );
-  const hash = await crypto.subtle.deriveBits(
-    { name: "PBKDF2", hash: "SHA-256", salt, iterations: 100_000 },
-    key,
-    32 * 8,
-  );
-  const toHex = (buf: ArrayBuffer | Uint8Array<ArrayBuffer>) =>
-    [...new Uint8Array(buf)]
-      .map((b) => b.toString(16).padStart(2, "0"))
-      .join("");
-  return `${toHex(salt)}:${toHex(hash)}`;
 }
 
 function toSql(data: ImportData): string {
@@ -110,9 +84,12 @@ if (files.length === 0) {
   process.exit(1);
 }
 
-DEV_PASSWORD_HASH = await computeDevHash();
+const devPasswordHash = await hashPassword(
+  "devpassword",
+  new Uint8Array(16).fill(0) as Uint8Array<ArrayBuffer>,
+);
 // Seed user first, then video data
-const seedUser = `INSERT OR IGNORE INTO users (email, password_hash) VALUES ('dev@zamak.local', '${DEV_PASSWORD_HASH}');\n`;
+const seedUser = `INSERT OR IGNORE INTO users (email, password_hash) VALUES ('dev@zamak.local', '${devPasswordHash}');\n`;
 const sql =
   seedUser +
   files.map((f) => toSql(JSON.parse(readFileSync(f, "utf-8")))).join("\n");
