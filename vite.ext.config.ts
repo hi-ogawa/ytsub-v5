@@ -74,9 +74,7 @@ export default defineConfig({
 
       // Modify manifest.json
       const manifestPath = resolve(outDir, "manifest.json");
-      const manifest = JSON.parse(
-        readFileSync(manifestPath, "utf8"),
-      );
+      const manifest = JSON.parse(readFileSync(manifestPath, "utf8"));
       if (process.env.DEV_EXT) {
         const time = buildTime.toLocaleTimeString("en-GB", {
           hour: "2-digit",
@@ -84,10 +82,7 @@ export default defineConfig({
         });
         manifest.name = `Zamak-dev [${branch} ${rev} ${time}]`;
       }
-      writeFileSync(
-        manifestPath,
-        JSON.stringify(manifest, null, 2),
-      );
+      writeFileSync(manifestPath, JSON.stringify(manifest, null, 2));
 
       // Copy to main repo's dist/extension-dev for single Chrome load point
       if (process.env.DEV_EXT) {
