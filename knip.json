@@ -1,6 +1,7 @@
 {
   "entry": [
     "src/server/index.ts",
+    "src/extension/content.tsx",
     "src/extension/bookmarks-entry.tsx",
     "scripts/*.ts"
   ],

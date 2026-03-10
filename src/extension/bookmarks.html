@@ -1,34 +1,11 @@
 <!doctype html>
-<html>
+<html class="dark">
   <head>
     <meta charset="utf-8" />
-    <link rel="stylesheet" href="bookmarks-page.css" />
-    <style>
-      * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-      }
-      body {
-        width: 380px;
-        max-height: 520px;
-        overflow-y: auto;
-        background: #0a0a0a;
-        color: #e5e5e5;
-        font-family: "Roboto", "Arial", sans-serif;
-        font-size: 14px;
-      }
-      .header {
-        padding: 12px 16px;
-        border-bottom: 1px solid #262626;
-        font-size: 15px;
-        font-weight: 600;
-      }
-    </style>
+    <title>Zamak — Bookmarks</title>
   </head>
   <body>
-    <div class="header">Bookmarked Videos</div>
     <div id="root"></div>
-    <script src="bookmarks-page.js"></script>
+    <script type="module" src="./bookmarks-entry.tsx"></script>
   </body>
 </html>

@@ -122,16 +122,9 @@ const fixtureBookmarkEntries: VideoIndexEntry[] = Object.values(
 
 export function DevBookmarksPage() {
   return (
-    <div className="mx-auto flex max-w-md flex-col" style={{ maxHeight: 520 }}>
-      <div className="border-b border-neutral-800 px-4 py-3 text-[15px] font-semibold text-neutral-200">
-        Bookmarked Videos
-      </div>
-      <div className="overflow-y-auto bg-neutral-950 text-neutral-200">
-        <BookmarksPage
-          entries={fixtureBookmarkEntries}
-          onVideoClick={(id) => window.open(`/dev/youtube/${id}`, "_blank")}
-        />
-      </div>
-    </div>
+    <BookmarksPage
+      entries={fixtureBookmarkEntries}
+      onVideoClick={(id) => window.open(`/dev/youtube/${id}`, "_blank")}
+    />
   );
 }

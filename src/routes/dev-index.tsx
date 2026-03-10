@@ -1,4 +1,5 @@
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
+import { VideoCard } from "../components/video-card.tsx";
 import type { YouTubeExtractionResult } from "../lib/youtube.ts";
 
 const fixtureModules = import.meta.glob<YouTubeExtractionResult>(
@@ -16,6 +17,7 @@ function formatDuration(seconds: number): string {
 }
 
 export function DevIndexPage() {
+  const navigate = useNavigate();
   return (
     <div className="mx-auto max-w-5xl p-8">
       <div className="mb-6 flex items-center justify-between">
@@ -29,32 +31,25 @@ export function DevIndexPage() {
       </div>
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
         {fixtures.map((meta) => (
-          <Link
+          <VideoCard
             key={meta.video.youtubeId}
-            to={`/dev/youtube/${meta.video.youtubeId}`}
-            className="block overflow-hidden rounded-lg border border-border bg-card shadow-sm transition-all hover:border-ring hover:shadow-md"
-          >
-            <img
-              src={`https://img.youtube.com/vi/${meta.video.youtubeId}/mqdefault.jpg`}
-              alt=""
-              loading="lazy"
-              className="aspect-video w-full object-cover"
-            />
-            <div className="p-4">
-              <h2 className="mb-1 line-clamp-2 font-semibold leading-snug">
-                {meta.video.title}
-              </h2>
-              <p className="mb-3 truncate text-sm text-muted-foreground">
-                {meta.video.channelName || "Unknown channel"}
-              </p>
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            youtubeId={meta.video.youtubeId}
+            href={`/dev/youtube/${meta.video.youtubeId}`}
+            title={meta.video.title}
+            channelName={meta.video.channelName || "Unknown channel"}
+            badge={
+              <>
                 <span className="rounded bg-muted px-2 py-0.5 font-mono">
                   {meta.captionTracks.map((t) => t.languageCode).join(", ")}
                 </span>
                 <span>{formatDuration(meta.video.duration)}</span>
-              </div>
-            </div>
-          </Link>
+              </>
+            }
+            onClick={(e) => {
+              e.preventDefault();
+              navigate(`/dev/youtube/${meta.video.youtubeId}`);
+            }}
+          />
         ))}
       </div>
     </div>
