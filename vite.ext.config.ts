@@ -1,5 +1,11 @@
 import { execSync } from "node:child_process";
-import { cpSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import {
+  cpSync,
+  mkdirSync,
+  readFileSync,
+  readdirSync,
+  writeFileSync,
+} from "node:fs";
 import { basename, resolve } from "node:path";
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
@@ -69,8 +75,9 @@ export default defineConfig({
           ).replaceAll("../../assets/", "assets/");
           writeFileSync(resolve(EXT_OUT, "bookmarks.html"), html);
           mkdirSync(resolve(EXT_OUT, "assets"), { recursive: true });
-          // Only copy assets needed by bookmarks popup (skip ESM content — already re-bundled to IIFE)
-          for (const file of ["bookmarks.js", "bookmarks.css", "client.js"]) {
+          // Copy all assets except content.js (already re-bundled to IIFE above)
+          for (const file of readdirSync(resolve(TMP_OUT, "assets"))) {
+            if (file === "content.js") continue;
             cpSync(
               resolve(TMP_OUT, "assets", file),
               resolve(EXT_OUT, "assets", file),
