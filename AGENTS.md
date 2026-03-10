@@ -68,6 +68,13 @@ To continue in fresh session: `Read docs/tasks/YYYY-MM-DD-<topic>.md and continu
 - User runs `pnpm dev` manually in their terminal
 - **Never use `--` to pass args to pnpm scripts.** pnpm doesn't need `--` and it silently breaks filtering. Write `pnpm test "filename" -t "pattern"` or `pnpm test-e2e "filename" -g "pattern"` directly.
 
+## E2E Tests
+
+- **dev-viewer tests** use fixture data — no DB setup needed, just `login(page)` + `goto("/dev/youtube/...")`
+- **video-viewer tests** need `setupDb({ seed: true })` for server data
+- **Text selection** (for bookmark creation) requires DOM Range API via `page.evaluate` — mouse drag doesn't work reliably
+- **Selector preference**: scope to `data-testid` or panel containers to avoid ambiguity (e.g. FAB text can collide with tab button names). Prefer `getByTestId` > `getByRole` scoped to a container > page-wide `getByText`.
+
 ## Git Workflow
 
 1. Create feature branch before starting work
