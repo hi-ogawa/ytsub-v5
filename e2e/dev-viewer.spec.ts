@@ -401,9 +401,7 @@ test.describe("dev-viewer caption panel", () => {
   test("tab bar shows captions and bookmarks tabs", async ({ page }) => {
     await openPanelWithTracks(page);
     const panel = page.getByTestId("resizable-panel");
-    await expect(
-      panel.getByRole("button", { name: "Captions" }),
-    ).toBeVisible();
+    await expect(panel.getByRole("button", { name: "Captions" })).toBeVisible();
     await expect(
       panel.getByRole("button", { name: /Bookmarks/ }),
     ).toBeVisible();
@@ -480,9 +478,9 @@ test.describe("dev-viewer caption panel", () => {
     await page.getByRole("button", { name: "Go to caption" }).first().click();
 
     // Should switch back to captions tab
-    await expect(
-      panel.getByRole("button", { name: "Captions" }),
-    ).toHaveClass(/font-medium/);
+    await expect(panel.getByRole("button", { name: "Captions" })).toHaveClass(
+      /font-medium/,
+    );
     await expect(page.locator("[data-index='0']")).toBeVisible();
   });
 
