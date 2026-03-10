@@ -1,4 +1,5 @@
 @import "../styles.css";
+@import "../theme-dark.css";
 
 /* YouTube sets :root { font-size: 10px }, making all rem values 62.5% of expected.
    Override Tailwind's rem-based spacing to use correct px values. */
@@ -14,33 +15,10 @@
   --text-lg--line-height: 28px;
 }
 
-/* CSS custom properties for the shadow DOM theme.
-   Only custom properties go here — `all: initial` on the host element
-   doesn't reset them, but it does beat :host for regular properties
-   (inline styles win), so font-family, font-size, etc. are set as
-   inline styles in content.tsx instead.
-   TODO: support light mode (detect YouTube's theme and switch) */
+/* color-scheme must be on :host (not .dark) so the browser applies
+   dark scrollbar/form-control styling to the shadow root. */
 :host {
   color-scheme: dark;
-  --background: #0f0f0f;
-  --foreground: #f1f1f1;
-  --popover: #272727;
-  --popover-foreground: #f1f1f1;
-  --muted: #272727;
-  --muted-foreground: #aaa;
-  --accent: #3ea6ff;
-  --accent-foreground: #fff;
-  --border: #3f3f3f;
-  --ring: #3ea6ff;
-  --input: #3f3f3f;
-
-  /* Bookmark highlights */
-  --highlight: var(--color-sky-900);
-  --highlight-bg: var(--color-sky-950);
-  --highlight-border: var(--color-sky-500);
-  --highlight-foreground: var(--color-sky-300);
-  --highlight-alt-bg: var(--color-amber-950);
-  --highlight-alt-border: var(--color-amber-500);
 }
 
 /* Radix portaled layers (dropdown, popover, dialog) inherit pointer-events:none

@@ -1,0 +1,46 @@
+/* Dark theme tokens — shared by web app (.dark class) and extension (shadow DOM).
+   Single source of truth: adding a token here applies to both contexts. */
+.dark {
+  /* Page */
+  --background: var(--color-gray-950);
+  --foreground: var(--color-gray-100);
+
+  /* Cards & popovers */
+  --card: var(--color-gray-900);
+  --card-foreground: var(--color-gray-100);
+  --popover: var(--color-gray-900);
+  --popover-foreground: var(--color-gray-100);
+
+  /* Primary (buttons) */
+  --primary: var(--color-white);
+  --primary-hover: var(--color-gray-200);
+  --primary-foreground: var(--color-black);
+
+  /* Muted (subtle bg, dimmed text) */
+  --muted: var(--color-gray-800);
+  --muted-foreground: var(--color-gray-400);
+
+  /* Accent (blue interactive) */
+  --accent: var(--color-blue-400);
+  --accent-foreground: var(--color-white);
+
+  /* Destructive (errors, danger) */
+  --destructive: var(--color-red-400);
+  --destructive-subtle: var(--color-red-950);
+
+  /* Borders & rings */
+  --border: var(--color-gray-800);
+  --input: var(--color-gray-800);
+  --ring: var(--color-blue-400);
+
+  /* Overlay */
+  --overlay: color-mix(in oklch, black 60%, transparent);
+
+  /* Highlights (bookmark underlines) */
+  --highlight: var(--color-sky-900);
+  --highlight-bg: var(--color-sky-950);
+  --highlight-border: var(--color-sky-500);
+  --highlight-foreground: var(--color-sky-300);
+  --highlight-alt-bg: var(--color-amber-950);
+  --highlight-alt-border: var(--color-amber-500);
+}
