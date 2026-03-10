@@ -1,7 +1,8 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createBrowserRouter, RouterProvider } from "react-router";
+import { DevBookmarksPage } from "./routes/dev-bookmarks.tsx";
 import { DevIndexPage } from "./routes/dev-index.tsx";
-import { DevBookmarksPage, DevViewerPage } from "./routes/dev-viewer.tsx";
+import { DevViewerPage } from "./routes/dev-viewer.tsx";
 import { LoginPage } from "./routes/login.tsx";
 import {
   AuthLayout,

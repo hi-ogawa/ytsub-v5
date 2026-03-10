@@ -7,9 +7,9 @@ export type VideoIndexEntry = {
 };
 
 const KEY = "zamak:video-index";
-const EVENT_NAME = "zamak:video-index-updated";
+export const VIDEO_INDEX_EVENT = "zamak:video-index-updated";
 
-function getIndex(): VideoIndexEntry[] {
+export function getVideoIndex(): VideoIndexEntry[] {
   try {
     const raw = localStorage.getItem(KEY);
     return raw ? (JSON.parse(raw) as VideoIndexEntry[]) : [];
@@ -21,7 +21,7 @@ function getIndex(): VideoIndexEntry[] {
 function writeIndex(entries: VideoIndexEntry[]) {
   localStorage.setItem(KEY, JSON.stringify(entries));
   // Signal to ISOLATED world relay script (shares DOM, reads localStorage)
-  window.dispatchEvent(new Event(EVENT_NAME));
+  window.dispatchEvent(new Event(VIDEO_INDEX_EVENT));
 }
 
 export function updateVideoIndex(
@@ -30,7 +30,7 @@ export function updateVideoIndex(
   channelName: string,
   bookmarkCount: number,
 ) {
-  const entries = getIndex();
+  const entries = getVideoIndex();
   const idx = entries.findIndex((e) => e.youtubeId === youtubeId);
   const entry: VideoIndexEntry = {
     youtubeId,
@@ -45,6 +45,6 @@ export function updateVideoIndex(
 }
 
 export function removeFromVideoIndex(youtubeId: string) {
-  const entries = getIndex().filter((e) => e.youtubeId !== youtubeId);
+  const entries = getVideoIndex().filter((e) => e.youtubeId !== youtubeId);
   writeIndex(entries);
 }
