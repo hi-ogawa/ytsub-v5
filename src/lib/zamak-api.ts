@@ -215,17 +215,9 @@ export function useZamakApi({
         const currentRows = rowsRef.current;
         if (!currentRows) return;
         const warnings: string[] = [];
-        const valid: {
-          captionIndex: number;
-          text: string;
-          side: 0;
-          offset: number;
-          timestamp: number;
-          context: string;
-          translation?: string;
-          etymology?: string;
-          notes?: string;
-        }[] = [];
+        const valid: Parameters<
+          typeof sessionRef.current.onCreateBookmarks
+        >[0] = [];
         for (const { captionIndex, text, ...metadata } of entries) {
           const row = currentRows[captionIndex];
           if (!row) {
