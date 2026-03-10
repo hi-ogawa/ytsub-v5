@@ -7,7 +7,7 @@
     "dev": "vite dev",
     "build": "vite build",
     "preview": "vite preview",
-    "dev-ext": "node --watch --watch-path=./src scripts/dev-ext.ts",
+    "dev-ext": "DEV_EXT=1 node --watch --watch-preserve-output --watch-path=./src ./scripts/exec.ts node --run build-ext",
     "build-ext": "vite build --config vite.ext.config.ts && cd dist/extension && zip -r ../extension.zip .",
     "tsc": "tsc -b",
     "lint": "oxfmt && knip --fix",
