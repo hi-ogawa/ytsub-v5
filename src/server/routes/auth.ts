@@ -24,7 +24,7 @@ export const authRouter = pub.router({
     .input(
       z.object({
         email: z.string().email(),
-        password: z.string().min(8),
+        password: z.string().min(8).max(256),
       }),
     )
     .handler(async ({ input, context }) => {
@@ -48,6 +48,7 @@ export const authRouter = pub.router({
       const token = await createSessionToken(user.id);
       setCookie(context.resHeaders, "session", token, {
         httpOnly: true,
+        secure: true,
         sameSite: "lax",
         maxAge: SESSION_MAX_AGE,
       });
@@ -58,7 +59,7 @@ export const authRouter = pub.router({
     .input(
       z.object({
         email: z.string().email(),
-        password: z.string(),
+        password: z.string().max(256),
       }),
     )
     .handler(async ({ input, context }) => {
@@ -67,14 +68,18 @@ export const authRouter = pub.router({
         .from(users)
         .where(eq(users.email, input.email))
         .get();
-      if (!user) throw new ORPCError("UNAUTHORIZED");
 
-      const valid = await verifyPassword(input.password, user.passwordHash);
-      if (!valid) throw new ORPCError("UNAUTHORIZED");
+      // Always hash to prevent timing-based user enumeration
+      const valid = await verifyPassword(
+        input.password,
+        user?.passwordHash ?? "$dummy$",
+      );
+      if (!user || !valid) throw new ORPCError("UNAUTHORIZED");
 
       const token = await createSessionToken(user.id);
       setCookie(context.resHeaders, "session", token, {
         httpOnly: true,
+        secure: true,
         sameSite: "lax",
         maxAge: SESSION_MAX_AGE,
       });

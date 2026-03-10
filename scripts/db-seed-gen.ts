@@ -38,9 +38,32 @@ function esc(s: string): string {
   return s.replace(/'/g, "''");
 }
 
-// SHA-256 hex of "devpassword" (pre-computed for seed user)
-const DEV_PASSWORD_HASH =
-  "d0cc333979497e7263f6288c1aacd6f2cdc659e9efad861265095b7db9060e6a";
+// PBKDF2 hash of "devpassword" (pre-computed for seed user)
+// To regenerate: node -e "import('./src/server/auth.ts').then(m => m.hashPassword('devpassword').then(console.log))"
+let DEV_PASSWORD_HASH: string;
+
+async function computeDevHash(): Promise<string> {
+  const password = "devpassword";
+  // Use a fixed salt for deterministic seed SQL
+  const salt = new Uint8Array(16).fill(0);
+  const key = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(password),
+    "PBKDF2",
+    false,
+    ["deriveBits"],
+  );
+  const hash = await crypto.subtle.deriveBits(
+    { name: "PBKDF2", hash: "SHA-256", salt, iterations: 100_000 },
+    key,
+    32 * 8,
+  );
+  const toHex = (buf: ArrayBuffer | Uint8Array<ArrayBuffer>) =>
+    [...new Uint8Array(buf)]
+      .map((b) => b.toString(16).padStart(2, "0"))
+      .join("");
+  return `${toHex(salt)}:${toHex(hash)}`;
+}
 
 function toSql(data: ImportData): string {
   const { video, captions, bookmarks } = data;
@@ -87,6 +110,7 @@ if (files.length === 0) {
   process.exit(1);
 }
 
+DEV_PASSWORD_HASH = await computeDevHash();
 // Seed user first, then video data
 const seedUser = `INSERT OR IGNORE INTO users (email, password_hash) VALUES ('dev@zamak.local', '${DEV_PASSWORD_HASH}');\n`;
 const sql =
