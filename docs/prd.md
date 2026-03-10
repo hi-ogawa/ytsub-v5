@@ -82,7 +82,8 @@ See ytsub-v4 for relevant technique.
   - export `import.json` to be imported on main app
 - [x] fix: store selected track pair storage per video. not only globally.
 - [x] support manual bookmark
-- [ ] caption panel bookmark list tab — match server viewer's captions/bookmarks tab UI in shared `CaptionPanel` (extension + dev-viewer)
+- [x] caption panel bookmark list tab — match server viewer's captions/bookmarks tab UI in shared `CaptionPanel` (extension + dev-viewer)
+- [ ] caption panel bookmark popover
 - [ ] extension page to list all videos with bookmarks (need own storage?)
 - [ ] consolidate captions panel for extension/dev-viewer/video-viewer
 - [ ] consolidate extension/content.css theme with styles.app.css — currently extension `:host` duplicates dark theme variables manually, causing new tokens to be missed; consider reusing `.dark` class or shared partial
