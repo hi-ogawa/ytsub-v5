@@ -1,4 +1,4 @@
-import { count, desc, eq, sql } from "drizzle-orm";
+import { and, count, desc, eq, sql } from "drizzle-orm";
 import z from "zod";
 import { authed } from "../auth.ts";
 import { BOOKMARK_BATCH_SIZE, CAPTION_BATCH_SIZE, db } from "../db.ts";
@@ -17,10 +17,10 @@ export const videosRouter = authed.router({
         language2: z.string().optional().default("en"),
       }),
     )
-    .handler(async ({ input }) => {
+    .handler(async ({ input, context }) => {
       const [row] = await db
         .insert(videos)
-        .values(input)
+        .values({ ...input, userId: context.userId })
         .onConflictDoUpdate({
           target: videos.youtubeId,
           set: {
@@ -51,11 +51,13 @@ export const videosRouter = authed.router({
         ),
       }),
     )
-    .handler(async ({ input }) => {
+    .handler(async ({ input, context }) => {
       const video = await db
         .select({ id: videos.id })
         .from(videos)
-        .where(eq(videos.id, input.videoId))
+        .where(
+          and(eq(videos.id, input.videoId), eq(videos.userId, context.userId)),
+        )
         .get();
       if (!video) {
         throw new Error(`Video ${input.videoId} not found`);
@@ -80,7 +82,16 @@ export const videosRouter = authed.router({
 
   listCaptions: authed
     .input(z.object({ videoId: z.number().int() }))
-    .handler(async ({ input }) => {
+    .handler(async ({ input, context }) => {
+      // Verify video belongs to user
+      const video = await db
+        .select({ id: videos.id })
+        .from(videos)
+        .where(
+          and(eq(videos.id, input.videoId), eq(videos.userId, context.userId)),
+        )
+        .get();
+      if (!video) throw new Error(`Video ${input.videoId} not found`);
       return db
         .select()
         .from(captions)
@@ -95,11 +106,16 @@ export const videosRouter = authed.router({
         offset: z.number().int().optional().default(0),
       }),
     )
-    .handler(async ({ input }) => {
-      const [total] = await db.select({ count: count() }).from(videos);
+    .handler(async ({ input, context }) => {
+      const where = eq(videos.userId, context.userId);
+      const [total] = await db
+        .select({ count: count() })
+        .from(videos)
+        .where(where);
       const items = await db
         .select()
         .from(videos)
+        .where(where)
         .orderBy(desc(videos.createdAt))
         .limit(input.limit)
         .offset(input.offset);
@@ -108,11 +124,11 @@ export const videosRouter = authed.router({
 
   getVideo: authed
     .input(z.object({ id: z.number().int() }))
-    .handler(async ({ input }) => {
+    .handler(async ({ input, context }) => {
       const video = await db
         .select()
         .from(videos)
-        .where(eq(videos.id, input.id))
+        .where(and(eq(videos.id, input.id), eq(videos.userId, context.userId)))
         .get();
       if (!video) {
         throw new Error(`Video ${input.id} not found`);
@@ -163,11 +179,11 @@ export const videosRouter = authed.router({
           .default([]),
       }),
     )
-    .handler(async ({ input }) => {
+    .handler(async ({ input, context }) => {
       // Upsert video
       const [video] = await db
         .insert(videos)
-        .values(input.video)
+        .values({ ...input.video, userId: context.userId })
         .onConflictDoUpdate({
           target: videos.youtubeId,
           set: {
@@ -238,10 +254,10 @@ export const videosRouter = authed.router({
 
   deleteVideo: authed
     .input(z.object({ id: z.number().int() }))
-    .handler(async ({ input }) => {
+    .handler(async ({ input, context }) => {
       const [row] = await db
         .delete(videos)
-        .where(eq(videos.id, input.id))
+        .where(and(eq(videos.id, input.id), eq(videos.userId, context.userId)))
         .returning();
       if (!row) {
         throw new Error(`Video ${input.id} not found`);

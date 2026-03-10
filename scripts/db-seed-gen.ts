@@ -1,5 +1,6 @@
 // Generate seed SQL from import.json files.
 // Usage: node scripts/db-seed-gen.ts scripts/db-seed-json/*/import.json > scripts/db-seed.sql
+// Creates a seed user and assigns all data to it.
 
 import { readFileSync } from "fs";
 
@@ -37,14 +38,18 @@ function esc(s: string): string {
   return s.replace(/'/g, "''");
 }
 
+// SHA-256 hex of "dev" (pre-computed for seed user)
+const DEV_PASSWORD_HASH =
+  "2bb80d537b1da3e38bd30361aa855686bde0eacd7162fef6a25fe97bf527a25b";
+
 function toSql(data: ImportData): string {
   const { video, captions, bookmarks } = data;
   const id = video.youtubeId;
   const lines: string[] = [];
 
   lines.push(
-    `INSERT INTO videos (youtube_id, title, channel_name, channel_id, duration, language1, language2)`,
-    `VALUES ('${esc(id)}', '${esc(video.title)}', '${esc(video.channelName)}', '${esc(video.channelId)}', ${video.duration}, '${esc(video.language1)}', '${esc(video.language2)}');`,
+    `INSERT INTO videos (user_id, youtube_id, title, channel_name, channel_id, duration, language1, language2)`,
+    `VALUES ((SELECT id FROM users WHERE email = 'dev@zamak.local'), '${esc(id)}', '${esc(video.title)}', '${esc(video.channelName)}', '${esc(video.channelId)}', ${video.duration}, '${esc(video.language1)}', '${esc(video.language2)}');`,
     "",
   );
 
@@ -82,7 +87,9 @@ if (files.length === 0) {
   process.exit(1);
 }
 
-const sql = files
-  .map((f) => toSql(JSON.parse(readFileSync(f, "utf-8"))))
-  .join("\n");
+// Seed user first, then video data
+const seedUser = `INSERT OR IGNORE INTO users (email, password_hash) VALUES ('dev@zamak.local', '${DEV_PASSWORD_HASH}');\n`;
+const sql =
+  seedUser +
+  files.map((f) => toSql(JSON.parse(readFileSync(f, "utf-8")))).join("\n");
 console.log(sql);

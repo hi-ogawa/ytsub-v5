@@ -35,17 +35,20 @@ No merge needed because the usage pattern is sequential: work on one device, syn
 ## Current state (what exists)
 
 ### Extension side
+
 - **IndexedDB** (`zamak` db, `caption-sessions` store): stores `CaptionSession` per `youtubeId` with merged captions + bookmarks
 - **Export**: `handleExport()` in `caption-session.ts` builds JSON payload and triggers file download
 - **`window.__zamak` API**: full read/write surface for AI extensions
 - **Bookmarks page**: lists videos with bookmarks via `chrome.storage.local`
 
 ### Server side
+
 - **`importVideo` endpoint** (`server/routes/videos.ts`): idempotent upsert — takes `{video, captions, bookmarks}`, upserts video, replaces captions, inserts bookmarks. Already handles the exact payload the extension exports.
 - **Full CRUD**: `getVideo`, `listVideos`, `listBookmarks`, `createBookmarks`, `updateBookmark`, `deleteBookmark`
 - **Auth**: single-user, token-based
 
 ### Bridge (current)
+
 Extension "Export import.json" → file download → web app "Import" dialog → upload → `importVideo` API call
 
 ## Open questions
@@ -68,6 +71,7 @@ Extension "Export import.json" → file download → web app "Import" dialog →
 ## Implementation sketch (not yet approved)
 
 ### Phase 1: Auth + extension → server push
+
 - **Prerequisite: user auth system** (see `2026-03-10-user-auth.md`) — user accounts, per-user data scoping, session management
 - Extension settings: configure server URL, login with credentials
 - Sync button in caption panel (or dropdown) — pushes current video session to server
@@ -76,11 +80,13 @@ Extension "Export import.json" → file download → web app "Import" dialog →
 - Sync state indicator (synced / unsynced)
 
 ### Phase 2: Server → extension pull
+
 - New server endpoint: get video + captions + bookmarks by `youtubeId`
 - Sync button also pulls server state into IndexedDB
 - Full round-trip: push local, then pull server state (server wins)
 
 ### Phase 3: Data layer abstraction
+
 - Shared interface: `{ getCaptions, getBookmarks, createBookmark, updateBookmark, ... }`
 - Two implementations: `ServerDataLayer` (API calls) and `LocalDataLayer` (IndexedDB)
 - Extension uses `ServerDataLayer` when connected, falls back to `LocalDataLayer`

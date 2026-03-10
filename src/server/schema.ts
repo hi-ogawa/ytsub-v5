@@ -8,19 +8,33 @@ import {
   unique,
 } from "drizzle-orm/sqlite-core";
 
-export const videos = sqliteTable("videos", {
+export const users = sqliteTable("users", {
   id: int().primaryKey({ autoIncrement: true }),
-  youtubeId: text("youtube_id").notNull().unique(),
-  title: text().notNull(),
-  channelName: text("channel_name").notNull().default(""),
-  channelId: text("channel_id").notNull().default(""),
-  duration: int().notNull().default(0),
-  language1: text().notNull().default("ko"),
-  language2: text().notNull().default("en"),
+  email: text().notNull().unique(),
+  passwordHash: text("password_hash").notNull(),
   createdAt: text("created_at")
     .notNull()
     .default(sql`(datetime('now'))`),
 });
+
+export const videos = sqliteTable(
+  "videos",
+  {
+    id: int().primaryKey({ autoIncrement: true }),
+    userId: int("user_id").references(() => users.id, { onDelete: "cascade" }),
+    youtubeId: text("youtube_id").notNull().unique(),
+    title: text().notNull(),
+    channelName: text("channel_name").notNull().default(""),
+    channelId: text("channel_id").notNull().default(""),
+    duration: int().notNull().default(0),
+    language1: text().notNull().default("ko"),
+    language2: text().notNull().default("en"),
+    createdAt: text("created_at")
+      .notNull()
+      .default(sql`(datetime('now'))`),
+  },
+  (t) => [index("idx_videos_user").on(t.userId)],
+);
 
 export const captions = sqliteTable(
   "captions",

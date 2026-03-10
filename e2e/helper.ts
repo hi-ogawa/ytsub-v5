@@ -13,7 +13,10 @@ export async function setupDb(options: { seed?: boolean } = {}) {
 
 export async function login(page: Page) {
   await page.goto("/login");
-  await page.getByPlaceholder("Password").fill("dev");
-  await page.getByRole("button", { name: "Login" }).click();
+  // Switch to register mode
+  await page.getByRole("button", { name: "Sign up" }).click();
+  await page.getByPlaceholder("Email").fill("test@zamak.local");
+  await page.getByPlaceholder("Password").fill("testpassword");
+  await page.getByRole("button", { name: "Sign up" }).click();
   await expect(page).toHaveURL("/");
 }
