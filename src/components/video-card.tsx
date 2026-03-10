@@ -20,6 +20,7 @@ export function VideoCard({
   return (
     <a
       href={href}
+      data-testid={`video-card-${youtubeId}`}
       className="block overflow-hidden rounded-lg border border-border bg-card shadow-sm transition-all hover:border-ring hover:shadow-md"
       onClick={onClick}
     >
@@ -31,15 +32,24 @@ export function VideoCard({
       />
       <div className="p-4">
         <div className="mb-1 flex items-start gap-1">
-          <h2 className="line-clamp-2 flex-1 font-semibold leading-snug">
+          <h2
+            data-testid="video-card-title"
+            className="line-clamp-2 flex-1 font-semibold leading-snug"
+          >
             {title}
           </h2>
           {titleRight}
         </div>
-        <p className="mb-3 truncate text-sm text-muted-foreground">
+        <p
+          data-testid="video-card-channel"
+          className="mb-3 truncate text-sm text-muted-foreground"
+        >
           {channelName || "Unknown channel"}
         </p>
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+        <div
+          data-testid="video-card-badge"
+          className="flex items-center gap-2 text-xs text-muted-foreground"
+        >
           {badge}
         </div>
       </div>

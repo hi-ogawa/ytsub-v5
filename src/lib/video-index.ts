@@ -9,7 +9,7 @@ export type VideoIndexEntry = {
 const KEY = "zamak:video-index";
 export const VIDEO_INDEX_EVENT = "zamak:video-index-updated";
 
-function getVideoIndex(): VideoIndexEntry[] {
+export function getVideoIndex(): VideoIndexEntry[] {
   try {
     const raw = localStorage.getItem(KEY);
     return raw ? (JSON.parse(raw) as VideoIndexEntry[]) : [];
@@ -20,7 +20,6 @@ function getVideoIndex(): VideoIndexEntry[] {
 
 function writeIndex(entries: VideoIndexEntry[]) {
   localStorage.setItem(KEY, JSON.stringify(entries));
-  // Signal to ISOLATED world relay script (shares DOM, reads localStorage)
   window.dispatchEvent(new Event(VIDEO_INDEX_EVENT));
 }
 
