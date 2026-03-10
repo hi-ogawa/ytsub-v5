@@ -75,7 +75,7 @@ See ytsub-v4 for relevant technique.
 - [x] align captions viewer experience with app video viewer (e.g. auto-scroll sensitivity)
 - [x] align/merge captions algorithm improvements
 - [x] release preview
-- [x] release chrome store (submitted, waiting for review)
+- [x] release chrome store
 - [x] caption panel settings
   - virtical dot next to track picker
   - move alignment select and autoscroll toggle inside the dropdown
