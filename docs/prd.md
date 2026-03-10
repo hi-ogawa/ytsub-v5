@@ -101,6 +101,7 @@ See ytsub-v4 for relevant technique.
 - [ ] Keyboard shortcuts — space (play/pause), arrow keys (prev/next caption), etc.
 - [x] Mobile-friendly layout
 - [x] Browser extension as data source (content script fetches subs from YouTube same-origin)
+- [ ] refactor: make extension session (IndexedDB) persistence explicitly async — current bookmark CRUD is synchronous setState with fire-and-forget persist calls; should return promises so callers (especially zamak API) can await and verify writes
 - [ ] Authentication (multi users)
 - [ ] Typing practice (v3/v4 had this)
 - [x] feat: extension bookmark editor + AI extension integration

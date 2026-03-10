@@ -230,7 +230,7 @@ export function CaptionPanel({
     fallbackStrategies,
     bookmarks,
     bookmarksByIndex,
-    onCreateBookmark,
+    onCreateBookmarks,
     onDeleteBookmark,
     onClearBookmarks,
     hasBookmarks,
@@ -353,11 +353,13 @@ export function CaptionPanel({
     const row = rows[bookmarkSelection.captionIndex];
     if (!row) return;
     setIsCreating(true);
-    onCreateBookmark({
-      ...bookmarkSelection,
-      timestamp: row.begin,
-      context: bookmarkSelection.side === 0 ? row.text1 : row.text2,
-    });
+    onCreateBookmarks([
+      {
+        ...bookmarkSelection,
+        timestamp: row.begin,
+        context: bookmarkSelection.side === 0 ? row.text1 : row.text2,
+      },
+    ]);
     getSelection()?.removeAllRanges();
     setBookmarkSelection(undefined);
     setIsCreating(false);
