@@ -33,36 +33,39 @@ export default defineConfig({
     tailwindcss(),
     {
       name: "extension-manifest-and-copy",
-      writeBundle(_, bundle) {
-        const outDir = resolve("dist", "extension");
+      buildApp: {
+        async handler(builder) {
+          await builder.build(builder.environments.client);
 
-        // Write manifest (not emitted via emitFile since we're in writeBundle)
-        const manifest = JSON.parse(
-          readFileSync("./src/extension/manifest.json", "utf8"),
-        );
-        if (process.env.DEV_EXT) {
-          const time = buildTime.toLocaleTimeString("en-GB", {
-            hour: "2-digit",
-            minute: "2-digit",
-          });
-          manifest.name = `Zamak-dev [${branch} ${rev} ${time}]`;
-        }
-        writeFileSync(
-          resolve(outDir, "manifest.json"),
-          JSON.stringify(manifest, null, 2),
-        );
+          // Write manifest
+          const outDir = builder.environments.client.config.build.outDir;
+          const manifest = JSON.parse(
+            readFileSync("./src/extension/manifest.json", "utf8"),
+          );
+          if (process.env.DEV_EXT) {
+            const time = buildTime.toLocaleTimeString("en-GB", {
+              hour: "2-digit",
+              minute: "2-digit",
+            });
+            manifest.name = `Zamak-dev [${branch} ${rev} ${time}]`;
+          }
+          writeFileSync(
+            resolve(outDir, "manifest.json"),
+            JSON.stringify(manifest, null, 2),
+          );
 
-        // Copy to main repo's dist/extension-dev for single Chrome load point
-        if (process.env.DEV_EXT) {
-          const cwd = process.cwd();
-          const dirName = basename(cwd);
-          const match = dirName.match(/^(.+)-wt\d+$/);
-          const mainRepo = match ? resolve(cwd, "..", match[1]) : cwd;
-          const dest = resolve(mainRepo, "dist", "extension-dev");
-          mkdirSync(dest, { recursive: true });
-          cpSync(outDir, dest, { recursive: true });
-          console.log(`Copied extension → ${dest}`);
-        }
+          // Copy to main repo's dist/extension-dev for single Chrome load point
+          if (process.env.DEV_EXT) {
+            const cwd = process.cwd();
+            const dirName = basename(cwd);
+            const match = dirName.match(/^(.+)-wt\d+$/);
+            const mainRepo = match ? resolve(cwd, "..", match[1]) : cwd;
+            const dest = resolve(mainRepo, "dist", "extension-dev");
+            mkdirSync(dest, { recursive: true });
+            cpSync(outDir, dest, { recursive: true });
+            console.log(`[dev-ext] Copied extension → ${dest}`);
+          }
+        },
       },
     },
   ],
