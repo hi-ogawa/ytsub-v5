@@ -24,6 +24,7 @@ function BookmarkWord({
   onGoToBookmark?: (bookmarkId: string) => void;
   onPopoverOpenChange?: (open: boolean) => void;
 }) {
+  const filled = !!bookmark.translation;
   return (
     <Popover onOpenChange={onPopoverOpenChange}>
       <PopoverTrigger asChild>
@@ -33,7 +34,13 @@ function BookmarkWord({
           data-offset={offset}
           onClick={(e) => e.stopPropagation()}
         >
-          <span className="border-b-2 border-highlight-border bg-highlight-bg">
+          <span
+            className={
+              filled
+                ? "border-b-2 border-highlight-alt-border bg-highlight-alt-bg"
+                : "border-b-2 border-highlight-border bg-highlight-bg"
+            }
+          >
             {children}
           </span>
         </span>
@@ -47,9 +54,13 @@ function BookmarkWord({
         <span className="block text-xs font-medium text-popover-foreground">
           {bookmark.text}
         </span>
-        {bookmark.translation && (
+        {bookmark.translation ? (
           <span className="block text-xs text-muted-foreground">
             {bookmark.translation}
+          </span>
+        ) : (
+          <span className="block text-xs italic text-muted-foreground/50">
+            unfilled
           </span>
         )}
         {bookmark.etymology && (

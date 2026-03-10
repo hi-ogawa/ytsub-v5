@@ -682,9 +682,11 @@ function ExtensionBookmarksList({
                   <div>{caption.text2}</div>
                 </div>
                 <div className="flex shrink-0 items-center gap-1">
-                  <span className="rounded bg-highlight px-1 text-highlight-foreground">
-                    manual
-                  </span>
+                  {!bm.translation && (
+                    <span className="rounded bg-muted px-1 text-muted-foreground">
+                      unfilled
+                    </span>
+                  )}
                   <button
                     className="rounded p-0.5 text-muted-foreground hover:bg-accent hover:text-foreground"
                     title="Go to caption"
@@ -698,10 +700,10 @@ function ExtensionBookmarksList({
                 </div>
               </div>
             )}
-            {!caption && (
+            {!caption && !bm.translation && (
               <div className="text-xs">
-                <span className="rounded bg-highlight px-1 text-highlight-foreground">
-                  manual
+                <span className="rounded bg-muted px-1 text-muted-foreground">
+                  unfilled
                 </span>
               </div>
             )}
