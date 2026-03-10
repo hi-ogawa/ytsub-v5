@@ -23,7 +23,7 @@ export const authRouter = pub.router({
   register: pub
     .input(
       z.object({
-        email: z.string().email(),
+        username: z.string().min(3).max(50),
         password: z.string().min(8).max(256),
       }),
     )
@@ -31,18 +31,18 @@ export const authRouter = pub.router({
       const existing = await db
         .select({ id: users.id })
         .from(users)
-        .where(eq(users.email, input.email))
+        .where(eq(users.username, input.username))
         .get();
       if (existing) {
         throw new ORPCError("CONFLICT", {
-          message: "Email already registered",
+          message: "Username already taken",
         });
       }
 
       const passwordHash = await hashPassword(input.password);
       const [user] = await db
         .insert(users)
-        .values({ email: input.email, passwordHash })
+        .values({ username: input.username, passwordHash })
         .returning({ id: users.id });
 
       const token = await createSessionToken(user.id);
@@ -58,7 +58,7 @@ export const authRouter = pub.router({
   login: pub
     .input(
       z.object({
-        email: z.string().email(),
+        username: z.string().max(50),
         password: z.string().max(256),
       }),
     )
@@ -66,7 +66,7 @@ export const authRouter = pub.router({
       const user = await db
         .select({ id: users.id, passwordHash: users.passwordHash })
         .from(users)
-        .where(eq(users.email, input.email))
+        .where(eq(users.username, input.username))
         .get();
 
       // Always hash to prevent timing-based user enumeration

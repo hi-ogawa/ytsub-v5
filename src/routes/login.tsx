@@ -5,7 +5,7 @@ import { orpc } from "../rpc.ts";
 
 export function LoginPage() {
   const navigate = useNavigate();
-  const emailRef = useRef<HTMLInputElement>(null);
+  const usernameRef = useRef<HTMLInputElement>(null);
   const [mode, setMode] = useState<"login" | "register">("login");
 
   const login = useMutation(
@@ -26,7 +26,7 @@ export function LoginPage() {
     e.preventDefault();
     const form = new FormData(e.currentTarget);
     mutation.mutate({
-      email: form.get("email") as string,
+      username: form.get("username") as string,
       password: form.get("password") as string,
     });
   }
@@ -37,12 +37,13 @@ export function LoginPage() {
         Zamak — {mode === "login" ? "login" : "sign up"}
       </h1>
       <input
-        ref={emailRef}
-        name="email"
-        type="email"
-        placeholder="Email"
+        ref={usernameRef}
+        name="username"
+        type="text"
+        placeholder="Username"
         autoFocus
         required
+        minLength={mode === "register" ? 3 : undefined}
         className="w-full rounded border px-3 py-2"
       />
       <input
@@ -63,8 +64,8 @@ export function LoginPage() {
       {mutation.isError && (
         <p className="text-sm text-destructive">
           {mode === "login"
-            ? "Invalid email or password"
-            : "Registration failed — email may already be in use"}
+            ? "Invalid username or password"
+            : "Registration failed — username may already be taken"}
         </p>
       )}
       <p className="text-center text-sm text-muted-foreground">

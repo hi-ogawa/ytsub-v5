@@ -46,7 +46,7 @@ function toSql(data: ImportData): string {
 
   lines.push(
     `INSERT INTO videos (user_id, youtube_id, title, channel_name, channel_id, duration, language1, language2)`,
-    `VALUES ((SELECT id FROM users WHERE email = 'dev@zamak.local'), '${esc(id)}', '${esc(video.title)}', '${esc(video.channelName)}', '${esc(video.channelId)}', ${video.duration}, '${esc(video.language1)}', '${esc(video.language2)}');`,
+    `VALUES ((SELECT id FROM users WHERE username = 'dev'), '${esc(id)}', '${esc(video.title)}', '${esc(video.channelName)}', '${esc(video.channelId)}', ${video.duration}, '${esc(video.language1)}', '${esc(video.language2)}');`,
     "",
   );
 
@@ -89,7 +89,7 @@ const devPasswordHash = await hashPassword(
   new Uint8Array(16).fill(0) as Uint8Array<ArrayBuffer>,
 );
 // Seed user first, then video data
-const seedUser = `INSERT OR IGNORE INTO users (email, password_hash) VALUES ('dev@zamak.local', '${devPasswordHash}');\n`;
+const seedUser = `INSERT OR IGNORE INTO users (username, password_hash) VALUES ('dev', '${devPasswordHash}');\n`;
 const sql =
   seedUser +
   files.map((f) => toSql(JSON.parse(readFileSync(f, "utf-8")))).join("\n");

@@ -11,7 +11,7 @@ async function getAuthCookie(request: any): Promise<string> {
     headers: { "Content-Type": "application/json" },
     data: {
       json: {
-        email: `api-${Math.random().toString(36).slice(2)}@zamak.local`,
+        username: `api-${Math.random().toString(36).slice(2)}`,
         password: "testpassword",
       },
     },

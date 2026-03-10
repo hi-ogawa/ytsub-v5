@@ -24,7 +24,7 @@ test.describe("auth endpoints", () => {
 
   test("register creates user and sets session cookie", async ({ request }) => {
     const res = await rpc(request, "auth/register", {
-      email: "new@zamak.local",
+      username: "newuser",
       password: "testpassword",
     });
     expect(res.ok()).toBe(true);
@@ -35,15 +35,15 @@ test.describe("auth endpoints", () => {
     expect(setCookie).toContain("HttpOnly");
   });
 
-  test("register duplicate email returns conflict", async ({ request }) => {
+  test("register duplicate username returns conflict", async ({ request }) => {
     // Register first
     await rpc(request, "auth/register", {
-      email: "dup@zamak.local",
+      username: "dupuser",
       password: "testpassword",
     });
     // Try again
     const res = await rpc(request, "auth/register", {
-      email: "dup@zamak.local",
+      username: "dupuser",
       password: "testpassword",
     });
     expect(res.status()).toBe(409);
@@ -52,11 +52,11 @@ test.describe("auth endpoints", () => {
   test("login with wrong password returns 401", async ({ request }) => {
     // Register first
     await rpc(request, "auth/register", {
-      email: "wrong-pw@zamak.local",
+      username: "wrongpw",
       password: "testpassword",
     });
     const res = await rpc(request, "auth/login", {
-      email: "wrong-pw@zamak.local",
+      username: "wrongpw",
       password: "badpassword",
     });
     expect(res.status()).toBe(401);
@@ -67,11 +67,11 @@ test.describe("auth endpoints", () => {
   }) => {
     // Register first
     await rpc(request, "auth/register", {
-      email: "login@zamak.local",
+      username: "loginuser",
       password: "testpassword",
     });
     const res = await rpc(request, "auth/login", {
-      email: "login@zamak.local",
+      username: "loginuser",
       password: "testpassword",
     });
     expect(res.ok()).toBe(true);
@@ -82,7 +82,7 @@ test.describe("auth endpoints", () => {
 
   test("authenticated API calls succeed with cookie", async ({ request }) => {
     await rpc(request, "auth/register", {
-      email: "authed@zamak.local",
+      username: "autheduser",
       password: "testpassword",
     });
 
@@ -98,7 +98,7 @@ test.describe("auth endpoints", () => {
 
     // Register
     await rpc(request, "auth/register", {
-      email: "check@zamak.local",
+      username: "checkuser",
       password: "testpassword",
     });
 
@@ -109,7 +109,7 @@ test.describe("auth endpoints", () => {
 
   test("logout clears session", async ({ request }) => {
     await rpc(request, "auth/register", {
-      email: "logout@zamak.local",
+      username: "logoutuser",
       password: "testpassword",
     });
 

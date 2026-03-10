@@ -9,7 +9,7 @@ test("redirects to /login when not authenticated", async ({ page }) => {
   await page.goto("/");
   await expect(page).toHaveURL("/login");
   await expect(page.locator("h1")).toHaveText("Zamak — login");
-  await expect(page.getByPlaceholder("Email")).toBeVisible();
+  await expect(page.getByPlaceholder("Username")).toBeVisible();
   await expect(page.getByPlaceholder("Password")).toBeVisible();
 });
 
@@ -19,7 +19,7 @@ test("register with short password shows validation error", async ({
   await page.goto("/login");
   await page.getByRole("button", { name: "Sign up" }).click();
   await expect(page.locator("h1")).toHaveText("Zamak — sign up");
-  await page.getByPlaceholder("Email").fill("short@zamak.local");
+  await page.getByPlaceholder("Username").fill("shortpw");
   await page.getByPlaceholder("Password").fill("short");
   await page.getByRole("button", { name: "Sign up" }).click();
   // Should stay on login page (HTML minLength validation or server rejection)
@@ -30,7 +30,7 @@ test("register then login as new user", async ({ page }) => {
   await page.goto("/login");
   // Switch to register mode
   await page.getByRole("button", { name: "Sign up" }).click();
-  await page.getByPlaceholder("Email").fill("newuser@zamak.local");
+  await page.getByPlaceholder("Username").fill("newuser");
   await page.getByPlaceholder("Password").fill("newpassword");
   await page.getByRole("button", { name: "Sign up" }).click();
   await expect(page).toHaveURL("/");
@@ -43,17 +43,17 @@ test("register then login as new user", async ({ page }) => {
   await expect(page).toHaveURL("/login");
 
   // Login again with same credentials
-  await page.getByPlaceholder("Email").fill("newuser@zamak.local");
+  await page.getByPlaceholder("Username").fill("newuser");
   await page.getByPlaceholder("Password").fill("newpassword");
   await page.getByRole("button", { name: "Login" }).click();
   await expect(page).toHaveURL("/");
 });
 
-test("register duplicate email shows error", async ({ page }) => {
+test("register duplicate username shows error", async ({ page }) => {
   await page.goto("/login");
   await page.getByRole("button", { name: "Sign up" }).click();
-  // dev@zamak.local already exists from seed
-  await page.getByPlaceholder("Email").fill("dev@zamak.local");
+  // "dev" already exists from seed
+  await page.getByPlaceholder("Username").fill("dev");
   await page.getByPlaceholder("Password").fill("somepassword");
   await page.getByRole("button", { name: "Sign up" }).click();
   await expect(page.getByText("Registration failed")).toBeVisible();
@@ -61,10 +61,10 @@ test("register duplicate email shows error", async ({ page }) => {
 
 test("login with wrong then correct password", async ({ page }) => {
   await page.goto("/login");
-  await page.getByPlaceholder("Email").fill("dev@zamak.local");
+  await page.getByPlaceholder("Username").fill("dev");
   await page.getByPlaceholder("Password").fill("wrong");
   await page.getByRole("button", { name: "Login" }).click();
-  await expect(page.getByText("Invalid email or password")).toBeVisible();
+  await expect(page.getByText("Invalid username or password")).toBeVisible();
 
   await page.getByPlaceholder("Password").fill("devpassword");
   await page.getByRole("button", { name: "Login" }).click();

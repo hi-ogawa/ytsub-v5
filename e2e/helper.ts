@@ -13,25 +13,25 @@ export async function setupDb(options: { seed?: boolean } = {}) {
 
 /**
  * Log in via the UI.
- * When seed data is loaded, logs in as the seed user (dev@zamak.local / dev).
+ * When seed data is loaded, logs in as the seed user (dev / devpassword).
  * Otherwise registers a fresh test user.
  */
 export async function login(
   page: Page,
-  opts?: { email?: string; password?: string },
+  opts?: { username?: string; password?: string },
 ) {
-  const email = opts?.email ?? "dev@zamak.local";
+  const username = opts?.username ?? "dev";
   const password = opts?.password ?? "devpassword";
 
   await page.goto("/login");
-  await page.getByPlaceholder("Email").fill(email);
+  await page.getByPlaceholder("Username").fill(username);
   await page.getByPlaceholder("Password").fill(password);
   await page.getByRole("button", { name: "Login" }).click();
 
   // If login fails (no seed user), register instead
   const nav = page.waitForURL("/", { timeout: 3000 }).catch(() => null);
   const err = page
-    .getByText("Invalid email or password")
+    .getByText("Invalid username or password")
     .waitFor({ timeout: 3000 })
     .catch(() => null);
 
@@ -43,7 +43,7 @@ export async function login(
   if (result === "error") {
     // Switch to register
     await page.getByRole("button", { name: "Sign up" }).click();
-    await page.getByPlaceholder("Email").fill(email);
+    await page.getByPlaceholder("Username").fill(username);
     await page.getByPlaceholder("Password").fill(password);
     await page.getByRole("button", { name: "Sign up" }).click();
   }
