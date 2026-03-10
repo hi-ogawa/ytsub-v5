@@ -2,7 +2,7 @@ import { StrictMode, useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { BookmarksPage } from "../components/bookmarks-page.tsx";
 import type { VideoIndexEntry } from "../lib/video-index.ts";
-import "./bookmarks.css";
+import "../styles.css";
 
 declare const chrome: {
   storage: {

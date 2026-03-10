@@ -12,10 +12,10 @@
       rel="stylesheet"
     />
     <!-- Separate file instead of inline script: MV3 CSP only allows 'self' for script-src -->
-    <script src="theme-init.js"></script>
+    <script vite-ignore src="/theme-init.js"></script>
   </head>
   <body>
     <div id="root"></div>
-    <script type="module" src="./bookmarks-entry.tsx"></script>
+    <script type="module" src="./bookmarks.tsx"></script>
   </body>
 </html>

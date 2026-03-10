@@ -3,23 +3,19 @@ import {
   cpSync,
   mkdirSync,
   readFileSync,
-  readdirSync,
   rmSync,
   writeFileSync,
 } from "node:fs";
 import { basename, resolve } from "node:path";
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
-import { build, defineConfig } from "vite";
+import { defineConfig } from "vite";
 
 const git = (cmd: string) => execSync(cmd).toString().trim();
 const rev = git("git rev-parse --short HEAD");
 const branch = git("git branch --show-current");
 const dirty = git("git status --porcelain") ? "-dirty" : "";
 const buildTime = new Date();
-
-const TMP_OUT = "./dist/extension-tmp";
-const EXT_OUT = "./dist/extension";
 
 export default defineConfig({
   environments: {
@@ -45,6 +41,7 @@ export default defineConfig({
         outDir: "./dist/extension",
         minify: false,
         emptyOutDir: false,
+        copyPublicDir: false,
         rolldownOptions: {
           input: {
             bookmarks: "./src/extension/bookmarks.html",
@@ -72,9 +69,13 @@ export default defineConfig({
       );
       rmSync(resolve(outDir, "src"), { force: true, recursive: true });
 
-      // Copy manifest.json
+      // Copy raw assets
+      cpSync("./src/extension/public", outDir, { recursive: true });
+
+      // Modify manifest.json
+      const manifestPath = resolve(outDir, "manifest.json");
       const manifest = JSON.parse(
-        readFileSync("./src/extension/manifest.json", "utf8"),
+        readFileSync(manifestPath, "utf8"),
       );
       if (process.env.DEV_EXT) {
         const time = buildTime.toLocaleTimeString("en-GB", {
@@ -84,14 +85,9 @@ export default defineConfig({
         manifest.name = `Zamak-dev [${branch} ${rev} ${time}]`;
       }
       writeFileSync(
-        resolve(EXT_OUT, "manifest.json"),
+        manifestPath,
         JSON.stringify(manifest, null, 2),
       );
-
-      // Copy plain JS files for the extension
-      for (const file of ["relay.js", "background.js", "theme-init.js"]) {
-        cpSync(`./src/extension/${file}`, resolve(EXT_OUT, file));
-      }
 
       // Copy to main repo's dist/extension-dev for single Chrome load point
       if (process.env.DEV_EXT) {
@@ -101,7 +97,7 @@ export default defineConfig({
         const mainRepo = match ? resolve(cwd, "..", match[1]) : cwd;
         const dest = resolve(mainRepo, "dist", "extension-dev");
         mkdirSync(dest, { recursive: true });
-        cpSync(EXT_OUT, dest, { recursive: true });
+        cpSync(outDir, dest, { recursive: true });
         console.log(`[dev-ext] Copied extension → ${dest}`);
       }
     },
