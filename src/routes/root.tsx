@@ -60,6 +60,22 @@ export function AuthLayout() {
   return <Outlet />;
 }
 
+export function DevLayout() {
+  return (
+    <div className="flex h-screen flex-col">
+      <header className="flex h-10 flex-none items-center justify-between border-b px-3">
+        <Link to="/dev" className="text-sm font-semibold">
+          Zamak <span className="text-muted-foreground">(dev)</span>
+        </Link>
+        <HeaderMenu authenticated={false} />
+      </header>
+      <main className="flex-1 overflow-auto">
+        <Outlet />
+      </main>
+    </div>
+  );
+}
+
 function HeaderMenu({ authenticated }: { authenticated: boolean }) {
   const { theme, cycle, Icon } = useTheme();
 

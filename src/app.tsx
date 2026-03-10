@@ -6,6 +6,7 @@ import { LoginPage } from "./routes/login.tsx";
 import {
   AuthLayout,
   authLoader,
+  DevLayout,
   GuestLayout,
   RootLayout,
 } from "./routes/root.tsx";
@@ -15,6 +16,15 @@ import { VideoViewerPage } from "./routes/video-viewer.tsx";
 const queryClient = new QueryClient();
 
 const router = createBrowserRouter([
+  {
+    path: "/dev",
+    Component: DevLayout,
+    children: [
+      { index: true, Component: DevIndexPage },
+      { path: "youtube/:videoId", Component: DevViewerPage },
+      { path: "bookmarks", Component: DevBookmarksPage },
+    ],
+  },
   {
     id: "root",
     Component: RootLayout,
@@ -29,9 +39,6 @@ const router = createBrowserRouter([
         children: [
           { path: "/", Component: VideoListPage },
           { path: "/videos/:id", Component: VideoViewerPage },
-          { path: "/dev", Component: DevIndexPage },
-          { path: "/dev/youtube/:videoId", Component: DevViewerPage },
-          { path: "/dev/bookmarks", Component: DevBookmarksPage },
         ],
       },
     ],
