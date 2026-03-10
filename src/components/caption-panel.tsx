@@ -149,7 +149,7 @@ const AI_PROMPTS: { label: string; task: string }[] = [
 ];
 
 function makePrompt(task: string): string {
-  return `Run window.__zamak.log.skillPrompt() and read the console output. Follow the "${task}" task. If any API call errors, stop and report — do not try to fix it.`;
+  return `This page has a language learning tool (zamak) injected as window.__zamak. It exposes methods to read captions/bookmarks and write bookmark metadata. Run window.__zamak.log.skillPrompt() and read the console output — it contains the full API reference and task instructions. Follow the "${task}" task. All data is read via console logs (prefixed ZAMAK:), not return values. If any API call errors, stop and report — do not try to fix it.`;
 }
 
 function AiPromptCopy() {

@@ -177,6 +177,7 @@ export function useZamakApi({
 
       updateCaptions(entries) {
         sessionRef.current.onUpdateCaptions(entries);
+        console.log(`ZAMAK:updateCaptions done — ${entries.length} updated`);
       },
 
       getBookmarks(): ZamakBookmark[] {
@@ -239,15 +240,20 @@ export function useZamakApi({
             ...metadata,
           });
         }
+        const added = entries.length - warnings.length;
         if (warnings.length > 0) {
           console.warn("ZAMAK:addBookmarks warnings\n" + warnings.join("\n"));
         }
+        console.log(
+          `ZAMAK:addBookmarks done — ${added} added, ${warnings.length} skipped`,
+        );
       },
 
       fillBookmarks(entries) {
         for (const { id, ...data } of entries) {
           sessionRef.current.onUpdateBookmark(id, data);
         }
+        console.log(`ZAMAK:fillBookmarks done — ${entries.length} updated`);
       },
 
       getVideoContext() {
