@@ -83,5 +83,5 @@ Bookmark fields (`text`, `translation`, `etymology`, `notes`) and other user-pro
 - [ ] 3. Rate limiting
 - [x] 4. Timing-safe login
 - [x] 5. Max password length
-- [ ] 6. Max text field lengths
+- [~] 6. Max payload/field lengths — deferred; Cloudflare enforces 100MB request body limit at platform level (free/pro plans)
 - [ ] 7. Session revocation
