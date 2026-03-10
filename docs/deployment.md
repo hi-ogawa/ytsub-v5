@@ -5,7 +5,7 @@
 - **Runtime**: Cloudflare Workers (entry: `src/server/index.ts`)
 - **Database**: Cloudflare D1 (`ytsub-v5`, ID: `882ee273-02b6-4548-9c0f-087b320e4d8e`)
 - **Assets**: SPA mode, worker-first for `/api/*`
-- **Auth**: Password hash + secret stored as Cloudflare secrets (not in `wrangler.jsonc`)
+- **Auth**: secrets as Cloudflare secrets (not in `wrangler.jsonc`)
 
 ## Deployment Procedure
 
@@ -59,9 +59,8 @@ pnpm wrangler secret bulk .dev.vars.production
 Current secrets:
 
 - `AUTH_SECRET` — session signing key
-- `AUTH_PASSWORD_HASH` — SHA-256 hash of the login password
 
-The `vars` in `wrangler.jsonc` are dev-only defaults. Secrets override them in production.
+The values in `.dev.vars` are dev-only defaults. Secrets override them in production.
 
 ## Initial Setup (one-time, already done)
 
@@ -70,7 +69,3 @@ See `docs/tasks/2026-03-04-deployment.md` for the original setup steps:
 - Creating the D1 database
 - Setting secrets
 - First deploy
-
-## CI/CD
-
-GitHub Actions runs build + e2e on push/PR. Deployment is manual (`pnpm release`).
