@@ -17,7 +17,16 @@
 | `docs/background/architecture.md` | Problem context, design decisions |
 | `docs/tasks/YYYY-MM-DD-*.md`      | Task-specific planning/notes      |
 
-Read `docs/prd.md` for the task list and `docs/background/architecture.md` for architecture context before implementing features. For extension work, also read `docs/background/architecture-extension.md` — UI features should go in shared components (`src/components/`), not in extension-specific code, so they can be iterated via the dev-viewer without reloading the extension.
+Read `docs/prd.md` for the task list and `docs/background/architecture.md` for architecture context before implementing features.
+
+## Two isolated UI paths
+
+The codebase has two independent caption/bookmark UIs. Know which one you're working on:
+
+- **Web app** (`routes/video-viewer.tsx`) — full-stack, server DB via oRPC/React Query. Self-contained in one route file.
+- **Extension** (`components/caption-panel.tsx`, `components/caption-list.tsx`) — client-only, IndexedDB. The dev-viewer (`routes/dev-viewer.tsx`) renders these with fixture data so extension UI can be iterated without loading YouTube. See `docs/background/architecture-extension.md`.
+
+They implement the same UI independently because the extension has no backend. Consolidation is planned (see `docs/prd.md`). Changes to one path don't automatically apply to the other.
 
 ## Task Documents
 
@@ -58,6 +67,13 @@ To continue in fresh session: `Read docs/tasks/YYYY-MM-DD-<topic>.md and continu
 - Use `pnpm build` to verify code, not `pnpm dev`
 - User runs `pnpm dev` manually in their terminal
 - **Never use `--` to pass args to pnpm scripts.** pnpm doesn't need `--` and it silently breaks filtering. Write `pnpm test "filename" -t "pattern"` or `pnpm test-e2e "filename" -g "pattern"` directly.
+
+## E2E Tests
+
+- **dev-viewer tests** use fixture data — no DB setup needed, just `login(page)` + `goto("/dev/youtube/...")`
+- **video-viewer tests** need `setupDb({ seed: true })` for server data
+- **Text selection** (for bookmark creation) requires DOM Range API via `page.evaluate` — mouse drag doesn't work reliably
+- **Selector preference**: scope to `data-testid` or panel containers to avoid ambiguity (e.g. FAB text can collide with tab button names). Prefer `getByTestId` > `getByRole` scoped to a container > page-wide `getByText`.
 
 ## Git Workflow
 

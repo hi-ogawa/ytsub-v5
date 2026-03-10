@@ -1,14 +1,25 @@
 import {
+  ArrowDown,
   Bookmark,
   Check,
+  ChevronLeft,
+  ChevronRight,
   Copy,
   Download,
   EllipsisVertical,
+  ExternalLink,
   Loader2,
   Trash2,
   X,
 } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useImperativeHandle,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import type { MergeStrategy, MergedCaption } from "../lib/caption-merge.ts";
 import type { CaptionSessionManager } from "../lib/caption-session.ts";
 import {
@@ -191,6 +202,12 @@ function AiPromptCopy() {
 
 // --- CaptionPanel: display component ---
 
+function formatTimestamp(seconds: number): string {
+  const m = Math.floor(seconds / 60);
+  const s = Math.floor(seconds % 60);
+  return `${m}:${String(s).padStart(2, "0")}`;
+}
+
 export function CaptionPanel({
   tracks,
   player,
@@ -212,8 +229,10 @@ export function CaptionPanel({
     forceStrategy,
     onSetForceStrategy,
     fallbackStrategies,
+    bookmarks,
     bookmarksByIndex,
     onCreateBookmark,
+    onDeleteBookmark,
     onClearBookmarks,
     hasBookmarks,
     onExport,
@@ -232,6 +251,57 @@ export function CaptionPanel({
       const next = !prev;
       localStorage.setItem("zamak:auto-scroll", JSON.stringify(next));
       return next;
+    });
+  }
+
+  // --- Tab state ---
+  const [activeTab, setActiveTab] = useState<"captions" | "bookmarks">(
+    "captions",
+  );
+
+  const sortedBookmarks = useMemo(
+    () => [...bookmarks].sort((a, b) => a.timestamp - b.timestamp),
+    [bookmarks],
+  );
+
+  // --- Bookmark navigation ---
+  function onPrevBookmark() {
+    if (!player || sortedBookmarks.length === 0) return;
+    const time = player.getCurrentTime();
+    for (let i = sortedBookmarks.length - 1; i >= 0; i--) {
+      if (sortedBookmarks[i].timestamp < time - 1) {
+        player.seekTo(sortedBookmarks[i].timestamp);
+        player.playVideo();
+        return;
+      }
+    }
+    const last = sortedBookmarks[sortedBookmarks.length - 1];
+    player.seekTo(last.timestamp);
+    player.playVideo();
+  }
+
+  function onNextBookmark() {
+    if (!player || sortedBookmarks.length === 0) return;
+    const time = player.getCurrentTime();
+    for (const bm of sortedBookmarks) {
+      if (bm.timestamp > time + 0.5) {
+        player.seekTo(bm.timestamp);
+        player.playVideo();
+        return;
+      }
+    }
+    player.seekTo(sortedBookmarks[0].timestamp);
+    player.playVideo();
+  }
+
+  // --- Cross-tab navigation ---
+  const captionListRef = useRef<{ scrollToIndex: (index: number) => void }>(
+    null,
+  );
+  function onGoToCaption(captionIndex: number) {
+    setActiveTab("captions");
+    requestAnimationFrame(() => {
+      captionListRef.current?.scrollToIndex(captionIndex);
     });
   }
 
@@ -361,18 +431,110 @@ export function CaptionPanel({
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
+
+      {/* Tab bar */}
+      <div className="flex flex-none items-center gap-1 border-b px-2 py-1">
+        <button
+          className={[
+            "rounded px-2 py-0.5 text-sm",
+            activeTab === "captions"
+              ? "bg-muted font-medium"
+              : "text-muted-foreground hover:bg-muted",
+          ].join(" ")}
+          onClick={() => setActiveTab("captions")}
+        >
+          Captions
+        </button>
+        <button
+          className={[
+            "rounded px-2 py-0.5 text-sm",
+            activeTab === "bookmarks"
+              ? "bg-muted font-medium"
+              : "text-muted-foreground hover:bg-muted",
+          ].join(" ")}
+          onClick={() => setActiveTab("bookmarks")}
+        >
+          Bookmarks
+          {sortedBookmarks.length > 0 && ` (${sortedBookmarks.length})`}
+        </button>
+        <div className="ml-auto flex items-center gap-0.5">
+          <button
+            className={[
+              "rounded p-0.5",
+              autoScroll
+                ? "text-accent hover:bg-highlight-bg"
+                : "text-muted-foreground hover:bg-muted",
+            ].join(" ")}
+            onClick={toggleAutoScroll}
+            title={autoScroll ? "Auto-scroll on" : "Auto-scroll off"}
+          >
+            <ArrowDown className="h-4 w-4" />
+          </button>
+          {sortedBookmarks.length > 0 && (
+            <div className="flex gap-0.5">
+              <button
+                className="rounded p-0.5 text-muted-foreground hover:bg-muted"
+                onClick={onPrevBookmark}
+                title="Previous bookmark"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+              <button
+                className="rounded p-0.5 text-muted-foreground hover:bg-muted"
+                onClick={onNextBookmark}
+                title="Next bookmark"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+
       <div className="relative flex min-h-0 flex-[1_0_0] flex-col">
         {error ? (
           <div className="flex h-full items-center justify-center text-sm text-destructive">
             {String(error)}
           </div>
         ) : rows ? (
-          <CaptionViewer
-            rows={rows}
-            player={player}
-            autoScroll={autoScroll}
-            bookmarksByIndex={bookmarksByIndex}
-          />
+          <>
+            {/* Captions — hidden (not unmounted) to preserve scroll position */}
+            <div
+              className="flex min-h-0 flex-[1_0_0] flex-col"
+              style={{
+                display: activeTab === "captions" ? undefined : "none",
+              }}
+            >
+              <CaptionViewer
+                ref={captionListRef}
+                rows={rows}
+                player={player}
+                autoScroll={autoScroll}
+                bookmarksByIndex={bookmarksByIndex}
+              />
+            </div>
+
+            {/* Bookmarks list */}
+            {activeTab === "bookmarks" && (
+              <div className="flex-[1_0_0] overflow-y-auto">
+                {sortedBookmarks.length === 0 ? (
+                  <div className="flex h-full items-center justify-center">
+                    <p className="text-sm text-muted-foreground">
+                      No bookmarks yet
+                    </p>
+                  </div>
+                ) : (
+                  <ExtensionBookmarksList
+                    bookmarks={sortedBookmarks}
+                    rows={rows}
+                    player={player}
+                    onDeleteBookmark={onDeleteBookmark}
+                    onGoToCaption={onGoToCaption}
+                  />
+                )}
+              </div>
+            )}
+          </>
         ) : null}
 
         {/* Floating bookmark action buttons */}
@@ -404,14 +566,130 @@ export function CaptionPanel({
   );
 }
 
+// --- ExtensionBookmarksList ---
+
+function ExtensionBookmarksList({
+  bookmarks,
+  rows,
+  player,
+  onDeleteBookmark,
+  onGoToCaption,
+}: {
+  bookmarks: ExtensionBookmark[];
+  rows: MergedCaption[];
+  player: YTPlayer | null;
+  onDeleteBookmark: (id: string) => void;
+  onGoToCaption: (captionIndex: number) => void;
+}) {
+  return (
+    <div className="flex flex-col gap-1.5 p-1.5">
+      {bookmarks.map((bm) => {
+        const caption = rows[bm.captionIndex];
+        return (
+          <div
+            key={bm.id}
+            data-bookmark-id={bm.id}
+            className="flex cursor-pointer flex-col gap-1 border border-border p-2 hover:bg-muted"
+            onClick={() => {
+              if (!player) return;
+              player.seekTo(bm.timestamp);
+              player.playVideo();
+            }}
+          >
+            <div className="flex items-start gap-1">
+              <div className="flex-1 text-sm font-medium">{bm.text}</div>
+              <span className="shrink-0 text-xs text-muted-foreground">
+                {formatTimestamp(bm.timestamp)}
+              </span>
+              <DropdownMenu>
+                <DropdownMenuTrigger
+                  className="-mr-1 -mt-0.5 shrink-0 rounded p-1 text-muted-foreground hover:bg-muted"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <EllipsisVertical className="h-3.5 w-3.5" />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  align="end"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <DropdownMenuItem
+                    className="text-destructive focus:text-destructive"
+                    onClick={() => {
+                      if (confirm(`Delete bookmark "${bm.text}"?`)) {
+                        onDeleteBookmark(bm.id);
+                      }
+                    }}
+                  >
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    Delete
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+            {bm.translation && (
+              <div className="text-sm text-muted-foreground">
+                {bm.translation}
+              </div>
+            )}
+            {bm.etymology && (
+              <div className="text-xs text-muted-foreground">
+                {bm.etymology}
+              </div>
+            )}
+            {bm.notes && (
+              <div className="text-xs text-muted-foreground">{bm.notes}</div>
+            )}
+            {caption && (
+              <div className="mt-0.5 flex items-start gap-1 border-t border-border pt-1 text-xs text-muted-foreground">
+                <div className="flex-1">
+                  <div>{caption.text1}</div>
+                  <div>{caption.text2}</div>
+                </div>
+                <div className="flex shrink-0 items-center gap-1">
+                  <span className="rounded bg-highlight px-1 text-highlight-foreground">
+                    manual
+                  </span>
+                  <button
+                    className="rounded p-0.5 text-muted-foreground hover:bg-accent hover:text-foreground"
+                    title="Go to caption"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onGoToCaption(bm.captionIndex);
+                    }}
+                  >
+                    <ExternalLink className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              </div>
+            )}
+            {!caption && (
+              <div className="text-xs">
+                <span className="rounded bg-highlight px-1 text-highlight-foreground">
+                  manual
+                </span>
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 // --- CaptionViewer: playback-synced caption list ---
 
+interface CaptionViewerHandle {
+  scrollToIndex: (index: number) => void;
+}
+
 function CaptionViewer({
+  ref,
   rows,
   player,
   autoScroll,
   bookmarksByIndex,
 }: {
+  ref?: React.Ref<CaptionViewerHandle>;
   rows: MergedCaption[];
   player: YTPlayer | null;
   autoScroll: boolean;
@@ -419,6 +697,15 @@ function CaptionViewer({
 }) {
   const [currentIndex, setCurrentIndex] = useState<number>();
   const [isPlaying, setIsPlaying] = useState(false);
+  const captionListRef = useRef<{ scrollToIndex: (index: number) => void }>(
+    null,
+  );
+
+  useImperativeHandle(ref, () => ({
+    scrollToIndex: (index: number) => {
+      captionListRef.current?.scrollToIndex(index);
+    },
+  }));
 
   useEffect(() => {
     if (!player || rows.length === 0) return;
@@ -444,6 +731,7 @@ function CaptionViewer({
 
   return (
     <CaptionList
+      ref={captionListRef}
       rows={rows}
       currentIndex={currentIndex}
       isPlaying={isPlaying}

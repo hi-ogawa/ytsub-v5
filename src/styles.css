@@ -29,6 +29,21 @@
   --color-highlight-alt-border: var(--highlight-alt-border);
 }
 
+@keyframes flash-highlight {
+  0% {
+    border-color: var(--color-ring);
+    background-color: var(--color-highlight-bg);
+  }
+  100% {
+    border-color: transparent;
+    background-color: transparent;
+  }
+}
+
+.flash-highlight {
+  animation: flash-highlight 3s ease-out;
+}
+
 @layer base {
   *,
   ::after,

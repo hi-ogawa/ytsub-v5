@@ -15,9 +15,7 @@ import {
 import {
   type BookmarkSelection,
   type ExtensionBookmark,
-  addBookmark as addBookmarkToStorage,
-  getBookmarks,
-  updateBookmark as updateBookmarkInStorage,
+  createBookmark,
 } from "./extension-bookmarks.ts";
 import {
   type Json3File,
@@ -190,12 +188,9 @@ export function useCaptionSession({
 
   const error = json3Query1.error ?? json3Query2.error ?? null;
 
-  // Bookmarks
-  const [bookmarks, setBookmarks] = useState<ExtensionBookmark[]>(() =>
-    getBookmarks(youtubeId),
-  );
+  // Bookmarks — loaded from IndexedDB session (no localStorage)
+  const [bookmarks, setBookmarks] = useState<ExtensionBookmark[]>([]);
 
-  // Sync bookmarks from hydrated session
   useEffect(() => {
     if (hydrated) {
       setBookmarks(hydrated.bookmarks);
@@ -244,7 +239,7 @@ export function useCaptionSession({
         notes?: string;
       },
     ) => {
-      addBookmarkToStorage(youtubeId, {
+      const bookmark = createBookmark({
         text: sel.text,
         side: sel.side,
         offset: sel.offset,
@@ -255,11 +250,25 @@ export function useCaptionSession({
         etymology: sel.etymology,
         notes: sel.notes,
       });
-      const updated = getBookmarks(youtubeId);
+      const updated = [...bookmarks, bookmark];
       setBookmarks(updated);
       persistSession(updated);
     },
-    [youtubeId, persistSession],
+    [bookmarks, persistSession],
+  );
+
+  const deleteBookmark = useCallback(
+    (bookmarkId: string) => {
+      const updated = bookmarks.filter((b) => b.id !== bookmarkId);
+      setBookmarks(updated);
+      if (updated.length > 0) {
+        persistSession(updated);
+      } else {
+        deleteSession(youtubeId);
+        setHydrated(undefined);
+      }
+    },
+    [bookmarks, youtubeId, persistSession],
   );
 
   const updateBookmark = useCallback(
@@ -269,12 +278,13 @@ export function useCaptionSession({
         Pick<ExtensionBookmark, "translation" | "etymology" | "notes">
       >,
     ) => {
-      updateBookmarkInStorage(youtubeId, id, data);
-      const updated = getBookmarks(youtubeId);
+      const updated = bookmarks.map((b) =>
+        b.id === id ? { ...b, ...data } : b,
+      );
       setBookmarks(updated);
       persistSession(updated);
     },
-    [youtubeId, persistSession],
+    [bookmarks, persistSession],
   );
 
   const updateCaptions = useCallback(
@@ -291,7 +301,6 @@ export function useCaptionSession({
   );
 
   const clearBookmarks = useCallback(() => {
-    localStorage.removeItem(`zamak:bookmarks:${youtubeId}`);
     setBookmarks([]);
     deleteSession(youtubeId);
     setHydrated(undefined);
@@ -372,6 +381,7 @@ export function useCaptionSession({
     bookmarks,
     bookmarksByIndex,
     onCreateBookmark: addBookmark,
+    onDeleteBookmark: deleteBookmark,
     onUpdateBookmark: updateBookmark,
     onClearBookmarks: clearBookmarks,
     hasBookmarks,

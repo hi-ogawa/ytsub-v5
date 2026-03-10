@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useImperativeHandle, useRef } from "react";
 import type { MergedCaption } from "../lib/caption-merge.ts";
 import type { ExtensionBookmark } from "../lib/extension-bookmarks.ts";
 import type { YTPlayer } from "./youtube-player.tsx";
@@ -46,6 +46,7 @@ function highlightText(
 }
 
 export function CaptionList({
+  ref,
   rows,
   currentIndex,
   isPlaying,
@@ -53,6 +54,7 @@ export function CaptionList({
   autoScroll = true,
   bookmarksByIndex,
 }: {
+  ref?: React.Ref<{ scrollToIndex: (index: number) => void }>;
   rows: MergedCaption[];
   currentIndex: number | undefined;
   isPlaying: boolean;
@@ -61,6 +63,15 @@ export function CaptionList({
   bookmarksByIndex?: Map<number, ExtensionBookmark[]>;
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  useImperativeHandle(ref, () => ({
+    scrollToIndex: (index: number) => {
+      const el = scrollRef.current?.querySelector(`[data-index="${index}"]`);
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+    },
+  }));
   const prevScrollIndex = useRef<number | undefined>(undefined);
   const isManualScrollRef = useRef(false);
   const manualScrollTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
