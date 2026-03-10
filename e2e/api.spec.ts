@@ -5,11 +5,34 @@ test.beforeAll(async () => {
   await setupDb();
 });
 
+/** Register a test user and return a cookie header for subsequent requests */
+async function getAuthCookie(request: any): Promise<string> {
+  const res = await request.post("/api/auth/register", {
+    headers: { "Content-Type": "application/json" },
+    data: {
+      json: {
+        username: `api-${Math.random().toString(36).slice(2)}`,
+        password: "testpassword",
+      },
+    },
+  });
+  const setCookie = res.headers()["set-cookie"] ?? "";
+  // Extract session cookie value
+  const match = setCookie.match(/session=([^;]+)/);
+  return match ? `session=${match[1]}` : "";
+}
+
+let cookie: string;
+
+test.beforeAll(async ({ request }) => {
+  cookie = await getAuthCookie(request);
+});
+
 const rpc = (request: any, path: string, data: any = {}) =>
   request.post(`/api/${path.replace(/\./g, "/")}`, {
     headers: {
       "Content-Type": "application/json",
-      Authorization: "Bearer dev",
+      Cookie: cookie,
     },
     data: { json: data },
   });

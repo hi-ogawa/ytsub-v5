@@ -2,7 +2,28 @@ import { and, count, desc, eq, sql } from "drizzle-orm";
 import z from "zod";
 import { authed } from "../auth.ts";
 import { BOOKMARK_BATCH_SIZE, db } from "../db.ts";
-import { bookmarks } from "../schema.ts";
+import { bookmarks, videos } from "../schema.ts";
+
+/** Verify video belongs to the authenticated user */
+async function assertVideoOwner(videoId: number, userId: number) {
+  const video = await db
+    .select({ id: videos.id })
+    .from(videos)
+    .where(and(eq(videos.id, videoId), eq(videos.userId, userId)))
+    .get();
+  if (!video) throw new Error(`Video ${videoId} not found`);
+}
+
+/** Verify bookmark belongs to user (via its video) */
+async function assertBookmarkOwner(bookmarkId: number, userId: number) {
+  const row = await db
+    .select({ id: bookmarks.id })
+    .from(bookmarks)
+    .innerJoin(videos, eq(bookmarks.videoId, videos.id))
+    .where(and(eq(bookmarks.id, bookmarkId), eq(videos.userId, userId)))
+    .get();
+  if (!row) throw new Error(`Bookmark ${bookmarkId} not found`);
+}
 
 export const bookmarksRouter = authed.router({
   createBookmarks: authed
@@ -25,8 +46,13 @@ export const bookmarksRouter = authed.router({
         ),
       }),
     )
-    .handler(async ({ input }) => {
+    .handler(async ({ input, context }) => {
       if (input.bookmarks.length === 0) return { inserted: 0 };
+      // Verify all referenced videos belong to user
+      const videoIds = [...new Set(input.bookmarks.map((b) => b.videoId))];
+      for (const videoId of videoIds) {
+        await assertVideoOwner(videoId, context.userId);
+      }
       const rows = input.bookmarks.map((b) => ({
         videoId: sql.raw(`${b.videoId}`),
         captionId:
@@ -59,22 +85,40 @@ export const bookmarksRouter = authed.router({
         offset: z.number().int().optional().default(0),
       }),
     )
-    .handler(async ({ input }) => {
+    .handler(async ({ input, context }) => {
       const conditions = [];
+      // Always scope to user's videos
+      conditions.push(eq(videos.userId, context.userId));
       if (input.videoId !== undefined) {
         conditions.push(eq(bookmarks.videoId, input.videoId));
       }
       if (input.status !== undefined) {
         conditions.push(eq(bookmarks.status, input.status));
       }
-      const where = conditions.length > 0 ? and(...conditions) : undefined;
+      const where = and(...conditions);
       const [total] = await db
         .select({ count: count() })
         .from(bookmarks)
+        .innerJoin(videos, eq(bookmarks.videoId, videos.id))
         .where(where);
       const items = await db
-        .select()
+        .select({
+          id: bookmarks.id,
+          videoId: bookmarks.videoId,
+          captionId: bookmarks.captionId,
+          text: bookmarks.text,
+          side: bookmarks.side,
+          offset: bookmarks.offset,
+          translation: bookmarks.translation,
+          context: bookmarks.context,
+          timestamp: bookmarks.timestamp,
+          etymology: bookmarks.etymology,
+          notes: bookmarks.notes,
+          status: bookmarks.status,
+          createdAt: bookmarks.createdAt,
+        })
         .from(bookmarks)
+        .innerJoin(videos, eq(bookmarks.videoId, videos.id))
         .where(where)
         .orderBy(desc(bookmarks.createdAt))
         .limit(input.limit)
@@ -92,7 +136,8 @@ export const bookmarksRouter = authed.router({
         notes: z.string().optional(),
       }),
     )
-    .handler(async ({ input }) => {
+    .handler(async ({ input, context }) => {
+      await assertBookmarkOwner(input.id, context.userId);
       const { id, ...updates } = input;
       const setValues: Record<string, string> = {};
       if (updates.status !== undefined) setValues.status = updates.status;
@@ -117,7 +162,8 @@ export const bookmarksRouter = authed.router({
 
   deleteBookmark: authed
     .input(z.object({ id: z.number().int() }))
-    .handler(async ({ input }) => {
+    .handler(async ({ input, context }) => {
+      await assertBookmarkOwner(input.id, context.userId);
       const [row] = await db
         .delete(bookmarks)
         .where(eq(bookmarks.id, input.id))

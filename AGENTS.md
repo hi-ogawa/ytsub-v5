@@ -75,6 +75,7 @@ To continue in fresh session: `Read docs/tasks/YYYY-MM-DD-<topic>.md and continu
 - **video-viewer tests** need `setupDb({ seed: true })` for server data
 - **Text selection** (for bookmark creation) requires DOM Range API via `page.evaluate` — mouse drag doesn't work reliably
 - **Selector preference**: scope to `data-testid` or panel containers to avoid ambiguity (e.g. FAB text can collide with tab button names). Prefer `getByTestId` > `getByRole` scoped to a container > page-wide `getByText`.
+- **Iterate with bail**: use `pnpm test-e2e -x` to stop on first failure when fixing tests. Avoids waiting for the full suite on each iteration.
 
 ## Git Workflow
 

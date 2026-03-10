@@ -1,5 +1,6 @@
-INSERT INTO videos (youtube_id, title, channel_name, channel_id, duration, language1, language2)
-VALUES ('7GU_VQfgMT0', 'Billlie | ''cloud palace'' 𝐁efore sunrise live', 'Billlie', 'UCyc9sUCxELTDK9vELO5Fzeg', 210, 'ko', 'en');
+INSERT OR IGNORE INTO users (username, password_hash) VALUES ('dev', '00000000000000000000000000000000:053759aefc68ef45593ea65227e7e4f6a43086aae217e4bd2ad60c528dfe6dc5');
+INSERT INTO videos (user_id, youtube_id, title, channel_name, channel_id, duration, language1, language2)
+VALUES ((SELECT id FROM users WHERE username = 'dev'), '7GU_VQfgMT0', 'Billlie | ''cloud palace'' 𝐁efore sunrise live', 'Billlie', 'UCyc9sUCxELTDK9vELO5Fzeg', 210, 'ko', 'en');
 
 INSERT INTO captions (video_id, idx, begin, end, text1, text2) VALUES
 ((SELECT id FROM videos WHERE youtube_id = '7GU_VQfgMT0'), 0, 25.585, 29.489, '꼬집어 봐 뜬 꿈인 것 같아', 'am I awake? or am I still dreaming'),
@@ -130,8 +131,8 @@ SELECT v.id, c.id, '펼쳐진', 0, 7, 'unfolded, spread out (펼쳐지다)', '�
   FROM videos v JOIN captions c ON c.video_id = v.id AND c.idx = 24
   WHERE v.youtube_id = '7GU_VQfgMT0';
 
-INSERT INTO videos (youtube_id, title, channel_name, channel_id, duration, language1, language2)
-VALUES ('DtK-CkwNHSY', 'SecretBase 260211 ParkShiOn.SSS [ EN JP CN ]', 'tripleS official', 'UCJnL-TBcsYrF2SLs7tmiC8Q', 272, 'ko', 'en');
+INSERT INTO videos (user_id, youtube_id, title, channel_name, channel_id, duration, language1, language2)
+VALUES ((SELECT id FROM users WHERE username = 'dev'), 'DtK-CkwNHSY', 'SecretBase 260211 ParkShiOn.SSS [ EN JP CN ]', 'tripleS official', 'UCJnL-TBcsYrF2SLs7tmiC8Q', 272, 'ko', 'en');
 
 INSERT INTO captions (video_id, idx, begin, end, text1, text2) VALUES
 ((SELECT id FROM videos WHERE youtube_id = 'DtK-CkwNHSY'), 0, 0.873, 2.999, '안녕하세요, 시온입니다.', 'Hi, it''s Shion.'),
@@ -250,8 +251,8 @@ SELECT v.id, c.id, '아깝지 않도록', 0, 12, 'so that it''s not a waste', '�
   FROM videos v JOIN captions c ON c.video_id = v.id AND c.idx = 37
   WHERE v.youtube_id = 'DtK-CkwNHSY';
 
-INSERT INTO videos (youtube_id, title, channel_name, channel_id, duration, language1, language2)
-VALUES ('E8KM2qWSUS0', '명절에 모인 성격 다른 오자매, 평화는 없었습니다 [ EN JP CN ]', 'tripleS official', 'UCJnL-TBcsYrF2SLs7tmiC8Q', 642, 'ko', 'en');
+INSERT INTO videos (user_id, youtube_id, title, channel_name, channel_id, duration, language1, language2)
+VALUES ((SELECT id FROM users WHERE username = 'dev'), 'E8KM2qWSUS0', '명절에 모인 성격 다른 오자매, 평화는 없었습니다 [ EN JP CN ]', 'tripleS official', 'UCJnL-TBcsYrF2SLs7tmiC8Q', 642, 'ko', 'en');
 
 INSERT INTO captions (video_id, idx, begin, end, text1, text2) VALUES
 ((SELECT id FROM videos WHERE youtube_id = 'E8KM2qWSUS0'), 0, 0, 1.594, '우리는 성이 뭐야?', 'What''s our last name?'),

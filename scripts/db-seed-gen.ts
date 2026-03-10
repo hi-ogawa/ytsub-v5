@@ -1,7 +1,9 @@
 // Generate seed SQL from import.json files.
 // Usage: node scripts/db-seed-gen.ts scripts/db-seed-json/*/import.json > scripts/db-seed.sql
+// Creates a seed user and assigns all data to it.
 
 import { readFileSync } from "fs";
+import { hashPassword } from "../src/lib/password.ts";
 
 interface ImportData {
   video: {
@@ -43,8 +45,8 @@ function toSql(data: ImportData): string {
   const lines: string[] = [];
 
   lines.push(
-    `INSERT INTO videos (youtube_id, title, channel_name, channel_id, duration, language1, language2)`,
-    `VALUES ('${esc(id)}', '${esc(video.title)}', '${esc(video.channelName)}', '${esc(video.channelId)}', ${video.duration}, '${esc(video.language1)}', '${esc(video.language2)}');`,
+    `INSERT INTO videos (user_id, youtube_id, title, channel_name, channel_id, duration, language1, language2)`,
+    `VALUES ((SELECT id FROM users WHERE username = 'dev'), '${esc(id)}', '${esc(video.title)}', '${esc(video.channelName)}', '${esc(video.channelId)}', ${video.duration}, '${esc(video.language1)}', '${esc(video.language2)}');`,
     "",
   );
 
@@ -82,7 +84,13 @@ if (files.length === 0) {
   process.exit(1);
 }
 
-const sql = files
-  .map((f) => toSql(JSON.parse(readFileSync(f, "utf-8"))))
-  .join("\n");
+const devPasswordHash = await hashPassword(
+  "devpassword",
+  new Uint8Array(16).fill(0) as Uint8Array<ArrayBuffer>,
+);
+// Seed user first, then video data
+const seedUser = `INSERT OR IGNORE INTO users (username, password_hash) VALUES ('dev', '${devPasswordHash}');\n`;
+const sql =
+  seedUser +
+  files.map((f) => toSql(JSON.parse(readFileSync(f, "utf-8")))).join("\n");
 console.log(sql);
