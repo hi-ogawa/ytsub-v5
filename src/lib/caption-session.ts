@@ -17,6 +17,7 @@ import {
   type ExtensionBookmark,
   createBookmark,
 } from "./extension-bookmarks.ts";
+import { removeFromVideoIndex, updateVideoIndex } from "./video-index.ts";
 import {
   type Json3File,
   type YouTubeCaptionTrack,
@@ -229,6 +230,22 @@ export function useCaptionSession({
     [youtubeId, rows, sel1, sel2],
   );
 
+  const syncVideoIndex = useCallback(
+    (bookmarkCount: number) => {
+      if (bookmarkCount > 0) {
+        updateVideoIndex(
+          youtubeId,
+          videoMeta.title,
+          videoMeta.channelName ?? "",
+          bookmarkCount,
+        );
+      } else {
+        removeFromVideoIndex(youtubeId);
+      }
+    },
+    [youtubeId, videoMeta.title, videoMeta.channelName],
+  );
+
   const addBookmark = useCallback(
     (
       sel: BookmarkSelection & {
@@ -253,8 +270,9 @@ export function useCaptionSession({
       const updated = [...bookmarks, bookmark];
       setBookmarks(updated);
       persistSession(updated);
+      syncVideoIndex(updated.length);
     },
-    [bookmarks, persistSession],
+    [bookmarks, persistSession, syncVideoIndex],
   );
 
   const deleteBookmark = useCallback(
@@ -267,8 +285,9 @@ export function useCaptionSession({
         deleteSession(youtubeId);
         setHydrated(undefined);
       }
+      syncVideoIndex(updated.length);
     },
-    [bookmarks, youtubeId, persistSession],
+    [bookmarks, youtubeId, persistSession, syncVideoIndex],
   );
 
   const updateBookmark = useCallback(
@@ -304,7 +323,8 @@ export function useCaptionSession({
     setBookmarks([]);
     deleteSession(youtubeId);
     setHydrated(undefined);
-  }, [youtubeId]);
+    syncVideoIndex(0);
+  }, [youtubeId, syncVideoIndex]);
 
   const setTracks = useCallback(
     (v1: string | undefined, v2: string | undefined) => {

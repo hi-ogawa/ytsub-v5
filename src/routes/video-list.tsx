@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { EllipsisVertical, Trash2 } from "lucide-react";
 import { useRef, useState } from "react";
-import { Link, useNavigate } from "react-router";
+import { useNavigate } from "react-router";
 import {
   Dialog,
   DialogContent,
@@ -13,6 +13,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "../components/ui/dropdown-menu.tsx";
+import { VideoCard } from "../components/video-card.tsx";
 import { orpc } from "../rpc.ts";
 
 function formatDuration(seconds: number): string {
@@ -172,6 +173,7 @@ function ImportDialog({
 }
 
 export function VideoListPage() {
+  const navigate = useNavigate();
   const [showImport, setShowImport] = useState(false);
   const queryClient = useQueryClient();
   const { data, isLoading, isError } = useQuery(
@@ -213,61 +215,50 @@ export function VideoListPage() {
           ) : (
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
               {data.items.map((video) => (
-                <Link
+                <VideoCard
                   key={video.id}
-                  to={`/videos/${video.id}`}
-                  className="block overflow-hidden rounded-lg border border-border bg-card shadow-sm transition-all hover:shadow-md hover:border-ring"
-                >
-                  <img
-                    src={`https://img.youtube.com/vi/${video.youtubeId}/mqdefault.jpg`}
-                    alt=""
-                    loading="lazy"
-                    className="aspect-video w-full object-cover"
-                  />
-                  <div className="p-4">
-                    <div className="mb-1 flex items-start gap-1">
-                      <h2 className="line-clamp-2 flex-1 font-semibold leading-snug">
-                        {video.title}
-                      </h2>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger
-                          className="-mr-1.5 -mt-1 shrink-0 rounded p-1.5 text-muted-foreground hover:bg-muted"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
+                  youtubeId={video.youtubeId}
+                  href={`/videos/${video.id}`}
+                  title={video.title}
+                  channelName={video.channelName || "Unknown channel"}
+                  titleRight={
+                    <DropdownMenu>
+                      <DropdownMenuTrigger
+                        className="-mr-1.5 -mt-1 shrink-0 rounded p-1.5 text-muted-foreground hover:bg-muted"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                        }}
+                      >
+                        <EllipsisVertical className="h-4 w-4" />
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent
+                        align="end"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                        }}
+                      >
+                        <DropdownMenuItem
+                          className="text-destructive focus:text-destructive"
+                          onClick={() => {
+                            if (
+                              window.confirm(
+                                `Delete "${video.title}"? This will also delete its captions and bookmarks.`,
+                              )
+                            ) {
+                              deleteMutation.mutate({ id: video.id });
+                            }
                           }}
                         >
-                          <EllipsisVertical className="h-4 w-4" />
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent
-                          align="end"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                          }}
-                        >
-                          <DropdownMenuItem
-                            className="text-destructive focus:text-destructive"
-                            onClick={() => {
-                              if (
-                                window.confirm(
-                                  `Delete "${video.title}"? This will also delete its captions and bookmarks.`,
-                                )
-                              ) {
-                                deleteMutation.mutate({ id: video.id });
-                              }
-                            }}
-                          >
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            Delete
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-                    <p className="mb-3 truncate text-sm text-muted-foreground">
-                      {video.channelName || "Unknown channel"}
-                    </p>
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  }
+                  badge={
+                    <>
                       <span className="rounded bg-muted px-2 py-0.5 font-mono">
                         {video.language1} / {video.language2}
                       </span>
@@ -275,9 +266,13 @@ export function VideoListPage() {
                       <span className="ml-auto">
                         {formatDate(video.createdAt)}
                       </span>
-                    </div>
-                  </div>
-                </Link>
+                    </>
+                  }
+                  onClick={(e) => {
+                    e.preventDefault();
+                    navigate(`/videos/${video.id}`);
+                  }}
+                />
               ))}
             </div>
           )}

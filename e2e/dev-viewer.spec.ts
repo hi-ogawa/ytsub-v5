@@ -579,4 +579,33 @@ test.describe("dev-viewer caption panel", () => {
     await expect(bookmarkCard).toBeVisible();
     await expect(bookmarkCard).toHaveClass(/flash-highlight/);
   });
+
+  test("creating bookmark populates dev-bookmarks page via video-index", async ({
+    page,
+  }) => {
+    await openPanelWithTracks(page);
+    await createBookmarkAt(page, 0, 0, 2);
+
+    // Navigate to bookmarks page and verify the video card
+    await page.goto("/dev/bookmarks");
+    const card = page.getByTestId("video-card-7GU_VQfgMT0");
+    await expect(card).toBeVisible();
+    await expect(card.getByTestId("video-card-title")).toHaveText(
+      /cloud palace/,
+    );
+    await expect(card.getByTestId("video-card-channel")).toHaveText("Billlie");
+    await expect(card.getByTestId("video-card-badge")).toHaveText("1 bookmark");
+
+    // Create another bookmark, verify count updates on revisit
+    await page.goto("/dev/youtube/7GU_VQfgMT0");
+    await page.getByTitle("Show captions").click();
+    await expect(page.locator("[data-index='0']")).toBeVisible();
+    await createBookmarkAt(page, 1, 0, 2);
+    await page.goto("/dev/bookmarks");
+    await expect(
+      page
+        .getByTestId("video-card-7GU_VQfgMT0")
+        .getByTestId("video-card-badge"),
+    ).toHaveText("2 bookmarks");
+  });
 });

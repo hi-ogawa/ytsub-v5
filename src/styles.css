@@ -130,6 +130,14 @@
     border-color: var(--color-border);
     scrollbar-color: var(--color-muted) transparent;
   }
+
+  body {
+    font-family: "Roboto", "Arial", sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+  }
 }
 
 @keyframes flash-highlight {

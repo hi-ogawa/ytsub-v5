@@ -1,5 +1,11 @@
 import { execSync } from "node:child_process";
-import { cpSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import {
+  cpSync,
+  mkdirSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { basename, resolve } from "node:path";
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
@@ -12,61 +18,83 @@ const dirty = git("git status --porcelain") ? "-dirty" : "";
 const buildTime = new Date();
 
 export default defineConfig({
-  build: {
-    minify: false,
-    lib: {
-      entry: "./src/extension/content.tsx",
-      formats: ["iife"],
-      name: "zamak",
-      fileName: () => "content.js",
-      cssFileName: "content",
+  environments: {
+    client: {
+      build: {
+        outDir: "./dist/extension",
+        minify: false,
+        copyPublicDir: false,
+        rolldownOptions: {
+          input: {
+            content: "./src/extension/content.tsx",
+          },
+          output: {
+            format: "iife",
+            entryFileNames: "content.js",
+          },
+        },
+      },
     },
-    outDir: "./dist/extension",
+    bookmarks: {
+      consumer: "client",
+      build: {
+        outDir: "./dist/extension",
+        minify: false,
+        emptyOutDir: false,
+        copyPublicDir: false,
+        rolldownOptions: {
+          input: {
+            bookmarks: "./src/extension/bookmarks.html",
+          },
+        },
+      },
+    },
   },
   define: {
     "process.env.NODE_ENV": JSON.stringify("production"),
     __BUILD_TIME__: JSON.stringify(buildTime.toISOString()),
     __GIT_REV__: JSON.stringify(rev + dirty),
   },
-  plugins: [
-    react(),
-    tailwindcss(),
-    {
-      name: "extension-manifest-and-copy",
-      buildApp: {
-        async handler(builder) {
-          await builder.build(builder.environments.client);
+  plugins: [react(), tailwindcss()],
+  builder: {
+    async buildApp(builder) {
+      await builder.build(builder.environments.client);
+      await builder.build(builder.environments.bookmarks);
+      const outDir = builder.environments.client.config.build.outDir;
 
-          // Write manifest
-          const outDir = builder.environments.client.config.build.outDir;
-          const manifest = JSON.parse(
-            readFileSync("./src/extension/manifest.json", "utf8"),
-          );
-          if (process.env.DEV_EXT) {
-            const time = buildTime.toLocaleTimeString("en-GB", {
-              hour: "2-digit",
-              minute: "2-digit",
-            });
-            manifest.name = `Zamak-dev [${branch} ${rev} ${time}]`;
-          }
-          writeFileSync(
-            resolve(outDir, "manifest.json"),
-            JSON.stringify(manifest, null, 2),
-          );
+      // Move html
+      cpSync(
+        resolve(outDir, "src/extension/bookmarks.html"),
+        resolve(outDir, "bookmarks.html"),
+      );
+      rmSync(resolve(outDir, "src"), { force: true, recursive: true });
 
-          // Copy to main repo's dist/extension-dev for single Chrome load point
-          if (process.env.DEV_EXT) {
-            const cwd = process.cwd();
-            const dirName = basename(cwd);
-            const match = dirName.match(/^(.+)-wt\d+$/);
-            const mainRepo = match ? resolve(cwd, "..", match[1]) : cwd;
-            const dest = resolve(mainRepo, "dist", "extension-dev");
-            mkdirSync(dest, { recursive: true });
-            cpSync(outDir, dest, { recursive: true });
-            console.log(`[dev-ext] Copied extension → ${dest}`);
-          }
-        },
-      },
+      // Copy raw assets
+      cpSync("./src/extension/public", outDir, { recursive: true });
+
+      // Modify manifest.json
+      const manifestPath = resolve(outDir, "manifest.json");
+      const manifest = JSON.parse(readFileSync(manifestPath, "utf8"));
+      if (process.env.DEV_EXT) {
+        const time = buildTime.toLocaleTimeString("en-GB", {
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+        manifest.name = `Zamak-dev [${branch} ${rev} ${time}]`;
+      }
+      writeFileSync(manifestPath, JSON.stringify(manifest, null, 2));
+
+      // Copy to main repo's dist/extension-dev for single Chrome load point
+      if (process.env.DEV_EXT) {
+        const cwd = process.cwd();
+        const dirName = basename(cwd);
+        const match = dirName.match(/^(.+)-wt\d+$/);
+        const mainRepo = match ? resolve(cwd, "..", match[1]) : cwd;
+        const dest = resolve(mainRepo, "dist", "extension-dev");
+        mkdirSync(dest, { recursive: true });
+        cpSync(outDir, dest, { recursive: true });
+        console.log(`[dev-ext] Copied extension → ${dest}`);
+      }
     },
-  ],
+  },
 });

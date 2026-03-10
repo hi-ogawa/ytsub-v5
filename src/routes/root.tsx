@@ -1,6 +1,5 @@
 import { useMutation } from "@tanstack/react-query";
-import { EllipsisVertical, Monitor, Moon, Sun } from "lucide-react";
-import { useEffect, useState } from "react";
+import { EllipsisVertical } from "lucide-react";
 import {
   Link,
   Navigate,
@@ -14,6 +13,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "../components/ui/dropdown-menu.tsx";
+import { useTheme } from "../lib/theme.ts";
 import { orpc } from "../rpc.ts";
 
 export async function authLoader() {
@@ -28,6 +28,7 @@ export async function authLoader() {
 
 export function RootLayout() {
   const { authenticated } = useLoaderData<typeof authLoader>();
+
   return (
     <div className="flex h-screen flex-col">
       <header className="flex h-10 flex-none items-center justify-between border-b px-3">
@@ -59,69 +60,24 @@ export function AuthLayout() {
   return <Outlet />;
 }
 
-type Theme = "light" | "dark" | "system";
-const THEME_KEY = "zamak:theme";
-const THEMES: Theme[] = ["light", "dark", "system"];
-
-function resolveTheme(theme: Theme): boolean {
-  if (theme === "system")
-    return matchMedia("(prefers-color-scheme: dark)").matches;
-  return theme === "dark";
-}
-
-function applyDarkClass(dark: boolean) {
-  // Disable transitions during theme switch to prevent color flicker
-  const css = document.createElement("style");
-  css.textContent = "*, *::before, *::after { transition: none !important; }";
-  document.head.appendChild(css);
-
-  document.documentElement.classList.toggle("dark", dark);
-
-  // Force a reflow so the no-transition style takes effect, then remove it
-  document.body.offsetHeight;
-  css.remove();
-}
-
-function useTheme() {
-  const [theme, setTheme] = useState<Theme>(() => {
-    const stored = localStorage.getItem(THEME_KEY);
-    if (stored === "light" || stored === "dark") return stored;
-    return "system";
-  });
-
-  useEffect(() => {
-    applyDarkClass(resolveTheme(theme));
-    if (theme === "system") {
-      localStorage.removeItem(THEME_KEY);
-    } else {
-      localStorage.setItem(THEME_KEY, theme);
-    }
-  }, [theme]);
-
-  // Listen for system preference changes when in "system" mode
-  useEffect(() => {
-    if (theme !== "system") return;
-    const mql = matchMedia("(prefers-color-scheme: dark)");
-    const handler = (e: MediaQueryListEvent) => applyDarkClass(e.matches);
-    mql.addEventListener("change", handler);
-    return () => mql.removeEventListener("change", handler);
-  }, [theme]);
-
-  const cycle = () =>
-    setTheme((t) => THEMES[(THEMES.indexOf(t) + 1) % THEMES.length]);
-
-  return { theme, isDark: resolveTheme(theme), cycle };
-}
-
-const THEME_ICON_MAP = { light: Sun, dark: Moon, system: Monitor } as const;
-
-function ThemeIcon({ theme }: { theme: Theme }) {
-  const Icon = THEME_ICON_MAP[theme];
-  return <Icon className="h-4 w-4" />;
+export function DevLayout() {
+  return (
+    <div className="flex h-screen flex-col">
+      <header className="flex h-10 flex-none items-center justify-between border-b px-3">
+        <Link to="/dev" className="text-sm font-semibold">
+          Zamak <span className="text-muted-foreground">(dev)</span>
+        </Link>
+        <HeaderMenu authenticated={false} />
+      </header>
+      <main className="flex-1 overflow-auto">
+        <Outlet />
+      </main>
+    </div>
+  );
 }
 
 function HeaderMenu({ authenticated }: { authenticated: boolean }) {
-  const { theme, cycle: cycleTheme } = useTheme();
+  const { theme, cycle, Icon } = useTheme();
 
   const logoutMutation = useMutation(
     orpc.auth.logout.mutationOptions({
@@ -145,11 +101,11 @@ function HeaderMenu({ authenticated }: { authenticated: boolean }) {
           data-theme={theme}
           onSelect={(e) => {
             e.preventDefault();
-            cycleTheme();
+            cycle();
           }}
           className="gap-2"
         >
-          <ThemeIcon theme={theme} />
+          <Icon className="h-4 w-4" />
           <span className="capitalize">{theme}</span>
         </DropdownMenuItem>
         {authenticated && (
