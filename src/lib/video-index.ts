@@ -9,7 +9,7 @@ export type VideoIndexEntry = {
 const KEY = "zamak:video-index";
 export const VIDEO_INDEX_EVENT = "zamak:video-index-updated";
 
-export function getVideoIndex(): VideoIndexEntry[] {
+function getVideoIndex(): VideoIndexEntry[] {
   try {
     const raw = localStorage.getItem(KEY);
     return raw ? (JSON.parse(raw) as VideoIndexEntry[]) : [];
