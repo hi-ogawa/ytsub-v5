@@ -17,7 +17,16 @@
 | `docs/background/architecture.md` | Problem context, design decisions |
 | `docs/tasks/YYYY-MM-DD-*.md`      | Task-specific planning/notes      |
 
-Read `docs/prd.md` for the task list and `docs/background/architecture.md` for architecture context before implementing features. For extension work, also read `docs/background/architecture-extension.md` — UI features should go in shared components (`src/components/`), not in extension-specific code, so they can be iterated via the dev-viewer without reloading the extension.
+Read `docs/prd.md` for the task list and `docs/background/architecture.md` for architecture context before implementing features.
+
+## Two isolated UI paths
+
+The codebase has two independent caption/bookmark UIs. Know which one you're working on:
+
+- **Web app** (`routes/video-viewer.tsx`) — full-stack, server DB via oRPC/React Query. Self-contained in one route file.
+- **Extension** (`components/caption-panel.tsx`, `components/caption-list.tsx`) — client-only, IndexedDB. The dev-viewer (`routes/dev-viewer.tsx`) renders these with fixture data so extension UI can be iterated without loading YouTube. See `docs/background/architecture-extension.md`.
+
+They implement the same UI independently because the extension has no backend. Consolidation is planned (see `docs/prd.md`). Changes to one path don't automatically apply to the other.
 
 ## Task Documents
 
