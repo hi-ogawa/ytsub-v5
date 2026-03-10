@@ -17,6 +17,9 @@
 /* color-scheme must be on :host (not .dark) so the browser applies
    dark scrollbar/form-control styling to the shadow root. */
 :host {
+  color-scheme: light;
+}
+:host(.dark) {
   color-scheme: dark;
 }
 

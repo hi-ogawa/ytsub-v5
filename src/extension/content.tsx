@@ -191,6 +191,18 @@ function getVideoId() {
   return new URL(window.location.href).searchParams.get("v");
 }
 
+function isYouTubeDark(): boolean {
+  return document.documentElement.hasAttribute("dark");
+}
+
+function applyTheme(host: HTMLElement, container: HTMLElement) {
+  const dark = isYouTubeDark();
+  container.classList.toggle("dark", dark);
+  host.classList.toggle("dark", dark);
+}
+
+let themeObserver: MutationObserver | null = null;
+
 function inject() {
   if (document.getElementById("zamak-host")) return;
 
@@ -219,8 +231,15 @@ function inject() {
   addStyle(shadow, contentCss);
 
   const container = document.createElement("div");
-  container.classList.add("dark");
   shadow.appendChild(container);
+
+  // Match YouTube's dark/light theme
+  applyTheme(host, container);
+  themeObserver = new MutationObserver(() => applyTheme(host, container));
+  themeObserver.observe(document.documentElement, {
+    attributes: true,
+    attributeFilter: ["dark"],
+  });
 
   createRoot(container).render(
     <StrictMode>
@@ -234,6 +253,8 @@ function inject() {
 }
 
 function remove() {
+  themeObserver?.disconnect();
+  themeObserver = null;
   document.getElementById("zamak-host")?.remove();
 }
 
