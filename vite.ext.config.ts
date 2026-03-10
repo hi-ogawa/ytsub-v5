@@ -3,6 +3,12 @@ import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 
+const git = (cmd: string) => execSync(cmd).toString().trim();
+const rev = git("git rev-parse --short HEAD");
+const branch = git("git branch --show-current");
+const dirty = git("git status --porcelain") ? "-dirty" : "";
+const buildTime = new Date();
+
 export default defineConfig({
   build: {
     minify: false,
@@ -17,11 +23,8 @@ export default defineConfig({
   },
   define: {
     "process.env.NODE_ENV": JSON.stringify("production"),
-    __BUILD_TIME__: JSON.stringify(new Date().toISOString()),
-    __GIT_REV__: JSON.stringify(
-      execSync("git rev-parse --short HEAD").toString().trim() +
-        (execSync("git status --porcelain").toString().trim() ? "-dirty" : ""),
-    ),
+    __BUILD_TIME__: JSON.stringify(buildTime.toISOString()),
+    __GIT_REV__: JSON.stringify(rev + dirty),
   },
   plugins: [
     react(),
@@ -34,7 +37,11 @@ export default defineConfig({
         });
         const manifest = JSON.parse(raw);
         if (process.env.DEV_EXT) {
-          manifest.name = "Zamak-dev";
+          const time = buildTime.toLocaleTimeString("en-GB", {
+            hour: "2-digit",
+            minute: "2-digit",
+          });
+          manifest.name = `Zamak-dev [${branch} ${rev} ${time}]`;
         }
         this.emitFile({
           type: "asset",
