@@ -56,9 +56,8 @@ export default defineConfig({
         if (process.env.DEV_EXT) {
           const cwd = process.cwd();
           const dirName = basename(cwd);
-          const mainRepo = dirName.match(/^ytsub-v5-wt/)
-            ? resolve(cwd, "..", "ytsub-v5")
-            : cwd;
+          const match = dirName.match(/^(.+)-wt\d+$/);
+          const mainRepo = match ? resolve(cwd, "..", match[1]) : cwd;
           const dest = resolve(mainRepo, "dist", "extension-dev");
           mkdirSync(dest, { recursive: true });
           cpSync(outDir, dest, { recursive: true });
