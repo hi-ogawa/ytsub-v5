@@ -16,20 +16,17 @@ test("redirects to /login when not authenticated", async ({ page }) => {
 test("register with short password shows validation error", async ({
   page,
 }) => {
-  await page.goto("/login");
-  await page.getByRole("button", { name: "Sign up" }).click();
+  await page.goto("/register");
   await expect(page.locator("h1")).toHaveText("Zamak — sign up");
   await page.getByPlaceholder("Username").fill("shortpw");
   await page.getByPlaceholder("Password").fill("short");
   await page.getByRole("button", { name: "Sign up" }).click();
-  // Should stay on login page (HTML minLength validation or server rejection)
-  await expect(page).toHaveURL("/login");
+  // Should stay on register page (HTML minLength validation or server rejection)
+  await expect(page).toHaveURL("/register");
 });
 
 test("register then login as new user", async ({ page }) => {
-  await page.goto("/login");
-  // Switch to register mode
-  await page.getByRole("button", { name: "Sign up" }).click();
+  await page.goto("/register");
   await page.getByPlaceholder("Username").fill("newuser");
   await page.getByPlaceholder("Password").fill("newpassword");
   await page.getByRole("button", { name: "Sign up" }).click();
@@ -50,8 +47,7 @@ test("register then login as new user", async ({ page }) => {
 });
 
 test("register duplicate username shows error", async ({ page }) => {
-  await page.goto("/login");
-  await page.getByRole("button", { name: "Sign up" }).click();
+  await page.goto("/register");
   // "dev" already exists from seed
   await page.getByPlaceholder("Username").fill("dev");
   await page.getByPlaceholder("Password").fill("somepassword");
@@ -70,6 +66,17 @@ test("login with wrong then correct password", async ({ page }) => {
   await page.getByRole("button", { name: "Login" }).click();
   await expect(page).toHaveURL("/");
   await expect(page.locator("h1")).toHaveText("Videos");
+});
+
+test("navigate between login and register", async ({ page }) => {
+  await page.goto("/login");
+  await page.getByRole("link", { name: "Sign up" }).click();
+  await expect(page).toHaveURL("/register");
+  await expect(page.locator("h1")).toHaveText("Zamak — sign up");
+
+  await page.getByRole("link", { name: "Login" }).click();
+  await expect(page).toHaveURL("/login");
+  await expect(page.locator("h1")).toHaveText("Zamak — login");
 });
 
 test.describe("video list and navigation", () => {

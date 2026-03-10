@@ -41,8 +41,7 @@ export async function login(
   ]);
 
   if (result === "error") {
-    // Switch to register
-    await page.getByRole("button", { name: "Sign up" }).click();
+    await page.goto("/register");
     await page.getByPlaceholder("Username").fill(username);
     await page.getByPlaceholder("Password").fill(password);
     await page.getByRole("button", { name: "Sign up" }).click();
