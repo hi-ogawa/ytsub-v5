@@ -1,5 +1,4 @@
 @import "../styles.css";
-@import "../theme-dark.css";
 
 /* YouTube sets :root { font-size: 10px }, making all rem values 62.5% of expected.
    Override Tailwind's rem-based spacing to use correct px values. */

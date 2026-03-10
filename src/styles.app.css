@@ -1,5 +1,4 @@
 @import "./styles.css";
-@import "./theme-dark.css";
 
 :root {
   /* Page */
@@ -45,8 +44,6 @@
   --highlight-alt-bg: var(--color-amber-100);
   --highlight-alt-border: var(--color-amber-400);
 }
-
-/* .dark token definitions imported from theme-dark.css */
 
 @layer base {
   body {
