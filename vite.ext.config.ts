@@ -1,4 +1,6 @@
 import { execSync } from "node:child_process";
+import { cpSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { basename, resolve } from "node:path";
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
@@ -30,12 +32,14 @@ export default defineConfig({
     react(),
     tailwindcss(),
     {
-      name: "copy-manifest-and-icons",
-      async buildEnd() {
-        const raw = await this.fs.readFile("./src/extension/manifest.json", {
-          encoding: "utf8",
-        });
-        const manifest = JSON.parse(raw);
+      name: "extension-manifest-and-copy",
+      writeBundle(_, bundle) {
+        const outDir = resolve("dist", "extension");
+
+        // Write manifest (not emitted via emitFile since we're in writeBundle)
+        const manifest = JSON.parse(
+          readFileSync("./src/extension/manifest.json", "utf8"),
+        );
         if (process.env.DEV_EXT) {
           const time = buildTime.toLocaleTimeString("en-GB", {
             hour: "2-digit",
@@ -43,11 +47,23 @@ export default defineConfig({
           });
           manifest.name = `Zamak-dev [${branch} ${rev} ${time}]`;
         }
-        this.emitFile({
-          type: "asset",
-          fileName: "manifest.json",
-          source: JSON.stringify(manifest, null, 2),
-        });
+        writeFileSync(
+          resolve(outDir, "manifest.json"),
+          JSON.stringify(manifest, null, 2),
+        );
+
+        // Copy to main repo's dist/extension-dev for single Chrome load point
+        if (process.env.DEV_EXT) {
+          const cwd = process.cwd();
+          const dirName = basename(cwd);
+          const mainRepo = dirName.match(/^ytsub-v5-wt/)
+            ? resolve(cwd, "..", "ytsub-v5")
+            : cwd;
+          const dest = resolve(mainRepo, "dist", "extension-dev");
+          mkdirSync(dest, { recursive: true });
+          cpSync(outDir, dest, { recursive: true });
+          console.log(`Copied extension → ${dest}`);
+        }
       },
     },
   ],
