@@ -12,6 +12,7 @@ import type { YTPlayer } from "../components/youtube-player.tsx";
 import { useCaptionSession } from "../lib/caption-session.ts";
 import type { YouTubeExtractionResult } from "../lib/youtube.ts";
 import { fetchPlayerApi, fetchTrackJson3 } from "../lib/youtube.ts";
+import { useZamakApi } from "../lib/zamak-api.ts";
 import contentCss from "./content.css?inline";
 
 declare const __BUILD_TIME__: string;
@@ -120,6 +121,21 @@ function ExtensionSession({
     videoMeta: data.video,
   });
 
+  const sel1 = data.captionTracks.find(
+    (t) => t.vssId === session.selectedVssId1,
+  );
+  const sel2 = data.captionTracks.find(
+    (t) => t.vssId === session.selectedVssId2,
+  );
+
+  useZamakApi({
+    session,
+    rows: session.rows,
+    videoMeta: data.video,
+    language1: sel1?.languageCode ?? "ko",
+    language2: sel2?.languageCode ?? "en",
+  });
+
   return (
     <CaptionPanel
       tracks={data.captionTracks}
@@ -175,6 +191,18 @@ function getVideoId() {
   return new URL(window.location.href).searchParams.get("v");
 }
 
+function isYouTubeDark(): boolean {
+  return document.documentElement.hasAttribute("dark");
+}
+
+function applyTheme(host: HTMLElement, container: HTMLElement) {
+  const dark = isYouTubeDark();
+  container.classList.toggle("dark", dark);
+  host.classList.toggle("dark", dark);
+}
+
+let themeObserver: MutationObserver | null = null;
+
 function inject() {
   if (document.getElementById("zamak-host")) return;
 
@@ -205,6 +233,14 @@ function inject() {
   const container = document.createElement("div");
   shadow.appendChild(container);
 
+  // Match YouTube's dark/light theme
+  applyTheme(host, container);
+  themeObserver = new MutationObserver(() => applyTheme(host, container));
+  themeObserver.observe(document.documentElement, {
+    attributes: true,
+    attributeFilter: ["dark"],
+  });
+
   createRoot(container).render(
     <StrictMode>
       <PortalContainerProvider value={container}>
@@ -217,6 +253,8 @@ function inject() {
 }
 
 function remove() {
+  themeObserver?.disconnect();
+  themeObserver = null;
   document.getElementById("zamak-host")?.remove();
 }
 

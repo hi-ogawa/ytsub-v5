@@ -10,6 +10,32 @@ async function openPanelWithTracks(page: Page) {
   await expect(page.locator("[data-index='0']")).toBeVisible();
 }
 
+/** Select text in a caption row and create a bookmark */
+async function createBookmarkAt(
+  page: Page,
+  index: number,
+  start: number,
+  end: number,
+) {
+  await page.evaluate(
+    ({ index, start, end }) => {
+      const sideEl = document
+        .querySelector(`[data-index='${index}']`)!
+        .querySelector("[data-side='0']")!;
+      const textSpan = sideEl.querySelector("[data-offset]")!;
+      const textNode = textSpan.firstChild!;
+      const range = document.createRange();
+      range.setStart(textNode, start);
+      range.setEnd(textNode, end);
+      const selection = document.getSelection()!;
+      selection.removeAllRanges();
+      selection.addRange(range);
+    },
+    { index, start, end },
+  );
+  await page.getByRole("button", { name: "Create bookmark" }).click();
+}
+
 test.describe("dev-viewer caption panel", () => {
   test.beforeEach(async ({ page }) => {
     await login(page);
@@ -370,5 +396,187 @@ test.describe("dev-viewer caption panel", () => {
     await expect(
       page.getByRole("button", { name: "Create bookmark" }),
     ).not.toBeVisible();
+  });
+
+  test("tab bar shows captions and bookmarks tabs", async ({ page }) => {
+    await openPanelWithTracks(page);
+    const panel = page.getByTestId("resizable-panel");
+    await expect(panel.getByRole("button", { name: "Captions" })).toBeVisible();
+    await expect(
+      panel.getByRole("button", { name: /Bookmarks/ }),
+    ).toBeVisible();
+  });
+
+  test("bookmarks tab shows empty state", async ({ page }) => {
+    await openPanelWithTracks(page);
+    const panel = page.getByTestId("resizable-panel");
+    await panel.getByRole("button", { name: /Bookmarks/ }).click();
+    await expect(page.getByText("No bookmarks yet")).toBeVisible();
+  });
+
+  test("bookmarks tab shows created bookmark with caption context", async ({
+    page,
+  }) => {
+    await openPanelWithTracks(page);
+    const panel = page.getByTestId("resizable-panel");
+    // Create bookmark "꼬집어" at idx=0
+    await createBookmarkAt(page, 0, 0, 3);
+
+    // Switch to bookmarks tab
+    await panel.getByRole("button", { name: /Bookmarks/ }).click();
+    // Bookmark card should be visible
+    const bookmarkCard = page.locator("[data-bookmark-id]").first();
+    await expect(bookmarkCard).toBeVisible();
+    await expect(bookmarkCard.getByText("꼬집어").first()).toBeVisible();
+    // Caption context shown
+    await expect(
+      bookmarkCard.getByText("꼬집어 봐 뜬 꿈인 것 같아"),
+    ).toBeVisible();
+  });
+
+  test("bookmark count shown in tab label", async ({ page }) => {
+    await openPanelWithTracks(page);
+    const panel = page.getByTestId("resizable-panel");
+    await createBookmarkAt(page, 0, 0, 3);
+    await expect(
+      panel.getByRole("button", { name: "Bookmarks (1)" }),
+    ).toBeVisible();
+  });
+
+  test("prev/next bookmark buttons appear when bookmarks exist", async ({
+    page,
+  }) => {
+    await openPanelWithTracks(page);
+
+    // No nav buttons without bookmarks
+    await expect(
+      page.getByRole("button", { name: "Previous bookmark" }),
+    ).not.toBeVisible();
+
+    await createBookmarkAt(page, 0, 0, 3);
+
+    await expect(
+      page.getByRole("button", { name: "Previous bookmark" }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "Next bookmark" }),
+    ).toBeVisible();
+  });
+
+  test("go-to-caption button switches from bookmarks to captions tab", async ({
+    page,
+  }) => {
+    await openPanelWithTracks(page);
+    const panel = page.getByTestId("resizable-panel");
+    await createBookmarkAt(page, 0, 0, 3);
+
+    // Switch to bookmarks tab
+    await panel.getByRole("button", { name: /Bookmarks/ }).click();
+    await expect(page.locator("[data-bookmark-id]").first()).toBeVisible();
+
+    // Click go-to-caption
+    await page.getByRole("button", { name: "Go to caption" }).first().click();
+
+    // Should switch back to captions tab
+    await expect(panel.getByRole("button", { name: "Captions" })).toHaveClass(
+      /font-medium/,
+    );
+    await expect(page.locator("[data-index='0']")).toBeVisible();
+  });
+
+  test("delete bookmark from bookmarks tab", async ({ page }) => {
+    await openPanelWithTracks(page);
+    const panel = page.getByTestId("resizable-panel");
+    await createBookmarkAt(page, 0, 0, 3);
+
+    await panel.getByRole("button", { name: /Bookmarks/ }).click();
+    await expect(page.locator("[data-bookmark-id]").first()).toBeVisible();
+
+    // Open dropdown and delete
+    page.on("dialog", (d) => d.accept());
+    const bookmarkCard = page.locator("[data-bookmark-id]").first();
+    await bookmarkCard
+      .getByRole("button")
+      .filter({ has: page.locator("svg") })
+      .first()
+      .click();
+    await page.getByRole("menuitem", { name: "Delete" }).click();
+
+    // Should show empty state
+    await expect(page.getByText("No bookmarks yet")).toBeVisible();
+
+    // Highlight should be gone from captions
+    await panel.getByRole("button", { name: "Captions" }).click();
+    await expect(
+      page.locator("[data-index='0'] .bg-highlight-bg"),
+    ).not.toBeVisible();
+  });
+
+  test("captions tab preserves scroll after switching tabs", async ({
+    page,
+  }) => {
+    await openPanelWithTracks(page);
+    const panel = page.getByTestId("resizable-panel");
+    await expect(page.locator("[data-index='0']")).toBeVisible();
+
+    // Switch to bookmarks and back
+    await panel.getByRole("button", { name: /Bookmarks/ }).click();
+    await expect(page.getByText("No bookmarks yet")).toBeVisible();
+    await panel.getByRole("button", { name: "Captions" }).click();
+    await expect(page.locator("[data-index='0']")).toBeVisible();
+  });
+
+  test("bookmark highlight shows popover on click", async ({ page }) => {
+    await openPanelWithTracks(page);
+    await createBookmarkAt(page, 0, 0, 3);
+
+    // Click the bookmark highlight to open popover
+    const highlight = page
+      .locator("[data-index='0']")
+      .getByTestId("bookmark-highlight")
+      .first();
+    await expect(highlight).toBeVisible();
+    await highlight.click();
+
+    // Popover should show bookmark text
+    const popover = page.getByTestId("bookmark-popover");
+    await expect(popover).toBeVisible();
+    await expect(popover.getByText("꼬집어")).toBeVisible();
+
+    // "Go to bookmark" button should be present
+    await expect(
+      popover.getByRole("button", { name: "Go to bookmark" }),
+    ).toBeVisible();
+  });
+
+  test("popover go-to-bookmark switches to bookmarks tab with flash-highlight", async ({
+    page,
+  }) => {
+    await openPanelWithTracks(page);
+    const panel = page.getByTestId("resizable-panel");
+    await createBookmarkAt(page, 0, 0, 3);
+
+    // Click highlight to open popover
+    const highlight = page
+      .locator("[data-index='0']")
+      .getByTestId("bookmark-highlight")
+      .first();
+    await highlight.click();
+
+    // Click "Go to bookmark" in popover
+    const popover = page.getByTestId("bookmark-popover");
+    await popover
+      .getByRole("button", { name: "Go to bookmark" })
+      .dispatchEvent("mousedown");
+
+    // Should switch to bookmarks tab
+    await expect(panel.getByRole("button", { name: /Bookmarks/ })).toHaveClass(
+      /font-medium/,
+    );
+
+    // Bookmark card should be visible with flash-highlight animation
+    const bookmarkCard = page.locator("[data-bookmark-id]").first();
+    await expect(bookmarkCard).toBeVisible();
+    await expect(bookmarkCard).toHaveClass(/flash-highlight/);
   });
 });
