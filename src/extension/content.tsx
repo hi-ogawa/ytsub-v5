@@ -121,19 +121,12 @@ function ExtensionSession({
     videoMeta: data.video,
   });
 
-  const sel1 = data.captionTracks.find(
-    (t) => t.vssId === session.selectedVssId1,
-  );
-  const sel2 = data.captionTracks.find(
-    (t) => t.vssId === session.selectedVssId2,
-  );
-
   useZamakApi({
     session,
     rows: session.rows,
     videoMeta: data.video,
-    language1: sel1?.languageCode ?? "ko",
-    language2: sel2?.languageCode ?? "en",
+    language1: session.selectedTrack1?.languageCode ?? "ko",
+    language2: session.selectedTrack2?.languageCode ?? "en",
   });
 
   return (

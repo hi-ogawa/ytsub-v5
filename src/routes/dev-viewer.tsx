@@ -82,19 +82,12 @@ function DevViewerSession({
     videoMeta: meta.video,
   });
 
-  const sel1 = meta.captionTracks.find(
-    (t) => t.vssId === session.selectedVssId1,
-  );
-  const sel2 = meta.captionTracks.find(
-    (t) => t.vssId === session.selectedVssId2,
-  );
-
   useZamakApi({
     session,
     rows: session.rows,
     videoMeta: meta.video,
-    language1: sel1?.languageCode ?? "ko",
-    language2: sel2?.languageCode ?? "en",
+    language1: session.selectedTrack1?.languageCode ?? "ko",
+    language2: session.selectedTrack2?.languageCode ?? "en",
   });
 
   return (
