@@ -6,7 +6,6 @@ import {
   Copy,
   Download,
   EllipsisVertical,
-  ExternalLink,
   Loader2,
   Trash2,
   X,
@@ -19,15 +18,16 @@ import {
   useRef,
   useState,
 } from "react";
-import type { MergeStrategy, MergedCaption } from "../lib/caption-merge.ts";
+import type { MergeStrategy } from "../lib/caption-merge.ts";
 import type { CaptionSessionManager } from "../lib/caption-session.ts";
+import type { BookmarkItem, CaptionRow } from "../lib/caption-types.ts";
 import {
   type BookmarkSelection,
   type ExtensionBookmark,
   extractBookmarkSelection,
 } from "../lib/extension-bookmarks.ts";
 import type { YouTubeCaptionTrack } from "../lib/youtube.ts";
-import { CaptionList } from "./caption-list.tsx";
+import { BookmarksList, CaptionList } from "./caption-list.tsx";
 import { TrackPicker } from "./track-picker.tsx";
 import {
   DropdownMenu,
@@ -201,12 +201,6 @@ function AiPromptCopy() {
 
 // --- CaptionPanel: display component ---
 
-function formatTimestamp(seconds: number): string {
-  const m = Math.floor(seconds / 60);
-  const s = Math.floor(seconds % 60);
-  return `${m}:${String(s).padStart(2, "0")}`;
-}
-
 export function CaptionPanel({
   tracks,
   player,
@@ -297,7 +291,9 @@ export function CaptionPanel({
   const captionListRef = useRef<{ scrollToIndex: (index: number) => void }>(
     null,
   );
-  const [flashBookmarkId, setFlashBookmarkId] = useState<string | null>(null);
+  const [flashBookmarkId, setFlashBookmarkId] = useState<
+    string | number | null
+  >(null);
   const flashBookmarkCounter = useRef(0);
 
   function onGoToCaption(captionIndex: number) {
@@ -307,7 +303,7 @@ export function CaptionPanel({
     });
   }
 
-  function onGoToBookmark(bookmarkId: string) {
+  function onGoToBookmark(bookmarkId: string | number) {
     const counter = ++flashBookmarkCounter.current;
     setFlashBookmarkId(bookmarkId);
     setActiveTab("bookmarks");
@@ -531,13 +527,19 @@ export function CaptionPanel({
                     </p>
                   </div>
                 ) : (
-                  <ExtensionBookmarksList
+                  <BookmarksList
                     bookmarks={sortedBookmarks}
-                    rows={rows}
                     player={player}
-                    onDeleteBookmark={onDeleteBookmark}
-                    onGoToCaption={onGoToCaption}
+                    onDeleteBookmark={(id) => onDeleteBookmark(id as string)}
+                    onGoToCaption={(bm) => {
+                      const eb = bm as ExtensionBookmark;
+                      onGoToCaption(eb.captionIndex);
+                    }}
                     flashBookmarkId={flashBookmarkId}
+                    getCaptionForBookmark={(bm) => {
+                      const eb = bm as ExtensionBookmark;
+                      return rows?.[eb.captionIndex];
+                    }}
                   />
                 )}
               </div>
@@ -574,133 +576,6 @@ export function CaptionPanel({
   );
 }
 
-// --- ExtensionBookmarksList ---
-
-function ExtensionBookmarksList({
-  bookmarks,
-  rows,
-  player,
-  onDeleteBookmark,
-  onGoToCaption,
-  flashBookmarkId,
-}: {
-  bookmarks: ExtensionBookmark[];
-  rows: MergedCaption[];
-  player: YTPlayer | null;
-  onDeleteBookmark: (id: string) => void;
-  onGoToCaption: (captionIndex: number) => void;
-  flashBookmarkId: string | null;
-}) {
-  const scrollRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (flashBookmarkId === null || !scrollRef.current) return;
-    const el = scrollRef.current.querySelector(
-      `[data-bookmark-id="${flashBookmarkId}"]`,
-    );
-    if (!el) return;
-    el.scrollIntoView({ behavior: "smooth", block: "center" });
-    el.classList.remove("flash-highlight");
-    void (el as HTMLElement).offsetWidth;
-    el.classList.add("flash-highlight");
-  }, [flashBookmarkId]);
-
-  return (
-    <div ref={scrollRef} className="flex flex-col gap-1.5 p-1.5">
-      {bookmarks.map((bm) => {
-        const caption = rows[bm.captionIndex];
-        return (
-          <div
-            key={bm.id}
-            data-bookmark-id={bm.id}
-            className="flex cursor-pointer flex-col gap-1 border border-border p-2 hover:bg-muted"
-            onClick={() => {
-              if (!player) return;
-              player.seekTo(bm.timestamp);
-              player.playVideo();
-            }}
-          >
-            <div className="flex items-start gap-1">
-              <div className="flex-1 text-sm font-medium">{bm.text}</div>
-              <span className="shrink-0 text-xs text-muted-foreground">
-                {formatTimestamp(bm.timestamp)}
-              </span>
-              <DropdownMenu>
-                <DropdownMenuTrigger
-                  className="-mr-1 -mt-0.5 shrink-0 rounded p-1 text-muted-foreground hover:bg-muted"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <EllipsisVertical className="h-3.5 w-3.5" />
-                </DropdownMenuTrigger>
-                <DropdownMenuContent
-                  align="end"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <DropdownMenuItem
-                    className="text-destructive focus:text-destructive"
-                    onClick={() => {
-                      if (confirm(`Delete bookmark "${bm.text}"?`)) {
-                        onDeleteBookmark(bm.id);
-                      }
-                    }}
-                  >
-                    <Trash2 className="mr-2 h-4 w-4" />
-                    Delete
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-            {bm.translation && (
-              <div className="text-sm text-muted-foreground">
-                {bm.translation}
-              </div>
-            )}
-            {bm.etymology && (
-              <div className="text-xs text-muted-foreground">
-                {bm.etymology}
-              </div>
-            )}
-            {bm.notes && (
-              <div className="text-xs text-muted-foreground">{bm.notes}</div>
-            )}
-            {caption && (
-              <div className="mt-0.5 flex items-start gap-1 border-t border-border pt-1 text-xs text-muted-foreground">
-                <div className="flex-1">
-                  <div>{caption.text1}</div>
-                  <div>{caption.text2}</div>
-                </div>
-                <div className="flex shrink-0 items-center gap-1">
-                  {!bm.translation && (
-                    <span className="rounded bg-muted px-1 text-muted-foreground">
-                      unfilled
-                    </span>
-                  )}
-                  <button
-                    className="rounded p-0.5 text-muted-foreground hover:bg-accent hover:text-foreground"
-                    title="Go to caption"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onGoToCaption(bm.captionIndex);
-                    }}
-                  >
-                    <ExternalLink className="h-3.5 w-3.5" />
-                  </button>
-                </div>
-              </div>
-            )}
-            {!caption && !bm.translation && (
-              <div className="text-xs">
-                <span className="rounded bg-muted px-1 text-muted-foreground">
-                  unfilled
-                </span>
-              </div>
-            )}
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
 // --- CaptionViewer: playback-synced caption list ---
 
 interface CaptionViewerHandle {
@@ -717,11 +592,11 @@ function CaptionViewer({
   onPopoverOpenChange,
 }: {
   ref?: React.Ref<CaptionViewerHandle>;
-  rows: MergedCaption[];
+  rows: CaptionRow[];
   player: YTPlayer | null;
   autoScroll: boolean;
-  bookmarksByIndex?: Map<number, ExtensionBookmark[]>;
-  onGoToBookmark?: (bookmarkId: string) => void;
+  bookmarksByIndex?: Map<number, BookmarkItem[]>;
+  onGoToBookmark?: (bookmarkId: string | number) => void;
   onPopoverOpenChange?: (open: boolean) => void;
 }) {
   const [currentIndex, setCurrentIndex] = useState<number>();

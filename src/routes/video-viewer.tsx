@@ -1,14 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useVirtualizer } from "@tanstack/react-virtual";
 import {
   ArrowDown,
   Bookmark as BookmarkIcon,
   ChevronLeft,
   ChevronRight,
-  EllipsisVertical,
-  ExternalLink,
   Loader2,
-  Trash2,
   X,
 } from "lucide-react";
 import {
@@ -20,17 +16,9 @@ import {
   type RefCallback,
 } from "react";
 import { useParams } from "react-router";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "../components/ui/dropdown-menu.tsx";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "../components/ui/popover.tsx";
+import { BookmarksList, CaptionList } from "../components/caption-list.tsx";
+import type { BookmarkItem, CaptionRow } from "../lib/caption-types.ts";
+import { extractBookmarkSelection } from "../lib/extension-bookmarks.ts";
 import { orpc } from "../rpc.ts";
 
 // --- YouTube IFrame API types ---
@@ -127,75 +115,6 @@ type Caption = {
   text2: string;
 };
 
-function findCurrentEntry(
-  entries: Caption[],
-  time: number,
-): number | undefined {
-  for (let i = entries.length - 1; i >= 0; i--) {
-    if (entries[i].begin <= time) {
-      return i;
-    }
-  }
-  return undefined;
-}
-
-function formatTimestamp(seconds: number): string {
-  const m = Math.floor(seconds / 60);
-  const s = Math.floor(seconds % 60);
-  return `${m}:${String(s).padStart(2, "0")}`;
-}
-
-// --- Text selection for bookmarking ---
-
-interface BookmarkSelection {
-  captionEntryIndex: number;
-  side: number;
-  offset: number;
-  text: string;
-}
-
-function extractBookmarkSelection(
-  selection: Selection,
-): BookmarkSelection | undefined {
-  const text = selection.toString();
-  if (!text.trim()) return;
-  if (selection.rangeCount === 0) return;
-
-  const range = selection.getRangeAt(0);
-  if (range.collapsed) return;
-
-  const { startContainer, startOffset, endContainer } = range;
-  if (
-    startContainer.nodeType !== Node.TEXT_NODE ||
-    endContainer.nodeType !== Node.TEXT_NODE
-  )
-    return;
-
-  // Walk up: text node → span[data-offset] → div[data-side] → div(flex) → div[data-index]
-  const startEl = startContainer.parentElement;
-  const endEl = endContainer.parentElement;
-  const dataOffset = startEl?.getAttribute("data-offset");
-  if (!startEl || !endEl || !dataOffset) return;
-
-  const sideEl = startEl.parentElement;
-  const dataSide = sideEl?.getAttribute("data-side");
-  if (!sideEl || !dataSide || startEl.parentElement !== endEl.parentElement)
-    return;
-
-  const indexEl = sideEl.parentElement?.parentElement;
-  const dataIndex = indexEl?.getAttribute("data-index");
-  if (!indexEl || !dataIndex) return;
-
-  return {
-    captionEntryIndex: Number(dataIndex),
-    side: Number(dataSide),
-    offset: Number(dataOffset) + startOffset,
-    text,
-  };
-}
-
-// --- Components ---
-
 type Bookmark = {
   id: number;
   videoId: number;
@@ -211,262 +130,19 @@ type Bookmark = {
   status: string;
 };
 
-function highlightText(
-  text: string,
-  marks: { offset: number; length: number; bookmark: Bookmark }[],
-  onGoToBookmark?: (bookmarkId: number) => void,
-  onPopoverOpenChange?: (open: boolean) => void,
-) {
-  if (marks.length === 0) return <span data-offset={0}>{text}</span>;
-  const sorted = [...marks].sort((a, b) => a.offset - b.offset);
-  const parts: React.ReactNode[] = [];
-  let cursor = 0;
-  for (const m of sorted) {
-    if (m.offset > cursor)
-      parts.push(
-        <span key={`t${cursor}`} data-offset={cursor}>
-          {text.slice(cursor, m.offset)}
-        </span>,
-      );
-    const end = m.offset + m.length;
-    parts.push(
-      <BookmarkWord
-        key={m.bookmark.id}
-        bookmark={m.bookmark}
-        offset={m.offset}
-        onGoToBookmark={onGoToBookmark}
-        onPopoverOpenChange={onPopoverOpenChange}
-      >
-        {text.slice(m.offset, end)}
-      </BookmarkWord>,
-    );
-    cursor = end;
+function findCurrentEntry(
+  entries: Caption[],
+  time: number,
+): number | undefined {
+  for (let i = entries.length - 1; i >= 0; i--) {
+    if (entries[i].begin <= time) {
+      return i;
+    }
   }
-  if (cursor < text.length)
-    parts.push(
-      <span key={`t${cursor}`} data-offset={cursor}>
-        {text.slice(cursor)}
-      </span>,
-    );
-  return <>{parts}</>;
+  return undefined;
 }
 
-function BookmarkWord({
-  bookmark,
-  offset,
-  children,
-  onGoToBookmark,
-  onPopoverOpenChange,
-}: {
-  bookmark: Bookmark;
-  offset: number;
-  children: React.ReactNode;
-  onGoToBookmark?: (bookmarkId: number) => void;
-  onPopoverOpenChange?: (open: boolean) => void;
-}) {
-  return (
-    <Popover onOpenChange={onPopoverOpenChange}>
-      <PopoverTrigger asChild>
-        <span
-          className="inline-block cursor-pointer"
-          data-testid="bookmark-highlight"
-          data-offset={offset}
-          onClick={(e) => e.stopPropagation()}
-        >
-          <span
-            className={
-              bookmark.translation
-                ? "border-b-2 border-highlight-alt-border bg-highlight-alt-bg"
-                : "border-b-2 border-highlight-border bg-highlight-bg"
-            }
-          >
-            {children}
-          </span>
-        </span>
-      </PopoverTrigger>
-      <PopoverContent
-        data-testid="bookmark-popover"
-        side="top"
-        avoidCollisions
-        onOpenAutoFocus={(e) => e.preventDefault()}
-      >
-        <span className="block text-xs font-medium text-popover-foreground">
-          {bookmark.text}
-        </span>
-        {bookmark.translation ? (
-          <span className="block text-xs text-muted-foreground">
-            {bookmark.translation}
-          </span>
-        ) : (
-          <span className="block text-xs italic text-muted-foreground/50">
-            unfilled
-          </span>
-        )}
-        {bookmark.etymology && (
-          <span className="mt-1 block text-[10px] text-muted-foreground">
-            {bookmark.etymology}
-          </span>
-        )}
-        {onGoToBookmark && (
-          <button
-            className="mt-1 rounded p-0.5 text-muted-foreground hover:bg-accent hover:text-foreground"
-            title="Go to bookmark"
-            onMouseDown={(e) => {
-              e.stopPropagation();
-              onGoToBookmark(bookmark.id);
-            }}
-          >
-            <ExternalLink className="h-3.5 w-3.5" />
-          </button>
-        )}
-      </PopoverContent>
-    </Popover>
-  );
-}
-
-function BookmarksList({
-  bookmarks,
-  captions,
-  player,
-  videoId,
-  flashBookmarkId,
-  onGoToCaption,
-}: {
-  bookmarks: Bookmark[];
-  captions: Caption[];
-  player: YTPlayer | null;
-  videoId: number;
-  flashBookmarkId: number | null;
-  onGoToCaption: (captionId: number) => void;
-}) {
-  const queryClient = useQueryClient();
-  const deleteMutation = useMutation(
-    orpc.bookmarks.deleteBookmark.mutationOptions({
-      onSuccess: () =>
-        queryClient.invalidateQueries({
-          queryKey: orpc.bookmarks.listBookmarks.queryOptions({
-            input: { videoId, limit: 500 },
-          }).queryKey,
-        }),
-    }),
-  );
-
-  const captionById = useMemo(() => {
-    const map = new Map<number, Caption>();
-    for (const c of captions) map.set(c.id, c);
-    return map;
-  }, [captions]);
-
-  const scrollRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (flashBookmarkId === null || !scrollRef.current) return;
-    const el = scrollRef.current.querySelector(
-      `[data-bookmark-id="${flashBookmarkId}"]`,
-    );
-    if (!el) return;
-    el.scrollIntoView({ behavior: "smooth", block: "center" });
-    el.classList.remove("flash-highlight");
-    // Force reflow to restart animation
-    void (el as HTMLElement).offsetWidth;
-    el.classList.add("flash-highlight");
-  }, [flashBookmarkId]);
-
-  return (
-    <div ref={scrollRef} className="flex flex-col gap-1.5 p-1.5">
-      {bookmarks.map((bm) => {
-        const caption = bm.captionId ? captionById.get(bm.captionId) : null;
-        return (
-          <div
-            key={bm.id}
-            data-bookmark-id={bm.id}
-            className="flex cursor-pointer flex-col gap-1 border border-border p-2 hover:bg-muted"
-            onClick={() => {
-              if (!player) return;
-              player.seekTo(bm.timestamp);
-              player.playVideo();
-            }}
-          >
-            <div className="flex items-start gap-1">
-              <div className="flex-1 text-sm font-medium">{bm.text}</div>
-              <span className="shrink-0 text-xs text-muted-foreground">
-                {formatTimestamp(bm.timestamp)}
-              </span>
-              <DropdownMenu>
-                <DropdownMenuTrigger
-                  className="-mr-1 -mt-0.5 shrink-0 rounded p-1 text-muted-foreground hover:bg-muted"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <EllipsisVertical className="h-3.5 w-3.5" />
-                </DropdownMenuTrigger>
-                <DropdownMenuContent
-                  align="end"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <DropdownMenuItem
-                    className="text-destructive focus:text-destructive"
-                    onClick={() => {
-                      if (window.confirm(`Delete bookmark "${bm.text}"?`)) {
-                        deleteMutation.mutate({ id: bm.id });
-                      }
-                    }}
-                  >
-                    <Trash2 className="mr-2 h-4 w-4" />
-                    Delete
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-            {bm.translation && (
-              <div className="text-sm text-muted-foreground">
-                {bm.translation}
-              </div>
-            )}
-            {bm.etymology && (
-              <div className="text-xs text-muted-foreground">
-                {bm.etymology}
-              </div>
-            )}
-            {bm.notes && (
-              <div className="text-xs text-muted-foreground">{bm.notes}</div>
-            )}
-            {caption && (
-              <div className="mt-0.5 flex items-start gap-1 border-t border-border pt-1 text-xs text-muted-foreground">
-                <div className="flex-1">
-                  <div>{caption.text1}</div>
-                  <div>{caption.text2}</div>
-                </div>
-                <div className="flex shrink-0 items-center gap-1">
-                  {!bm.translation && (
-                    <span className="rounded bg-muted px-1 text-muted-foreground">
-                      unfilled
-                    </span>
-                  )}
-                  <button
-                    className="rounded p-0.5 text-muted-foreground hover:bg-accent hover:text-foreground"
-                    title="Go to caption"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onGoToCaption(bm.captionId!);
-                    }}
-                  >
-                    <ExternalLink className="h-3.5 w-3.5" />
-                  </button>
-                </div>
-              </div>
-            )}
-            {!caption && !bm.translation && (
-              <div className="text-xs">
-                <span className="rounded bg-muted px-1 text-muted-foreground">
-                  unfilled
-                </span>
-              </div>
-            )}
-          </div>
-        );
-      })}
-    </div>
-  );
-}
+// --- Components ---
 
 export function VideoViewerPage() {
   const { id } = useParams<"id">();
@@ -486,23 +162,32 @@ export function VideoViewerPage() {
 
   const video = videoQuery.data;
   const captions = captionsQuery.data ?? [];
-  const bookmarkItems = bookmarksQuery.data?.items ?? [];
+  const bookmarkItems = (bookmarksQuery.data?.items ?? []) as Bookmark[];
 
   const sortedBookmarks = useMemo(
     () => [...bookmarkItems].sort((a, b) => a.timestamp - b.timestamp),
     [bookmarkItems],
   );
 
-  const bookmarksByCaptionId = useMemo(() => {
-    const map = new Map<number, Bookmark[]>();
+  // Map bookmarks by caption index (for CaptionList)
+  const captionIndexById = useMemo(() => {
+    const map = new Map<number, number>();
+    for (let i = 0; i < captions.length; i++) map.set(captions[i].id, i);
+    return map;
+  }, [captions]);
+
+  const bookmarksByIndex = useMemo(() => {
+    const map = new Map<number, BookmarkItem[]>();
     for (const bm of bookmarkItems) {
       if (!bm.captionId) continue;
-      const list = map.get(bm.captionId);
+      const idx = captionIndexById.get(bm.captionId);
+      if (idx === undefined) continue;
+      const list = map.get(idx);
       if (list) list.push(bm);
-      else map.set(bm.captionId, [bm]);
+      else map.set(idx, [bm]);
     }
     return map;
-  }, [bookmarkItems]);
+  }, [bookmarkItems, captionIndexById]);
 
   const { ref: playerRef, player } = useYouTubePlayer(video?.youtubeId);
 
@@ -511,9 +196,6 @@ export function VideoViewerPage() {
   const [activeTab, setActiveTab] = useState<"captions" | "bookmarks">(
     "captions",
   );
-  const currentTimeRef = useRef(0);
-  const [bookmarkSelection, setBookmarkSelection] =
-    useState<BookmarkSelection>();
   const [flashBookmarkId, setFlashBookmarkId] = useState<number | null>(null);
   const flashBookmarkCounter = useRef(0);
   const [flashCaptionIndex, setFlashCaptionIndex] = useState<number | null>(
@@ -535,7 +217,21 @@ export function VideoViewerPage() {
     }),
   );
 
+  const deleteMutation = useMutation(
+    orpc.bookmarks.deleteBookmark.mutationOptions({
+      onSuccess: () =>
+        queryClient.invalidateQueries({
+          queryKey: orpc.bookmarks.listBookmarks.queryOptions({
+            input: { videoId, limit: 500 },
+          }).queryKey,
+        }),
+    }),
+  );
+
   // Selection change listener
+  const [bookmarkSelection, setBookmarkSelection] =
+    useState<ReturnType<typeof extractBookmarkSelection>>();
+
   useEffect(() => {
     const handler = () => {
       const sel = document.getSelection() ?? undefined;
@@ -547,7 +243,7 @@ export function VideoViewerPage() {
 
   function onClickBookmark() {
     if (!bookmarkSelection) return;
-    const entry = captions[bookmarkSelection.captionEntryIndex];
+    const entry = captions[bookmarkSelection.captionIndex];
     if (!entry) return;
     createBookmarkMutation.mutate({
       bookmarks: [
@@ -588,62 +284,42 @@ export function VideoViewerPage() {
   }
 
   // Pause auto-scroll when bookmark popover is open
-  const isPopoverOpenRef = useRef(false);
   const onPopoverOpenChange = useCallback((open: boolean) => {
-    isPopoverOpenRef.current = open;
+    // CaptionList handles popover-open internally; this is kept for future use
+    void open;
   }, []);
 
-  // Pause auto-scroll during manual interaction
-  const isManualScrollRef = useRef(false);
-  const setDebouncedTimeout = useDebouncedTimeout();
-  function onManualScroll() {
-    isManualScrollRef.current = true;
-    setDebouncedTimeout(() => {
-      isManualScrollRef.current = false;
-    }, 2000);
-  }
+  // Caption list ref for cross-tab navigation
+  const captionListRef = useRef<{ scrollToIndex: (index: number) => void }>(
+    null,
+  );
 
-  // Virtualizer
-  const scrollElementRef = useRef<HTMLDivElement>(null);
-  const virtualizer = useVirtualizer({
-    count: captions.length,
-    getScrollElement: () => scrollElementRef.current,
-    estimateSize: () => 100,
-    overscan: 5,
-  });
-
-  const captionIndexById = useMemo(() => {
-    const map = new Map<number, number>();
-    for (let i = 0; i < captions.length; i++) map.set(captions[i].id, i);
-    return map;
-  }, [captions]);
-
-  function onGoToCaption(captionId: number) {
-    const index = captionIndexById.get(captionId);
+  function onGoToCaption(bm: BookmarkItem) {
+    const bookmark = bm as Bookmark;
+    if (!bookmark.captionId) return;
+    const index = captionIndexById.get(bookmark.captionId);
     if (index === undefined) return;
     setActiveTab("captions");
-    isManualScrollRef.current = true;
     const counter = ++flashCaptionCounter.current;
     setFlashCaptionIndex(index);
-    // Delay scroll to let the tab switch render
     requestAnimationFrame(() => {
-      virtualizer.scrollToIndex(index, { align: "center", behavior: "smooth" });
+      captionListRef.current?.scrollToIndex(index);
     });
     setTimeout(() => {
       if (flashCaptionCounter.current === counter) setFlashCaptionIndex(null);
     }, 1000);
   }
 
-  function onGoToBookmark(bookmarkId: number) {
+  function onGoToBookmark(bookmarkId: string | number) {
     const counter = ++flashBookmarkCounter.current;
-    setFlashBookmarkId(bookmarkId);
+    setFlashBookmarkId(bookmarkId as number);
     setActiveTab("bookmarks");
     setTimeout(() => {
       if (flashBookmarkCounter.current === counter) setFlashBookmarkId(null);
     }, 1000);
   }
 
-  // RAF loop — poll player time, update current entry, auto-scroll
+  // RAF loop — poll player time, update current entry
   useEffect(() => {
     if (!player || captions.length === 0) return;
 
@@ -654,34 +330,8 @@ export function VideoViewerPage() {
 
       if (playing) {
         const time = player.getCurrentTime();
-        currentTimeRef.current = time;
         const nextIndex = findCurrentEntry(captions, time);
-
-        setCurrentIndex((prev) => {
-          if (
-            nextIndex !== prev &&
-            nextIndex !== undefined &&
-            autoScroll &&
-            !isManualScrollRef.current &&
-            !isPopoverOpenRef.current
-          ) {
-            const scrollEl = scrollElementRef.current;
-            if (scrollEl) {
-              const { scrollTop, clientHeight } = scrollEl;
-              const currentCenter = scrollTop + clientHeight / 2;
-              const threshold = clientHeight / 6;
-              const items = virtualizer.getVirtualItems();
-              const item = items.find((it) => it.index === nextIndex);
-              if (!item || Math.abs(item.start - currentCenter) > threshold) {
-                virtualizer.scrollToIndex(nextIndex, {
-                  align: "center",
-                  behavior: "smooth",
-                });
-              }
-            }
-          }
-          return nextIndex;
-        });
+        setCurrentIndex(nextIndex);
       }
 
       rafId = requestAnimationFrame(loop);
@@ -689,28 +339,7 @@ export function VideoViewerPage() {
 
     rafId = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(rafId);
-  }, [player, captions, virtualizer, autoScroll]);
-
-  // Click-to-seek
-  function onClickEntry(index: number) {
-    if (!player) return;
-    // Don't seek if user is selecting text
-    if (document.getSelection()?.toString()) return;
-    isManualScrollRef.current = false;
-
-    const entry = captions[index];
-    if (index === currentIndex) {
-      // Toggle play/pause on current entry
-      if (isPlaying) {
-        player.pauseVideo();
-      } else {
-        player.playVideo();
-      }
-    } else {
-      player.seekTo(entry.begin);
-      player.playVideo();
-    }
-  }
+  }, [player, captions]);
 
   // Bookmark navigation — read time directly from player to avoid stale ref
   function onPrevBookmark() {
@@ -744,6 +373,16 @@ export function VideoViewerPage() {
     player.playVideo();
   }
 
+  const getCaptionForBookmark = useCallback(
+    (bm: BookmarkItem): CaptionRow | undefined => {
+      const bookmark = bm as Bookmark;
+      if (!bookmark.captionId) return undefined;
+      const idx = captionIndexById.get(bookmark.captionId);
+      return idx !== undefined ? captions[idx] : undefined;
+    },
+    [captions, captionIndexById],
+  );
+
   if (videoQuery.isLoading || captionsQuery.isLoading) {
     return (
       <div className="flex h-full items-center justify-center">
@@ -759,8 +398,6 @@ export function VideoViewerPage() {
       </div>
     );
   }
-
-  const virtualItems = virtualizer.getVirtualItems();
 
   return (
     <div className="flex h-full w-full flex-col lg:flex-row lg:gap-2 lg:p-2">
@@ -836,94 +473,23 @@ export function VideoViewerPage() {
           </div>
         </div>
 
-        {/* Captions scroll area — hidden (not unmounted) to preserve virtualizer */}
+        {/* Captions — hidden (not unmounted) to preserve virtualizer */}
         <div
-          className="h-full flex-[1_0_0] overflow-y-auto"
-          ref={scrollElementRef}
+          className="flex min-h-0 flex-[1_0_0] flex-col"
           style={{ display: activeTab === "captions" ? undefined : "none" }}
-          onWheel={onManualScroll}
-          onTouchStart={onManualScroll}
         >
-          {captions.length > 0 && virtualItems.length > 0 && (
-            <div
-              className="relative flex flex-col"
-              style={{ height: virtualizer.getTotalSize() }}
-            >
-              <div
-                className="absolute left-0 top-0 flex w-full flex-col gap-1.5 px-1.5"
-                style={{
-                  transform: `translateY(${virtualItems[0].start}px)`,
-                }}
-              >
-                {virtualItems.map((item) => {
-                  const entry = captions[item.index];
-                  const isCurrent = item.index === currentIndex;
-                  const isEntryPlaying = isCurrent && isPlaying;
-                  const entryBookmarks = bookmarksByCaptionId.get(entry.id);
-                  const text1Marks = entryBookmarks
-                    ?.filter((b) => b.side === 0)
-                    .map((b) => ({
-                      offset: b.offset,
-                      length: b.text.length,
-                      bookmark: b,
-                    }));
-                  const text2Marks = entryBookmarks
-                    ?.filter((b) => b.side === 1)
-                    .map((b) => ({
-                      offset: b.offset,
-                      length: b.text.length,
-                      bookmark: b,
-                    }));
-
-                  return (
-                    <div
-                      key={item.key}
-                      ref={virtualizer.measureElement}
-                      data-index={item.index}
-                      className={[
-                        "flex w-full flex-col gap-1 border p-1 px-2 hover:bg-muted",
-                        isEntryPlaying && "ring-2 ring-ring",
-                        isCurrent ? "border-ring" : "border-border",
-                        item.index === flashCaptionIndex && "flash-highlight",
-                        item.index === 0 && "mt-1.5",
-                        item.index === captions.length - 1 && "mb-1.5",
-                      ]
-                        .filter(Boolean)
-                        .join(" ")}
-                    >
-                      <div className="flex items-center text-xs text-muted-foreground">
-                        <span className="ml-auto">
-                          {formatTimestamp(entry.begin)} –{" "}
-                          {formatTimestamp(entry.end)}
-                        </span>
-                      </div>
-                      <div
-                        className="flex cursor-pointer text-sm"
-                        onClick={() => onClickEntry(item.index)}
-                      >
-                        <div className="flex-1 border-r pr-2" data-side="0">
-                          {highlightText(
-                            entry.text1,
-                            text1Marks ?? [],
-                            onGoToBookmark,
-                            onPopoverOpenChange,
-                          )}
-                        </div>
-                        <div className="flex-1 pl-2" data-side="1">
-                          {highlightText(
-                            entry.text2,
-                            text2Marks ?? [],
-                            onGoToBookmark,
-                            onPopoverOpenChange,
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
+          <CaptionList
+            ref={captionListRef}
+            rows={captions}
+            currentIndex={currentIndex}
+            isPlaying={isPlaying}
+            player={player}
+            autoScroll={autoScroll}
+            bookmarksByIndex={bookmarksByIndex}
+            onGoToBookmark={onGoToBookmark}
+            onPopoverOpenChange={onPopoverOpenChange}
+            flashIndex={flashCaptionIndex}
+          />
         </div>
 
         {/* Bookmarks list */}
@@ -938,11 +504,13 @@ export function VideoViewerPage() {
             ) : (
               <BookmarksList
                 bookmarks={sortedBookmarks}
-                captions={captions}
                 player={player}
-                videoId={videoId}
-                flashBookmarkId={flashBookmarkId}
+                onDeleteBookmark={(id) =>
+                  deleteMutation.mutate({ id: id as number })
+                }
                 onGoToCaption={onGoToCaption}
+                flashBookmarkId={flashBookmarkId}
+                getCaptionForBookmark={getCaptionForBookmark}
               />
             )}
           </div>
@@ -975,17 +543,4 @@ export function VideoViewerPage() {
       </div>
     </div>
   );
-}
-
-function useDebouncedTimeout() {
-  const ref = useRef<ReturnType<typeof setTimeout> | null>(null);
-  return (callback: () => void, timeoutMs: number) => {
-    if (ref.current !== null) {
-      clearTimeout(ref.current);
-    }
-    ref.current = setTimeout(() => {
-      callback();
-      ref.current = null;
-    }, timeoutMs);
-  };
 }

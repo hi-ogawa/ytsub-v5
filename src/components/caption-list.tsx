@@ -1,7 +1,13 @@
-import { ExternalLink } from "lucide-react";
+import { useVirtualizer } from "@tanstack/react-virtual";
+import { EllipsisVertical, ExternalLink, Trash2 } from "lucide-react";
 import { useEffect, useImperativeHandle, useRef } from "react";
-import type { MergedCaption } from "../lib/caption-merge.ts";
-import type { ExtensionBookmark } from "../lib/extension-bookmarks.ts";
+import type { BookmarkItem, CaptionRow } from "../lib/caption-types.ts";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "./ui/dropdown-menu.tsx";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover.tsx";
 import type { YTPlayer } from "./youtube-player.tsx";
 
@@ -18,10 +24,10 @@ function BookmarkWord({
   onGoToBookmark,
   onPopoverOpenChange,
 }: {
-  bookmark: ExtensionBookmark;
+  bookmark: BookmarkItem;
   offset: number;
   children: React.ReactNode;
-  onGoToBookmark?: (bookmarkId: string) => void;
+  onGoToBookmark?: (bookmarkId: string | number) => void;
   onPopoverOpenChange?: (open: boolean) => void;
 }) {
   const filled = !!bookmark.translation;
@@ -87,8 +93,8 @@ function BookmarkWord({
 
 function highlightText(
   text: string,
-  marks: { offset: number; length: number; bookmark?: ExtensionBookmark }[],
-  onGoToBookmark?: (bookmarkId: string) => void,
+  marks: { offset: number; length: number; bookmark?: BookmarkItem }[],
+  onGoToBookmark?: (bookmarkId: string | number) => void,
   onPopoverOpenChange?: (open: boolean) => void,
 ) {
   if (marks.length === 0) return <span data-offset={0}>{text}</span>;
@@ -106,7 +112,7 @@ function highlightText(
     if (m.bookmark) {
       parts.push(
         <BookmarkWord
-          key={m.bookmark.id}
+          key={`${m.bookmark.id}`}
           bookmark={m.bookmark}
           offset={m.offset}
           onGoToBookmark={onGoToBookmark}
@@ -147,27 +153,37 @@ export function CaptionList({
   bookmarksByIndex,
   onGoToBookmark,
   onPopoverOpenChange,
+  flashIndex,
 }: {
   ref?: React.Ref<{ scrollToIndex: (index: number) => void }>;
-  rows: MergedCaption[];
+  rows: CaptionRow[];
   currentIndex: number | undefined;
   isPlaying: boolean;
   player: YTPlayer | null;
   autoScroll?: boolean;
-  bookmarksByIndex?: Map<number, ExtensionBookmark[]>;
-  onGoToBookmark?: (bookmarkId: string) => void;
+  bookmarksByIndex?: Map<number, BookmarkItem[]>;
+  onGoToBookmark?: (bookmarkId: string | number) => void;
   onPopoverOpenChange?: (open: boolean) => void;
+  flashIndex?: number | null;
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  const virtualizer = useVirtualizer({
+    count: rows.length,
+    getScrollElement: () => scrollRef.current,
+    estimateSize: () => 100,
+    overscan: 5,
+  });
+
   useImperativeHandle(ref, () => ({
     scrollToIndex: (index: number) => {
-      const el = scrollRef.current?.querySelector(`[data-index="${index}"]`);
-      if (el) {
-        el.scrollIntoView({ behavior: "smooth", block: "center" });
-      }
+      virtualizer.scrollToIndex(index, {
+        align: "center",
+        behavior: "smooth",
+      });
     },
   }));
+
   const prevScrollIndex = useRef<number | undefined>(undefined);
   const isManualScrollRef = useRef(false);
   const isPopoverOpenRef = useRef(false);
@@ -203,20 +219,18 @@ export function CaptionList({
     const scrollEl = scrollRef.current;
     if (!scrollEl) return;
 
-    const el = scrollEl.querySelector(`[data-index="${currentIndex}"]`);
-    if (!el) return;
-
-    // Only scroll if item is far from viewport center
     const { scrollTop, clientHeight } = scrollEl;
     const currentCenter = scrollTop + clientHeight / 2;
-    const itemRect =
-      (el as HTMLElement).offsetTop + (el as HTMLElement).offsetHeight / 2;
     const threshold = clientHeight / 6;
-
-    if (Math.abs(itemRect - currentCenter) > threshold) {
-      el.scrollIntoView({ behavior: "smooth", block: "center" });
+    const items = virtualizer.getVirtualItems();
+    const item = items.find((it) => it.index === currentIndex);
+    if (!item || Math.abs(item.start - currentCenter) > threshold) {
+      virtualizer.scrollToIndex(currentIndex, {
+        align: "center",
+        behavior: "smooth",
+      });
     }
-  }, [currentIndex]);
+  }, [currentIndex, autoScroll, virtualizer]);
 
   function onClickRow(index: number) {
     if (!player) return;
@@ -237,6 +251,8 @@ export function CaptionList({
     }
   }
 
+  const virtualItems = virtualizer.getVirtualItems();
+
   return (
     <div
       className="flex-[1_0_0] overflow-y-auto"
@@ -244,64 +260,214 @@ export function CaptionList({
       onWheel={onManualScroll}
       onTouchStart={onManualScroll}
     >
-      <div className="flex flex-col gap-1.5 p-1.5">
-        {rows.map((row, i) => {
-          const rowBookmarks = bookmarksByIndex?.get(i);
-          const text1Marks = rowBookmarks
-            ?.filter((b) => b.side === 0)
-            .map((b) => ({
-              offset: b.offset,
-              length: b.text.length,
-              bookmark: b,
-            }));
-          const text2Marks = rowBookmarks
-            ?.filter((b) => b.side === 1)
-            .map((b) => ({
-              offset: b.offset,
-              length: b.text.length,
-              bookmark: b,
-            }));
+      {rows.length > 0 && virtualItems.length > 0 && (
+        <div
+          className="relative flex flex-col"
+          style={{ height: virtualizer.getTotalSize() }}
+        >
+          <div
+            className="absolute left-0 top-0 flex w-full flex-col gap-1.5 px-1.5"
+            style={{
+              transform: `translateY(${virtualItems[0].start}px)`,
+            }}
+          >
+            {virtualItems.map((item) => {
+              const row = rows[item.index];
+              const rowBookmarks = bookmarksByIndex?.get(item.index);
+              const text1Marks = rowBookmarks
+                ?.filter((b) => b.side === 0)
+                .map((b) => ({
+                  offset: b.offset,
+                  length: b.text.length,
+                  bookmark: b,
+                }));
+              const text2Marks = rowBookmarks
+                ?.filter((b) => b.side === 1)
+                .map((b) => ({
+                  offset: b.offset,
+                  length: b.text.length,
+                  bookmark: b,
+                }));
 
-          return (
-            <div
-              key={i}
-              data-index={i}
-              className={[
-                "flex w-full cursor-pointer flex-col gap-1 border p-1 px-2 hover:bg-muted",
-                i === currentIndex && isPlaying && "ring-2 ring-ring",
-                i === currentIndex ? "border-ring" : "border-border",
-              ]
-                .filter(Boolean)
-                .join(" ")}
-              onClick={() => onClickRow(i)}
-            >
+              return (
+                <div
+                  key={item.key}
+                  ref={virtualizer.measureElement}
+                  data-index={item.index}
+                  className={[
+                    "flex w-full cursor-pointer flex-col gap-1 border p-1 px-2 hover:bg-muted",
+                    item.index === currentIndex &&
+                      isPlaying &&
+                      "ring-2 ring-ring",
+                    item.index === currentIndex
+                      ? "border-ring"
+                      : "border-border",
+                    item.index === flashIndex && "flash-highlight",
+                    item.index === 0 && "mt-1.5",
+                    item.index === rows.length - 1 && "mb-1.5",
+                  ]
+                    .filter(Boolean)
+                    .join(" ")}
+                  onClick={() => onClickRow(item.index)}
+                >
+                  <div className="text-xs text-muted-foreground">
+                    <span className="ml-auto">
+                      {formatTimestamp(row.begin)} – {formatTimestamp(row.end)}
+                    </span>
+                  </div>
+                  <div className="flex text-sm">
+                    <div className="flex-1 border-r pr-2" data-side="0">
+                      {highlightText(
+                        row.text1,
+                        text1Marks ?? [],
+                        onGoToBookmark,
+                        wrappedPopoverOpenChange,
+                      )}
+                    </div>
+                    <div className="flex-1 pl-2" data-side="1">
+                      {highlightText(
+                        row.text2,
+                        text2Marks ?? [],
+                        onGoToBookmark,
+                        wrappedPopoverOpenChange,
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// --- BookmarksList ---
+
+export function BookmarksList({
+  bookmarks,
+  player,
+  onDeleteBookmark,
+  onGoToCaption,
+  flashBookmarkId,
+  getCaptionForBookmark,
+}: {
+  bookmarks: BookmarkItem[];
+  player: YTPlayer | null;
+  onDeleteBookmark: (id: string | number) => void;
+  onGoToCaption?: (bm: BookmarkItem) => void;
+  flashBookmarkId: string | number | null;
+  getCaptionForBookmark: (bm: BookmarkItem) => CaptionRow | undefined;
+}) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (flashBookmarkId === null || !scrollRef.current) return;
+    const el = scrollRef.current.querySelector(
+      `[data-bookmark-id="${flashBookmarkId}"]`,
+    );
+    if (!el) return;
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
+    el.classList.remove("flash-highlight");
+    void (el as HTMLElement).offsetWidth;
+    el.classList.add("flash-highlight");
+  }, [flashBookmarkId]);
+
+  return (
+    <div ref={scrollRef} className="flex flex-col gap-1.5 p-1.5">
+      {bookmarks.map((bm) => {
+        const caption = getCaptionForBookmark(bm);
+        return (
+          <div
+            key={`${bm.id}`}
+            data-bookmark-id={bm.id}
+            className="flex cursor-pointer flex-col gap-1 border border-border p-2 hover:bg-muted"
+            onClick={() => {
+              if (!player) return;
+              player.seekTo(bm.timestamp);
+              player.playVideo();
+            }}
+          >
+            <div className="flex items-start gap-1">
+              <div className="flex-1 text-sm font-medium">{bm.text}</div>
+              <span className="shrink-0 text-xs text-muted-foreground">
+                {formatTimestamp(bm.timestamp)}
+              </span>
+              <DropdownMenu>
+                <DropdownMenuTrigger
+                  className="-mr-1 -mt-0.5 shrink-0 rounded p-1 text-muted-foreground hover:bg-muted"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <EllipsisVertical className="h-3.5 w-3.5" />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  align="end"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <DropdownMenuItem
+                    className="text-destructive focus:text-destructive"
+                    onClick={() => {
+                      if (confirm(`Delete bookmark "${bm.text}"?`)) {
+                        onDeleteBookmark(bm.id);
+                      }
+                    }}
+                  >
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    Delete
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+            {bm.translation && (
+              <div className="text-sm text-muted-foreground">
+                {bm.translation}
+              </div>
+            )}
+            {bm.etymology && (
               <div className="text-xs text-muted-foreground">
-                <span className="ml-auto">
-                  {formatTimestamp(row.begin)} – {formatTimestamp(row.end)}
+                {bm.etymology}
+              </div>
+            )}
+            {bm.notes && (
+              <div className="text-xs text-muted-foreground">{bm.notes}</div>
+            )}
+            {caption && (
+              <div className="mt-0.5 flex items-start gap-1 border-t border-border pt-1 text-xs text-muted-foreground">
+                <div className="flex-1">
+                  <div>{caption.text1}</div>
+                  <div>{caption.text2}</div>
+                </div>
+                <div className="flex shrink-0 items-center gap-1">
+                  {!bm.translation && (
+                    <span className="rounded bg-muted px-1 text-muted-foreground">
+                      unfilled
+                    </span>
+                  )}
+                  {onGoToCaption && (
+                    <button
+                      className="rounded p-0.5 text-muted-foreground hover:bg-accent hover:text-foreground"
+                      title="Go to caption"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onGoToCaption(bm);
+                      }}
+                    >
+                      <ExternalLink className="h-3.5 w-3.5" />
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+            {!caption && !bm.translation && (
+              <div className="text-xs">
+                <span className="rounded bg-muted px-1 text-muted-foreground">
+                  unfilled
                 </span>
               </div>
-              <div className="flex text-sm">
-                <div className="flex-1 border-r pr-2" data-side="0">
-                  {highlightText(
-                    row.text1,
-                    text1Marks ?? [],
-                    onGoToBookmark,
-                    wrappedPopoverOpenChange,
-                  )}
-                </div>
-                <div className="flex-1 pl-2" data-side="1">
-                  {highlightText(
-                    row.text2,
-                    text2Marks ?? [],
-                    onGoToBookmark,
-                    wrappedPopoverOpenChange,
-                  )}
-                </div>
-              </div>
-            </div>
-          );
-        })}
-      </div>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }

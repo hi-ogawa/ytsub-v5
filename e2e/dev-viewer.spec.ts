@@ -126,18 +126,30 @@ test.describe("dev-viewer caption panel", () => {
     await expect(strategySelect).toBeVisible();
     await expect(strategySelect).toHaveValue("partition");
 
-    // Count rows with partition strategy (default)
-    // Close menu first to count rows
+    // Get virtual container height for partition strategy (default)
+    // Close menu first to read height
     await page.keyboard.press("Escape");
-    const partitionCount = await page.locator("[data-index]").count();
+    // Get total row count via virtual container height for partition strategy
+    // Close menu first, then scroll to bottom to find last index
+    await page.keyboard.press("Escape");
+    // The virtual container div has a style height = totalSize
+    // Read it from the first child of the scroll container
+    const panel = page.getByTestId("resizable-panel");
+    const getVirtualHeight = () =>
+      panel.locator("[data-index='0']").evaluate((el) => {
+        // The virtual container is the grandparent of the row items
+        const container = el.parentElement?.parentElement;
+        return container ? parseInt(container.style.height) : 0;
+      });
+    const partitionHeight = await getVirtualHeight();
 
-    // Reopen and switch to overlap — should produce more rows
+    // Reopen and switch to overlap — should produce more rows (taller virtual list)
     await page.getByTitle("Settings").click();
     await strategySelect.selectOption("overlap");
     await page.keyboard.press("Escape");
     await expect(page.locator("[data-index='0']")).toBeVisible();
-    const overlapCount = await page.locator("[data-index]").count();
-    expect(overlapCount).toBeGreaterThan(partitionCount);
+    const overlapHeight = await getVirtualHeight();
+    expect(overlapHeight).toBeGreaterThan(partitionHeight);
 
     // Switch to best-overlap
     await page.getByTitle("Settings").click();
