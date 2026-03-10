@@ -13,6 +13,52 @@ test("redirects to /login when not authenticated", async ({ page }) => {
   await expect(page.getByPlaceholder("Password")).toBeVisible();
 });
 
+test("register with short password shows validation error", async ({
+  page,
+}) => {
+  await page.goto("/login");
+  await page.getByRole("button", { name: "Sign up" }).click();
+  await expect(page.locator("h1")).toHaveText("Zamak — sign up");
+  await page.getByPlaceholder("Email").fill("short@zamak.local");
+  await page.getByPlaceholder("Password").fill("short");
+  await page.getByRole("button", { name: "Sign up" }).click();
+  // Should stay on login page (HTML minLength validation or server rejection)
+  await expect(page).toHaveURL("/login");
+});
+
+test("register then login as new user", async ({ page }) => {
+  await page.goto("/login");
+  // Switch to register mode
+  await page.getByRole("button", { name: "Sign up" }).click();
+  await page.getByPlaceholder("Email").fill("newuser@zamak.local");
+  await page.getByPlaceholder("Password").fill("newpassword");
+  await page.getByRole("button", { name: "Sign up" }).click();
+  await expect(page).toHaveURL("/");
+  // New user should see empty video list
+  await expect(page.getByText("No videos yet.")).toBeVisible();
+
+  // Logout
+  await page.getByTestId("header-menu").click();
+  await page.getByText("Log out").click();
+  await expect(page).toHaveURL("/login");
+
+  // Login again with same credentials
+  await page.getByPlaceholder("Email").fill("newuser@zamak.local");
+  await page.getByPlaceholder("Password").fill("newpassword");
+  await page.getByRole("button", { name: "Login" }).click();
+  await expect(page).toHaveURL("/");
+});
+
+test("register duplicate email shows error", async ({ page }) => {
+  await page.goto("/login");
+  await page.getByRole("button", { name: "Sign up" }).click();
+  // dev@zamak.local already exists from seed
+  await page.getByPlaceholder("Email").fill("dev@zamak.local");
+  await page.getByPlaceholder("Password").fill("somepassword");
+  await page.getByRole("button", { name: "Sign up" }).click();
+  await expect(page.getByText("Registration failed")).toBeVisible();
+});
+
 test("login with wrong then correct password", async ({ page }) => {
   await page.goto("/login");
   await page.getByPlaceholder("Email").fill("dev@zamak.local");
