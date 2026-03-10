@@ -420,6 +420,16 @@ export function useCaptionSession({
 
     // Export
     onExport: handleExport,
+
+    // Re-read session from IndexedDB (e.g. after sync pull)
+    rehydrate: useCallback(() => {
+      getSession(youtubeId).then((s) => {
+        if (s) {
+          setHydrated(s);
+          setBookmarks(s.bookmarks);
+        }
+      });
+    }, [youtubeId]),
   };
 }
 

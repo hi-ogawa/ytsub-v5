@@ -1,6 +1,10 @@
 import {
+  AlertTriangle,
+  ArrowDownToLine,
+  ArrowUpFromLine,
   Bookmark,
   Check,
+  CheckCircle2,
   ChevronLeft,
   ChevronRight,
   Copy,
@@ -8,6 +12,7 @@ import {
   EllipsisVertical,
   ExternalLink,
   Loader2,
+  RefreshCw,
   Trash2,
   X,
 } from "lucide-react";
@@ -26,6 +31,7 @@ import {
   type ExtensionBookmark,
   extractBookmarkSelection,
 } from "../lib/extension-bookmarks.ts";
+import type { SyncState } from "../lib/sync.ts";
 import type { YouTubeCaptionTrack } from "../lib/youtube.ts";
 import { CaptionList } from "./caption-list.tsx";
 import { TrackPicker } from "./track-picker.tsx";
@@ -207,14 +213,88 @@ function formatTimestamp(seconds: number): string {
   return `${m}:${String(s).padStart(2, "0")}`;
 }
 
+function SyncButton({
+  state,
+  onSync,
+  error,
+}: {
+  state: SyncState;
+  onSync: (direction?: "push" | "pull") => void;
+  error: Error | null;
+}) {
+  const iconClass = "h-4 w-4";
+  let icon: React.ReactNode;
+  let title: string;
+  let disabled = false;
+  let onClick = () => onSync();
+
+  switch (state) {
+    case "checking":
+      icon = <Loader2 className={`${iconClass} animate-spin`} />;
+      title = "Checking sync status...";
+      disabled = true;
+      break;
+    case "synced":
+      icon = <CheckCircle2 className={`${iconClass} text-green-500`} />;
+      title = "Synced";
+      disabled = true;
+      break;
+    case "push":
+      icon = <ArrowUpFromLine className={iconClass} />;
+      title = "Push local changes to server";
+      onClick = () => onSync("push");
+      break;
+    case "pull":
+      icon = <ArrowDownToLine className={iconClass} />;
+      title = "Pull server changes";
+      onClick = () => onSync("pull");
+      break;
+    case "conflict":
+      icon = <AlertTriangle className={`${iconClass} text-yellow-500`} />;
+      title = "Both sides changed — click to push (keep local)";
+      onClick = () => onSync("push");
+      break;
+    case "syncing":
+      icon = <RefreshCw className={`${iconClass} animate-spin`} />;
+      title = "Syncing...";
+      disabled = true;
+      break;
+    case "error":
+      icon = <AlertTriangle className={`${iconClass} text-destructive`} />;
+      title = error ? `Sync error: ${error.message}` : "Sync error";
+      disabled = true;
+      break;
+  }
+
+  return (
+    <button
+      type="button"
+      className="shrink-0 rounded p-0.5 text-muted-foreground hover:bg-muted disabled:opacity-50"
+      title={title}
+      disabled={disabled}
+      onClick={onClick}
+      data-testid="sync-button"
+      data-sync-state={state}
+    >
+      {icon}
+    </button>
+  );
+}
+
 export function CaptionPanel({
   tracks,
   player,
   session,
+  sync,
 }: {
   tracks: YouTubeCaptionTrack[];
   player: YTPlayer | null;
   session: CaptionSessionManager;
+  sync?: {
+    state: SyncState;
+    onSync: (direction?: "push" | "pull") => void;
+    error: Error | null;
+  };
 }) {
   const {
     selectedVssId1,
@@ -387,6 +467,13 @@ export function CaptionPanel({
             disabled={tracksLocked}
           />
         </div>
+        {sync && (
+          <SyncButton
+            state={sync.state}
+            onSync={sync.onSync}
+            error={sync.error}
+          />
+        )}
         <DropdownMenu>
           <DropdownMenuTrigger
             className="mr-1 shrink-0 rounded p-0.5 text-muted-foreground hover:bg-muted"

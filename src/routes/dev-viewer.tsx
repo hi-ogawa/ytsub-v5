@@ -7,6 +7,7 @@ import {
 } from "../components/caption-panel.tsx";
 import { useYouTubePlayer } from "../components/youtube-player.tsx";
 import { useCaptionSession } from "../lib/caption-session.ts";
+import { useSyncState } from "../lib/sync.ts";
 import type { Json3File, YouTubeExtractionResult } from "../lib/youtube.ts";
 import { useZamakApi } from "../lib/zamak-api.ts";
 
@@ -89,12 +90,23 @@ function DevViewerSession({
     (t) => t.vssId === session.selectedVssId2,
   );
 
+  const language1 = sel1?.languageCode ?? "ko";
+  const language2 = sel2?.languageCode ?? "en";
+
   useZamakApi({
     session,
     rows: session.rows,
     videoMeta: meta.video,
-    language1: sel1?.languageCode ?? "ko",
-    language2: sel2?.languageCode ?? "en",
+    language1,
+    language2,
+  });
+
+  const syncState = useSyncState({
+    youtubeId: videoId,
+    session,
+    videoMeta: meta.video,
+    language1,
+    language2,
   });
 
   return (
@@ -102,6 +114,7 @@ function DevViewerSession({
       tracks={meta.captionTracks}
       player={player}
       session={session}
+      sync={syncState}
     />
   );
 }
