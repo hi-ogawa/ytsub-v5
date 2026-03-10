@@ -30,15 +30,15 @@ export function addBookmark(
   data: Omit<
     ExtensionBookmark,
     "id" | "createdAt" | "translation" | "etymology" | "notes"
-  >,
+  > & { translation?: string; etymology?: string; notes?: string },
 ): ExtensionBookmark {
   const bookmark: ExtensionBookmark = {
-    ...data,
+    id: crypto.randomUUID(),
+    createdAt: new Date().toISOString(),
     translation: "",
     etymology: "",
     notes: "",
-    id: crypto.randomUUID(),
-    createdAt: new Date().toISOString(),
+    ...data,
   };
   const bookmarks = getBookmarks(youtubeId);
   bookmarks.push(bookmark);
@@ -50,6 +50,19 @@ export function deleteBookmark(youtubeId: string, bookmarkId: string): void {
   const bookmarks = getBookmarks(youtubeId);
   const filtered = bookmarks.filter((b) => b.id !== bookmarkId);
   localStorage.setItem(storageKey(youtubeId), JSON.stringify(filtered));
+}
+
+export function updateBookmark(
+  youtubeId: string,
+  id: string,
+  data: Partial<Pick<ExtensionBookmark, "translation" | "etymology" | "notes">>,
+): ExtensionBookmark | undefined {
+  const bookmarks = getBookmarks(youtubeId);
+  const idx = bookmarks.findIndex((b) => b.id === id);
+  if (idx === -1) return;
+  bookmarks[idx] = { ...bookmarks[idx], ...data };
+  localStorage.setItem(storageKey(youtubeId), JSON.stringify(bookmarks));
+  return bookmarks[idx];
 }
 
 // --- Text selection for bookmarking ---
