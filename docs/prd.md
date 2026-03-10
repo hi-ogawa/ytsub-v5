@@ -89,7 +89,7 @@ See ytsub-v4 for relevant technique.
   - [x] bookmark highlight popover with go-to cross-links (video-viewer only)
   - [x] flash-highlight on cross-tab navigation (video-viewer only)
   - [ ] data layer abstraction (server DB vs IndexedDB)
-- [ ] consolidate extension/content.css theme with styles.app.css — currently extension `:host` duplicates dark theme variables manually, causing new tokens to be missed; consider reusing `.dark` class or shared partial
+- [x] consolidate extension/content.css theme with styles.app.css — currently extension `:host` duplicates dark theme variables manually, causing new tokens to be missed; consider reusing `.dark` class or shared partial
 - [ ] adapt to youtube dark/light theme (currently style hard-coded for dark)
 
 ## TODO: Backlog
