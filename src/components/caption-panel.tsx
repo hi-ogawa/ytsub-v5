@@ -3,6 +3,7 @@ import {
   Check,
   ChevronLeft,
   ChevronRight,
+  ClipboardPaste,
   Copy,
   Download,
   EllipsisVertical,
@@ -19,6 +20,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { type AiTask, AI_TASKS, makeAiPrompt } from "../lib/ai-prompt.ts";
 import type { MergeStrategy, MergedCaption } from "../lib/caption-merge.ts";
 import type { CaptionSessionManager } from "../lib/caption-session.ts";
 import {
@@ -142,22 +144,25 @@ export function ResizablePanel({
 
 // --- AI prompt copy (inline dropdown widget) ---
 
-const AI_PROMPTS: { label: string; task: string }[] = [
-  { label: "Pick & Fill", task: "Pick & Fill" },
-  { label: "Fill Bookmarks", task: "Fill Bookmarks" },
-  { label: "Fix Korean ASR", task: "Fix Korean ASR" },
-];
-
-function makePrompt(task: string): string {
-  return `This page has a language learning tool (zamak) injected as window.__zamak. It exposes methods to read captions/bookmarks and write bookmark metadata. Run window.__zamak.log.skillPrompt() and read the console output — it contains the full API reference and task instructions. Follow the "${task}" task. All data is read via console logs (prefixed ZAMAK:), not return values. If any API call errors, stop and report — do not try to fix it.`;
-}
-
-function AiPromptCopy() {
-  const [selected, setSelected] = useState(AI_PROMPTS[0].task);
+function AiPromptCopy({
+  rows,
+  bookmarks,
+  title,
+  duration,
+}: {
+  rows: MergedCaption[] | undefined;
+  bookmarks: ExtensionBookmark[];
+  title: string;
+  duration: number | undefined;
+}) {
+  const [selected, setSelected] = useState<AiTask>(AI_TASKS[0].task);
   const [copied, setCopied] = useState(false);
 
-  function copyPrompt(task: string) {
-    navigator.clipboard.writeText(makePrompt(task));
+  function copyPrompt(task: AiTask) {
+    if (!rows) return;
+    navigator.clipboard.writeText(
+      makeAiPrompt(task, rows, bookmarks, title, duration),
+    );
     setCopied(true);
     setTimeout(() => setCopied(false), 1500);
   }
@@ -172,11 +177,11 @@ function AiPromptCopy() {
           className="min-w-0 flex-1 rounded border bg-background px-1 py-0.5 text-sm"
           value={selected}
           onChange={(e) => {
-            setSelected(e.target.value);
-            copyPrompt(e.target.value);
+            setSelected(e.target.value as AiTask);
+            copyPrompt(e.target.value as AiTask);
           }}
         >
-          {AI_PROMPTS.map((p) => (
+          {AI_TASKS.map((p) => (
             <option key={p.task} value={p.task}>
               {p.label}
             </option>
@@ -187,6 +192,7 @@ function AiPromptCopy() {
           className="shrink-0 rounded p-0.5 text-muted-foreground hover:bg-muted"
           title="Copy prompt"
           onClick={() => copyPrompt(selected)}
+          disabled={!rows}
         >
           {copied ? (
             <Check className="h-4 w-4 text-green-500" />
@@ -195,6 +201,162 @@ function AiPromptCopy() {
           )}
         </button>
       </div>
+    </div>
+  );
+}
+
+// --- AI import paste ---
+
+function extractJson(text: string): string {
+  // Extract JSON from markdown code block if present
+  const match = text.match(/```(?:json)?\s*\n([\s\S]*?)\n```/);
+  return match ? match[1].trim() : text.trim();
+}
+
+function AiImportPaste({
+  rows,
+  onCreateBookmarks,
+  onUpdateBookmarks,
+  onUpdateCaptions,
+}: {
+  rows: MergedCaption[] | undefined;
+  onCreateBookmarks: CaptionSessionManager["onCreateBookmarks"];
+  onUpdateBookmarks: CaptionSessionManager["onUpdateBookmarks"];
+  onUpdateCaptions: CaptionSessionManager["onUpdateCaptions"];
+}) {
+  const [showInput, setShowInput] = useState(false);
+  const [status, setStatus] = useState<{
+    type: "success" | "error";
+    msg: string;
+  } | null>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    if (showInput) {
+      inputRef.current?.focus();
+    }
+  }, [showInput]);
+
+  function handlePaste(e: React.ClipboardEvent<HTMLTextAreaElement>) {
+    e.preventDefault();
+    const raw = e.clipboardData.getData("text");
+    try {
+      const json = JSON.parse(extractJson(raw));
+      if (!Array.isArray(json) || json.length === 0) {
+        setStatus({ type: "error", msg: "Expected a non-empty JSON array" });
+        return;
+      }
+      const first = json[0];
+
+      if ("captionIndex" in first && "text" in first && rows) {
+        // Pick & Fill result
+        const entries = json as {
+          captionIndex: number;
+          text: string;
+          translation?: string;
+          etymology?: string;
+          notes?: string;
+        }[];
+        onCreateBookmarks(
+          entries
+            .filter((e) => rows[e.captionIndex])
+            .map((e) => ({
+              text: e.text,
+              side: 0,
+              offset: rows[e.captionIndex].text1.indexOf(e.text),
+              captionIndex: e.captionIndex,
+              timestamp: rows[e.captionIndex].begin,
+              context: rows[e.captionIndex].text1,
+              translation: e.translation,
+              etymology: e.etymology,
+              notes: e.notes,
+            })),
+        );
+        setStatus({
+          type: "success",
+          msg: `Created ${entries.length} bookmarks`,
+        });
+      } else if ("id" in first && "translation" in first) {
+        // Fill result
+        const entries = json as {
+          id: string;
+          translation?: string;
+          etymology?: string;
+          notes?: string;
+        }[];
+        onUpdateBookmarks(
+          entries.map((e) => ({
+            id: e.id,
+            data: {
+              translation: e.translation,
+              etymology: e.etymology,
+              notes: e.notes,
+            },
+          })),
+        );
+        setStatus({
+          type: "success",
+          msg: `Filled ${entries.length} bookmarks`,
+        });
+      } else if ("idx" in first && "text1" in first) {
+        // Fix ASR result
+        onUpdateCaptions(json as { idx: number; text1?: string }[]);
+        setStatus({
+          type: "success",
+          msg: `Updated ${json.length} captions`,
+        });
+      } else {
+        setStatus({ type: "error", msg: "Unrecognized JSON shape" });
+        return;
+      }
+      setTimeout(() => {
+        setShowInput(false);
+        setStatus(null);
+      }, 1500);
+    } catch {
+      setStatus({ type: "error", msg: "Invalid JSON" });
+    }
+  }
+
+  if (!showInput) {
+    return (
+      <DropdownMenuItem
+        onSelect={(e) => {
+          e.preventDefault();
+          setShowInput(true);
+        }}
+      >
+        <ClipboardPaste className="mr-2 h-4 w-4" />
+        Import AI result
+      </DropdownMenuItem>
+    );
+  }
+
+  return (
+    <div className="px-2 py-1.5">
+      <label className="mb-1 block text-xs text-muted-foreground">
+        Paste AI result (Ctrl+V)
+      </label>
+      <textarea
+        ref={inputRef}
+        className="w-full rounded border bg-background px-2 py-1 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+        rows={2}
+        placeholder="Paste JSON here..."
+        onPaste={handlePaste}
+        onKeyDown={(e) => {
+          if (e.key === "Escape") {
+            setShowInput(false);
+            setStatus(null);
+          }
+        }}
+      />
+      {status && (
+        <p
+          className={`mt-1 text-xs ${status.type === "error" ? "text-destructive" : "text-green-500"}`}
+        >
+          {status.msg}
+        </p>
+      )}
     </div>
   );
 }
@@ -211,10 +373,12 @@ export function CaptionPanel({
   tracks,
   player,
   session,
+  videoMeta,
 }: {
   tracks: YouTubeCaptionTrack[];
   player: YTPlayer | null;
   session: CaptionSessionManager;
+  videoMeta?: { title: string; duration?: number };
 }) {
   const {
     selectedVssId1,
@@ -232,6 +396,8 @@ export function CaptionPanel({
     bookmarksByIndex,
     onCreateBookmarks,
     onDeleteBookmark,
+    onUpdateBookmarks,
+    onUpdateCaptions,
     onClearBookmarks,
     hasBookmarks,
     onExport,
@@ -435,7 +601,18 @@ export function CaptionPanel({
                 </select>
               </div>
             )}
-            <AiPromptCopy />
+            <AiPromptCopy
+              rows={rows}
+              bookmarks={bookmarks}
+              title={videoMeta?.title ?? ""}
+              duration={videoMeta?.duration}
+            />
+            <AiImportPaste
+              rows={rows}
+              onCreateBookmarks={onCreateBookmarks}
+              onUpdateBookmarks={onUpdateBookmarks}
+              onUpdateCaptions={onUpdateCaptions}
+            />
             <DropdownMenuItem onClick={onExport}>
               <Download className="mr-2 h-4 w-4" />
               Export import.json

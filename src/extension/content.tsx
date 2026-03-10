@@ -141,6 +141,7 @@ function ExtensionSession({
       tracks={data.captionTracks}
       player={player}
       session={session}
+      videoMeta={data.video}
     />
   );
 }

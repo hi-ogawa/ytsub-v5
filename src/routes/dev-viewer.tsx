@@ -102,6 +102,7 @@ function DevViewerSession({
       tracks={meta.captionTracks}
       player={player}
       session={session}
+      videoMeta={meta.video}
     />
   );
 }
