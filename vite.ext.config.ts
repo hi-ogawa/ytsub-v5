@@ -118,7 +118,7 @@ export default defineConfig({
           );
 
           // 5. Copy plain JS files for the extension
-          for (const file of ["relay.js", "background.js"]) {
+          for (const file of ["relay.js", "background.js", "theme-init.js"]) {
             cpSync(`./src/extension/${file}`, resolve(EXT_OUT, file));
           }
 
@@ -167,7 +167,7 @@ export default defineConfig({
       );
 
       // Copy plain JS files for the extension
-      for (const file of ["relay.js", "background.js"]) {
+      for (const file of ["relay.js", "background.js", "theme-init.js"]) {
         cpSync(`./src/extension/${file}`, resolve(EXT_OUT, file));
       }
 
