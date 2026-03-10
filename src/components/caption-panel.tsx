@@ -1,5 +1,4 @@
 import {
-  ArrowDown,
   Bookmark,
   Check,
   ChevronLeft,
@@ -476,18 +475,6 @@ export function CaptionPanel({
           {sortedBookmarks.length > 0 && ` (${sortedBookmarks.length})`}
         </button>
         <div className="ml-auto flex items-center gap-0.5">
-          <button
-            className={[
-              "rounded p-0.5",
-              autoScroll
-                ? "text-accent hover:bg-highlight-bg"
-                : "text-muted-foreground hover:bg-muted",
-            ].join(" ")}
-            onClick={toggleAutoScroll}
-            title={autoScroll ? "Auto-scroll on" : "Auto-scroll off"}
-          >
-            <ArrowDown className="h-4 w-4" />
-          </button>
           {sortedBookmarks.length > 0 && (
             <div className="flex gap-0.5">
               <button
