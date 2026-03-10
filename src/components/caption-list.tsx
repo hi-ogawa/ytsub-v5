@@ -1,6 +1,8 @@
+import { ExternalLink } from "lucide-react";
 import { useEffect, useImperativeHandle, useRef } from "react";
 import type { MergedCaption } from "../lib/caption-merge.ts";
 import type { ExtensionBookmark } from "../lib/extension-bookmarks.ts";
+import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover.tsx";
 import type { YTPlayer } from "./youtube-player.tsx";
 
 function formatTimestamp(seconds: number): string {
@@ -9,9 +11,74 @@ function formatTimestamp(seconds: number): string {
   return `${m}:${String(s).padStart(2, "0")}`;
 }
 
+function BookmarkWord({
+  bookmark,
+  offset,
+  children,
+  onGoToBookmark,
+  onPopoverOpenChange,
+}: {
+  bookmark: ExtensionBookmark;
+  offset: number;
+  children: React.ReactNode;
+  onGoToBookmark?: (bookmarkId: string) => void;
+  onPopoverOpenChange?: (open: boolean) => void;
+}) {
+  return (
+    <Popover onOpenChange={onPopoverOpenChange}>
+      <PopoverTrigger asChild>
+        <span
+          className="inline-block cursor-pointer"
+          data-testid="bookmark-highlight"
+          data-offset={offset}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <span className="border-b-2 border-highlight-border bg-highlight-bg">
+            {children}
+          </span>
+        </span>
+      </PopoverTrigger>
+      <PopoverContent
+        data-testid="bookmark-popover"
+        side="top"
+        avoidCollisions
+        onOpenAutoFocus={(e) => e.preventDefault()}
+      >
+        <span className="block text-xs font-medium text-popover-foreground">
+          {bookmark.text}
+        </span>
+        {bookmark.translation && (
+          <span className="block text-xs text-muted-foreground">
+            {bookmark.translation}
+          </span>
+        )}
+        {bookmark.etymology && (
+          <span className="mt-1 block text-[10px] text-muted-foreground">
+            {bookmark.etymology}
+          </span>
+        )}
+        {onGoToBookmark && (
+          <button
+            className="mt-1 rounded p-0.5 text-muted-foreground hover:bg-accent hover:text-foreground"
+            title="Go to bookmark"
+            onMouseDown={(e) => {
+              e.stopPropagation();
+              onGoToBookmark(bookmark.id);
+            }}
+          >
+            <ExternalLink className="h-3.5 w-3.5" />
+          </button>
+        )}
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 function highlightText(
   text: string,
-  marks: { offset: number; length: number }[],
+  marks: { offset: number; length: number; bookmark?: ExtensionBookmark }[],
+  onGoToBookmark?: (bookmarkId: string) => void,
+  onPopoverOpenChange?: (open: boolean) => void,
 ) {
   if (marks.length === 0) return <span data-offset={0}>{text}</span>;
   const sorted = [...marks].sort((a, b) => a.offset - b.offset);
@@ -25,15 +92,29 @@ function highlightText(
         </span>,
       );
     const end = m.offset + m.length;
-    parts.push(
-      <span
-        key={`h${m.offset}`}
-        data-offset={m.offset}
-        className="border-b-2 border-highlight-border bg-highlight-bg"
-      >
-        {text.slice(m.offset, end)}
-      </span>,
-    );
+    if (m.bookmark) {
+      parts.push(
+        <BookmarkWord
+          key={m.bookmark.id}
+          bookmark={m.bookmark}
+          offset={m.offset}
+          onGoToBookmark={onGoToBookmark}
+          onPopoverOpenChange={onPopoverOpenChange}
+        >
+          {text.slice(m.offset, end)}
+        </BookmarkWord>,
+      );
+    } else {
+      parts.push(
+        <span
+          key={`h${m.offset}`}
+          data-offset={m.offset}
+          className="border-b-2 border-highlight-border bg-highlight-bg"
+        >
+          {text.slice(m.offset, end)}
+        </span>,
+      );
+    }
     cursor = end;
   }
   if (cursor < text.length)
@@ -53,6 +134,8 @@ export function CaptionList({
   player,
   autoScroll = true,
   bookmarksByIndex,
+  onGoToBookmark,
+  onPopoverOpenChange,
 }: {
   ref?: React.Ref<{ scrollToIndex: (index: number) => void }>;
   rows: MergedCaption[];
@@ -61,6 +144,8 @@ export function CaptionList({
   player: YTPlayer | null;
   autoScroll?: boolean;
   bookmarksByIndex?: Map<number, ExtensionBookmark[]>;
+  onGoToBookmark?: (bookmarkId: string) => void;
+  onPopoverOpenChange?: (open: boolean) => void;
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -74,7 +159,15 @@ export function CaptionList({
   }));
   const prevScrollIndex = useRef<number | undefined>(undefined);
   const isManualScrollRef = useRef(false);
+  const isPopoverOpenRef = useRef(false);
   const manualScrollTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const wrappedPopoverOpenChange = onPopoverOpenChange
+    ? (open: boolean) => {
+        isPopoverOpenRef.current = open;
+        onPopoverOpenChange(open);
+      }
+    : undefined;
 
   function onManualScroll() {
     isManualScrollRef.current = true;
@@ -93,7 +186,8 @@ export function CaptionList({
       return;
     prevScrollIndex.current = currentIndex;
 
-    if (!autoScroll || isManualScrollRef.current) return;
+    if (!autoScroll || isManualScrollRef.current || isPopoverOpenRef.current)
+      return;
 
     const scrollEl = scrollRef.current;
     if (!scrollEl) return;
@@ -144,10 +238,18 @@ export function CaptionList({
           const rowBookmarks = bookmarksByIndex?.get(i);
           const text1Marks = rowBookmarks
             ?.filter((b) => b.side === 0)
-            .map((b) => ({ offset: b.offset, length: b.text.length }));
+            .map((b) => ({
+              offset: b.offset,
+              length: b.text.length,
+              bookmark: b,
+            }));
           const text2Marks = rowBookmarks
             ?.filter((b) => b.side === 1)
-            .map((b) => ({ offset: b.offset, length: b.text.length }));
+            .map((b) => ({
+              offset: b.offset,
+              length: b.text.length,
+              bookmark: b,
+            }));
 
           return (
             <div
@@ -169,10 +271,20 @@ export function CaptionList({
               </div>
               <div className="flex text-sm">
                 <div className="flex-1 border-r pr-2" data-side="0">
-                  {highlightText(row.text1, text1Marks ?? [])}
+                  {highlightText(
+                    row.text1,
+                    text1Marks ?? [],
+                    onGoToBookmark,
+                    wrappedPopoverOpenChange,
+                  )}
                 </div>
                 <div className="flex-1 pl-2" data-side="1">
-                  {highlightText(row.text2, text2Marks ?? [])}
+                  {highlightText(
+                    row.text2,
+                    text2Marks ?? [],
+                    onGoToBookmark,
+                    wrappedPopoverOpenChange,
+                  )}
                 </div>
               </div>
             </div>

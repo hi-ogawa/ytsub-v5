@@ -298,12 +298,30 @@ export function CaptionPanel({
   const captionListRef = useRef<{ scrollToIndex: (index: number) => void }>(
     null,
   );
+  const [flashBookmarkId, setFlashBookmarkId] = useState<string | null>(null);
+  const flashBookmarkCounter = useRef(0);
+
   function onGoToCaption(captionIndex: number) {
     setActiveTab("captions");
     requestAnimationFrame(() => {
       captionListRef.current?.scrollToIndex(captionIndex);
     });
   }
+
+  function onGoToBookmark(bookmarkId: string) {
+    const counter = ++flashBookmarkCounter.current;
+    setFlashBookmarkId(bookmarkId);
+    setActiveTab("bookmarks");
+    setTimeout(() => {
+      if (flashBookmarkCounter.current === counter) setFlashBookmarkId(null);
+    }, 1000);
+  }
+
+  // Pause auto-scroll when bookmark popover is open
+  const isPopoverOpenRef = useRef(false);
+  const onPopoverOpenChange = useCallback((open: boolean) => {
+    isPopoverOpenRef.current = open;
+  }, []);
 
   // --- Bookmark selection ---
   const [bookmarkSelection, setBookmarkSelection] =
@@ -511,6 +529,8 @@ export function CaptionPanel({
                 player={player}
                 autoScroll={autoScroll}
                 bookmarksByIndex={bookmarksByIndex}
+                onGoToBookmark={onGoToBookmark}
+                onPopoverOpenChange={onPopoverOpenChange}
               />
             </div>
 
@@ -530,6 +550,7 @@ export function CaptionPanel({
                     player={player}
                     onDeleteBookmark={onDeleteBookmark}
                     onGoToCaption={onGoToCaption}
+                    flashBookmarkId={flashBookmarkId}
                   />
                 )}
               </div>
@@ -574,15 +595,30 @@ function ExtensionBookmarksList({
   player,
   onDeleteBookmark,
   onGoToCaption,
+  flashBookmarkId,
 }: {
   bookmarks: ExtensionBookmark[];
   rows: MergedCaption[];
   player: YTPlayer | null;
   onDeleteBookmark: (id: string) => void;
   onGoToCaption: (captionIndex: number) => void;
+  flashBookmarkId: string | null;
 }) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (flashBookmarkId === null || !scrollRef.current) return;
+    const el = scrollRef.current.querySelector(
+      `[data-bookmark-id="${flashBookmarkId}"]`,
+    );
+    if (!el) return;
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
+    el.classList.remove("flash-highlight");
+    void (el as HTMLElement).offsetWidth;
+    el.classList.add("flash-highlight");
+  }, [flashBookmarkId]);
+
   return (
-    <div className="flex flex-col gap-1.5 p-1.5">
+    <div ref={scrollRef} className="flex flex-col gap-1.5 p-1.5">
       {bookmarks.map((bm) => {
         const caption = rows[bm.captionIndex];
         return (
@@ -688,12 +724,16 @@ function CaptionViewer({
   player,
   autoScroll,
   bookmarksByIndex,
+  onGoToBookmark,
+  onPopoverOpenChange,
 }: {
   ref?: React.Ref<CaptionViewerHandle>;
   rows: MergedCaption[];
   player: YTPlayer | null;
   autoScroll: boolean;
   bookmarksByIndex?: Map<number, ExtensionBookmark[]>;
+  onGoToBookmark?: (bookmarkId: string) => void;
+  onPopoverOpenChange?: (open: boolean) => void;
 }) {
   const [currentIndex, setCurrentIndex] = useState<number>();
   const [isPlaying, setIsPlaying] = useState(false);
@@ -738,6 +778,8 @@ function CaptionViewer({
       player={player}
       autoScroll={autoScroll}
       bookmarksByIndex={bookmarksByIndex}
+      onGoToBookmark={onGoToBookmark}
+      onPopoverOpenChange={onPopoverOpenChange}
     />
   );
 }
