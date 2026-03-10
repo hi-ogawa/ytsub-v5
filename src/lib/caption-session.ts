@@ -267,27 +267,31 @@ export function useCaptionSession({
         etymology: sel.etymology,
         notes: sel.notes,
       });
-      const updated = [...bookmarks, bookmark];
-      setBookmarks(updated);
-      persistSession(updated);
-      syncVideoIndex(updated.length);
+      setBookmarks((prev) => {
+        const updated = [...prev, bookmark];
+        persistSession(updated);
+        syncVideoIndex(updated.length);
+        return updated;
+      });
     },
-    [bookmarks, persistSession, syncVideoIndex],
+    [persistSession, syncVideoIndex],
   );
 
   const deleteBookmark = useCallback(
     (bookmarkId: string) => {
-      const updated = bookmarks.filter((b) => b.id !== bookmarkId);
-      setBookmarks(updated);
-      if (updated.length > 0) {
-        persistSession(updated);
-      } else {
-        deleteSession(youtubeId);
-        setHydrated(undefined);
-      }
-      syncVideoIndex(updated.length);
+      setBookmarks((prev) => {
+        const updated = prev.filter((b) => b.id !== bookmarkId);
+        if (updated.length > 0) {
+          persistSession(updated);
+        } else {
+          deleteSession(youtubeId);
+          setHydrated(undefined);
+        }
+        syncVideoIndex(updated.length);
+        return updated;
+      });
     },
-    [bookmarks, youtubeId, persistSession, syncVideoIndex],
+    [youtubeId, persistSession, syncVideoIndex],
   );
 
   const updateBookmark = useCallback(
@@ -297,13 +301,13 @@ export function useCaptionSession({
         Pick<ExtensionBookmark, "translation" | "etymology" | "notes">
       >,
     ) => {
-      const updated = bookmarks.map((b) =>
-        b.id === id ? { ...b, ...data } : b,
-      );
-      setBookmarks(updated);
-      persistSession(updated);
+      setBookmarks((prev) => {
+        const updated = prev.map((b) => (b.id === id ? { ...b, ...data } : b));
+        persistSession(updated);
+        return updated;
+      });
     },
-    [bookmarks, persistSession],
+    [persistSession],
   );
 
   const updateCaptions = useCallback(
