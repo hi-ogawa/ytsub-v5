@@ -48,7 +48,9 @@ test.describe("dev-bookmarks page", () => {
   test("does not require authentication", async ({ page }) => {
     // Navigate directly without login
     await page.goto("/dev/bookmarks");
-    await expect(page.getByRole("heading", { name: "Bookmarked Videos" })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Bookmarked Videos" }),
+    ).toBeVisible();
   });
 
   test("header shows Zamak (dev) branding", async ({ page }) => {

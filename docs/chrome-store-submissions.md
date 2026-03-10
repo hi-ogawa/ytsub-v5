@@ -73,16 +73,19 @@ Take screenshots at 1280×800 showing:
 ## Privacy
 
 - **Single purpose description**:
+
   ```
   Display dual-language subtitles on YouTube videos for language learning, with the ability to bookmark caption lines for review.
   ```
 
 - **Permissions justification** (`storage`):
+
   ```
   The extension uses chrome.storage.local to store a lightweight index of videos where the user has bookmarked caption lines. This allows the bookmarks page (opened via the extension icon) to display the user's bookmarked videos. No data is sent externally.
   ```
 
 - **Host permission justification** (for `https://www.youtube.com/*` content script match):
+
   ```
   The content script injects a dual-language subtitle panel into YouTube watch pages. It reads the video's existing subtitle tracks via YouTube's in-page player API and displays them side by side for language learners. A second content script (ISOLATED world) relays bookmark metadata from the page to extension storage so the bookmarks page can list bookmarked videos. The scripts only run on youtube.com and do not access any other hosts.
   ```

@@ -11,12 +11,12 @@
 
 ## Key Docs
 
-| File                              | Purpose                           |
-| --------------------------------- | --------------------------------- |
-| `docs/prd.md`                     | Task list (features & priorities) |
-| `docs/background/architecture.md` | Problem context, design decisions |
+| File                               | Purpose                           |
+| ---------------------------------- | --------------------------------- |
+| `docs/prd.md`                      | Task list (features & priorities) |
+| `docs/background/architecture.md`  | Problem context, design decisions |
 | `docs/chrome-store-submissions.md` | Chrome Web Store listing details  |
-| `docs/tasks/YYYY-MM-DD-*.md`      | Task-specific planning/notes      |
+| `docs/tasks/YYYY-MM-DD-*.md`       | Task-specific planning/notes      |
 
 Read `docs/prd.md` for the task list and `docs/background/architecture.md` for architecture context before implementing features.
 
