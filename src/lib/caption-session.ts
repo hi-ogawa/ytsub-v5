@@ -246,64 +246,76 @@ export function useCaptionSession({
     [youtubeId, videoMeta.title, videoMeta.channelName],
   );
 
-  const addBookmark = useCallback(
+  const addBookmarks = useCallback(
     (
-      sel: BookmarkSelection & {
+      selections: (BookmarkSelection & {
         timestamp: number;
         context: string;
         translation?: string;
         etymology?: string;
         notes?: string;
-      },
+      })[],
     ) => {
-      const bookmark = createBookmark({
-        text: sel.text,
-        side: sel.side,
-        offset: sel.offset,
-        captionIndex: sel.captionIndex,
-        timestamp: sel.timestamp,
-        context: sel.context,
-        translation: sel.translation,
-        etymology: sel.etymology,
-        notes: sel.notes,
+      const newBookmarks = selections.map((sel) =>
+        createBookmark({
+          text: sel.text,
+          side: sel.side,
+          offset: sel.offset,
+          captionIndex: sel.captionIndex,
+          timestamp: sel.timestamp,
+          context: sel.context,
+          translation: sel.translation,
+          etymology: sel.etymology,
+          notes: sel.notes,
+        }),
+      );
+      setBookmarks((prev) => {
+        const updated = [...prev, ...newBookmarks];
+        persistSession(updated);
+        syncVideoIndex(updated.length);
+        return updated;
       });
-      const updated = [...bookmarks, bookmark];
-      setBookmarks(updated);
-      persistSession(updated);
-      syncVideoIndex(updated.length);
     },
-    [bookmarks, persistSession, syncVideoIndex],
+    [persistSession, syncVideoIndex],
   );
 
   const deleteBookmark = useCallback(
     (bookmarkId: string) => {
-      const updated = bookmarks.filter((b) => b.id !== bookmarkId);
-      setBookmarks(updated);
-      if (updated.length > 0) {
-        persistSession(updated);
-      } else {
-        deleteSession(youtubeId);
-        setHydrated(undefined);
-      }
-      syncVideoIndex(updated.length);
+      setBookmarks((prev) => {
+        const updated = prev.filter((b) => b.id !== bookmarkId);
+        if (updated.length > 0) {
+          persistSession(updated);
+        } else {
+          deleteSession(youtubeId);
+          setHydrated(undefined);
+        }
+        syncVideoIndex(updated.length);
+        return updated;
+      });
     },
-    [bookmarks, youtubeId, persistSession, syncVideoIndex],
+    [youtubeId, persistSession, syncVideoIndex],
   );
 
-  const updateBookmark = useCallback(
+  const updateBookmarks = useCallback(
     (
-      id: string,
-      data: Partial<
-        Pick<ExtensionBookmark, "translation" | "etymology" | "notes">
-      >,
+      entries: {
+        id: string;
+        data: Partial<
+          Pick<ExtensionBookmark, "translation" | "etymology" | "notes">
+        >;
+      }[],
     ) => {
-      const updated = bookmarks.map((b) =>
-        b.id === id ? { ...b, ...data } : b,
-      );
-      setBookmarks(updated);
-      persistSession(updated);
+      setBookmarks((prev) => {
+        const updates = new Map(entries.map((e) => [e.id, e.data]));
+        const updated = prev.map((b) => {
+          const data = updates.get(b.id);
+          return data ? { ...b, ...data } : b;
+        });
+        persistSession(updated);
+        return updated;
+      });
     },
-    [bookmarks, persistSession],
+    [persistSession],
   );
 
   const updateCaptions = useCallback(
@@ -400,9 +412,9 @@ export function useCaptionSession({
     // Bookmarks
     bookmarks,
     bookmarksByIndex,
-    onCreateBookmark: addBookmark,
+    onCreateBookmarks: addBookmarks,
     onDeleteBookmark: deleteBookmark,
-    onUpdateBookmark: updateBookmark,
+    onUpdateBookmarks: updateBookmarks,
     onClearBookmarks: clearBookmarks,
     hasBookmarks,
 

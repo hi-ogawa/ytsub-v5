@@ -12,29 +12,24 @@ Tasks for AI browser extensions on a zamak page with `window.__zamak` available.
 ## Rules
 
 - Use ONLY `window.__zamak.*` methods. No screenshots, no clicking, no typing, no DOM interaction — ever.
-- If any API call fails or returns unexpected results: **STOP and report** what happened. Do not retry, work around, or fall back to other tools.
-- To read data, use `window.__zamak.log.*` methods and read the console output. The browser extension's JS tool has an output sanitizer that blocks return values matching cookie/query-string patterns. The `log.*` methods bypass this by writing to the console buffer instead of returning values.
-- All console output is prefixed with `ZAMAK:` (e.g. `ZAMAK:captions`, `ZAMAK:bookmarks`, `ZAMAK:addBookmarks warnings`). Filter console messages by `ZAMAK:` to find relevant output.
-- **Clear console after each read** to avoid duplicate output accumulating across calls. Read `skillPrompt` only once per session — it's the largest payload and doesn't change.
+- If any API call fails or returns unexpected results compared to this prompt explains: **STOP and report** what happened. Do not retry, work around, or fall back to other tools.
+- To read data, use `window.__zamak.log.*` methods and read the console output. The browser extension's JS tool has an output sanitizer that blocks return values matching cookie/query-string patterns (bookmark IDs are UUIDs which trigger the sanitizer). The `log.*` methods bypass this by writing to the console buffer instead of returning values — they are **required**, not optional.
+- All console output is prefixed with `ZAMAK:` (e.g. `ZAMAK:captions`, `ZAMAK:bookmarks`). Filter console messages by `ZAMAK:` to find relevant output.
+- **Clear console after each read** to avoid duplicate output accumulating across calls.
 
 ## API
 
 ```js
-// Read (log to console — use these to read data)
-window.__zamak.log.skillPrompt()   // logs ZAMAK:skillPrompt → skill instructions
-window.__zamak.log.videoContext()   // logs ZAMAK:videoContext → { youtubeId, title, language1, language2 }
+// Read (log data to console — use these to read data)
+window.__zamak.log.skillPrompt()   // logs ZAMAK:skillPrompt → skill instructions (call once per session only; large payload, static content)
+window.__zamak.log.videoContext()  // logs ZAMAK:videoContext → { youtubeId, title, language1, language2 }
 window.__zamak.log.captions()      // logs ZAMAK:captions → [{ idx, begin, end, text1, text2 }, ...]
 window.__zamak.log.bookmarks()     // logs ZAMAK:bookmarks → [{ id, text, context, captionContext, translation, etymology, notes }, ...]
 
-// Read (return value — use in JS when chaining, e.g. before fillBookmarks)
-window.__zamak.getVideoContext()
-window.__zamak.getCaptions()
-window.__zamak.getBookmarks()
-
-// Write
-window.__zamak.addBookmarks([{ captionIndex, text }, ...])
-window.__zamak.fillBookmarks([{ id, translation?, etymology?, notes? }, ...])
-window.__zamak.updateCaptions([{ idx, text1?, text2? }, ...])
+// Write (always read console afterwards to verify success/warnings/errors)
+window.__zamak.addBookmarks([{ captionIndex, text }, ...])  // logs ZAMAK:addBookmarks done + warnings on skipped entries
+window.__zamak.fillBookmarks([{ id, translation?, etymology?, notes? }, ...])  // logs ZAMAK:fillBookmarks done
+window.__zamak.updateCaptions([{ idx, text1?, text2? }, ...])  // logs ZAMAK:updateCaptions done
 ```
 
 ---
@@ -61,7 +56,9 @@ Scan `text1` (Korean). Pick words that are:
 
 Target: ~1 per 10s of video duration.
 
-### Step 3: Create bookmarks with metadata (one shot)
+### Step 3: Create bookmarks with metadata
+
+Submit all bookmarks in a single `addBookmarks` call where possible.
 
 ```js
 window.__zamak.addBookmarks([
@@ -76,7 +73,9 @@ window.__zamak.addBookmarks([
 ]);
 ```
 
-Read console after calling. Warnings (`ZAMAK:addBookmarks warnings`) indicate bookmarks skipped because `text` wasn't found in the caption. Fix the `text` or `captionIndex` and retry the skipped entries.
+Read console after calling. `ZAMAK:addBookmarks done` confirms how many were added vs skipped. If any were skipped, `ZAMAK:addBookmarks warnings` lists the reasons — fix `text` or `captionIndex` and resubmit only the skipped entries.
+
+**`text` matching:** `text` must be an exact, contiguous, case-sensitive substring of the caption's `text1` field. Do not include speaker labels (e.g. `[나경]`) in `text`. Repeated lyric lines with identical `text1` at different `captionIndex` values are supported — each creates a separate bookmark.
 
 **Fields:**
 

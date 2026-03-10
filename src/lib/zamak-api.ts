@@ -177,6 +177,7 @@ export function useZamakApi({
 
       updateCaptions(entries) {
         sessionRef.current.onUpdateCaptions(entries);
+        console.log(`ZAMAK:updateCaptions done — ${entries.length} updated`);
       },
 
       getBookmarks(): ZamakBookmark[] {
@@ -214,6 +215,9 @@ export function useZamakApi({
         const currentRows = rowsRef.current;
         if (!currentRows) return;
         const warnings: string[] = [];
+        const valid: Parameters<
+          typeof sessionRef.current.onCreateBookmarks
+        >[0] = [];
         for (const { captionIndex, text, ...metadata } of entries) {
           const row = currentRows[captionIndex];
           if (!row) {
@@ -229,7 +233,7 @@ export function useZamakApi({
             );
             continue;
           }
-          sessionRef.current.onCreateBookmark({
+          valid.push({
             captionIndex,
             text,
             side: 0,
@@ -239,15 +243,22 @@ export function useZamakApi({
             ...metadata,
           });
         }
+        if (valid.length > 0) {
+          sessionRef.current.onCreateBookmarks(valid);
+        }
         if (warnings.length > 0) {
           console.warn("ZAMAK:addBookmarks warnings\n" + warnings.join("\n"));
         }
+        console.log(
+          `ZAMAK:addBookmarks done — ${valid.length} added, ${warnings.length} skipped`,
+        );
       },
 
       fillBookmarks(entries) {
-        for (const { id, ...data } of entries) {
-          sessionRef.current.onUpdateBookmark(id, data);
-        }
+        sessionRef.current.onUpdateBookmarks(
+          entries.map(({ id, ...data }) => ({ id, data })),
+        );
+        console.log(`ZAMAK:fillBookmarks done — ${entries.length} updated`);
       },
 
       getVideoContext() {
