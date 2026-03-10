@@ -525,4 +525,58 @@ test.describe("dev-viewer caption panel", () => {
     await panel.getByRole("button", { name: "Captions" }).click();
     await expect(page.locator("[data-index='0']")).toBeVisible();
   });
+
+  test("bookmark highlight shows popover on click", async ({ page }) => {
+    await openPanelWithTracks(page);
+    await createBookmarkAt(page, 0, 0, 3);
+
+    // Click the bookmark highlight to open popover
+    const highlight = page
+      .locator("[data-index='0']")
+      .getByTestId("bookmark-highlight")
+      .first();
+    await expect(highlight).toBeVisible();
+    await highlight.click();
+
+    // Popover should show bookmark text
+    const popover = page.getByTestId("bookmark-popover");
+    await expect(popover).toBeVisible();
+    await expect(popover.getByText("꼬집어")).toBeVisible();
+
+    // "Go to bookmark" button should be present
+    await expect(
+      popover.getByRole("button", { name: "Go to bookmark" }),
+    ).toBeVisible();
+  });
+
+  test("popover go-to-bookmark switches to bookmarks tab with flash-highlight", async ({
+    page,
+  }) => {
+    await openPanelWithTracks(page);
+    const panel = page.getByTestId("resizable-panel");
+    await createBookmarkAt(page, 0, 0, 3);
+
+    // Click highlight to open popover
+    const highlight = page
+      .locator("[data-index='0']")
+      .getByTestId("bookmark-highlight")
+      .first();
+    await highlight.click();
+
+    // Click "Go to bookmark" in popover
+    const popover = page.getByTestId("bookmark-popover");
+    await popover
+      .getByRole("button", { name: "Go to bookmark" })
+      .dispatchEvent("mousedown");
+
+    // Should switch to bookmarks tab
+    await expect(panel.getByRole("button", { name: /Bookmarks/ })).toHaveClass(
+      /font-medium/,
+    );
+
+    // Bookmark card should be visible with flash-highlight animation
+    const bookmarkCard = page.locator("[data-bookmark-id]").first();
+    await expect(bookmarkCard).toBeVisible();
+    await expect(bookmarkCard).toHaveClass(/flash-highlight/);
+  });
 });

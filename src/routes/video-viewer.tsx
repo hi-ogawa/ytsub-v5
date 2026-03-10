@@ -275,9 +275,9 @@ function BookmarkWord({
         >
           <span
             className={
-              bookmark.status === "manual"
-                ? "border-b-2 border-highlight-border bg-highlight-bg"
-                : "border-b-2 border-highlight-alt-border bg-highlight-alt-bg"
+              bookmark.translation
+                ? "border-b-2 border-highlight-alt-border bg-highlight-alt-bg"
+                : "border-b-2 border-highlight-border bg-highlight-bg"
             }
           >
             {children}
@@ -293,9 +293,15 @@ function BookmarkWord({
         <span className="block text-xs font-medium text-popover-foreground">
           {bookmark.text}
         </span>
-        <span className="block text-xs text-muted-foreground">
-          {bookmark.translation}
-        </span>
+        {bookmark.translation ? (
+          <span className="block text-xs text-muted-foreground">
+            {bookmark.translation}
+          </span>
+        ) : (
+          <span className="block text-xs italic text-muted-foreground/50">
+            unfilled
+          </span>
+        )}
         {bookmark.etymology && (
           <span className="mt-1 block text-[10px] text-muted-foreground">
             {bookmark.etymology}
@@ -430,9 +436,9 @@ function BookmarksList({
                   <div>{caption.text2}</div>
                 </div>
                 <div className="flex shrink-0 items-center gap-1">
-                  {bm.status === "manual" && (
-                    <span className="rounded bg-highlight px-1 text-highlight-foreground">
-                      manual
+                  {!bm.translation && (
+                    <span className="rounded bg-muted px-1 text-muted-foreground">
+                      unfilled
                     </span>
                   )}
                   <button
@@ -448,10 +454,10 @@ function BookmarksList({
                 </div>
               </div>
             )}
-            {!caption && bm.status === "manual" && (
+            {!caption && !bm.translation && (
               <div className="text-xs">
-                <span className="rounded bg-highlight px-1 text-highlight-foreground">
-                  manual
+                <span className="rounded bg-muted px-1 text-muted-foreground">
+                  unfilled
                 </span>
               </div>
             )}

@@ -16,4 +16,7 @@ export default defineConfig({
         : undefined,
     }),
   ],
+  server: {
+    forwardConsole: true,
+  },
 });
