@@ -3,13 +3,15 @@ import { cpSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { basename, resolve } from "node:path";
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
-import { defineConfig } from "vite";
+import { build, defineConfig } from "vite";
 
 const git = (cmd: string) => execSync(cmd).toString().trim();
 const rev = git("git rev-parse --short HEAD");
 const branch = git("git branch --show-current");
 const dirty = git("git status --porcelain") ? "-dirty" : "";
 const buildTime = new Date();
+
+const EXT_OUT = "./dist/extension";
 
 export default defineConfig({
   build: {
@@ -21,7 +23,7 @@ export default defineConfig({
       fileName: () => "content.js",
       cssFileName: "content",
     },
-    outDir: "./dist/extension",
+    outDir: EXT_OUT,
   },
   define: {
     "process.env.NODE_ENV": JSON.stringify("production"),
@@ -35,9 +37,31 @@ export default defineConfig({
       name: "extension-manifest-and-copy",
       buildApp: {
         async handler(builder) {
+          // 1. Build content script (main entry)
           await builder.build(builder.environments.client);
 
-          // Write manifest
+          // 2. Build bookmarks popup page (second IIFE entry)
+          await build({
+            configFile: false,
+            build: {
+              lib: {
+                entry: "./src/extension/bookmarks-entry.tsx",
+                formats: ["iife"],
+                name: "zamakBookmarks",
+                fileName: () => "bookmarks-page.js",
+                cssFileName: "bookmarks-page",
+              },
+              outDir: EXT_OUT,
+              emptyOutDir: false,
+              minify: false,
+            },
+            plugins: [react(), tailwindcss()],
+            define: {
+              "process.env.NODE_ENV": JSON.stringify("production"),
+            },
+          });
+
+          // 3. Write manifest
           const outDir = builder.environments.client.config.build.outDir;
           const manifest = JSON.parse(
             readFileSync("./src/extension/manifest.json", "utf8"),
@@ -54,17 +78,12 @@ export default defineConfig({
             JSON.stringify(manifest, null, 2),
           );
 
-          // Copy plain JS + HTML files for the extension
-          for (const file of [
-            "relay.js",
-            "background.js",
-            "bookmarks.html",
-            "bookmarks-page.js",
-          ]) {
+          // 4. Copy plain JS + HTML files for the extension
+          for (const file of ["relay.js", "background.js", "bookmarks.html"]) {
             cpSync(`./src/extension/${file}`, resolve(outDir, file));
           }
 
-          // Copy to main repo's dist/extension-dev for single Chrome load point
+          // 5. Copy to main repo's dist/extension-dev for single Chrome load point
           if (process.env.DEV_EXT) {
             const cwd = process.cwd();
             const dirName = basename(cwd);

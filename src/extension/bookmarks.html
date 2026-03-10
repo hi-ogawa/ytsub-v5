@@ -2,6 +2,7 @@
 <html>
   <head>
     <meta charset="utf-8" />
+    <link rel="stylesheet" href="bookmarks-page.css" />
     <style>
       * {
         margin: 0;
@@ -22,73 +23,6 @@
         border-bottom: 1px solid #262626;
         font-size: 15px;
         font-weight: 600;
-      }
-      .empty {
-        padding: 48px 16px;
-        text-align: center;
-        color: #737373;
-        font-size: 13px;
-      }
-      .list {
-        display: flex;
-        flex-direction: column;
-      }
-      .card {
-        display: flex;
-        gap: 12px;
-        padding: 10px 16px;
-        border-bottom: 1px solid #1a1a1a;
-        cursor: pointer;
-        text-decoration: none;
-        color: inherit;
-      }
-      .card:hover {
-        background: #171717;
-      }
-      .thumb {
-        width: 100px;
-        min-width: 100px;
-        aspect-ratio: 16 / 9;
-        object-fit: cover;
-        border-radius: 4px;
-        background: #262626;
-      }
-      .info {
-        display: flex;
-        flex-direction: column;
-        gap: 2px;
-        min-width: 0;
-        padding: 2px 0;
-      }
-      .title {
-        font-size: 13px;
-        font-weight: 500;
-        line-height: 1.3;
-        display: -webkit-box;
-        -webkit-line-clamp: 2;
-        -webkit-box-orient: vertical;
-        overflow: hidden;
-      }
-      .channel {
-        font-size: 12px;
-        color: #737373;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-      }
-      .meta {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        margin-top: auto;
-        font-size: 11px;
-        color: #737373;
-      }
-      .badge {
-        background: #262626;
-        padding: 1px 6px;
-        border-radius: 3px;
-        font-family: monospace;
       }
     </style>
   </head>

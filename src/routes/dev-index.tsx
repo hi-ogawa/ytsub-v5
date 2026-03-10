@@ -18,7 +18,15 @@ function formatDuration(seconds: number): string {
 export function DevIndexPage() {
   return (
     <div className="mx-auto max-w-5xl p-8">
-      <h1 className="mb-6 text-2xl font-bold">Dev Viewer</h1>
+      <div className="mb-6 flex items-center justify-between">
+        <h1 className="text-2xl font-bold">Dev Viewer</h1>
+        <Link
+          to="/dev/bookmarks"
+          className="rounded border border-border px-3 py-1.5 text-sm hover:bg-muted"
+        >
+          Bookmarks Page
+        </Link>
+      </div>
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
         {fixtures.map((meta) => (
           <Link

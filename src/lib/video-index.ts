@@ -1,4 +1,4 @@
-type VideoIndexEntry = {
+export type VideoIndexEntry = {
   youtubeId: string;
   title: string;
   channelName: string;

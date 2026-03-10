@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useParams } from "react-router";
+import { BookmarksPage } from "../components/bookmarks-page.tsx";
 import {
   CaptionFab,
   CaptionPanel,
@@ -7,6 +8,7 @@ import {
 } from "../components/caption-panel.tsx";
 import { useYouTubePlayer } from "../components/youtube-player.tsx";
 import { useCaptionSession } from "../lib/caption-session.ts";
+import type { VideoIndexEntry } from "../lib/video-index.ts";
 import type { Json3File, YouTubeExtractionResult } from "../lib/youtube.ts";
 import { useZamakApi } from "../lib/zamak-api.ts";
 
@@ -103,5 +105,33 @@ function DevViewerSession({
       player={player}
       session={session}
     />
+  );
+}
+
+// --- Bookmarks dev page ---
+
+const fixtureBookmarkEntries: VideoIndexEntry[] = Object.values(
+  metadataModules,
+).map((meta, i) => ({
+  youtubeId: meta.video.youtubeId,
+  title: meta.video.title,
+  channelName: meta.video.channelName ?? "Unknown channel",
+  bookmarkCount: [3, 7, 1][i] ?? 2,
+  updatedAt: new Date(Date.now() - i * 86400_000).toISOString(),
+}));
+
+export function DevBookmarksPage() {
+  return (
+    <div className="mx-auto flex max-w-md flex-col" style={{ maxHeight: 520 }}>
+      <div className="border-b border-neutral-800 px-4 py-3 text-[15px] font-semibold text-neutral-200">
+        Bookmarked Videos
+      </div>
+      <div className="overflow-y-auto bg-neutral-950 text-neutral-200">
+        <BookmarksPage
+          entries={fixtureBookmarkEntries}
+          onVideoClick={(id) => window.open(`/dev/youtube/${id}`, "_blank")}
+        />
+      </div>
+    </div>
   );
 }
