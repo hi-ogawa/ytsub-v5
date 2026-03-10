@@ -29,6 +29,109 @@
   --color-highlight-alt-border: var(--highlight-alt-border);
 }
 
+/* Light theme tokens (YouTube light) — :root applies to web app directly,
+   and becomes :host in extension shadow DOM via addStyle() replacement. */
+:root {
+  /* Page */
+  --background: #fff;
+  --foreground: #0f0f0f;
+
+  /* Cards & popovers */
+  --card: #fff;
+  --card-foreground: #0f0f0f;
+  --popover: #fff;
+  --popover-foreground: #0f0f0f;
+
+  /* Primary (buttons) */
+  --primary: #0f0f0f;
+  --primary-hover: #272727;
+  --primary-foreground: #fff;
+
+  /* Muted (subtle bg, dimmed text) */
+  --muted: #f2f2f2;
+  --muted-foreground: #606060;
+
+  /* Accent (blue interactive) */
+  --accent: #065fd4;
+  --accent-foreground: #fff;
+
+  /* Destructive (errors, danger) */
+  --destructive: #cc0000;
+  --destructive-subtle: #fee2e2;
+
+  /* Borders & rings */
+  --border: #e5e5e5;
+  --input: #e5e5e5;
+  --ring: #065fd4;
+
+  /* Overlay */
+  --overlay: rgb(0 0 0 / 40%);
+
+  /* Highlights (bookmark underlines) */
+  --highlight: #e1f5fe;
+  --highlight-bg: #e1f5fe;
+  --highlight-border: #38bdf8;
+  --highlight-foreground: #0369a1;
+  --highlight-alt-bg: #fef3c7;
+  --highlight-alt-border: #f59e0b;
+}
+
+/* Dark theme tokens (YouTube dark) — shared by web app (.dark class)
+   and extension (shadow DOM). Single source of truth. */
+.dark {
+  /* Page */
+  --background: #0f0f0f;
+  --foreground: #f1f1f1;
+
+  /* Cards & popovers */
+  --card: #212121;
+  --card-foreground: #f1f1f1;
+  --popover: #272727;
+  --popover-foreground: #f1f1f1;
+
+  /* Primary (buttons) */
+  --primary: #f1f1f1;
+  --primary-hover: #ddd;
+  --primary-foreground: #0f0f0f;
+
+  /* Muted (subtle bg, dimmed text) */
+  --muted: #272727;
+  --muted-foreground: #aaa;
+
+  /* Accent (blue interactive) */
+  --accent: #3ea6ff;
+  --accent-foreground: #fff;
+
+  /* Destructive (errors, danger) */
+  --destructive: #ff4e45;
+  --destructive-subtle: #3d0000;
+
+  /* Borders & rings */
+  --border: #3f3f3f;
+  --input: #3f3f3f;
+  --ring: #3ea6ff;
+
+  /* Overlay */
+  --overlay: rgb(0 0 0 / 60%);
+
+  /* Highlights (bookmark underlines) */
+  --highlight: #0c4a6e;
+  --highlight-bg: #082f49;
+  --highlight-border: #0ea5e9;
+  --highlight-foreground: #7dd3fc;
+  --highlight-alt-bg: #451a03;
+  --highlight-alt-border: #f59e0b;
+}
+
+@layer base {
+  *,
+  ::after,
+  ::before {
+    border-color: var(--color-border);
+    scrollbar-color: var(--color-muted) transparent;
+  }
+}
+
 @keyframes flash-highlight {
   0% {
     border-color: var(--color-ring);
@@ -42,13 +145,4 @@
 
 .flash-highlight {
   animation: flash-highlight 3s ease-out;
-}
-
-@layer base {
-  *,
-  ::after,
-  ::before {
-    border-color: var(--color-border);
-    scrollbar-color: var(--color-muted) transparent;
-  }
 }

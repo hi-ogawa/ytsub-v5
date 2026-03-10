@@ -219,6 +219,7 @@ function inject() {
   addStyle(shadow, contentCss);
 
   const container = document.createElement("div");
+  container.classList.add("dark");
   shadow.appendChild(container);
 
   createRoot(container).render(
