@@ -9,16 +9,18 @@ test("redirects to /login when not authenticated", async ({ page }) => {
   await page.goto("/");
   await expect(page).toHaveURL("/login");
   await expect(page.locator("h1")).toHaveText("Zamak — login");
+  await expect(page.getByPlaceholder("Email")).toBeVisible();
   await expect(page.getByPlaceholder("Password")).toBeVisible();
 });
 
 test("login with wrong then correct password", async ({ page }) => {
   await page.goto("/login");
+  await page.getByPlaceholder("Email").fill("dev@zamak.local");
   await page.getByPlaceholder("Password").fill("wrong");
   await page.getByRole("button", { name: "Login" }).click();
-  await expect(page.getByText("Invalid password")).toBeVisible();
+  await expect(page.getByText("Invalid email or password")).toBeVisible();
 
-  await page.getByPlaceholder("Password").fill("dev");
+  await page.getByPlaceholder("Password").fill("devpassword");
   await page.getByRole("button", { name: "Login" }).click();
   await expect(page).toHaveURL("/");
   await expect(page.locator("h1")).toHaveText("Videos");

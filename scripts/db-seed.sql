@@ -1,4 +1,4 @@
-INSERT OR IGNORE INTO users (email, password_hash) VALUES ('dev@zamak.local', '2bb80d537b1da3e38bd30361aa855686bde0eacd7162fef6a25fe97bf527a25b');
+INSERT OR IGNORE INTO users (email, password_hash) VALUES ('dev@zamak.local', 'd0cc333979497e7263f6288c1aacd6f2cdc659e9efad861265095b7db9060e6a');
 INSERT INTO videos (user_id, youtube_id, title, channel_name, channel_id, duration, language1, language2)
 VALUES ((SELECT id FROM users WHERE email = 'dev@zamak.local'), '7GU_VQfgMT0', 'Billlie | ''cloud palace'' 𝐁efore sunrise live', 'Billlie', 'UCyc9sUCxELTDK9vELO5Fzeg', 210, 'ko', 'en');
 

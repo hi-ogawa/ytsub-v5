@@ -1,4 +1,9 @@
 import { expect, test } from "@playwright/test";
+import { setupDb } from "./helper.ts";
+
+test.beforeAll(async () => {
+  await setupDb();
+});
 
 const rpc = (request: any, path: string, data: any = {}) =>
   request.post(`/api/${path.replace(/\./g, "/")}`, {
@@ -17,15 +22,11 @@ test.describe("auth endpoints", () => {
     expect(res.status()).toBe(401);
   });
 
-  test("login with wrong password returns 401", async ({ request }) => {
-    const res = await rpc(request, "auth/login", { password: "wrong" });
-    expect(res.status()).toBe(401);
-  });
-
-  test("login with correct password sets session cookie", async ({
-    request,
-  }) => {
-    const res = await rpc(request, "auth/login", { password: "dev" });
+  test("register creates user and sets session cookie", async ({ request }) => {
+    const res = await rpc(request, "auth/register", {
+      email: "new@zamak.local",
+      password: "testpassword",
+    });
     expect(res.ok()).toBe(true);
     const body = await json(res);
     expect(body.ok).toBe(true);
@@ -34,9 +35,56 @@ test.describe("auth endpoints", () => {
     expect(setCookie).toContain("HttpOnly");
   });
 
+  test("register duplicate email returns conflict", async ({ request }) => {
+    // Register first
+    await rpc(request, "auth/register", {
+      email: "dup@zamak.local",
+      password: "testpassword",
+    });
+    // Try again
+    const res = await rpc(request, "auth/register", {
+      email: "dup@zamak.local",
+      password: "testpassword",
+    });
+    expect(res.status()).toBe(409);
+  });
+
+  test("login with wrong password returns 401", async ({ request }) => {
+    // Register first
+    await rpc(request, "auth/register", {
+      email: "wrong-pw@zamak.local",
+      password: "testpassword",
+    });
+    const res = await rpc(request, "auth/login", {
+      email: "wrong-pw@zamak.local",
+      password: "badpassword",
+    });
+    expect(res.status()).toBe(401);
+  });
+
+  test("login with correct password sets session cookie", async ({
+    request,
+  }) => {
+    // Register first
+    await rpc(request, "auth/register", {
+      email: "login@zamak.local",
+      password: "testpassword",
+    });
+    const res = await rpc(request, "auth/login", {
+      email: "login@zamak.local",
+      password: "testpassword",
+    });
+    expect(res.ok()).toBe(true);
+    const setCookie = res.headers()["set-cookie"];
+    expect(setCookie).toContain("session=");
+    expect(setCookie).toContain("HttpOnly");
+  });
+
   test("authenticated API calls succeed with cookie", async ({ request }) => {
-    // Login first
-    await rpc(request, "auth/login", { password: "dev" });
+    await rpc(request, "auth/register", {
+      email: "authed@zamak.local",
+      password: "testpassword",
+    });
 
     // Now API calls should work (Playwright request context keeps cookies)
     const res = await rpc(request, "videos/listVideos", {});
@@ -48,44 +96,26 @@ test.describe("auth endpoints", () => {
     const before = await rpc(request, "auth/check");
     expect((await json(before)).authenticated).toBe(false);
 
-    // Login
-    await rpc(request, "auth/login", { password: "dev" });
+    // Register
+    await rpc(request, "auth/register", {
+      email: "check@zamak.local",
+      password: "testpassword",
+    });
 
-    // After login
+    // After register
     const after = await rpc(request, "auth/check");
     expect((await json(after)).authenticated).toBe(true);
   });
 
   test("logout clears session", async ({ request }) => {
-    // Login
-    await rpc(request, "auth/login", { password: "dev" });
+    await rpc(request, "auth/register", {
+      email: "logout@zamak.local",
+      password: "testpassword",
+    });
 
-    // Logout
     const logoutRes = await rpc(request, "auth/logout");
     expect(logoutRes.ok()).toBe(true);
     const setCookie = logoutRes.headers()["set-cookie"];
     expect(setCookie).toContain("Max-Age=0");
-  });
-
-  test("bearer password auth works", async ({ request }) => {
-    const res = await request.post("/api/videos/listVideos", {
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: "Bearer dev",
-      },
-      data: { json: {} },
-    });
-    expect(res.ok()).toBe(true);
-  });
-
-  test("bearer wrong password returns 401", async ({ request }) => {
-    const res = await request.post("/api/videos/listVideos", {
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: "Bearer wrong",
-      },
-      data: { json: {} },
-    });
-    expect(res.status()).toBe(401);
   });
 });

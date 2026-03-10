@@ -38,9 +38,9 @@ function esc(s: string): string {
   return s.replace(/'/g, "''");
 }
 
-// SHA-256 hex of "dev" (pre-computed for seed user)
+// SHA-256 hex of "devpassword" (pre-computed for seed user)
 const DEV_PASSWORD_HASH =
-  "2bb80d537b1da3e38bd30361aa855686bde0eacd7162fef6a25fe97bf527a25b";
+  "d0cc333979497e7263f6288c1aacd6f2cdc659e9efad861265095b7db9060e6a";
 
 function toSql(data: ImportData): string {
   const { video, captions, bookmarks } = data;
