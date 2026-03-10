@@ -1,7 +1,15 @@
 import { execSync } from "node:child_process";
+import { cpSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { basename, resolve } from "node:path";
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
+
+const git = (cmd: string) => execSync(cmd).toString().trim();
+const rev = git("git rev-parse --short HEAD");
+const branch = git("git branch --show-current");
+const dirty = git("git status --porcelain") ? "-dirty" : "";
+const buildTime = new Date();
 
 export default defineConfig({
   build: {
@@ -17,30 +25,47 @@ export default defineConfig({
   },
   define: {
     "process.env.NODE_ENV": JSON.stringify("production"),
-    __BUILD_TIME__: JSON.stringify(new Date().toISOString()),
-    __GIT_REV__: JSON.stringify(
-      execSync("git rev-parse --short HEAD").toString().trim() +
-        (execSync("git status --porcelain").toString().trim() ? "-dirty" : ""),
-    ),
+    __BUILD_TIME__: JSON.stringify(buildTime.toISOString()),
+    __GIT_REV__: JSON.stringify(rev + dirty),
   },
   plugins: [
     react(),
     tailwindcss(),
     {
-      name: "copy-manifest-and-icons",
-      async buildEnd() {
-        const raw = await this.fs.readFile("./src/extension/manifest.json", {
-          encoding: "utf8",
-        });
-        const manifest = JSON.parse(raw);
-        if (process.env.DEV_EXT) {
-          manifest.name = "Zamak-dev";
-        }
-        this.emitFile({
-          type: "asset",
-          fileName: "manifest.json",
-          source: JSON.stringify(manifest, null, 2),
-        });
+      name: "extension-manifest-and-copy",
+      buildApp: {
+        async handler(builder) {
+          await builder.build(builder.environments.client);
+
+          // Write manifest
+          const outDir = builder.environments.client.config.build.outDir;
+          const manifest = JSON.parse(
+            readFileSync("./src/extension/manifest.json", "utf8"),
+          );
+          if (process.env.DEV_EXT) {
+            const time = buildTime.toLocaleTimeString("en-GB", {
+              hour: "2-digit",
+              minute: "2-digit",
+            });
+            manifest.name = `Zamak-dev [${branch} ${rev} ${time}]`;
+          }
+          writeFileSync(
+            resolve(outDir, "manifest.json"),
+            JSON.stringify(manifest, null, 2),
+          );
+
+          // Copy to main repo's dist/extension-dev for single Chrome load point
+          if (process.env.DEV_EXT) {
+            const cwd = process.cwd();
+            const dirName = basename(cwd);
+            const match = dirName.match(/^(.+)-wt\d+$/);
+            const mainRepo = match ? resolve(cwd, "..", match[1]) : cwd;
+            const dest = resolve(mainRepo, "dist", "extension-dev");
+            mkdirSync(dest, { recursive: true });
+            cpSync(outDir, dest, { recursive: true });
+            console.log(`[dev-ext] Copied extension → ${dest}`);
+          }
+        },
       },
     },
   ],
