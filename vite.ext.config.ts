@@ -4,6 +4,7 @@ import {
   mkdirSync,
   readFileSync,
   readdirSync,
+  rmSync,
   writeFileSync,
 } from "node:fs";
 import { basename, resolve } from "node:path";
@@ -21,19 +22,34 @@ const TMP_OUT = "./dist/extension-tmp";
 const EXT_OUT = "./dist/extension";
 
 export default defineConfig({
-  base: "./",
-  build: {
-    minify: false,
-    outDir: TMP_OUT,
-    rolldownOptions: {
-      input: {
-        content: "./src/extension/content.tsx",
-        bookmarks: "./src/extension/bookmarks.html",
+  environments: {
+    client: {
+      build: {
+        outDir: "./dist/extension",
+        minify: false,
+        copyPublicDir: false,
+        rolldownOptions: {
+          input: {
+            content: "./src/extension/content.tsx",
+          },
+          output: {
+            format: "iife",
+            entryFileNames: "content.js",
+          },
+        },
       },
-      output: {
-        entryFileNames: "assets/[name].js",
-        chunkFileNames: "assets/[name].js",
-        assetFileNames: "assets/[name][extname]",
+    },
+    bookmarks: {
+      consumer: "client",
+      build: {
+        outDir: "./dist/extension",
+        minify: false,
+        emptyOutDir: false,
+        rolldownOptions: {
+          input: {
+            bookmarks: "./src/extension/bookmarks.html",
+          },
+        },
       },
     },
   },
@@ -49,8 +65,9 @@ export default defineConfig({
       name: "extension-post-build",
       buildApp: {
         async handler(builder) {
-          // 1. Build both entries as ESM (with shared chunks)
+          if (1) return;
           await builder.build(builder.environments.client);
+          await builder.build(builder.environments.bookmarks);
 
           // 2. Re-bundle content.js ESM → IIFE (MAIN world needs self-contained script)
           await build({
@@ -120,4 +137,51 @@ export default defineConfig({
       },
     },
   ],
+  builder: {
+    async buildApp(builder) {
+      await builder.build(builder.environments.client);
+      await builder.build(builder.environments.bookmarks);
+      const outDir = builder.environments.client.config.build.outDir;
+
+      // Move html
+      cpSync(
+        resolve(outDir, "src/extension/bookmarks.html"),
+        resolve(outDir, "bookmarks.html"),
+      );
+      rmSync(resolve(outDir, "src"), { force: true, recursive: true });
+
+      // Copy manifest.json
+      const manifest = JSON.parse(
+        readFileSync("./src/extension/manifest.json", "utf8"),
+      );
+      if (process.env.DEV_EXT) {
+        const time = buildTime.toLocaleTimeString("en-GB", {
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+        manifest.name = `Zamak-dev [${branch} ${rev} ${time}]`;
+      }
+      writeFileSync(
+        resolve(EXT_OUT, "manifest.json"),
+        JSON.stringify(manifest, null, 2),
+      );
+
+      // Copy plain JS files for the extension
+      for (const file of ["relay.js", "background.js"]) {
+        cpSync(`./src/extension/${file}`, resolve(EXT_OUT, file));
+      }
+
+      // Copy to main repo's dist/extension-dev for single Chrome load point
+      if (process.env.DEV_EXT) {
+        const cwd = process.cwd();
+        const dirName = basename(cwd);
+        const match = dirName.match(/^(.+)-wt\d+$/);
+        const mainRepo = match ? resolve(cwd, "..", match[1]) : cwd;
+        const dest = resolve(mainRepo, "dist", "extension-dev");
+        mkdirSync(dest, { recursive: true });
+        cpSync(EXT_OUT, dest, { recursive: true });
+        console.log(`[dev-ext] Copied extension → ${dest}`);
+      }
+    },
+  },
 });
