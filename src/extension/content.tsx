@@ -98,24 +98,19 @@ function ExtensionViewer({ videoId }: { videoId: string }) {
 
   return (
     <div className="flex h-full flex-col">
-      {data && (
-        <ExtensionSession videoId={videoId} data={data} player={player} />
-      )}
+      {data && <ExtensionSession data={data} player={player} />}
     </div>
   );
 }
 
 function ExtensionSession({
-  videoId,
   data,
   player,
 }: {
-  videoId: string;
   data: YouTubeExtractionResult;
   player: YTPlayer | null;
 }) {
   const session = useCaptionSession({
-    youtubeId: videoId,
     tracks: data.captionTracks,
     fetchJson3: (track) => fetchTrackJson3(track.baseUrl),
     videoMeta: data.video,

@@ -70,7 +70,6 @@ function DevViewerSession({
   player: ReturnType<typeof useYouTubePlayer>["player"];
 }) {
   const session = useCaptionSession({
-    youtubeId: videoId,
     tracks: meta.captionTracks,
     fetchJson3: async (track) => {
       const key = `/scripts/youtube-json/${videoId}/track-${track.vssId}.json`;

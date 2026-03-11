@@ -7,6 +7,7 @@ import {
   useState,
   useSyncExternalStore,
 } from "react";
+import type { Router } from "../server/rpc.ts";
 import {
   type MergeStrategy,
   type MergedCaption,
@@ -19,7 +20,6 @@ import {
   saveSession,
 } from "./caption-session-db.ts";
 import type { ExtensionBookmark } from "./extension-bookmarks.ts";
-import type { Router } from "../server/rpc.ts";
 import { removeFromVideoIndex, updateVideoIndex } from "./video-index.ts";
 import {
   type Json3File,
@@ -27,7 +27,7 @@ import {
   pickBestTrack,
 } from "./youtube.ts";
 
-export interface VideoMeta {
+interface VideoMeta {
   youtubeId: string;
   title: string;
   channelName?: string;
@@ -35,7 +35,7 @@ export interface VideoMeta {
   duration?: number;
 }
 
-export type ExportData = InferRouterInputs<Router>["videos"]["importVideo"];
+type ExportData = InferRouterInputs<Router>["videos"]["importVideo"];
 
 // --- Track preference persistence ---
 
@@ -257,16 +257,16 @@ export class CaptionSessionStore {
 // --- React Hook ---
 
 export function useCaptionSession({
-  youtubeId,
   tracks,
   fetchJson3,
   videoMeta,
 }: {
-  youtubeId: string;
   tracks: YouTubeCaptionTrack[];
   fetchJson3: (track: YouTubeCaptionTrack) => Promise<Json3File>;
   videoMeta: VideoMeta;
 }) {
+  const { youtubeId } = videoMeta;
+
   // Hydration from IndexedDB (gcTime: 0 ensures fresh data on each mount)
   const hydrationQuery = useQuery({
     queryKey: ["caption-session", youtubeId],
