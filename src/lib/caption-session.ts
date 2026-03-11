@@ -1,7 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useSyncExternalStore } from "react";
 import {
-  ALL_STRATEGIES,
   type MergeStrategy,
   type MergedCaption,
   mergeCaptions,
@@ -87,8 +86,6 @@ export class CaptionSessionStore {
   readonly youtubeId: string;
   readonly tracks: YouTubeCaptionTrack[];
   readonly videoMeta: VideoMeta;
-  readonly allStrategies = ALL_STRATEGIES;
-
   selectedVssId1: string | undefined;
   selectedVssId2: string | undefined;
   strategy: MergeStrategy | undefined = undefined;

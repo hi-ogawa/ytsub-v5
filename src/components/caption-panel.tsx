@@ -19,7 +19,11 @@ import {
   useRef,
   useState,
 } from "react";
-import type { MergeStrategy, MergedCaption } from "../lib/caption-merge.ts";
+import {
+  ALL_STRATEGIES,
+  type MergeStrategy,
+  type MergedCaption,
+} from "../lib/caption-merge.ts";
 import type { CaptionSession_Hook } from "../lib/caption-session.ts";
 import {
   type BookmarkSelection,
@@ -408,7 +412,7 @@ export function CaptionPanel({
                   }
                   disabled={tracksLocked}
                 >
-                  {store.allStrategies.map((s) => (
+                  {ALL_STRATEGIES.map((s) => (
                     <option key={s} value={s}>
                       {s}
                     </option>
