@@ -20,9 +20,17 @@ import {
   useRef,
   useState,
 } from "react";
-import { type AiTask, AI_TASKS, makeAiPrompt } from "../lib/ai-prompt.ts";
+import {
+  type AiTask,
+  AI_TASKS,
+  extractJson,
+  makeAiPrompt,
+} from "../lib/ai-prompt.ts";
 import type { MergeStrategy, MergedCaption } from "../lib/caption-merge.ts";
-import type { CaptionSessionManager } from "../lib/caption-session.ts";
+import type {
+  CaptionSessionManager,
+  VideoMeta,
+} from "../lib/caption-session.ts";
 import {
   type BookmarkSelection,
   type ExtensionBookmark,
@@ -207,12 +215,6 @@ function AiPromptCopy({
 
 // --- AI import paste ---
 
-function extractJson(text: string): string {
-  // Extract JSON from markdown code block if present
-  const match = text.match(/```(?:json)?\s*\n([\s\S]*?)\n```/);
-  return match ? match[1].trim() : text.trim();
-}
-
 function AiImportPaste({
   rows,
   onCreateBookmarks,
@@ -378,7 +380,7 @@ export function CaptionPanel({
   tracks: YouTubeCaptionTrack[];
   player: YTPlayer | null;
   session: CaptionSessionManager;
-  videoMeta?: { title: string; duration?: number };
+  videoMeta: VideoMeta;
 }) {
   const {
     selectedVssId1,
@@ -604,8 +606,8 @@ export function CaptionPanel({
             <AiPromptCopy
               rows={rows}
               bookmarks={bookmarks}
-              title={videoMeta?.title ?? ""}
-              duration={videoMeta?.duration}
+              title={videoMeta.title}
+              duration={videoMeta.duration}
             />
             <AiImportPaste
               rows={rows}

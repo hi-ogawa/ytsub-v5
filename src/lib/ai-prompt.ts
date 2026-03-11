@@ -41,6 +41,11 @@ function formatBookmarks(
   return JSON.stringify(bms, null, 2);
 }
 
+export function extractJson(text: string): string {
+  const match = text.match(/```(?:json)?\s*\n([\s\S]*?)\n```/);
+  return match ? match[1].trim() : text.trim();
+}
+
 export function makeAiPrompt(
   task: AiTask,
   rows: MergedCaption[],

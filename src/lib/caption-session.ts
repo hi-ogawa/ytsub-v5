@@ -24,7 +24,7 @@ import {
   pickBestTrack,
 } from "./youtube.ts";
 
-interface VideoMeta {
+export interface VideoMeta {
   youtubeId: string;
   title: string;
   channelName?: string;

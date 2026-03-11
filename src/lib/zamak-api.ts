@@ -1,15 +1,7 @@
 import { useEffect, useRef } from "react";
 import skillPrompt from "../../docs/skills/zamak/SKILL.md?raw";
 import type { MergedCaption } from "./caption-merge.ts";
-import type { CaptionSessionManager } from "./caption-session.ts";
-
-interface VideoMeta {
-  youtubeId: string;
-  title: string;
-  channelName?: string;
-  channelId?: string;
-  duration?: number;
-}
+import type { CaptionSessionManager, VideoMeta } from "./caption-session.ts";
 
 interface ZamakBookmark {
   id: string;
