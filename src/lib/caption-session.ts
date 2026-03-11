@@ -96,7 +96,7 @@ export class CaptionSessionStore {
   readonly strategy: MergeStrategy; // TODO: smells
   bookmarks: ExtensionBookmark[];
   version = 0;
-  onChange: (() => void) | null = null; // TODO: should be listeners: Set<() => void>
+  private listeners = new Set<() => void>();
 
   constructor(params: {
     tracks: YouTubeCaptionTrack[];
@@ -117,26 +117,14 @@ export class CaptionSessionStore {
 
   notify() {
     this.version++;
-    this.onChange?.();
+    for (const cb of this.listeners) cb();
   }
 
   subscribe(cb: () => void) {
-    this.onChange = cb;
+    this.listeners.add(cb);
     return () => {
-      if (this.onChange === cb) this.onChange = null;
+      this.listeners.delete(cb);
     };
-  }
-
-  // --- Derived ---
-
-  bookmarksByIndex(): Map<number, ExtensionBookmark[]> {
-    const map = new Map<number, ExtensionBookmark[]>();
-    for (const bm of this.bookmarks) {
-      const list = map.get(bm.captionIndex);
-      if (list) list.push(bm);
-      else map.set(bm.captionIndex, [bm]);
-    }
-    return map;
   }
 
   // --- Operations ---
