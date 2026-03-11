@@ -124,6 +124,7 @@ IndexedDB sessions (`CaptionSession`) don't store which merge strategy was used.
 - [ ] Verification
 
 ### Done
+
 - Store refactored: non-nullable constructor, removed lifecycle methods
 - Hook rewritten: owns track/strategy state, hydration via useQuery, creates store when resolved
 - Consumers updated: `dev-viewer.tsx`, `content.tsx`, `zamak-api.ts`
@@ -131,6 +132,7 @@ IndexedDB sessions (`CaptionSession`) don't store which merge strategy was used.
 - 15/16 E2E tests passing (first 16 that ran)
 
 ### Remaining
+
 - Fix hydration query caching (`staleTime: Infinity` → `gcTime: 0`)
 - Split `CaptionPanel` into outer + inner component
 - Run full E2E suite
