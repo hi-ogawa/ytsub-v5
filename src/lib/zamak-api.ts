@@ -1,9 +1,7 @@
 import { useEffect, useRef } from "react";
 import skillPrompt from "../../docs/skills/zamak/SKILL.md?raw";
 import type { MergedCaption } from "./caption-merge.ts";
-import type { CaptionSessionManager } from "./caption-session.ts";
-
-import type { VideoMeta } from "./caption-session.ts";
+import type { CaptionSessionStore, VideoMeta } from "./caption-session.ts";
 
 interface ZamakBookmark {
   id: string;
@@ -123,7 +121,7 @@ export function useZamakApi({
   language1,
   language2,
 }: {
-  session: CaptionSessionManager;
+  session: CaptionSessionStore;
   rows: MergedCaption[] | undefined;
   videoMeta: VideoMeta;
   language1: string;
@@ -170,7 +168,7 @@ export function useZamakApi({
       },
 
       updateCaptions(entries) {
-        sessionRef.current.onUpdateCaptions(entries);
+        sessionRef.current.updateCaptions(entries);
         console.log(`ZAMAK:updateCaptions done — ${entries.length} updated`);
       },
 
@@ -209,9 +207,8 @@ export function useZamakApi({
         const currentRows = rowsRef.current;
         if (!currentRows) return;
         const warnings: string[] = [];
-        const valid: Parameters<
-          typeof sessionRef.current.onCreateBookmarks
-        >[0] = [];
+        const valid: Parameters<typeof sessionRef.current.createBookmarks>[0] =
+          [];
         for (const { captionIndex, text, ...metadata } of entries) {
           const row = currentRows[captionIndex];
           if (!row) {
@@ -238,7 +235,7 @@ export function useZamakApi({
           });
         }
         if (valid.length > 0) {
-          sessionRef.current.onCreateBookmarks(valid);
+          sessionRef.current.createBookmarks(valid);
         }
         if (warnings.length > 0) {
           console.warn("ZAMAK:addBookmarks warnings\n" + warnings.join("\n"));
@@ -249,7 +246,7 @@ export function useZamakApi({
       },
 
       fillBookmarks(entries) {
-        sessionRef.current.onUpdateBookmarks(
+        sessionRef.current.updateBookmarks(
           entries.map(({ id, ...data }) => ({ id, data })),
         );
         console.log(`ZAMAK:fillBookmarks done — ${entries.length} updated`);

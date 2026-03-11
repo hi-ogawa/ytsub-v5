@@ -83,29 +83,22 @@ function saveSelectedTracks(
 
 // --- Store ---
 
-class CaptionSessionStore {
-  // Config (immutable after construction)
+export class CaptionSessionStore {
   readonly youtubeId: string;
   readonly tracks: YouTubeCaptionTrack[];
   readonly videoMeta: VideoMeta;
+  readonly fallbackStrategies = FALLBACK_STRATEGIES;
 
-  // State
   selectedVssId1: string | undefined;
   selectedVssId2: string | undefined;
   forceStrategy: MergeStrategy | undefined = undefined;
   hydrationStatus: "pending" | "none" | "loaded" = "pending";
-  private _rows: MergedCaption[] | undefined = undefined;
-  private _activeStrategy: MergeStrategy | undefined = undefined;
-  private _captionOverrides = new Map<
-    number,
-    { text1?: string; text2?: string }
-  >();
-  private _bookmarks: ExtensionBookmark[] = [];
-
-  // Subscriber
-  private _onChange: (() => void) | null = null;
-  // Snapshot counter for useSyncExternalStore
-  private _version = 0;
+  mergedRows: MergedCaption[] | undefined = undefined;
+  activeStrategy: MergeStrategy | undefined = undefined;
+  captionOverrides = new Map<number, { text1?: string; text2?: string }>();
+  bookmarks: ExtensionBookmark[] = [];
+  version = 0;
+  onChange: (() => void) | null = null;
 
   constructor(params: {
     youtubeId: string;
@@ -120,36 +113,32 @@ class CaptionSessionStore {
     this.selectedVssId2 = initial.vssId2;
   }
 
-  private notify() {
-    this._version++;
-    this._onChange?.();
-  }
-
-  get version() {
-    return this._version;
+  notify() {
+    this.version++;
+    this.onChange?.();
   }
 
   subscribe(cb: () => void) {
-    this._onChange = cb;
+    this.onChange = cb;
     return () => {
-      if (this._onChange === cb) this._onChange = null;
+      if (this.onChange === cb) this.onChange = null;
     };
   }
 
   // --- Derived ---
 
-  get sel1(): YouTubeCaptionTrack | undefined {
+  get selectedTrack1(): YouTubeCaptionTrack | undefined {
     return this.tracks.find((t) => t.vssId === this.selectedVssId1);
   }
 
-  get sel2(): YouTubeCaptionTrack | undefined {
+  get selectedTrack2(): YouTubeCaptionTrack | undefined {
     return this.tracks.find((t) => t.vssId === this.selectedVssId2);
   }
 
   get rows(): MergedCaption[] | undefined {
-    if (this._captionOverrides.size === 0) return this._rows;
-    return this._rows?.map((r) => {
-      const override = this._captionOverrides.get(r.idx);
+    if (this.captionOverrides.size === 0) return this.mergedRows;
+    return this.mergedRows?.map((r) => {
+      const override = this.captionOverrides.get(r.idx);
       if (!override) return r;
       return {
         ...r,
@@ -159,48 +148,23 @@ class CaptionSessionStore {
     });
   }
 
-  get activeStrategy(): MergeStrategy | undefined {
-    return this._activeStrategy;
-  }
-
   get isAutoStrategy(): boolean {
     return (
       this.hydrationStatus !== "loaded" &&
       !this.forceStrategy &&
-      (this._activeStrategy === "strict" ||
-        this._activeStrategy === "relaxed-strict")
+      (this.activeStrategy === "strict" ||
+        this.activeStrategy === "relaxed-strict")
     );
-  }
-
-  get bookmarks(): ExtensionBookmark[] {
-    return this._bookmarks;
   }
 
   get bookmarksByIndex(): Map<number, ExtensionBookmark[]> {
     const map = new Map<number, ExtensionBookmark[]>();
-    for (const bm of this._bookmarks) {
+    for (const bm of this.bookmarks) {
       const list = map.get(bm.captionIndex);
       if (list) list.push(bm);
       else map.set(bm.captionIndex, [bm]);
     }
     return map;
-  }
-
-  get hasBookmarks(): boolean {
-    return this._bookmarks.length > 0;
-  }
-
-  get tracksLocked(): boolean {
-    return this.hasBookmarks;
-  }
-
-  get loading(): boolean {
-    return this.hydrationStatus === "pending";
-  }
-
-  get error(): null {
-    // Fetch errors are tracked in React layer (useQuery). Store always returns null.
-    return null;
   }
 
   // --- Operations ---
@@ -210,9 +174,9 @@ class CaptionSessionStore {
     if (session) {
       this.selectedVssId1 = session.vssId1;
       this.selectedVssId2 = session.vssId2;
-      this._rows = session.captions;
-      this._activeStrategy = undefined;
-      this._bookmarks = session.bookmarks;
+      this.mergedRows = session.captions;
+      this.activeStrategy = undefined;
+      this.bookmarks = session.bookmarks;
       this.hydrationStatus = "loaded";
     } else {
       this.hydrationStatus = "none";
@@ -221,12 +185,12 @@ class CaptionSessionStore {
   }
 
   setCaptions(merged: MergedCaption[], strategy: MergeStrategy): void {
-    this._rows = merged;
-    this._activeStrategy = strategy;
+    this.mergedRows = merged;
+    this.activeStrategy = strategy;
     this.notify();
   }
 
-  setTracks(v1: string | undefined, v2: string | undefined): void {
+  selectTracks(v1: string | undefined, v2: string | undefined): void {
     this.selectedVssId1 = v1;
     this.selectedVssId2 = v2;
     if (v1 && v2) saveSelectedTracks(this.tracks, v1, v2, this.youtubeId);
@@ -242,15 +206,15 @@ class CaptionSessionStore {
     entries: { idx: number; text1?: string; text2?: string }[],
   ): void {
     for (const { idx, ...data } of entries) {
-      this._captionOverrides.set(idx, {
-        ...this._captionOverrides.get(idx),
+      this.captionOverrides.set(idx, {
+        ...this.captionOverrides.get(idx),
         ...data,
       });
     }
     this.notify();
   }
 
-  addBookmarks(
+  createBookmarks(
     selections: (BookmarkSelection & {
       timestamp: number;
       context: string;
@@ -272,15 +236,15 @@ class CaptionSessionStore {
         notes: sel.notes,
       }),
     );
-    this._bookmarks = [...this._bookmarks, ...newBookmarks];
+    this.bookmarks = [...this.bookmarks, ...newBookmarks];
     this.persistSession();
     this.syncVideoIndex();
     this.notify();
   }
 
   deleteBookmark(bookmarkId: string): void {
-    this._bookmarks = this._bookmarks.filter((b) => b.id !== bookmarkId);
-    if (this._bookmarks.length > 0) {
+    this.bookmarks = this.bookmarks.filter((b) => b.id !== bookmarkId);
+    if (this.bookmarks.length > 0) {
       this.persistSession();
     } else {
       deleteSession(this.youtubeId);
@@ -299,7 +263,7 @@ class CaptionSessionStore {
     }[],
   ): void {
     const updates = new Map(entries.map((e) => [e.id, e.data]));
-    this._bookmarks = this._bookmarks.map((b) => {
+    this.bookmarks = this.bookmarks.map((b) => {
       const data = updates.get(b.id);
       return data ? { ...b, ...data } : b;
     });
@@ -308,25 +272,25 @@ class CaptionSessionStore {
   }
 
   clearBookmarks(): void {
-    this._bookmarks = [];
+    this.bookmarks = [];
     deleteSession(this.youtubeId);
     this.hydrationStatus = "none";
     this.syncVideoIndex();
     this.notify();
   }
 
-  buildExportData(): object | undefined {
+  exportFile(): void {
     const rows = this.rows;
-    if (!rows) return undefined;
-    return {
+    if (!rows) return;
+    const data = {
       video: {
         youtubeId: this.videoMeta.youtubeId,
         title: this.videoMeta.title,
         channelName: this.videoMeta.channelName ?? "",
         channelId: this.videoMeta.channelId ?? "",
         duration: this.videoMeta.duration ?? 0,
-        language1: this.sel1?.languageCode ?? "ko",
-        language2: this.sel2?.languageCode ?? "en",
+        language1: this.selectedTrack1?.languageCode ?? "ko",
+        language2: this.selectedTrack2?.languageCode ?? "en",
       },
       captions: rows.map((r, i) => ({
         idx: i,
@@ -335,7 +299,7 @@ class CaptionSessionStore {
         text1: r.text1,
         text2: r.text2,
       })),
-      bookmarks: this._bookmarks.map((b) => ({
+      bookmarks: this.bookmarks.map((b) => ({
         text: b.text,
         translation: b.translation,
         etymology: b.etymology,
@@ -347,34 +311,41 @@ class CaptionSessionStore {
         status: "manual",
       })),
     };
+    const blob = new Blob([JSON.stringify(data, null, 2)], {
+      type: "application/json",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `import-${this.youtubeId}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
   }
 
-  // --- Internal ---
-
-  private persistSession(): void {
-    const rows = this._rows;
-    const sel1 = this.sel1;
-    const sel2 = this.sel2;
-    if (!rows || !sel1 || !sel2) return;
+  persistSession(): void {
+    const rows = this.mergedRows;
+    const t1 = this.selectedTrack1;
+    const t2 = this.selectedTrack2;
+    if (!rows || !t1 || !t2) return;
     const session: CaptionSession = {
       youtubeId: this.youtubeId,
-      vssId1: sel1.vssId,
-      vssId2: sel2.vssId,
-      language1: sel1.languageCode,
-      language2: sel2.languageCode,
+      vssId1: t1.vssId,
+      vssId2: t2.vssId,
+      language1: t1.languageCode,
+      language2: t2.languageCode,
       captions: rows,
-      bookmarks: this._bookmarks,
+      bookmarks: this.bookmarks,
     };
     saveSession(session);
   }
 
-  private syncVideoIndex(): void {
-    if (this._bookmarks.length > 0) {
+  syncVideoIndex(): void {
+    if (this.bookmarks.length > 0) {
       updateVideoIndex(
         this.youtubeId,
         this.videoMeta.title,
         this.videoMeta.channelName ?? "",
-        this._bookmarks.length,
+        this.bookmarks.length,
       );
     } else {
       removeFromVideoIndex(this.youtubeId);
@@ -395,7 +366,6 @@ export function useCaptionSession({
   fetchJson3: (track: YouTubeCaptionTrack) => Promise<Json3File>;
   videoMeta: VideoMeta;
 }) {
-  // Create store — stable across renders, recreate on youtubeId change
   const storeRef = useRef<CaptionSessionStore>(undefined);
   if (!storeRef.current || storeRef.current.youtubeId !== youtubeId) {
     storeRef.current = new CaptionSessionStore({
@@ -406,21 +376,19 @@ export function useCaptionSession({
   }
   const store = storeRef.current;
 
-  // Subscribe for re-renders
   useSyncExternalStore(
     (cb) => store.subscribe(cb),
     () => store.version,
   );
 
-  // Hydrate from IndexedDB
   useEffect(() => {
     store.hydrate();
   }, [store]);
 
   // Fetch json3 — disabled when hydrated
   const isHydrated = store.hydrationStatus === "loaded";
-  const sel1 = store.sel1;
-  const sel2 = store.sel2;
+  const sel1 = store.selectedTrack1;
+  const sel2 = store.selectedTrack2;
 
   const json3Query1 = useQuery({
     queryKey: ["json3", sel1?.vssId],
@@ -452,65 +420,9 @@ export function useCaptionSession({
     }
   }, [mergeResult, store]);
 
-  // Export — DOM trigger lives in React layer
-  const handleExport = () => {
-    const data = store.buildExportData();
-    if (!data) return;
-    const blob = new Blob([JSON.stringify(data, null, 2)], {
-      type: "application/json",
-    });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `import-${youtubeId}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
-
   const error = json3Query1.error ?? json3Query2.error ?? null;
 
-  return {
-    // Track selection
-    selectedVssId1: store.selectedVssId1,
-    selectedVssId2: store.selectedVssId2,
-    selectedTrack1: sel1,
-    selectedTrack2: sel2,
-    onSelectTracks: (v1: string | undefined, v2: string | undefined) =>
-      store.setTracks(v1, v2),
-    tracksLocked: store.tracksLocked,
-
-    // Merge strategy
-    forceStrategy: store.forceStrategy,
-    onSetForceStrategy: (s: MergeStrategy | undefined) =>
-      store.setForceStrategy(s),
-    activeStrategy: store.activeStrategy,
-    isAutoStrategy: store.isAutoStrategy,
-    fallbackStrategies: FALLBACK_STRATEGIES,
-
-    // Caption data
-    rows: store.rows,
-    onUpdateCaptions: (
-      entries: { idx: number; text1?: string; text2?: string }[],
-    ) => store.updateCaptions(entries),
-    error,
-    loading: store.loading,
-
-    // Bookmarks
-    bookmarks: store.bookmarks,
-    bookmarksByIndex: store.bookmarksByIndex,
-    onCreateBookmarks: (
-      ...args: Parameters<CaptionSessionStore["addBookmarks"]>
-    ) => store.addBookmarks(...args),
-    onDeleteBookmark: (id: string) => store.deleteBookmark(id),
-    onUpdateBookmarks: (
-      ...args: Parameters<CaptionSessionStore["updateBookmarks"]>
-    ) => store.updateBookmarks(...args),
-    onClearBookmarks: () => store.clearBookmarks(),
-    hasBookmarks: store.hasBookmarks,
-
-    // Export
-    onExport: handleExport,
-  };
+  return { store, error };
 }
 
-export type CaptionSessionManager = ReturnType<typeof useCaptionSession>;
+export type CaptionSession_Hook = ReturnType<typeof useCaptionSession>;

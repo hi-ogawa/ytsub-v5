@@ -81,13 +81,14 @@ function DevViewerSession({
     },
     videoMeta: meta.video,
   });
+  const { store } = session;
 
   useZamakApi({
-    session,
-    rows: session.rows,
+    session: store,
+    rows: store.rows,
     videoMeta: meta.video,
-    language1: session.selectedTrack1?.languageCode ?? "ko",
-    language2: session.selectedTrack2?.languageCode ?? "en",
+    language1: store.selectedTrack1?.languageCode ?? "ko",
+    language2: store.selectedTrack2?.languageCode ?? "en",
   });
 
   return (

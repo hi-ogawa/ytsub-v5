@@ -20,7 +20,7 @@ import {
   useState,
 } from "react";
 import type { MergeStrategy, MergedCaption } from "../lib/caption-merge.ts";
-import type { CaptionSessionManager } from "../lib/caption-session.ts";
+import type { CaptionSession_Hook } from "../lib/caption-session.ts";
 import {
   type BookmarkSelection,
   type ExtensionBookmark,
@@ -210,32 +210,14 @@ function formatTimestamp(seconds: number): string {
 export function CaptionPanel({
   tracks,
   player,
-  session,
+  session: { store, error },
 }: {
   tracks: YouTubeCaptionTrack[];
   player: YTPlayer | null;
-  session: CaptionSessionManager;
+  session: CaptionSession_Hook;
 }) {
-  const {
-    selectedVssId1,
-    selectedVssId2,
-    onSelectTracks,
-    tracksLocked,
-    rows,
-    error,
-    activeStrategy,
-    isAutoStrategy,
-    forceStrategy,
-    onSetForceStrategy,
-    fallbackStrategies,
-    bookmarks,
-    bookmarksByIndex,
-    onCreateBookmarks,
-    onDeleteBookmark,
-    onClearBookmarks,
-    hasBookmarks,
-    onExport,
-  } = session;
+  const hasBookmarks = store.bookmarks.length > 0;
+  const tracksLocked = hasBookmarks;
   const [autoScroll, setAutoScroll] = useState(() => {
     try {
       const stored = localStorage.getItem("zamak:auto-scroll");
@@ -259,8 +241,8 @@ export function CaptionPanel({
   );
 
   const sortedBookmarks = useMemo(
-    () => [...bookmarks].sort((a, b) => a.timestamp - b.timestamp),
-    [bookmarks],
+    () => [...store.bookmarks].sort((a, b) => a.timestamp - b.timestamp),
+    [store.bookmarks],
   );
 
   // --- Bookmark navigation ---
@@ -349,11 +331,11 @@ export function CaptionPanel({
   }, [getSelection]);
 
   function onClickBookmark() {
-    if (!bookmarkSelection || !rows) return;
-    const row = rows[bookmarkSelection.captionIndex];
+    if (!bookmarkSelection || !store.rows) return;
+    const row = store.rows[bookmarkSelection.captionIndex];
     if (!row) return;
     setIsCreating(true);
-    onCreateBookmarks([
+    store.createBookmarks([
       {
         ...bookmarkSelection,
         timestamp: row.begin,
@@ -372,7 +354,7 @@ export function CaptionPanel({
 
   function handleClearBookmarks() {
     if (!confirm("Clear all bookmarks for this video?")) return;
-    onClearBookmarks();
+    store.clearBookmarks();
   }
 
   return (
@@ -381,9 +363,9 @@ export function CaptionPanel({
         <div className="min-w-0 flex-1">
           <TrackPicker
             tracks={tracks}
-            selectedVssId1={selectedVssId1}
-            selectedVssId2={selectedVssId2}
-            onSelect={onSelectTracks}
+            selectedVssId1={store.selectedVssId1}
+            selectedVssId2={store.selectedVssId2}
+            onSelect={(v1, v2) => store.selectTracks(v1, v2)}
             disabled={tracksLocked}
           />
         </div>
@@ -407,16 +389,16 @@ export function CaptionPanel({
               />
               Auto-scroll
             </DropdownMenuItem>
-            {!isAutoStrategy && (
+            {!store.isAutoStrategy && (
               <div className="px-2 py-1.5">
                 <label className="mb-1 block text-xs text-muted-foreground">
                   Track alignment
                 </label>
                 <select
                   className={`w-full rounded border bg-background px-1 py-0.5 text-sm ${tracksLocked ? "cursor-not-allowed opacity-50" : ""}`}
-                  value={forceStrategy ?? activeStrategy ?? ""}
+                  value={store.forceStrategy ?? store.activeStrategy ?? ""}
                   onChange={(e) =>
-                    onSetForceStrategy(
+                    store.setForceStrategy(
                       (e.target.value as MergeStrategy) || undefined,
                     )
                   }
@@ -427,7 +409,7 @@ export function CaptionPanel({
                   }
                   disabled={tracksLocked}
                 >
-                  {fallbackStrategies.map((s) => (
+                  {store.fallbackStrategies.map((s) => (
                     <option key={s} value={s}>
                       {s}
                     </option>
@@ -436,7 +418,7 @@ export function CaptionPanel({
               </div>
             )}
             <AiPromptCopy />
-            <DropdownMenuItem onClick={onExport}>
+            <DropdownMenuItem onClick={() => store.exportFile()}>
               <Download className="mr-2 h-4 w-4" />
               Export import.json
             </DropdownMenuItem>
@@ -503,7 +485,7 @@ export function CaptionPanel({
           <div className="flex h-full items-center justify-center text-sm text-destructive">
             {String(error)}
           </div>
-        ) : rows ? (
+        ) : store.rows ? (
           <>
             {/* Captions — hidden (not unmounted) to preserve scroll position */}
             <div
@@ -514,10 +496,10 @@ export function CaptionPanel({
             >
               <CaptionViewer
                 ref={captionListRef}
-                rows={rows}
+                rows={store.rows}
                 player={player}
                 autoScroll={autoScroll}
-                bookmarksByIndex={bookmarksByIndex}
+                bookmarksByIndex={store.bookmarksByIndex}
                 onGoToBookmark={onGoToBookmark}
                 onPopoverOpenChange={onPopoverOpenChange}
               />
@@ -535,9 +517,9 @@ export function CaptionPanel({
                 ) : (
                   <ExtensionBookmarksList
                     bookmarks={sortedBookmarks}
-                    rows={rows}
+                    rows={store.rows}
                     player={player}
-                    onDeleteBookmark={onDeleteBookmark}
+                    onDeleteBookmark={(id) => store.deleteBookmark(id)}
                     onGoToCaption={onGoToCaption}
                     flashBookmarkId={flashBookmarkId}
                   />
