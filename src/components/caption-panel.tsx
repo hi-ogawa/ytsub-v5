@@ -542,7 +542,7 @@ function CaptionPanelContent({
             rows={store.rows}
             player={player}
             autoScroll={autoScroll}
-            bookmarksByIndex={store.bookmarksByIndex()}
+            bookmarks={store.bookmarks}
             onGoToBookmark={onGoToBookmark}
             onPopoverOpenChange={onPopoverOpenChange}
           />
@@ -737,7 +737,7 @@ function CaptionViewer({
   rows,
   player,
   autoScroll,
-  bookmarksByIndex,
+  bookmarks,
   onGoToBookmark,
   onPopoverOpenChange,
 }: {
@@ -745,7 +745,7 @@ function CaptionViewer({
   rows: MergedCaption[];
   player: YTPlayer | null;
   autoScroll: boolean;
-  bookmarksByIndex: Map<number, ExtensionBookmark[]>;
+  bookmarks: ExtensionBookmark[];
   onGoToBookmark: (bookmarkId: string) => void;
   onPopoverOpenChange: (open: boolean) => void;
 }) {
@@ -791,7 +791,7 @@ function CaptionViewer({
       isPlaying={isPlaying}
       player={player}
       autoScroll={autoScroll}
-      bookmarksByIndex={bookmarksByIndex}
+      bookmarks={bookmarks}
       onGoToBookmark={onGoToBookmark}
       onPopoverOpenChange={onPopoverOpenChange}
     />

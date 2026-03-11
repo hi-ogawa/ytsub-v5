@@ -1,5 +1,5 @@
 import { ExternalLink } from "lucide-react";
-import { useEffect, useImperativeHandle, useRef } from "react";
+import { useEffect, useImperativeHandle, useMemo, useRef } from "react";
 import type { MergedCaption } from "../lib/caption-merge.ts";
 import type { ExtensionBookmark } from "../lib/extension-bookmarks.ts";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover.tsx";
@@ -144,7 +144,7 @@ export function CaptionList({
   isPlaying,
   player,
   autoScroll,
-  bookmarksByIndex,
+  bookmarks,
   onGoToBookmark,
   onPopoverOpenChange,
 }: {
@@ -154,11 +154,21 @@ export function CaptionList({
   isPlaying: boolean;
   player: YTPlayer | null;
   autoScroll: boolean;
-  bookmarksByIndex: Map<number, ExtensionBookmark[]>;
+  bookmarks: ExtensionBookmark[];
   onGoToBookmark: (bookmarkId: string) => void;
   onPopoverOpenChange: (open: boolean) => void;
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  const bookmarksByIndex = useMemo(() => {
+    const map = new Map<number, ExtensionBookmark[]>();
+    for (const bm of bookmarks) {
+      const list = map.get(bm.captionIndex);
+      if (list) list.push(bm);
+      else map.set(bm.captionIndex, [bm]);
+    }
+    return map;
+  }, [bookmarks]);
 
   useImperativeHandle(ref, () => ({
     scrollToIndex: (index: number) => {
