@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { useParams } from "react-router";
 import {
   CaptionFab,
@@ -6,9 +6,11 @@ import {
   ResizablePanel,
 } from "../components/caption-panel.tsx";
 import { useYouTubePlayer } from "../components/youtube-player.tsx";
-import { useCaptionSession } from "../lib/caption-session.ts";
-import type { Json3File, YouTubeExtractionResult } from "../lib/youtube.ts";
-import { useZamakApi } from "../lib/zamak-api.ts";
+import type {
+  Json3File,
+  YouTubeCaptionTrack,
+  YouTubeExtractionResult,
+} from "../lib/youtube.ts";
 
 const metadataModules = import.meta.glob<YouTubeExtractionResult>(
   "/scripts/youtube-json/*/metadata.json",
@@ -69,26 +71,23 @@ function DevViewerSession({
   meta: YouTubeExtractionResult;
   player: ReturnType<typeof useYouTubePlayer>["player"];
 }) {
-  const session = useCaptionSession({
-    tracks: meta.captionTracks,
-    fetchJson3: async (track) => {
+  const fetchJson3 = useCallback(
+    async (track: YouTubeCaptionTrack) => {
       const key = `/scripts/youtube-json/${videoId}/track-${track.vssId}.json`;
       const loader = trackModules[key];
       if (!loader) throw new Error(`No track fixture for ${track.vssId}`);
       const mod = await loader();
       return mod.default;
     },
-    videoMeta: meta.video,
-  });
-  const { store } = session;
-
-  useZamakApi(store);
+    [videoId],
+  );
 
   return (
     <CaptionPanel
       tracks={meta.captionTracks}
       player={player}
-      session={session}
+      fetchJson3={fetchJson3}
+      videoMeta={meta.video}
     />
   );
 }

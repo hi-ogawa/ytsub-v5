@@ -48,24 +48,26 @@ Store ready ── change tracks/strategy ──► Fetching ──► Merging �
 
 ## States
 
-| State | store | UI | Where decided |
-|-------|-------|----|---------------|
-| Hydrating | — | Loading spinner | Caller (before hook) |
-| Session found | non-null | Captions + bookmarks visible | Hook (immediate) |
-| No session, fetching | null | Track picker visible, content loading | Hook |
-| No session, merging | null | Track picker visible, content loading | Hook |
-| Store ready | non-null | Full UI | Hook |
+| State                | store    | UI                                    | Where decided        |
+| -------------------- | -------- | ------------------------------------- | -------------------- |
+| Hydrating            | —        | Loading spinner                       | Caller (before hook) |
+| Session found        | non-null | Captions + bookmarks visible          | Hook (immediate)     |
+| No session, fetching | null     | Track picker visible, content loading | Hook                 |
+| No session, merging  | null     | Track picker visible, content loading | Hook                 |
+| Store ready          | non-null | Full UI                               | Hook                 |
 
 ## Transitions
 
 ### Happy paths
 
 **Returning user (session in DB):**
+
 ```
 Hydrating → Session found → Store ready (instant, no fetch)
 ```
 
 **New video (no session):**
+
 ```
 Hydrating → No session → Fetching json3 → Merging → Store ready
 ```
@@ -73,6 +75,7 @@ Hydrating → No session → Fetching json3 → Merging → Store ready
 ### User actions on active store
 
 **Change tracks** (`selectTracks`):
+
 ```
 Store ready → sets userVssId1/2 → useHydratedData=false
   → Fetching json3 (new tracks) → Merging → NEW Store ready
@@ -80,12 +83,14 @@ Old store destroyed. Bookmarks lost (correct — they belong to old track pair).
 ```
 
 **Change strategy** (`selectStrategy`):
+
 ```
 Store ready → sets userStrategy → re-merge → NEW Store ready
 Old store destroyed. Bookmarks lost (correct — re-merge changes row alignment).
 ```
 
 **Add bookmark** (`store.createBookmarks`):
+
 ```
 Store ready → mutates store.bookmarks → notify → persist to IndexedDB
   → also updates video-index in localStorage
@@ -93,6 +98,7 @@ Store identity unchanged (same ref).
 ```
 
 **Delete bookmark** (`store.deleteBookmark`):
+
 ```
 Store ready → mutates store.bookmarks → notify
   → if bookmarks remain: persist to IndexedDB
@@ -101,18 +107,21 @@ Store identity unchanged.
 ```
 
 **Clear all bookmarks** (`store.clearBookmarks`):
+
 ```
 Store ready → bookmarks=[] → notify → delete session from IndexedDB
 Store identity unchanged (but session gone from DB).
 ```
 
 **Edit captions** (`store.updateCaptions`):
+
 ```
 Store ready → mutates store.rows → notify → persist to IndexedDB
 Store identity unchanged.
 ```
 
 **Update bookmark metadata** (`store.updateBookmarks`):
+
 ```
 Store ready → mutates store.bookmarks → notify → persist to IndexedDB
 Store identity unchanged.
@@ -121,25 +130,31 @@ Store identity unchanged.
 ### Edge cases / questions
 
 **Close panel + reopen (same video):**
+
 ```
 Store destroyed → Hydrating → Session found (if bookmarks were saved)
                              → No session (if no bookmarks / cleared)
 ```
+
 Note: `gcTime: 0` ensures fresh IndexedDB read, not stale cache.
 
 **Close panel + reopen after clearing bookmarks:**
+
 ```
 Store destroyed → Hydrating → No session → Fetching → Merging → Store ready
 Captions re-fetched and re-merged from scratch. Any caption edits lost.
 ```
+
 This is correct — caption edits only survive as long as bookmarks exist (they trigger persist).
 
 **Change tracks when hydrated session exists:**
+
 ```
 Store ready (hydrated) → selectTracks → useHydratedData=false
   → previous session's bookmarks dropped (new track pair)
   → Fetching json3 → Merging → NEW Store ready (empty bookmarks)
 ```
+
 Old session stays in IndexedDB until overwritten. Is this correct? Should we delete it?
 
 ## Key insight: this is a DAG, not cyclic
@@ -163,6 +178,7 @@ This DAG nature means the hook could be much simpler — a linear pipeline of de
 The `useCaptionSession` abstraction is obscuring the actual state/data flow. Rather than trying to redesign it top-down, inline everything into `CaptionPanel` so all state, queries, and branching are visible in one place. From there, the natural boundaries should become obvious.
 
 Currently `useCaptionSession` is used in two places:
+
 - `ExtensionSession` (content.tsx) — passes result to `CaptionPanel`
 - `DevViewerReady` (dev-viewer.tsx) — passes result to `CaptionPanel`
 

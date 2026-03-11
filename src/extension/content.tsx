@@ -9,10 +9,8 @@ import {
 } from "../components/caption-panel.tsx";
 import { PortalContainerProvider } from "../components/ui/portal-container.tsx";
 import type { YTPlayer } from "../components/youtube-player.tsx";
-import { useCaptionSession } from "../lib/caption-session.ts";
 import type { YouTubeExtractionResult } from "../lib/youtube.ts";
 import { fetchPlayerApi, fetchTrackJson3 } from "../lib/youtube.ts";
-import { useZamakApi } from "../lib/zamak-api.ts";
 import contentCss from "./content.css?inline";
 
 declare const __BUILD_TIME__: string;
@@ -110,20 +108,12 @@ function ExtensionSession({
   data: YouTubeExtractionResult;
   player: YTPlayer | null;
 }) {
-  const session = useCaptionSession({
-    tracks: data.captionTracks,
-    fetchJson3: (track) => fetchTrackJson3(track.baseUrl),
-    videoMeta: data.video,
-  });
-  const { store } = session;
-
-  useZamakApi(store);
-
   return (
     <CaptionPanel
       tracks={data.captionTracks}
       player={player}
-      session={session}
+      fetchJson3={(track) => fetchTrackJson3(track.baseUrl)}
+      videoMeta={data.video}
     />
   );
 }

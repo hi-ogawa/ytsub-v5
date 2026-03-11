@@ -1,28 +1,14 @@
 import type { InferRouterInputs } from "@orpc/server";
-import { useQuery } from "@tanstack/react-query";
-import {
-  useCallback,
-  useMemo,
-  useRef,
-  useState,
-  useSyncExternalStore,
-} from "react";
 import type { Router } from "../server/rpc.ts";
-import {
-  type MergeStrategy,
-  type MergedCaption,
-  mergeCaptions,
-} from "./caption-merge.ts";
+import { type MergeStrategy, type MergedCaption } from "./caption-merge.ts";
 import {
   type CaptionSession,
   deleteSession,
-  getSession,
   saveSession,
 } from "./caption-session-db.ts";
 import type { ExtensionBookmark } from "./extension-bookmarks.ts";
 import { removeFromVideoIndex, updateVideoIndex } from "./video-index.ts";
 import {
-  type Json3File,
   type YouTubeCaptionTrack,
   type YouTubeVideoData,
   pickBestTrack,
@@ -35,7 +21,7 @@ type ExportData = InferRouterInputs<Router>["videos"]["importVideo"];
 const TRACKS_KEY = "zamak:selected-tracks";
 const LANGS_KEY = "zamak:preferred-langs";
 
-function getInitialTracks(
+export function getInitialTracks(
   tracks: YouTubeCaptionTrack[],
   videoId: string,
 ): { vssId1?: string; vssId2?: string } {
@@ -59,7 +45,7 @@ function getInitialTracks(
   return {};
 }
 
-function saveSelectedTracks(
+export function saveSelectedTracks(
   tracks: YouTubeCaptionTrack[],
   vssId1: string,
   vssId2: string,
@@ -246,144 +232,3 @@ export class CaptionSessionStore {
     }
   }
 }
-
-// --- React Hook ---
-
-export function useCaptionSession({
-  tracks,
-  fetchJson3,
-  videoMeta,
-}: {
-  tracks: YouTubeCaptionTrack[];
-  fetchJson3: (track: YouTubeCaptionTrack) => Promise<Json3File>;
-  videoMeta: YouTubeVideoData;
-}) {
-  const { youtubeId } = videoMeta;
-
-  // Hydration from IndexedDB (gcTime: 0 ensures fresh data on each mount)
-  const hydrationQuery = useQuery({
-    queryKey: ["caption-session", youtubeId],
-    queryFn: async () => (await getSession(youtubeId)) ?? null,
-    gcTime: 0,
-  });
-  const session = hydrationQuery.data ?? undefined;
-  const isHydrating = hydrationQuery.isPending;
-
-  // Track selection state (user overrides, undefined = use default)
-  const [userVssId1, setUserVssId1] = useState<string | undefined>();
-  const [userVssId2, setUserVssId2] = useState<string | undefined>();
-  const [userStrategy, setUserStrategy] = useState<MergeStrategy | undefined>();
-
-  // Resolve initial tracks from localStorage preferences
-  const initialTracks = useMemo(
-    () => getInitialTracks(tracks, youtubeId),
-    [tracks, youtubeId],
-  );
-
-  // Effective track pair: user override > hydrated session > localStorage
-  const vssId1 = userVssId1 ?? session?.vssId1 ?? initialTracks.vssId1;
-  const vssId2 = userVssId2 ?? session?.vssId2 ?? initialTracks.vssId2;
-
-  // Use hydrated data when session exists and user hasn't overridden tracks
-  const useHydratedData = !!session && !userVssId1 && !userVssId2;
-
-  const sel1 = tracks.find((t) => t.vssId === vssId1);
-  const sel2 = tracks.find((t) => t.vssId === vssId2);
-
-  // Json3 fetches — disabled while hydrating or when using hydrated data
-  const json3Query1 = useQuery({
-    queryKey: ["json3", sel1?.vssId],
-    queryFn: () => fetchJson3(sel1!),
-    enabled: !!sel1 && !isHydrating && !useHydratedData,
-  });
-
-  const json3Query2 = useQuery({
-    queryKey: ["json3", sel2?.vssId],
-    queryFn: () => fetchJson3(sel2!),
-    enabled: !!sel2 && !isHydrating && !useHydratedData,
-  });
-
-  // Merge fetched captions
-  const json3_1 = json3Query1.data;
-  const json3_2 = json3Query2.data;
-  const mergeResult = useMemo(() => {
-    if (useHydratedData || !json3_1 || !json3_2 || !sel1 || !sel2)
-      return undefined;
-    return mergeCaptions(
-      { json3: json3_1, vssId: sel1.vssId },
-      { json3: json3_2, vssId: sel2.vssId },
-      userStrategy,
-    );
-  }, [json3_1, json3_2, sel1, sel2, userStrategy, useHydratedData]);
-
-  // Resolve all data for store creation
-  const resolvedData = useMemo(() => {
-    if (isHydrating || !vssId1 || !vssId2) return null;
-
-    if (useHydratedData) {
-      return {
-        vssId1: session!.vssId1,
-        vssId2: session!.vssId2,
-        rows: session!.captions,
-        strategy: "partition" as MergeStrategy,
-        bookmarks: session!.bookmarks,
-      };
-    }
-
-    if (!mergeResult) return null;
-
-    return {
-      vssId1,
-      vssId2,
-      rows: mergeResult.captions,
-      strategy: mergeResult.strategy,
-      bookmarks: [] as ExtensionBookmark[],
-    };
-  }, [isHydrating, vssId1, vssId2, useHydratedData, session, mergeResult]);
-
-  // Store creation (ref to preserve mutable state across renders)
-  const storeRef = useRef<CaptionSessionStore | null>(null);
-  const storeKeyRef = useRef("");
-
-  if (resolvedData) {
-    const key = `${youtubeId}:${resolvedData.vssId1}:${resolvedData.vssId2}:${resolvedData.strategy}`;
-    if (key !== storeKeyRef.current) {
-      storeKeyRef.current = key;
-      storeRef.current = new CaptionSessionStore({
-        videoMeta,
-        ...resolvedData,
-      });
-    }
-  } else {
-    storeRef.current = null;
-    storeKeyRef.current = "";
-  }
-
-  const store = storeRef.current;
-
-  useSyncExternalStore(
-    (cb) => store?.subscribe(cb) ?? (() => {}),
-    () => store?.version ?? 0,
-  );
-
-  // Track selection callback
-  const selectTracks = useCallback(
-    (v1: string | undefined, v2: string | undefined) => {
-      setUserVssId1(v1);
-      setUserVssId2(v2);
-      if (v1 && v2) saveSelectedTracks(tracks, v1, v2, youtubeId);
-    },
-    [tracks, youtubeId],
-  );
-
-  // Strategy selection callback
-  const selectStrategy = useCallback((s: MergeStrategy) => {
-    setUserStrategy(s);
-  }, []);
-
-  const error = json3Query1.error ?? json3Query2.error ?? null;
-
-  return { store, error, selectTracks, selectStrategy, vssId1, vssId2 };
-}
-
-export type CaptionSession_Hook = ReturnType<typeof useCaptionSession>;
