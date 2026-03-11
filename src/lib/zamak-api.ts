@@ -143,10 +143,7 @@ export function useZamakApi(store: CaptionSessionStore | null) {
       },
 
       getCaptions(): ZamakCaption[] {
-        const s = store;
-        if (!s) return [];
-        const rows = s.rows;
-        return rows.map((r, i) => ({
+        return store.rows.map((r, i) => ({
           idx: i,
           begin: r.begin,
           end: r.end,
@@ -161,11 +158,8 @@ export function useZamakApi(store: CaptionSessionStore | null) {
       },
 
       getBookmarks(): ZamakBookmark[] {
-        const s = store;
-        if (!s) return [];
-        const rows = s.rows;
-
-        return s.bookmarks.map((bm) => {
+        const { rows, bookmarks } = store;
+        return bookmarks.map((bm) => {
           const start = Math.max(0, bm.captionIndex - CONTEXT_RADIUS);
           const end = Math.min(
             rows.length,
@@ -192,11 +186,9 @@ export function useZamakApi(store: CaptionSessionStore | null) {
       },
 
       addBookmarks(entries) {
-        const s = store;
-        if (!s) return;
-        const rows = s.rows;
+        const { rows } = store;
         const warnings: string[] = [];
-        const valid: Parameters<typeof s.createBookmarks>[0] = [];
+        const valid: Parameters<typeof store.createBookmarks>[0] = [];
         for (const { captionIndex, text, ...metadata } of entries) {
           const row = rows[captionIndex];
           if (!row) {
@@ -223,7 +215,7 @@ export function useZamakApi(store: CaptionSessionStore | null) {
           });
         }
         if (valid.length > 0) {
-          s.createBookmarks(valid);
+          store.createBookmarks(valid);
         }
         if (warnings.length > 0) {
           console.warn("ZAMAK:addBookmarks warnings\n" + warnings.join("\n"));
