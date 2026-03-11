@@ -123,11 +123,8 @@ function ExtensionSession({
   const { store } = session;
 
   useZamakApi({
-    session: store,
-    rows: store.rows(),
+    store,
     videoMeta: data.video,
-    language1: store.selectedTrack1()?.languageCode ?? "ko",
-    language2: store.selectedTrack2()?.languageCode ?? "en",
   });
 
   return (

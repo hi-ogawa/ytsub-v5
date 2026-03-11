@@ -214,14 +214,12 @@ function formatTimestamp(seconds: number): string {
 export function CaptionPanel({
   tracks,
   player,
-  session: { store, error },
+  session: { store, error, selectTracks, selectStrategy, vssId1, vssId2 },
 }: {
   tracks: YouTubeCaptionTrack[];
   player: YTPlayer | null;
   session: CaptionSession_Hook;
 }) {
-  const hasBookmarks = store.bookmarks.length > 0;
-  const tracksLocked = hasBookmarks;
   const [autoScroll, setAutoScroll] = useState(() => {
     try {
       const stored = localStorage.getItem("zamak:auto-scroll");
@@ -245,8 +243,11 @@ export function CaptionPanel({
   );
 
   const sortedBookmarks = useMemo(
-    () => [...store.bookmarks].sort((a, b) => a.timestamp - b.timestamp),
-    [store.bookmarks],
+    () =>
+      store
+        ? [...store.bookmarks].sort((a, b) => a.timestamp - b.timestamp)
+        : [],
+    [store?.bookmarks],
   );
 
   // --- Bookmark navigation ---
@@ -334,9 +335,13 @@ export function CaptionPanel({
     return () => document.removeEventListener("selectionchange", handler);
   }, [getSelection]);
 
+  // Store-dependent derived state
+  const hasBookmarks = store ? store.bookmarks.length > 0 : false;
+  const tracksLocked = hasBookmarks;
+
   function onClickBookmark() {
+    if (!store || !bookmarkSelection) return;
     const rows = store.rows();
-    if (!bookmarkSelection || !rows) return;
     const row = rows[bookmarkSelection.captionIndex];
     if (!row) return;
     setIsCreating(true);
@@ -359,7 +364,7 @@ export function CaptionPanel({
 
   function handleClearBookmarks() {
     if (!confirm("Clear all bookmarks for this video?")) return;
-    store.clearBookmarks();
+    store?.clearBookmarks();
   }
 
   return (
@@ -368,9 +373,9 @@ export function CaptionPanel({
         <div className="min-w-0 flex-1">
           <TrackPicker
             tracks={tracks}
-            selectedVssId1={store.selectedVssId1}
-            selectedVssId2={store.selectedVssId2}
-            onSelect={(v1, v2) => store.selectTracks(v1, v2)}
+            selectedVssId1={vssId1}
+            selectedVssId2={vssId2}
+            onSelect={(v1, v2) => selectTracks(v1, v2)}
             disabled={tracksLocked}
           />
         </div>
@@ -394,7 +399,7 @@ export function CaptionPanel({
               />
               Auto-scroll
             </DropdownMenuItem>
-            {store.strategy && (
+            {store && (
               <div className="px-2 py-1.5">
                 <label className="mb-1 block text-xs text-muted-foreground">
                   Track alignment
@@ -403,7 +408,7 @@ export function CaptionPanel({
                   className={`w-full rounded border bg-background px-1 py-0.5 text-sm ${tracksLocked ? "cursor-not-allowed opacity-50" : ""}`}
                   value={store.strategy}
                   onChange={(e) =>
-                    store.setStrategy(e.target.value as MergeStrategy)
+                    selectStrategy(e.target.value as MergeStrategy)
                   }
                   title={
                     tracksLocked
@@ -412,16 +417,19 @@ export function CaptionPanel({
                   }
                   disabled={tracksLocked}
                 >
-                  {ALL_STRATEGIES.map((s) => (
-                    <option key={s} value={s}>
-                      {s}
+                  {ALL_STRATEGIES.map((st) => (
+                    <option key={st} value={st}>
+                      {st}
                     </option>
                   ))}
                 </select>
               </div>
             )}
             <AiPromptCopy />
-            <DropdownMenuItem onClick={() => store.exportFile()}>
+            <DropdownMenuItem
+              onClick={() => store?.exportFile()}
+              disabled={!store}
+            >
               <Download className="mr-2 h-4 w-4" />
               Export import.json
             </DropdownMenuItem>
@@ -484,60 +492,57 @@ export function CaptionPanel({
       </div>
 
       <div className="relative flex min-h-0 flex-[1_0_0] flex-col">
-        {(() => {
-          const rows = store.rows();
-          if (error) {
-            return (
-              <div className="flex h-full items-center justify-center text-sm text-destructive">
-                {String(error)}
-              </div>
-            );
-          }
-          if (!rows) return null;
-          return (
-            <>
-              {/* Captions — hidden (not unmounted) to preserve scroll position */}
-              <div
-                className="flex min-h-0 flex-[1_0_0] flex-col"
-                style={{
-                  display: activeTab === "captions" ? undefined : "none",
-                }}
-              >
-                <CaptionViewer
-                  ref={captionListRef}
-                  rows={rows}
-                  player={player}
-                  autoScroll={autoScroll}
-                  bookmarksByIndex={store.bookmarksByIndex()}
-                  onGoToBookmark={onGoToBookmark}
-                  onPopoverOpenChange={onPopoverOpenChange}
-                />
-              </div>
+        {error ? (
+          <div className="flex h-full items-center justify-center text-sm text-destructive">
+            {String(error)}
+          </div>
+        ) : !store ? (
+          <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
+            Loading subtitles…
+          </div>
+        ) : (
+          <>
+            {/* Captions — hidden (not unmounted) to preserve scroll position */}
+            <div
+              className="flex min-h-0 flex-[1_0_0] flex-col"
+              style={{
+                display: activeTab === "captions" ? undefined : "none",
+              }}
+            >
+              <CaptionViewer
+                ref={captionListRef}
+                rows={store.rows()}
+                player={player}
+                autoScroll={autoScroll}
+                bookmarksByIndex={store.bookmarksByIndex()}
+                onGoToBookmark={onGoToBookmark}
+                onPopoverOpenChange={onPopoverOpenChange}
+              />
+            </div>
 
-              {/* Bookmarks list */}
-              {activeTab === "bookmarks" && (
-                <div className="flex-[1_0_0] overflow-y-auto">
-                  {sortedBookmarks.length === 0 ? (
-                    <div className="flex h-full items-center justify-center">
-                      <p className="text-sm text-muted-foreground">
-                        No bookmarks yet
-                      </p>
-                    </div>
-                  ) : (
-                    <ExtensionBookmarksList
-                      bookmarks={sortedBookmarks}
-                      rows={rows}
-                      player={player}
-                      onDeleteBookmark={(id) => store.deleteBookmark(id)}
-                      onGoToCaption={onGoToCaption}
-                      flashBookmarkId={flashBookmarkId}
-                    />
-                  )}
-                </div>
-              )}
-            </>
-          );
-        })()}
+            {/* Bookmarks list */}
+            {activeTab === "bookmarks" && (
+              <div className="flex-[1_0_0] overflow-y-auto">
+                {sortedBookmarks.length === 0 ? (
+                  <div className="flex h-full items-center justify-center">
+                    <p className="text-sm text-muted-foreground">
+                      No bookmarks yet
+                    </p>
+                  </div>
+                ) : (
+                  <ExtensionBookmarksList
+                    bookmarks={sortedBookmarks}
+                    rows={store.rows()}
+                    player={player}
+                    onDeleteBookmark={(id) => store.deleteBookmark(id)}
+                    onGoToCaption={onGoToCaption}
+                    flashBookmarkId={flashBookmarkId}
+                  />
+                )}
+              </div>
+            )}
+          </>
+        )}
 
         {/* Floating bookmark action buttons */}
         {(bookmarkSelection || isCreating) && (

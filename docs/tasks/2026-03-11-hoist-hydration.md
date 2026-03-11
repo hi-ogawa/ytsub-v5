@@ -90,15 +90,48 @@ constructor(params: {
 - Store creation (only when all queries resolved)
 - Returns `null` while loading — callers already handle this (extension shows "Loading subtitles…")
 
+## CaptionPanel component split
+
+The store being nullable creates a problem: `CaptionPanel` mixes store-independent UI (TrackPicker) with store-dependent UI (settings, tabs, captions, bookmarks). Without a split, null checks leak throughout the viewer logic.
+
+**Split into two components:**
+
+- **`CaptionPanel`** (outer) — always renders. Owns TrackPicker (uses `vssId1`/`vssId2` from hook, not store). When store is null, shows skeleton/disabled content area. When store is ready, renders `CaptionPanelContent`.
+- **`CaptionPanelContent`** (inner) — receives non-null store as prop. Owns tabs, caption viewer, bookmarks list, bookmark creation FAB. Zero null checks on store.
+- **`SettingsDropdown`** — receives non-null store as prop. Owns strategy selector, export, clear bookmarks, auto-scroll toggle, AI prompt copy. Extracted from the inline dropdown in CaptionPanel; rendered by the outer component only when store is ready (or disabled/hidden when null).
+
+This keeps the null boundary at one point (the outer component's conditional render) instead of scattered throughout the viewer logic.
+
+## Hydration query caching
+
+Don't use `staleTime: Infinity` for the IndexedDB hydration query. Hydration is a one-shot "what's in the DB right now?" — caching across mounts is harmful because bookmarks may have been persisted since the last query. Use `gcTime: 0` so the cache is discarded on unmount and each mount fetches fresh.
+
+## Strategy data gap
+
+IndexedDB sessions (`CaptionSession`) don't store which merge strategy was used. After hydration, the strategy shown in the dropdown is a guess. Consider adding `strategy` to the `CaptionSession` schema so it round-trips correctly.
+
 ## Files to change
 
 - `src/lib/caption-session.ts` — store + hook
 - `src/routes/dev-viewer.tsx` — handle null store during loading
 - `src/extension/content.tsx` — same
-- `src/components/caption-panel.tsx` — track/strategy selection callbacks come from hook, not store
+- `src/components/caption-panel.tsx` — split into outer (TrackPicker + loading gate) and inner (store-dependent content)
 
 ## Status
 
-- [ ] Task doc approved
-- [ ] Implementation
+- [x] Task doc approved
+- [ ] Implementation (in progress — store + hook done, component split remaining)
 - [ ] Verification
+
+### Done
+- Store refactored: non-nullable constructor, removed lifecycle methods
+- Hook rewritten: owns track/strategy state, hydration via useQuery, creates store when resolved
+- Consumers updated: `dev-viewer.tsx`, `content.tsx`, `zamak-api.ts`
+- Build passes (`pnpm tsc`, `pnpm build`)
+- 15/16 E2E tests passing (first 16 that ran)
+
+### Remaining
+- Fix hydration query caching (`staleTime: Infinity` → `gcTime: 0`)
+- Split `CaptionPanel` into outer + inner component
+- Run full E2E suite
+- Consider adding `strategy` to IndexedDB schema

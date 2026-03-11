@@ -84,11 +84,8 @@ function DevViewerSession({
   const { store } = session;
 
   useZamakApi({
-    session: store,
-    rows: store.rows(),
+    store,
     videoMeta: meta.video,
-    language1: store.selectedTrack1()?.languageCode ?? "ko",
-    language2: store.selectedTrack2()?.languageCode ?? "en",
   });
 
   return (
