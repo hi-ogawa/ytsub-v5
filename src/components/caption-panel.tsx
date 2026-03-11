@@ -33,6 +33,7 @@ import {
   type ExtensionBookmark,
   extractBookmarkSelection,
 } from "../lib/extension-bookmarks.ts";
+import { useLocalStorage } from "../lib/use-local-storage.ts";
 import type { YouTubeCaptionTrack } from "../lib/youtube.ts";
 import { CaptionList } from "./caption-list.tsx";
 import { TrackPicker } from "./track-picker.tsx";
@@ -223,22 +224,10 @@ export function CaptionPanel({
   player: YTPlayer | null;
   session: CaptionSession_Hook;
 }) {
-  const [autoScroll, setAutoScroll] = useState(() => {
-    try {
-      const stored = localStorage.getItem("zamak:auto-scroll");
-      return stored !== null ? (JSON.parse(stored) as boolean) : true;
-    } catch {
-      return true;
-    }
-  });
-
-  function toggleAutoScroll() {
-    setAutoScroll((prev) => {
-      const next = !prev;
-      localStorage.setItem("zamak:auto-scroll", JSON.stringify(next));
-      return next;
-    });
-  }
+  const [autoScroll, setAutoScroll] = useLocalStorage(
+    "zamak:auto-scroll",
+    true,
+  );
 
   const tracksLocked = store ? store.bookmarks.length > 0 : false;
 
@@ -258,7 +247,7 @@ export function CaptionPanel({
           <SettingsDropdown
             store={store}
             autoScroll={autoScroll}
-            onToggleAutoScroll={toggleAutoScroll}
+            onSetAutoScroll={setAutoScroll}
             onSelectStrategy={selectStrategy}
           />
         )}
@@ -288,12 +277,12 @@ export function CaptionPanel({
 function SettingsDropdown({
   store,
   autoScroll,
-  onToggleAutoScroll,
+  onSetAutoScroll,
   onSelectStrategy,
 }: {
   store: CaptionSessionStore;
   autoScroll: boolean;
-  onToggleAutoScroll: () => void;
+  onSetAutoScroll: (value: boolean | ((prev: boolean) => boolean)) => void;
   onSelectStrategy: (s: MergeStrategy) => void;
 }) {
   const hasBookmarks = store.bookmarks.length > 0;
@@ -311,7 +300,7 @@ function SettingsDropdown({
           data-checked={autoScroll}
           onSelect={(e) => {
             e.preventDefault();
-            onToggleAutoScroll();
+            onSetAutoScroll((v) => !v);
           }}
         >
           <Check

@@ -6,10 +6,11 @@ export type VideoIndexEntry = {
   updatedAt: string;
 };
 
-const KEY = "zamak:video-index";
-export const VIDEO_INDEX_EVENT = "zamak:video-index-updated";
+import { notifyLocalStorage } from "./use-local-storage.ts";
 
-export function getVideoIndex(): VideoIndexEntry[] {
+const KEY = "zamak:video-index";
+
+function getVideoIndex(): VideoIndexEntry[] {
   try {
     const raw = localStorage.getItem(KEY);
     return raw ? (JSON.parse(raw) as VideoIndexEntry[]) : [];
@@ -20,7 +21,7 @@ export function getVideoIndex(): VideoIndexEntry[] {
 
 function writeIndex(entries: VideoIndexEntry[]) {
   localStorage.setItem(KEY, JSON.stringify(entries));
-  window.dispatchEvent(new Event(VIDEO_INDEX_EVENT));
+  notifyLocalStorage(KEY);
 }
 
 export function updateVideoIndex(
