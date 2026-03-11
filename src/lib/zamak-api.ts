@@ -234,9 +234,7 @@ export function useZamakApi(store: CaptionSessionStore | null) {
       },
 
       fillBookmarks(entries) {
-        store.updateBookmarks(
-          entries.map(({ id, ...data }) => ({ id, data })),
-        );
+        store.updateBookmarks(entries);
         console.log(`ZAMAK:fillBookmarks done — ${entries.length} updated`);
       },
 

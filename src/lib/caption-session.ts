@@ -170,17 +170,12 @@ export class CaptionSessionStore {
   }
 
   async updateBookmarks(
-    entries: {
-      id: string;
-      data: Partial<
-        Pick<ExtensionBookmark, "translation" | "etymology" | "notes">
-      >;
-    }[],
+    entries: (Partial<ExtensionBookmark> & { id: string })[],
   ): Promise<void> {
-    const updates = new Map(entries.map((e) => [e.id, e.data]));
+    const updates = new Map(entries.map((e) => [e.id, e]));
     this.bookmarks = this.bookmarks.map((b) => {
-      const data = updates.get(b.id);
-      return data ? { ...b, ...data } : b;
+      const u = updates.get(b.id);
+      return u ? { ...b, ...u } : b;
     });
     this.notify();
     await this.persistSession();
