@@ -17,11 +17,7 @@ import {
   getSession,
   saveSession,
 } from "./caption-session-db.ts";
-import {
-  type BookmarkSelection,
-  type ExtensionBookmark,
-  createBookmark,
-} from "./extension-bookmarks.ts";
+import type { ExtensionBookmark } from "./extension-bookmarks.ts";
 import { removeFromVideoIndex, updateVideoIndex } from "./video-index.ts";
 import {
   type Json3File,
@@ -147,27 +143,13 @@ export class CaptionSessionStore {
   }
 
   async createBookmarks(
-    selections: (BookmarkSelection & {
-      timestamp: number;
-      context: string;
-      translation?: string;
-      etymology?: string;
-      notes?: string;
-    })[],
+    selections: Omit<ExtensionBookmark, "id" | "createdAt">[],
   ): Promise<void> {
-    const newBookmarks = selections.map((sel) =>
-      createBookmark({
-        text: sel.text,
-        side: sel.side,
-        offset: sel.offset,
-        captionIndex: sel.captionIndex,
-        timestamp: sel.timestamp,
-        context: sel.context,
-        translation: sel.translation,
-        etymology: sel.etymology,
-        notes: sel.notes,
-      }),
-    );
+    const newBookmarks: ExtensionBookmark[] = selections.map((sel) => ({
+      id: crypto.randomUUID(),
+      createdAt: new Date().toISOString(),
+      ...sel,
+    }));
     this.bookmarks = [...this.bookmarks, ...newBookmarks];
     this.syncVideoIndex();
     this.notify();
