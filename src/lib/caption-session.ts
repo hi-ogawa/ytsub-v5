@@ -92,12 +92,11 @@ export class CaptionSessionStore {
   readonly videoMeta: VideoMeta;
   readonly track1: YouTubeCaptionTrack;
   readonly track2: YouTubeCaptionTrack;
-  readonly mergedRows: MergedCaption[];
-  readonly strategy: MergeStrategy;
-  captionOverrides = new Map<number, { text1?: string; text2?: string }>();
+  mergedRows: MergedCaption[]; // TOOD: just rows?
+  readonly strategy: MergeStrategy; // TODO: smells
   bookmarks: ExtensionBookmark[];
   version = 0;
-  onChange: (() => void) | null = null;
+  onChange: (() => void) | null = null; // TODO: should be listeners: Set<() => void>
 
   constructor(params: {
     tracks: YouTubeCaptionTrack[];
@@ -131,16 +130,7 @@ export class CaptionSessionStore {
   // --- Derived ---
 
   rows(): MergedCaption[] {
-    if (this.captionOverrides.size === 0) return this.mergedRows;
-    return this.mergedRows.map((r) => {
-      const override = this.captionOverrides.get(r.idx);
-      if (!override) return r;
-      return {
-        ...r,
-        ...(override.text1 !== undefined && { text1: override.text1 }),
-        ...(override.text2 !== undefined && { text2: override.text2 }),
-      };
-    });
+    return this.mergedRows;
   }
 
   bookmarksByIndex(): Map<number, ExtensionBookmark[]> {
@@ -155,16 +145,21 @@ export class CaptionSessionStore {
 
   // --- Operations ---
 
-  updateCaptions(
+  async updateCaptions(
     entries: { idx: number; text1?: string; text2?: string }[],
-  ): void {
-    for (const { idx, ...data } of entries) {
-      this.captionOverrides.set(idx, {
-        ...this.captionOverrides.get(idx),
-        ...data,
-      });
-    }
+  ): Promise<void> {
+    const updates = new Map(entries.map((e) => [e.idx, e]));
+    this.mergedRows = this.mergedRows.map((r) => {
+      const u = updates.get(r.idx);
+      if (!u) return r;
+      return {
+        ...r,
+        ...(u.text1 !== undefined && { text1: u.text1 }),
+        ...(u.text2 !== undefined && { text2: u.text2 }),
+      };
+    });
     this.notify();
+    await this.persistSession();
   }
 
   async createBookmarks(
