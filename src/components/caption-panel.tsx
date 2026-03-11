@@ -390,18 +390,16 @@ export function CaptionPanel({
               />
               Auto-scroll
             </DropdownMenuItem>
-            {!store.isAutoStrategy() && (
+            {store.strategy && (
               <div className="px-2 py-1.5">
                 <label className="mb-1 block text-xs text-muted-foreground">
                   Track alignment
                 </label>
                 <select
                   className={`w-full rounded border bg-background px-1 py-0.5 text-sm ${tracksLocked ? "cursor-not-allowed opacity-50" : ""}`}
-                  value={store.forceStrategy ?? store.activeStrategy ?? ""}
+                  value={store.strategy}
                   onChange={(e) =>
-                    store.setForceStrategy(
-                      (e.target.value as MergeStrategy) || undefined,
-                    )
+                    store.setStrategy(e.target.value as MergeStrategy)
                   }
                   title={
                     tracksLocked
@@ -410,7 +408,7 @@ export function CaptionPanel({
                   }
                   disabled={tracksLocked}
                 >
-                  {store.fallbackStrategies.map((s) => (
+                  {store.allStrategies.map((s) => (
                     <option key={s} value={s}>
                       {s}
                     </option>

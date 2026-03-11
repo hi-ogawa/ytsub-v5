@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useSyncExternalStore } from "react";
 import {
-  FALLBACK_STRATEGIES,
+  ALL_STRATEGIES,
   type MergeStrategy,
   type MergedCaption,
   mergeCaptions,
@@ -87,14 +87,13 @@ export class CaptionSessionStore {
   readonly youtubeId: string;
   readonly tracks: YouTubeCaptionTrack[];
   readonly videoMeta: VideoMeta;
-  readonly fallbackStrategies = FALLBACK_STRATEGIES;
+  readonly allStrategies = ALL_STRATEGIES;
 
   selectedVssId1: string | undefined;
   selectedVssId2: string | undefined;
-  forceStrategy: MergeStrategy | undefined = undefined;
+  strategy: MergeStrategy | undefined = undefined;
   hydrationStatus: "pending" | "none" | "loaded" = "pending";
   mergedRows: MergedCaption[] | undefined = undefined;
-  activeStrategy: MergeStrategy | undefined = undefined;
   captionOverrides = new Map<number, { text1?: string; text2?: string }>();
   bookmarks: ExtensionBookmark[] = [];
   version = 0;
@@ -148,15 +147,6 @@ export class CaptionSessionStore {
     });
   }
 
-  isAutoStrategy(): boolean {
-    return (
-      this.hydrationStatus !== "loaded" &&
-      !this.forceStrategy &&
-      (this.activeStrategy === "strict" ||
-        this.activeStrategy === "relaxed-strict")
-    );
-  }
-
   bookmarksByIndex(): Map<number, ExtensionBookmark[]> {
     const map = new Map<number, ExtensionBookmark[]>();
     for (const bm of this.bookmarks) {
@@ -175,7 +165,6 @@ export class CaptionSessionStore {
       this.selectedVssId1 = session.vssId1;
       this.selectedVssId2 = session.vssId2;
       this.mergedRows = session.captions;
-      this.activeStrategy = undefined;
       this.bookmarks = session.bookmarks;
       this.hydrationStatus = "loaded";
     } else {
@@ -186,7 +175,7 @@ export class CaptionSessionStore {
 
   setCaptions(merged: MergedCaption[], strategy: MergeStrategy): void {
     this.mergedRows = merged;
-    this.activeStrategy = strategy;
+    this.strategy = strategy;
     this.notify();
   }
 
@@ -197,8 +186,8 @@ export class CaptionSessionStore {
     this.notify();
   }
 
-  setForceStrategy(s: MergeStrategy | undefined): void {
-    this.forceStrategy = s;
+  setStrategy(s: MergeStrategy): void {
+    this.strategy = s;
     this.notify();
   }
 
@@ -412,9 +401,9 @@ export function useCaptionSession({
     return mergeCaptions(
       { json3: json3_1, vssId: sel1.vssId },
       { json3: json3_2, vssId: sel2.vssId },
-      store.forceStrategy,
+      store.strategy,
     );
-  }, [json3_1, json3_2, sel1, sel2, store.forceStrategy, isHydrated]);
+  }, [json3_1, json3_2, sel1, sel2, store.strategy, isHydrated]);
 
   useEffect(() => {
     if (mergeResult) {
