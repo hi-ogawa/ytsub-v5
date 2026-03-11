@@ -127,15 +127,15 @@ export class CaptionSessionStore {
 
   // --- Derived ---
 
-  get selectedTrack1(): YouTubeCaptionTrack | undefined {
+  selectedTrack1(): YouTubeCaptionTrack | undefined {
     return this.tracks.find((t) => t.vssId === this.selectedVssId1);
   }
 
-  get selectedTrack2(): YouTubeCaptionTrack | undefined {
+  selectedTrack2(): YouTubeCaptionTrack | undefined {
     return this.tracks.find((t) => t.vssId === this.selectedVssId2);
   }
 
-  get rows(): MergedCaption[] | undefined {
+  rows(): MergedCaption[] | undefined {
     if (this.captionOverrides.size === 0) return this.mergedRows;
     return this.mergedRows?.map((r) => {
       const override = this.captionOverrides.get(r.idx);
@@ -148,7 +148,7 @@ export class CaptionSessionStore {
     });
   }
 
-  get isAutoStrategy(): boolean {
+  isAutoStrategy(): boolean {
     return (
       this.hydrationStatus !== "loaded" &&
       !this.forceStrategy &&
@@ -157,7 +157,7 @@ export class CaptionSessionStore {
     );
   }
 
-  get bookmarksByIndex(): Map<number, ExtensionBookmark[]> {
+  bookmarksByIndex(): Map<number, ExtensionBookmark[]> {
     const map = new Map<number, ExtensionBookmark[]>();
     for (const bm of this.bookmarks) {
       const list = map.get(bm.captionIndex);
@@ -280,7 +280,7 @@ export class CaptionSessionStore {
   }
 
   exportFile(): void {
-    const rows = this.rows;
+    const rows = this.rows();
     if (!rows) return;
     const data = {
       video: {
@@ -289,8 +289,8 @@ export class CaptionSessionStore {
         channelName: this.videoMeta.channelName ?? "",
         channelId: this.videoMeta.channelId ?? "",
         duration: this.videoMeta.duration ?? 0,
-        language1: this.selectedTrack1?.languageCode ?? "ko",
-        language2: this.selectedTrack2?.languageCode ?? "en",
+        language1: this.selectedTrack1()?.languageCode ?? "ko",
+        language2: this.selectedTrack2()?.languageCode ?? "en",
       },
       captions: rows.map((r, i) => ({
         idx: i,
@@ -324,8 +324,8 @@ export class CaptionSessionStore {
 
   persistSession(): void {
     const rows = this.mergedRows;
-    const t1 = this.selectedTrack1;
-    const t2 = this.selectedTrack2;
+    const t1 = this.selectedTrack1();
+    const t2 = this.selectedTrack2();
     if (!rows || !t1 || !t2) return;
     const session: CaptionSession = {
       youtubeId: this.youtubeId,
@@ -387,8 +387,8 @@ export function useCaptionSession({
 
   // Fetch json3 — disabled when hydrated
   const isHydrated = store.hydrationStatus === "loaded";
-  const sel1 = store.selectedTrack1;
-  const sel2 = store.selectedTrack2;
+  const sel1 = store.selectedTrack1();
+  const sel2 = store.selectedTrack2();
 
   const json3Query1 = useQuery({
     queryKey: ["json3", sel1?.vssId],

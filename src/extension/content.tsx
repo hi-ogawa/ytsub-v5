@@ -124,10 +124,10 @@ function ExtensionSession({
 
   useZamakApi({
     session: store,
-    rows: store.rows,
+    rows: store.rows(),
     videoMeta: data.video,
-    language1: store.selectedTrack1?.languageCode ?? "ko",
-    language2: store.selectedTrack2?.languageCode ?? "en",
+    language1: store.selectedTrack1()?.languageCode ?? "ko",
+    language2: store.selectedTrack2()?.languageCode ?? "en",
   });
 
   return (

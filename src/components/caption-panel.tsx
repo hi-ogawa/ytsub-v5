@@ -331,8 +331,9 @@ export function CaptionPanel({
   }, [getSelection]);
 
   function onClickBookmark() {
-    if (!bookmarkSelection || !store.rows) return;
-    const row = store.rows[bookmarkSelection.captionIndex];
+    const rows = store.rows();
+    if (!bookmarkSelection || !rows) return;
+    const row = rows[bookmarkSelection.captionIndex];
     if (!row) return;
     setIsCreating(true);
     store.createBookmarks([
@@ -389,7 +390,7 @@ export function CaptionPanel({
               />
               Auto-scroll
             </DropdownMenuItem>
-            {!store.isAutoStrategy && (
+            {!store.isAutoStrategy() && (
               <div className="px-2 py-1.5">
                 <label className="mb-1 block text-xs text-muted-foreground">
                   Track alignment
@@ -481,53 +482,60 @@ export function CaptionPanel({
       </div>
 
       <div className="relative flex min-h-0 flex-[1_0_0] flex-col">
-        {error ? (
-          <div className="flex h-full items-center justify-center text-sm text-destructive">
-            {String(error)}
-          </div>
-        ) : store.rows ? (
-          <>
-            {/* Captions — hidden (not unmounted) to preserve scroll position */}
-            <div
-              className="flex min-h-0 flex-[1_0_0] flex-col"
-              style={{
-                display: activeTab === "captions" ? undefined : "none",
-              }}
-            >
-              <CaptionViewer
-                ref={captionListRef}
-                rows={store.rows}
-                player={player}
-                autoScroll={autoScroll}
-                bookmarksByIndex={store.bookmarksByIndex}
-                onGoToBookmark={onGoToBookmark}
-                onPopoverOpenChange={onPopoverOpenChange}
-              />
-            </div>
-
-            {/* Bookmarks list */}
-            {activeTab === "bookmarks" && (
-              <div className="flex-[1_0_0] overflow-y-auto">
-                {sortedBookmarks.length === 0 ? (
-                  <div className="flex h-full items-center justify-center">
-                    <p className="text-sm text-muted-foreground">
-                      No bookmarks yet
-                    </p>
-                  </div>
-                ) : (
-                  <ExtensionBookmarksList
-                    bookmarks={sortedBookmarks}
-                    rows={store.rows}
-                    player={player}
-                    onDeleteBookmark={(id) => store.deleteBookmark(id)}
-                    onGoToCaption={onGoToCaption}
-                    flashBookmarkId={flashBookmarkId}
-                  />
-                )}
+        {(() => {
+          const rows = store.rows();
+          if (error) {
+            return (
+              <div className="flex h-full items-center justify-center text-sm text-destructive">
+                {String(error)}
               </div>
-            )}
-          </>
-        ) : null}
+            );
+          }
+          if (!rows) return null;
+          return (
+            <>
+              {/* Captions — hidden (not unmounted) to preserve scroll position */}
+              <div
+                className="flex min-h-0 flex-[1_0_0] flex-col"
+                style={{
+                  display: activeTab === "captions" ? undefined : "none",
+                }}
+              >
+                <CaptionViewer
+                  ref={captionListRef}
+                  rows={rows}
+                  player={player}
+                  autoScroll={autoScroll}
+                  bookmarksByIndex={store.bookmarksByIndex()}
+                  onGoToBookmark={onGoToBookmark}
+                  onPopoverOpenChange={onPopoverOpenChange}
+                />
+              </div>
+
+              {/* Bookmarks list */}
+              {activeTab === "bookmarks" && (
+                <div className="flex-[1_0_0] overflow-y-auto">
+                  {sortedBookmarks.length === 0 ? (
+                    <div className="flex h-full items-center justify-center">
+                      <p className="text-sm text-muted-foreground">
+                        No bookmarks yet
+                      </p>
+                    </div>
+                  ) : (
+                    <ExtensionBookmarksList
+                      bookmarks={sortedBookmarks}
+                      rows={rows}
+                      player={player}
+                      onDeleteBookmark={(id) => store.deleteBookmark(id)}
+                      onGoToCaption={onGoToCaption}
+                      flashBookmarkId={flashBookmarkId}
+                    />
+                  )}
+                </div>
+              )}
+            </>
+          );
+        })()}
 
         {/* Floating bookmark action buttons */}
         {(bookmarkSelection || isCreating) && (
