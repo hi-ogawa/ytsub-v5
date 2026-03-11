@@ -284,64 +284,41 @@ export function CaptionPanel({
     enabled: !!sel2 && !isHydrating && !useHydratedData,
   });
 
-  // Merge fetched captions
+  // Store creation — merge + resolve in one shot
+  // TODO: should skeleton while store is undefined?
   const json3_1 = json3Query1.data;
   const json3_2 = json3Query2.data;
-  const mergeResult = useMemo(() => {
-    if (useHydratedData || !json3_1 || !json3_2 || !sel1 || !sel2)
-      return undefined;
-    return mergeCaptions(
-      { json3: json3_1, vssId: sel1.vssId },
-      { json3: json3_2, vssId: sel2.vssId },
-      userStrategy,
-    );
-  }, [json3_1, json3_2, sel1, sel2, userStrategy, useHydratedData]);
-
-  // Resolve all data for store creation
-  const resolvedData = useMemo(() => {
-    if (isHydrating || !vssId1 || !vssId2) return null;
+  const store = useMemo(() => {
+    if (isHydrating || !vssId1 || !vssId2) return undefined;
 
     if (useHydratedData) {
-      return {
+      return new CaptionSessionStore({
+        videoMeta,
         vssId1: session!.vssId1,
         vssId2: session!.vssId2,
         rows: session!.captions,
         strategy: "partition" as MergeStrategy,
         bookmarks: session!.bookmarks,
-      };
-    }
-
-    if (!mergeResult) return null;
-
-    return {
-      vssId1,
-      vssId2,
-      rows: mergeResult.captions,
-      strategy: mergeResult.strategy,
-      bookmarks: [] as ExtensionBookmark[],
-    };
-  }, [isHydrating, vssId1, vssId2, useHydratedData, session, mergeResult]);
-
-  // Store creation (ref to preserve mutable state across renders)
-  const storeRef = useRef<CaptionSessionStore | null>(null);
-  const storeKeyRef = useRef("");
-
-  // TOOD: should skelton if no resolvedData
-  if (resolvedData) {
-    const key = `${youtubeId}:${resolvedData.vssId1}:${resolvedData.vssId2}:${resolvedData.strategy}`;
-    if (key !== storeKeyRef.current) {
-      storeKeyRef.current = key;
-      storeRef.current = new CaptionSessionStore({
-        videoMeta,
-        ...resolvedData,
       });
     }
-  } else {
-    storeRef.current = null;
-    storeKeyRef.current = "";
-  }
 
-  const store = storeRef.current;
+    if (!json3_1 || !json3_2 || !sel1 || !sel2) return undefined;
+
+    const merged = mergeCaptions(
+      { json3: json3_1, vssId: sel1.vssId },
+      { json3: json3_2, vssId: sel2.vssId },
+      userStrategy,
+    );
+
+    return new CaptionSessionStore({
+      videoMeta,
+      vssId1,
+      vssId2,
+      rows: merged.captions,
+      strategy: merged.strategy,
+      bookmarks: [],
+    });
+  }, [isHydrating, vssId1, vssId2, useHydratedData, session, json3_1, json3_2, sel1, sel2, userStrategy, videoMeta]);
 
   useSyncExternalStore(
     (cb) => store?.subscribe(cb) ?? (() => {}),

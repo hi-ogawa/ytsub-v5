@@ -184,6 +184,95 @@ Currently `useCaptionSession` is used in two places:
 
 Both callers exist only to call the hook and forward to `CaptionPanel`. If CaptionPanel owns the hook logic directly, these wrapper components may collapse.
 
+## Component tree per state
+
+After inlining into CaptionPanel, the question: what should render at each state?
+
+### State 1: Hydrating (IndexedDB query pending)
+
+We don't know anything yet — not which tracks were last used, not whether bookmarks exist.
+
+```
+CaptionPanel
+├── TrackPicker (disabled? empty selection? or show localStorage guess?)
+└── content: skeleton / spinner
+```
+
+Problem: TrackPicker needs `vssId1`/`vssId2` to show selection. We can derive from localStorage immediately (synchronous), so TrackPicker can show the *guessed* selection even before hydration completes. This is actually what happens today — `initialTracks` from localStorage is synchronous.
+
+### State 2: Fetching json3 (tracks known, no store yet)
+
+Tracks are selected, we're waiting for subtitle data.
+
+```
+CaptionPanel
+├── TrackPicker (shows selection, enabled — user can change tracks)
+├── SettingsDropdown — CANNOT render (needs store for strategy, bookmarks count, export)
+└── content: skeleton / "Loading subtitles…"
+```
+
+### State 3: Store ready
+
+```
+CaptionPanel
+├── TrackPicker (shows selection, disabled if bookmarks exist)
+├── SettingsDropdown (strategy, export, clear bookmarks, auto-scroll, AI prompt)
+└── CaptionPanelContent (tabs, captions, bookmarks, FAB)
+```
+
+### What's wrong today
+
+The current code renders all hooks unconditionally in CaptionPanel, then conditionally renders UI. This means:
+
+1. **Wasted work**: useMemo for merge, useSyncExternalStore, useZamakApi all run even when store is null.
+2. **Null checks everywhere**: `store ?` scattered through the render.
+3. **No clear boundary**: The "loading" vs "ready" split is buried in a ternary inside JSX.
+
+### Proposed component split
+
+```
+CaptionPanel (outer)
+  — owns: hydration query, track selection state, localStorage track prefs
+  — always renders: TrackPicker
+  — conditionally renders:
+
+  if hydrating or fetching:
+    → skeleton/spinner in content area
+
+  if store ready:
+    → CaptionSession (inner)
+         — owns: store ref, useSyncExternalStore, useZamakApi
+         — receives: non-null store, player, tracks
+         — renders: SettingsDropdown + CaptionPanelContent
+```
+
+The key insight: **CaptionSession should only mount when the store exists**. This means:
+- No null store inside CaptionSession — ever
+- useSyncExternalStore always has a real store
+- useZamakApi always has a real store
+- SettingsDropdown/CaptionPanelContent receive non-null store
+
+The outer CaptionPanel handles the "what are we waiting for?" question. The inner CaptionSession handles the "we have data, render it" question.
+
+### Open question: where does json3 fetching live?
+
+Option A: Outer CaptionPanel owns fetch queries + merge. Creates store when ready. Passes store down.
+Option B: A middle layer owns fetching. Outer just does hydration + track selection.
+
+Option A keeps it simple — two layers, not three. The outer CaptionPanel is "resolve everything", the inner CaptionSession is "render with resolved data."
+
+### Open question: what about track/strategy changes?
+
+When user changes tracks on an active store:
+1. Old store is abandoned (store → null)
+2. New json3 fetch starts
+3. CaptionSession unmounts (store is null)
+4. CaptionSession remounts when new store is ready
+
+This is clean — CaptionSession lifecycle matches store lifecycle. No "store changed under you" problem. The gap where store=null shows the loading state naturally.
+
+But: the gap means useZamakApi briefly installs the stub API. Is that a problem? Probably not — the user can't interact with the AI skill during a 100ms fetch.
+
 ## Observations
 
 1. **Store identity = key**: `${youtubeId}:${vssId1}:${vssId2}:${strategy}`. Any change to these → new store, old state gone.

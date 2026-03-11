@@ -113,7 +113,7 @@ if (!window.__zamak) {
   window.__zamak = createStubApi();
 }
 
-export function useZamakApi(store: CaptionSessionStore | null) {
+export function useZamakApi(store?: CaptionSessionStore) {
   useEffect(() => {
     if (!store) {
       window.__zamak = createStubApi();
