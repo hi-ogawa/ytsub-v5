@@ -65,6 +65,7 @@ constructor(params: {
 ```
 
 **Remove from store:**
+
 - `hydrate()` method
 - `hydrationStatus` field
 - `setCaptions()` method
@@ -74,6 +75,7 @@ constructor(params: {
 - Language fallbacks (`?? "ko"`, `?? "en"`) in `exportFile` — tracks are always known
 
 **All properties become non-nullable:**
+
 - `vssId1: string`, `vssId2: string`
 - `mergedRows: MergedCaption[]`
 - `strategy: MergeStrategy`
@@ -81,6 +83,7 @@ constructor(params: {
 **Store becomes simpler** — just state + bookmark CRUD + persistence + export. No lifecycle, no data loading, no selection management.
 
 **Hook owns:**
+
 - `useState` for track pair + strategy (drives queries)
 - `useQuery` for hydration, json3 fetches
 - `useMemo` for merge
