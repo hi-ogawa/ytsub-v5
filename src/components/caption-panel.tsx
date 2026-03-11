@@ -239,8 +239,8 @@ export function CaptionPanel({
   const { youtubeId } = videoMeta;
 
   // Hydration from IndexedDB (gcTime: 0 ensures fresh data on each mount)
+  // TODO: should skelton when loading
   // TODO: this should restore Store?
-  // TODO: when loading entire CaptionPanel should skelton?
   const hydrationQuery = useQuery({
     queryKey: ["caption-session", youtubeId],
     queryFn: async () => (await getSession(youtubeId)) ?? null,
@@ -271,6 +271,7 @@ export function CaptionPanel({
   const sel2 = tracks.find((t) => t.vssId === vssId2);
 
   // Json3 fetches — disabled while hydrating or when using hydrated data
+  // TODO: should skelton when fetching
   const json3Query1 = useQuery({
     queryKey: ["json3", sel1?.vssId],
     queryFn: () => fetchJson3(sel1!),
@@ -325,6 +326,7 @@ export function CaptionPanel({
   const storeRef = useRef<CaptionSessionStore | null>(null);
   const storeKeyRef = useRef("");
 
+  // TOOD: should skelton if no resolvedData
   if (resolvedData) {
     const key = `${youtubeId}:${resolvedData.vssId1}:${resolvedData.vssId2}:${resolvedData.strategy}`;
     if (key !== storeKeyRef.current) {
@@ -356,11 +358,6 @@ export function CaptionPanel({
     [tracks, youtubeId],
   );
 
-  // Strategy selection callback
-  const selectStrategy = useCallback((s: MergeStrategy) => {
-    setUserStrategy(s);
-  }, []);
-
   const error = json3Query1.error ?? json3Query2.error ?? null;
 
   useZamakApi(store);
@@ -389,7 +386,7 @@ export function CaptionPanel({
             store={store}
             autoScroll={autoScroll}
             onSetAutoScroll={setAutoScroll}
-            onSelectStrategy={selectStrategy}
+            onSelectStrategy={setUserStrategy}
           />
         )}
       </div>
