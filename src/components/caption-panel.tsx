@@ -331,7 +331,20 @@ function SettingsDropdown({
           </select>
         </div>
         <AiPromptCopy />
-        <DropdownMenuItem onClick={() => store.exportFile()}>
+        <DropdownMenuItem
+          onClick={() => {
+            const data = store.toExportData();
+            const blob = new Blob([JSON.stringify(data, null, 2)], {
+              type: "application/json",
+            });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `import-${store.videoMeta.youtubeId}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+          }}
+        >
           <Download className="mr-2 h-4 w-4" />
           Export import.json
         </DropdownMenuItem>

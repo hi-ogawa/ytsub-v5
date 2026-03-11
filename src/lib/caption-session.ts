@@ -1,3 +1,4 @@
+import type { InferRouterInputs } from "@orpc/server";
 import { useQuery } from "@tanstack/react-query";
 import {
   useCallback,
@@ -18,6 +19,7 @@ import {
   saveSession,
 } from "./caption-session-db.ts";
 import type { ExtensionBookmark } from "./extension-bookmarks.ts";
+import type { Router } from "../server/rpc.ts";
 import { removeFromVideoIndex, updateVideoIndex } from "./video-index.ts";
 import {
   type Json3File,
@@ -32,6 +34,8 @@ export interface VideoMeta {
   channelId?: string;
   duration?: number;
 }
+
+export type ExportData = InferRouterInputs<Router>["videos"]["importVideo"];
 
 // --- Track preference persistence ---
 
@@ -188,19 +192,18 @@ export class CaptionSessionStore {
     await deleteSession(this.videoMeta.youtubeId);
   }
 
-  exportFile(): void {
-    const rows = this.rows;
-    const data = {
+  toExportData(): ExportData {
+    return {
       video: {
         youtubeId: this.videoMeta.youtubeId,
         title: this.videoMeta.title,
-        channelName: this.videoMeta.channelName ?? "",
-        channelId: this.videoMeta.channelId ?? "",
-        duration: this.videoMeta.duration ?? 0,
+        channelName: this.videoMeta.channelName,
+        channelId: this.videoMeta.channelId,
+        duration: this.videoMeta.duration,
         language1: this.track1.languageCode,
         language2: this.track2.languageCode,
       },
-      captions: rows.map((r, i) => ({
+      captions: this.rows.map((r, i) => ({
         idx: i,
         begin: r.begin,
         end: r.end,
@@ -219,15 +222,6 @@ export class CaptionSessionStore {
         status: "manual",
       })),
     };
-    const blob = new Blob([JSON.stringify(data, null, 2)], {
-      type: "application/json",
-    });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `import-${this.videoMeta.youtubeId}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
   }
 
   async persistSession(): Promise<void> {
