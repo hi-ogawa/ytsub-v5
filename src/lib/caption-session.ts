@@ -89,27 +89,17 @@ function saveSelectedTracks(
 // --- Store ---
 
 export class CaptionSessionStore {
-  // TODO: redundnat
-  // videoMeta -> youtubeId
-  // track -> vssId
-  readonly youtubeId: string;
-  readonly tracks: YouTubeCaptionTrack[];
   readonly videoMeta: VideoMeta;
-  readonly vssId1: string;
-  readonly vssId2: string;
   readonly track1: YouTubeCaptionTrack;
   readonly track2: YouTubeCaptionTrack;
   readonly mergedRows: MergedCaption[];
-  // TODO: do something with strategy
   readonly strategy: MergeStrategy;
-  // TOOD: needed?
   captionOverrides = new Map<number, { text1?: string; text2?: string }>();
   bookmarks: ExtensionBookmark[];
   version = 0;
   onChange: (() => void) | null = null;
 
   constructor(params: {
-    youtubeId: string;
     tracks: YouTubeCaptionTrack[];
     videoMeta: VideoMeta;
     vssId1: string;
@@ -118,11 +108,7 @@ export class CaptionSessionStore {
     strategy: MergeStrategy;
     bookmarks: ExtensionBookmark[];
   }) {
-    this.youtubeId = params.youtubeId;
-    this.tracks = params.tracks;
     this.videoMeta = params.videoMeta;
-    this.vssId1 = params.vssId1;
-    this.vssId2 = params.vssId2;
     this.track1 = params.tracks.find((t) => t.vssId === params.vssId1)!;
     this.track2 = params.tracks.find((t) => t.vssId === params.vssId2)!;
     this.mergedRows = params.mergedRows;
@@ -218,7 +204,7 @@ export class CaptionSessionStore {
     } else {
       this.syncVideoIndex();
       this.notify();
-      await deleteSession(this.youtubeId);
+      await deleteSession(this.videoMeta.youtubeId);
     }
   }
 
@@ -243,7 +229,7 @@ export class CaptionSessionStore {
     this.bookmarks = [];
     this.syncVideoIndex();
     this.notify();
-    await deleteSession(this.youtubeId);
+    await deleteSession(this.videoMeta.youtubeId);
   }
 
   exportFile(): void {
@@ -283,14 +269,14 @@ export class CaptionSessionStore {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `import-${this.youtubeId}.json`;
+    a.download = `import-${this.videoMeta.youtubeId}.json`;
     a.click();
     URL.revokeObjectURL(url);
   }
 
   async persistSession(): Promise<void> {
     const session: CaptionSession = {
-      youtubeId: this.youtubeId,
+      youtubeId: this.videoMeta.youtubeId,
       vssId1: this.track1.vssId,
       vssId2: this.track2.vssId,
       language1: this.track1.languageCode,
@@ -304,13 +290,13 @@ export class CaptionSessionStore {
   syncVideoIndex(): void {
     if (this.bookmarks.length > 0) {
       updateVideoIndex(
-        this.youtubeId,
+        this.videoMeta.youtubeId,
         this.videoMeta.title,
         this.videoMeta.channelName ?? "",
         this.bookmarks.length,
       );
     } else {
-      removeFromVideoIndex(this.youtubeId);
+      removeFromVideoIndex(this.videoMeta.youtubeId);
     }
   }
 }
@@ -418,7 +404,6 @@ export function useCaptionSession({
     if (key !== storeKeyRef.current) {
       storeKeyRef.current = key;
       storeRef.current = new CaptionSessionStore({
-        youtubeId,
         tracks,
         videoMeta,
         ...resolvedData,
