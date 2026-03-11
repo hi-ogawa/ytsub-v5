@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import {
   Bookmark,
   Check,
@@ -27,7 +27,7 @@ import {
   type MergedCaption,
   mergeCaptions,
 } from "../lib/caption-merge.ts";
-import { getSession } from "../lib/caption-session-db.ts";
+import { getSession, type CaptionSession } from "../lib/caption-session-db.ts";
 import {
   CaptionSessionStore,
   getInitialTracks,
@@ -225,84 +225,140 @@ function formatTimestamp(seconds: number): string {
   return `${m}:${String(s).padStart(2, "0")}`;
 }
 
-export function CaptionPanel({
-  tracks,
-  player,
-  fetchJson3,
-  videoMeta,
-}: {
+type CaptionPanelProps = {
   tracks: YouTubeCaptionTrack[];
   player: YTPlayer | null;
   fetchJson3: (track: YouTubeCaptionTrack) => Promise<Json3File>;
   videoMeta: YouTubeVideoData;
-}) {
-  const { youtubeId } = videoMeta;
+};
 
-  // Hydration from IndexedDB (gcTime: 0 ensures fresh data on each mount)
-  // TODO: should skelton when loading
-  // TODO: this should restore Store?
-  const hydrationQuery = useQuery({
+export function CaptionPanel(props: CaptionPanelProps) {
+  const { youtubeId } = props.videoMeta;
+
+  // Hydration from IndexedDB (suspends until resolved, gcTime: 0 for fresh data)
+  const hydrationQuery = useSuspenseQuery({
     queryKey: ["caption-session", youtubeId],
     queryFn: async () => (await getSession(youtubeId)) ?? null,
     gcTime: 0,
   });
-  const session = hydrationQuery.data ?? undefined;
-  const isHydrating = hydrationQuery.isPending;
+  const [session, setSession] = useState(hydrationQuery.data);
 
-  // Track selection state (user overrides, undefined = use default)
+  if (session) {
+    return (
+      <CaptionPanelWithSession
+        {...props}
+        session={session}
+        setSession={setSession}
+      />
+    );
+  }
+  return <CaptionPanelWithoutSession {...props} />;
+}
+
+function CaptionPanelWithSession({
+  tracks,
+  player,
+  videoMeta,
+  session,
+  setSession,
+}: CaptionPanelProps & {
+  session: CaptionSession;
+  setSession: (session: CaptionSession | null) => void;
+}) {
+  const store = useMemo(
+    () =>
+      new CaptionSessionStore({
+        videoMeta,
+        vssId1: session.vssId1,
+        vssId2: session.vssId2,
+        rows: session.captions,
+        strategy: "partition" as MergeStrategy,
+        bookmarks: session.bookmarks,
+      }),
+    [session, videoMeta],
+  );
+
+  useSyncExternalStore(
+    (cb) => store.subscribe(cb),
+    () => store.version,
+  );
+
+  useZamakApi(store);
+
+  const [autoScroll, setAutoScroll] = useLocalStorage(
+    "zamak:auto-scroll",
+    true,
+  );
+
+  return (
+    <div className="flex h-full flex-col">
+      <div className="flex items-center border-b">
+        <div className="min-w-0 flex-1">
+          <TrackPicker
+            tracks={tracks}
+            selectedVssId1={session.vssId1}
+            selectedVssId2={session.vssId2}
+            onSelect={() => setSession(null)}
+            disabled={store.bookmarks.length > 0}
+          />
+        </div>
+        <SettingsDropdown
+          store={store}
+          autoScroll={autoScroll}
+          onSetAutoScroll={setAutoScroll}
+          onSelectStrategy={() => {}}
+        />
+      </div>
+
+      <CaptionPanelContent
+        store={store}
+        player={player}
+        autoScroll={autoScroll}
+      />
+    </div>
+  );
+}
+
+function CaptionPanelWithoutSession({
+  tracks,
+  player,
+  fetchJson3,
+  videoMeta,
+}: CaptionPanelProps) {
+  const { youtubeId } = videoMeta;
+
   const [userVssId1, setUserVssId1] = useState<string | undefined>();
   const [userVssId2, setUserVssId2] = useState<string | undefined>();
   const [userStrategy, setUserStrategy] = useState<MergeStrategy | undefined>();
 
-  // Resolve initial tracks from localStorage preferences
   const initialTracks = useMemo(
     () => getInitialTracks(tracks, youtubeId),
     [tracks, youtubeId],
   );
 
-  // Effective track pair: user override > hydrated session > localStorage
-  const vssId1 = userVssId1 ?? session?.vssId1 ?? initialTracks.vssId1;
-  const vssId2 = userVssId2 ?? session?.vssId2 ?? initialTracks.vssId2;
-
-  // Use hydrated data when session exists and user hasn't overridden tracks
-  const useHydratedData = !!session && !userVssId1 && !userVssId2;
+  const vssId1 = userVssId1 ?? initialTracks.vssId1;
+  const vssId2 = userVssId2 ?? initialTracks.vssId2;
 
   const sel1 = tracks.find((t) => t.vssId === vssId1);
   const sel2 = tracks.find((t) => t.vssId === vssId2);
 
-  // Json3 fetches — disabled while hydrating or when using hydrated data
-  // TODO: should skelton when fetching
   const json3Query1 = useQuery({
     queryKey: ["json3", sel1?.vssId],
     queryFn: () => fetchJson3(sel1!),
-    enabled: !!sel1 && !isHydrating && !useHydratedData,
+    enabled: !!sel1,
   });
 
   const json3Query2 = useQuery({
     queryKey: ["json3", sel2?.vssId],
     queryFn: () => fetchJson3(sel2!),
-    enabled: !!sel2 && !isHydrating && !useHydratedData,
+    enabled: !!sel2,
   });
 
-  // Store creation — merge + resolve in one shot
-  // TODO: should skeleton while store is undefined?
   const json3_1 = json3Query1.data;
   const json3_2 = json3Query2.data;
   const store = useMemo(() => {
-    if (isHydrating || !vssId1 || !vssId2) return undefined;
-
-    if (useHydratedData) {
-      return new CaptionSessionStore({
-        videoMeta,
-        vssId1: session!.vssId1,
-        vssId2: session!.vssId2,
-        rows: session!.captions,
-        strategy: "partition" as MergeStrategy,
-        bookmarks: session!.bookmarks,
-      });
-    }
-
-    if (!json3_1 || !json3_2 || !sel1 || !sel2) return undefined;
+    if (!vssId1 || !vssId2 || !json3_1 || !json3_2 || !sel1 || !sel2)
+      return undefined;
 
     const merged = mergeCaptions(
       { json3: json3_1, vssId: sel1.vssId },
@@ -318,14 +374,13 @@ export function CaptionPanel({
       strategy: merged.strategy,
       bookmarks: [],
     });
-  }, [isHydrating, vssId1, vssId2, useHydratedData, session, json3_1, json3_2, sel1, sel2, userStrategy, videoMeta]);
+  }, [vssId1, vssId2, json3_1, json3_2, sel1, sel2, userStrategy, videoMeta]);
 
   useSyncExternalStore(
     (cb) => store?.subscribe(cb) ?? (() => {}),
     () => store?.version ?? 0,
   );
 
-  // Track selection callback
   const selectTracks = useCallback(
     (v1: string | undefined, v2: string | undefined) => {
       setUserVssId1(v1);
