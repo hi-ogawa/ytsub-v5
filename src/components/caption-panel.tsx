@@ -459,7 +459,7 @@ function CaptionPanelContent({
 
   function onClickBookmark() {
     if (!bookmarkSelection) return;
-    const rows = store.rows();
+    const rows = store.rows;
     const row = rows[bookmarkSelection.captionIndex];
     if (!row) return;
     setIsCreating(true);
@@ -539,7 +539,7 @@ function CaptionPanelContent({
         >
           <CaptionViewer
             ref={captionListRef}
-            rows={store.rows()}
+            rows={store.rows}
             player={player}
             autoScroll={autoScroll}
             bookmarksByIndex={store.bookmarksByIndex()}
@@ -560,7 +560,7 @@ function CaptionPanelContent({
             ) : (
               <ExtensionBookmarksList
                 bookmarks={sortedBookmarks}
-                rows={store.rows()}
+                rows={store.rows}
                 player={player}
                 onDeleteBookmark={(id) => store.deleteBookmark(id)}
                 onGoToCaption={onGoToCaption}

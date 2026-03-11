@@ -155,7 +155,7 @@ export function useZamakApi({
       getCaptions(): ZamakCaption[] {
         const s = storeRef.current;
         if (!s) return [];
-        const rows = s.rows();
+        const rows = s.rows;
         return rows.map((r, i) => ({
           idx: i,
           begin: r.begin,
@@ -173,7 +173,7 @@ export function useZamakApi({
       getBookmarks(): ZamakBookmark[] {
         const s = storeRef.current;
         if (!s) return [];
-        const rows = s.rows();
+        const rows = s.rows;
 
         return s.bookmarks.map((bm) => {
           const start = Math.max(0, bm.captionIndex - CONTEXT_RADIUS);
@@ -204,7 +204,7 @@ export function useZamakApi({
       addBookmarks(entries) {
         const s = storeRef.current;
         if (!s) return;
-        const rows = s.rows();
+        const rows = s.rows;
         const warnings: string[] = [];
         const valid: Parameters<typeof s.createBookmarks>[0] = [];
         for (const { captionIndex, text, ...metadata } of entries) {

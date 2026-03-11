@@ -92,7 +92,7 @@ export class CaptionSessionStore {
   readonly videoMeta: VideoMeta;
   readonly track1: YouTubeCaptionTrack;
   readonly track2: YouTubeCaptionTrack;
-  mergedRows: MergedCaption[]; // TOOD: just rows?
+  rows: MergedCaption[];
   readonly strategy: MergeStrategy; // TODO: smells
   bookmarks: ExtensionBookmark[];
   version = 0;
@@ -103,14 +103,14 @@ export class CaptionSessionStore {
     videoMeta: VideoMeta;
     vssId1: string;
     vssId2: string;
-    mergedRows: MergedCaption[];
+    rows: MergedCaption[];
     strategy: MergeStrategy;
     bookmarks: ExtensionBookmark[];
   }) {
     this.videoMeta = params.videoMeta;
     this.track1 = params.tracks.find((t) => t.vssId === params.vssId1)!;
     this.track2 = params.tracks.find((t) => t.vssId === params.vssId2)!;
-    this.mergedRows = params.mergedRows;
+    this.rows = params.rows;
     this.strategy = params.strategy;
     this.bookmarks = params.bookmarks;
   }
@@ -129,10 +129,6 @@ export class CaptionSessionStore {
 
   // --- Derived ---
 
-  rows(): MergedCaption[] {
-    return this.mergedRows;
-  }
-
   bookmarksByIndex(): Map<number, ExtensionBookmark[]> {
     const map = new Map<number, ExtensionBookmark[]>();
     for (const bm of this.bookmarks) {
@@ -149,7 +145,7 @@ export class CaptionSessionStore {
     entries: { idx: number; text1?: string; text2?: string }[],
   ): Promise<void> {
     const updates = new Map(entries.map((e) => [e.idx, e]));
-    this.mergedRows = this.mergedRows.map((r) => {
+    this.rows = this.rows.map((r) => {
       const u = updates.get(r.idx);
       if (!u) return r;
       return {
@@ -228,7 +224,7 @@ export class CaptionSessionStore {
   }
 
   exportFile(): void {
-    const rows = this.rows();
+    const rows = this.rows;
     const data = {
       video: {
         youtubeId: this.videoMeta.youtubeId,
@@ -276,7 +272,7 @@ export class CaptionSessionStore {
       vssId2: this.track2.vssId,
       language1: this.track1.languageCode,
       language2: this.track2.languageCode,
-      captions: this.mergedRows,
+      captions: this.rows,
       bookmarks: this.bookmarks,
     };
     await saveSession(session);
@@ -373,7 +369,7 @@ export function useCaptionSession({
       return {
         vssId1: session!.vssId1,
         vssId2: session!.vssId2,
-        mergedRows: session!.captions,
+        rows: session!.captions,
         strategy: "partition" as MergeStrategy,
         bookmarks: session!.bookmarks,
       };
@@ -384,7 +380,7 @@ export function useCaptionSession({
     return {
       vssId1,
       vssId2,
-      mergedRows: mergeResult.captions,
+      rows: mergeResult.captions,
       strategy: mergeResult.strategy,
       bookmarks: [] as ExtensionBookmark[],
     };
