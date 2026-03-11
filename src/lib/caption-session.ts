@@ -214,7 +214,7 @@ export class CaptionSessionStore {
     this.notify();
   }
 
-  createBookmarks(
+  async createBookmarks(
     selections: (BookmarkSelection & {
       timestamp: number;
       context: string;
@@ -222,7 +222,7 @@ export class CaptionSessionStore {
       etymology?: string;
       notes?: string;
     })[],
-  ): void {
+  ): Promise<void> {
     const newBookmarks = selections.map((sel) =>
       createBookmark({
         text: sel.text,
@@ -237,46 +237,48 @@ export class CaptionSessionStore {
       }),
     );
     this.bookmarks = [...this.bookmarks, ...newBookmarks];
-    this.persistSession();
     this.syncVideoIndex();
     this.notify();
+    await this.persistSession();
   }
 
-  deleteBookmark(bookmarkId: string): void {
+  async deleteBookmark(bookmarkId: string): Promise<void> {
     this.bookmarks = this.bookmarks.filter((b) => b.id !== bookmarkId);
     if (this.bookmarks.length > 0) {
-      this.persistSession();
+      this.syncVideoIndex();
+      this.notify();
+      await this.persistSession();
     } else {
-      deleteSession(this.youtubeId);
       this.hydrationStatus = "none";
+      this.syncVideoIndex();
+      this.notify();
+      await deleteSession(this.youtubeId);
     }
-    this.syncVideoIndex();
-    this.notify();
   }
 
-  updateBookmarks(
+  async updateBookmarks(
     entries: {
       id: string;
       data: Partial<
         Pick<ExtensionBookmark, "translation" | "etymology" | "notes">
       >;
     }[],
-  ): void {
+  ): Promise<void> {
     const updates = new Map(entries.map((e) => [e.id, e.data]));
     this.bookmarks = this.bookmarks.map((b) => {
       const data = updates.get(b.id);
       return data ? { ...b, ...data } : b;
     });
-    this.persistSession();
     this.notify();
+    await this.persistSession();
   }
 
-  clearBookmarks(): void {
+  async clearBookmarks(): Promise<void> {
     this.bookmarks = [];
-    deleteSession(this.youtubeId);
     this.hydrationStatus = "none";
     this.syncVideoIndex();
     this.notify();
+    await deleteSession(this.youtubeId);
   }
 
   exportFile(): void {
@@ -322,7 +324,7 @@ export class CaptionSessionStore {
     URL.revokeObjectURL(url);
   }
 
-  persistSession(): void {
+  async persistSession(): Promise<void> {
     const rows = this.mergedRows;
     const t1 = this.selectedTrack1();
     const t2 = this.selectedTrack2();
@@ -336,7 +338,7 @@ export class CaptionSessionStore {
       captions: rows,
       bookmarks: this.bookmarks,
     };
-    saveSession(session);
+    await saveSession(session);
   }
 
   syncVideoIndex(): void {
