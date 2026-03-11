@@ -24,16 +24,9 @@ import { removeFromVideoIndex, updateVideoIndex } from "./video-index.ts";
 import {
   type Json3File,
   type YouTubeCaptionTrack,
+  type YouTubeVideoData,
   pickBestTrack,
 } from "./youtube.ts";
-
-interface VideoMeta {
-  youtubeId: string;
-  title: string;
-  channelName?: string;
-  channelId?: string;
-  duration?: number;
-}
 
 type ExportData = InferRouterInputs<Router>["videos"]["importVideo"];
 
@@ -93,7 +86,7 @@ export function langFromVssId(vssId: string): string {
 }
 
 export class CaptionSessionStore {
-  readonly videoMeta: VideoMeta;
+  readonly videoMeta: YouTubeVideoData;
   readonly vssId1: string;
   readonly vssId2: string;
   rows: MergedCaption[];
@@ -103,7 +96,7 @@ export class CaptionSessionStore {
   private listeners = new Set<() => void>();
 
   constructor(params: {
-    videoMeta: VideoMeta;
+    videoMeta: YouTubeVideoData;
     vssId1: string;
     vssId2: string;
     rows: MergedCaption[];
@@ -245,7 +238,7 @@ export class CaptionSessionStore {
       updateVideoIndex(
         this.videoMeta.youtubeId,
         this.videoMeta.title,
-        this.videoMeta.channelName ?? "",
+        this.videoMeta.channelName,
         this.bookmarks.length,
       );
     } else {
@@ -263,7 +256,7 @@ export function useCaptionSession({
 }: {
   tracks: YouTubeCaptionTrack[];
   fetchJson3: (track: YouTubeCaptionTrack) => Promise<Json3File>;
-  videoMeta: VideoMeta;
+  videoMeta: YouTubeVideoData;
 }) {
   const { youtubeId } = videoMeta;
 
