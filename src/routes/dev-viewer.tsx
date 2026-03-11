@@ -83,10 +83,7 @@ function DevViewerSession({
   });
   const { store } = session;
 
-  useZamakApi({
-    store,
-    videoMeta: meta.video,
-  });
+  useZamakApi(store);
 
   return (
     <CaptionPanel

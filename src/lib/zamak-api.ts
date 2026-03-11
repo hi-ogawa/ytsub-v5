@@ -1,6 +1,6 @@
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import skillPrompt from "../../docs/skills/zamak/SKILL.md?raw";
-import type { CaptionSessionStore, VideoMeta } from "./caption-session.ts";
+import type { CaptionSessionStore } from "./caption-session.ts";
 
 interface ZamakBookmark {
   id: string;
@@ -113,17 +113,7 @@ if (!window.__zamak) {
   window.__zamak = createStubApi();
 }
 
-// TODO: should be just store api or stub
-export function useZamakApi({
-  store,
-  videoMeta,
-}: {
-  store: CaptionSessionStore | null;
-  videoMeta: VideoMeta;
-}) {
-  const storeRef = useRef(store);
-  storeRef.current = store;
-
+export function useZamakApi(store: CaptionSessionStore | null) {
   useEffect(() => {
     if (!store) {
       window.__zamak = createStubApi();
@@ -153,7 +143,7 @@ export function useZamakApi({
       },
 
       getCaptions(): ZamakCaption[] {
-        const s = storeRef.current;
+        const s = store;
         if (!s) return [];
         const rows = s.rows;
         return rows.map((r, i) => ({
@@ -166,12 +156,12 @@ export function useZamakApi({
       },
 
       updateCaptions(entries) {
-        storeRef.current!.updateCaptions(entries);
+        store.updateCaptions(entries);
         console.log(`ZAMAK:updateCaptions done — ${entries.length} updated`);
       },
 
       getBookmarks(): ZamakBookmark[] {
-        const s = storeRef.current;
+        const s = store;
         if (!s) return [];
         const rows = s.rows;
 
@@ -202,7 +192,7 @@ export function useZamakApi({
       },
 
       addBookmarks(entries) {
-        const s = storeRef.current;
+        const s = store;
         if (!s) return;
         const rows = s.rows;
         const warnings: string[] = [];
@@ -244,19 +234,18 @@ export function useZamakApi({
       },
 
       fillBookmarks(entries) {
-        storeRef.current!.updateBookmarks(
+        store.updateBookmarks(
           entries.map(({ id, ...data }) => ({ id, data })),
         );
         console.log(`ZAMAK:fillBookmarks done — ${entries.length} updated`);
       },
 
       getVideoContext() {
-        const s = storeRef.current!;
         return {
-          youtubeId: videoMeta.youtubeId,
-          title: videoMeta.title,
-          language1: s.track1.languageCode,
-          language2: s.track2.languageCode,
+          youtubeId: store.videoMeta.youtubeId,
+          title: store.videoMeta.title,
+          language1: store.track1.languageCode,
+          language2: store.track2.languageCode,
         };
       },
     };
@@ -267,5 +256,5 @@ export function useZamakApi({
       // Revert to stub on unmount (panel closed)
       window.__zamak = createStubApi();
     };
-  }, [store, videoMeta]);
+  }, [store]);
 }

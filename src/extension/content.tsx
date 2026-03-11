@@ -122,10 +122,7 @@ function ExtensionSession({
   });
   const { store } = session;
 
-  useZamakApi({
-    store,
-    videoMeta: data.video,
-  });
+  useZamakApi(store);
 
   return (
     <CaptionPanel
