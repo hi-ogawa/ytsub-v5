@@ -745,9 +745,9 @@ function CaptionViewer({
   rows: MergedCaption[];
   player: YTPlayer | null;
   autoScroll: boolean;
-  bookmarksByIndex?: Map<number, ExtensionBookmark[]>;
-  onGoToBookmark?: (bookmarkId: string) => void;
-  onPopoverOpenChange?: (open: boolean) => void;
+  bookmarksByIndex: Map<number, ExtensionBookmark[]>;
+  onGoToBookmark: (bookmarkId: string) => void;
+  onPopoverOpenChange: (open: boolean) => void;
 }) {
   const [currentIndex, setCurrentIndex] = useState<number>();
   const [isPlaying, setIsPlaying] = useState(false);
