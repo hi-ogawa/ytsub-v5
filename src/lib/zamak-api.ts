@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import skillPrompt from "../../docs/skills/zamak/SKILL.md?raw";
-import type { CaptionSessionStore } from "./caption-session.ts";
+import { type CaptionSessionStore, langFromVssId } from "./caption-session.ts";
 
 interface ZamakBookmark {
   id: string;
@@ -234,8 +234,8 @@ export function useZamakApi(store: CaptionSessionStore | null) {
         return {
           youtubeId: store.videoMeta.youtubeId,
           title: store.videoMeta.title,
-          language1: store.track1.languageCode,
-          language2: store.track2.languageCode,
+          language1: langFromVssId(store.vssId1),
+          language2: langFromVssId(store.vssId2),
         };
       },
     };

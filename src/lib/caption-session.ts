@@ -88,10 +88,14 @@ function saveSelectedTracks(
 
 // --- Store ---
 
+export function langFromVssId(vssId: string): string {
+  return vssId.split(".").pop()!;
+}
+
 export class CaptionSessionStore {
   readonly videoMeta: VideoMeta;
-  readonly track1: YouTubeCaptionTrack;
-  readonly track2: YouTubeCaptionTrack;
+  readonly vssId1: string;
+  readonly vssId2: string;
   rows: MergedCaption[];
   readonly strategy: MergeStrategy; // TODO: smells
   bookmarks: ExtensionBookmark[];
@@ -99,7 +103,6 @@ export class CaptionSessionStore {
   private listeners = new Set<() => void>();
 
   constructor(params: {
-    tracks: YouTubeCaptionTrack[];
     videoMeta: VideoMeta;
     vssId1: string;
     vssId2: string;
@@ -108,8 +111,8 @@ export class CaptionSessionStore {
     bookmarks: ExtensionBookmark[];
   }) {
     this.videoMeta = params.videoMeta;
-    this.track1 = params.tracks.find((t) => t.vssId === params.vssId1)!;
-    this.track2 = params.tracks.find((t) => t.vssId === params.vssId2)!;
+    this.vssId1 = params.vssId1;
+    this.vssId2 = params.vssId2;
     this.rows = params.rows;
     this.strategy = params.strategy;
     this.bookmarks = params.bookmarks;
@@ -200,8 +203,8 @@ export class CaptionSessionStore {
         channelName: this.videoMeta.channelName,
         channelId: this.videoMeta.channelId,
         duration: this.videoMeta.duration,
-        language1: this.track1.languageCode,
-        language2: this.track2.languageCode,
+        language1: langFromVssId(this.vssId1),
+        language2: langFromVssId(this.vssId2),
       },
       captions: this.rows.map((r, i) => ({
         idx: i,
@@ -227,10 +230,10 @@ export class CaptionSessionStore {
   async persistSession(): Promise<void> {
     const session: CaptionSession = {
       youtubeId: this.videoMeta.youtubeId,
-      vssId1: this.track1.vssId,
-      vssId2: this.track2.vssId,
-      language1: this.track1.languageCode,
-      language2: this.track2.languageCode,
+      vssId1: this.vssId1,
+      vssId2: this.vssId2,
+      language1: langFromVssId(this.vssId1),
+      language2: langFromVssId(this.vssId2),
       captions: this.rows,
       bookmarks: this.bookmarks,
     };
@@ -354,7 +357,6 @@ export function useCaptionSession({
     if (key !== storeKeyRef.current) {
       storeKeyRef.current = key;
       storeRef.current = new CaptionSessionStore({
-        tracks,
         videoMeta,
         ...resolvedData,
       });
