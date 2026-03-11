@@ -89,6 +89,9 @@ function saveSelectedTracks(
 // --- Store ---
 
 export class CaptionSessionStore {
+  // TODO: redundnat
+  // videoMeta -> youtubeId
+  // track -> vssId
   readonly youtubeId: string;
   readonly tracks: YouTubeCaptionTrack[];
   readonly videoMeta: VideoMeta;
@@ -97,7 +100,9 @@ export class CaptionSessionStore {
   readonly track1: YouTubeCaptionTrack;
   readonly track2: YouTubeCaptionTrack;
   readonly mergedRows: MergedCaption[];
+  // TODO: do something with strategy
   readonly strategy: MergeStrategy;
+  // TOOD: needed?
   captionOverrides = new Map<number, { text1?: string; text2?: string }>();
   bookmarks: ExtensionBookmark[];
   version = 0;

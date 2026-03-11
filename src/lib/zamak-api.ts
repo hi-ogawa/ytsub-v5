@@ -113,6 +113,7 @@ if (!window.__zamak) {
   window.__zamak = createStubApi();
 }
 
+// TODO: should be just store api or stub
 export function useZamakApi({
   store,
   videoMeta,
