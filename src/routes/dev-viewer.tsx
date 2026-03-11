@@ -81,20 +81,14 @@ function DevViewerSession({
     },
     videoMeta: meta.video,
   });
-
-  const sel1 = meta.captionTracks.find(
-    (t) => t.vssId === session.selectedVssId1,
-  );
-  const sel2 = meta.captionTracks.find(
-    (t) => t.vssId === session.selectedVssId2,
-  );
+  const { store } = session;
 
   useZamakApi({
-    session,
-    rows: session.rows,
+    session: store,
+    rows: store.rows(),
     videoMeta: meta.video,
-    language1: sel1?.languageCode ?? "ko",
-    language2: sel2?.languageCode ?? "en",
+    language1: store.selectedTrack1()?.languageCode ?? "ko",
+    language2: store.selectedTrack2()?.languageCode ?? "en",
   });
 
   return (

@@ -120,20 +120,14 @@ function ExtensionSession({
     fetchJson3: (track) => fetchTrackJson3(track.baseUrl),
     videoMeta: data.video,
   });
-
-  const sel1 = data.captionTracks.find(
-    (t) => t.vssId === session.selectedVssId1,
-  );
-  const sel2 = data.captionTracks.find(
-    (t) => t.vssId === session.selectedVssId2,
-  );
+  const { store } = session;
 
   useZamakApi({
-    session,
-    rows: session.rows,
+    session: store,
+    rows: store.rows(),
     videoMeta: data.video,
-    language1: sel1?.languageCode ?? "ko",
-    language2: sel2?.languageCode ?? "en",
+    language1: store.selectedTrack1()?.languageCode ?? "ko",
+    language2: store.selectedTrack2()?.languageCode ?? "en",
   });
 
   return (

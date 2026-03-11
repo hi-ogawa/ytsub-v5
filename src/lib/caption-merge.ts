@@ -470,7 +470,9 @@ interface MergeResult {
   captions: MergedCaption[];
 }
 
-export const FALLBACK_STRATEGIES: MergeStrategy[] = [
+export const ALL_STRATEGIES: MergeStrategy[] = [
+  "strict",
+  "relaxed-strict",
   "partition",
   "overlap",
   "best-overlap",
