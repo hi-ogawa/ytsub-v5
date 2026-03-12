@@ -278,44 +278,16 @@ function CaptionPanelWithSession({
     [session, videoMeta],
   );
 
-  useSyncExternalStore(
-    (cb) => store.subscribe(cb),
-    () => store.version,
-  );
-
-  useZamakApi(store);
-
-  const [autoScroll, setAutoScroll] = useLocalStorage(
-    "zamak:auto-scroll",
-    true,
-  );
-
   return (
-    <div className="flex h-full flex-col">
-      <div className="flex items-center border-b">
-        <div className="min-w-0 flex-1">
-          <TrackPicker
-            tracks={tracks}
-            selectedVssId1={session.vssId1}
-            selectedVssId2={session.vssId2}
-            onSelect={() => setSession(null)}
-            disabled={store.bookmarks.length > 0}
-          />
-        </div>
-        <SettingsDropdown
-          store={store}
-          autoScroll={autoScroll}
-          onSetAutoScroll={setAutoScroll}
-          onSelectStrategy={() => {}}
-        />
-      </div>
-
-      <CaptionPanelContent
-        store={store}
-        player={player}
-        autoScroll={autoScroll}
-      />
-    </div>
+    <CaptionPanelReady
+      store={store}
+      tracks={tracks}
+      player={player}
+      selectedVssId1={session.vssId1}
+      selectedVssId2={session.vssId2}
+      onSelectTracks={() => setSession(null)}
+      onSelectStrategy={() => {}} // strategy is fixed for hydrated sessions
+    />
   );
 }
 
@@ -376,10 +348,165 @@ function CaptionPanelWithoutSession({
     });
   }, [vssId1, vssId2, json3_1, json3_2, sel1, sel2, userStrategy, videoMeta]);
 
-  useSyncExternalStore(
-    (cb) => store?.subscribe(cb) ?? (() => {}),
-    () => store?.version ?? 0,
+  const selectTracks = useCallback(
+    (v1: string | undefined, v2: string | undefined) => {
+      setUserVssId1(v1);
+      setUserVssId2(v2);
+      if (v1 && v2) saveSelectedTracks(tracks, v1, v2, youtubeId);
+    },
+    [tracks, youtubeId],
   );
+
+  const error = json3Query1.error ?? json3Query2.error ?? null;
+
+  if (error) {
+    return (
+      <CaptionPanelLayout
+        tracks={tracks}
+        selectedVssId1={vssId1}
+        selectedVssId2={vssId2}
+        onSelectTracks={(v1, v2) => selectTracks(v1, v2)}
+      >
+        <div className="flex h-full items-center justify-center text-sm text-destructive">
+          {String(error)}
+        </div>
+      </CaptionPanelLayout>
+    );
+  }
+
+  if (!store) {
+    return (
+      <CaptionPanelLayout
+        tracks={tracks}
+        selectedVssId1={vssId1}
+        selectedVssId2={vssId2}
+        onSelectTracks={(v1, v2) => selectTracks(v1, v2)}
+      >
+        <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
+          Loading subtitles…
+        </div>
+      </CaptionPanelLayout>
+    );
+  }
+
+  return (
+    <CaptionPanelReady
+      store={store}
+      tracks={tracks}
+      player={player}
+      selectedVssId1={vssId1}
+      selectedVssId2={vssId2}
+      onSelectTracks={(v1, v2) => selectTracks(v1, v2)}
+      onSelectStrategy={setUserStrategy}
+    />
+  );
+}
+
+function CaptionPanelLayout({
+  tracks,
+  selectedVssId1,
+  selectedVssId2,
+  onSelectTracks,
+  disabled,
+  menu,
+  children,
+}: {
+  tracks: YouTubeCaptionTrack[];
+  selectedVssId1: string | undefined;
+  selectedVssId2: string | undefined;
+  onSelectTracks: (v1: string | undefined, v2: string | undefined) => void;
+  disabled?: boolean;
+  menu?: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="flex h-full flex-col">
+      <div className="flex items-center border-b">
+        <div className="min-w-0 flex-1">
+          <TrackPicker
+            tracks={tracks}
+            selectedVssId1={selectedVssId1}
+            selectedVssId2={selectedVssId2}
+            onSelect={onSelectTracks}
+            disabled={disabled}
+          />
+        </div>
+        {menu}
+      </div>
+      {children}
+    </div>
+  );
+}
+
+CaptionPanelLayoutWithoutSession;
+function CaptionPanelLayoutWithoutSession({
+  tracks,
+  fetchJson3,
+  videoMeta,
+  children,
+}: {
+  tracks: YouTubeCaptionTrack[];
+  fetchJson3: (track: YouTubeCaptionTrack) => Promise<Json3File>;
+  videoMeta: YouTubeVideoData;
+  children: (props: {
+    store: CaptionSessionStore | undefined;
+    vssId1: string | undefined;
+    vssId2: string | undefined;
+    selectTracks: (v1: string | undefined, v2: string | undefined) => void;
+    setUserStrategy: (s: MergeStrategy) => void;
+    error: Error | null;
+  }) => React.ReactNode;
+}) {
+  const { youtubeId } = videoMeta;
+
+  const [userVssId1, setUserVssId1] = useState<string | undefined>();
+  const [userVssId2, setUserVssId2] = useState<string | undefined>();
+  const [userStrategy, setUserStrategy] = useState<MergeStrategy | undefined>();
+
+  const initialTracks = useMemo(
+    () => getInitialTracks(tracks, youtubeId),
+    [tracks, youtubeId],
+  );
+
+  const vssId1 = userVssId1 ?? initialTracks.vssId1;
+  const vssId2 = userVssId2 ?? initialTracks.vssId2;
+
+  const sel1 = tracks.find((t) => t.vssId === vssId1);
+  const sel2 = tracks.find((t) => t.vssId === vssId2);
+
+  const json3Query1 = useQuery({
+    queryKey: ["json3", sel1?.vssId],
+    queryFn: () => fetchJson3(sel1!),
+    enabled: !!sel1,
+  });
+
+  const json3Query2 = useQuery({
+    queryKey: ["json3", sel2?.vssId],
+    queryFn: () => fetchJson3(sel2!),
+    enabled: !!sel2,
+  });
+
+  const json3_1 = json3Query1.data;
+  const json3_2 = json3Query2.data;
+  const store = useMemo(() => {
+    if (!vssId1 || !vssId2 || !json3_1 || !json3_2 || !sel1 || !sel2)
+      return undefined;
+
+    const merged = mergeCaptions(
+      { json3: json3_1, vssId: sel1.vssId },
+      { json3: json3_2, vssId: sel2.vssId },
+      userStrategy,
+    );
+
+    return new CaptionSessionStore({
+      videoMeta,
+      vssId1,
+      vssId2,
+      rows: merged.captions,
+      strategy: merged.strategy,
+      bookmarks: [],
+    });
+  }, [vssId1, vssId2, json3_1, json3_2, sel1, sel2, userStrategy, videoMeta]);
 
   const selectTracks = useCallback(
     (v1: string | undefined, v2: string | undefined) => {
@@ -392,6 +519,35 @@ function CaptionPanelWithoutSession({
 
   const error = json3Query1.error ?? json3Query2.error ?? null;
 
+  return children({
+    store,
+    vssId1,
+    vssId2,
+    selectTracks,
+    setUserStrategy,
+    error,
+  });
+}
+
+function CaptionPanelReady({
+  store,
+  tracks,
+  player,
+  selectedVssId1,
+  selectedVssId2,
+  onSelectTracks,
+  onSelectStrategy,
+}: {
+  store: CaptionSessionStore;
+  tracks: YouTubeCaptionTrack[];
+  player: YTPlayer | null;
+  selectedVssId1: string | undefined;
+  selectedVssId2: string | undefined;
+  onSelectTracks: (v1: string | undefined, v2: string | undefined) => void;
+  onSelectStrategy: (s: MergeStrategy) => void;
+}) {
+  useSyncExternalStore(store.subscribe, () => store.version);
+
   useZamakApi(store);
 
   const [autoScroll, setAutoScroll] = useLocalStorage(
@@ -399,46 +555,28 @@ function CaptionPanelWithoutSession({
     true,
   );
 
-  const tracksLocked = store ? store.bookmarks.length > 0 : false;
-
   return (
-    <div className="flex h-full flex-col">
-      <div className="flex items-center border-b">
-        <div className="min-w-0 flex-1">
-          <TrackPicker
-            tracks={tracks}
-            selectedVssId1={vssId1}
-            selectedVssId2={vssId2}
-            onSelect={(v1, v2) => selectTracks(v1, v2)}
-            disabled={tracksLocked}
-          />
-        </div>
-        {store && (
-          <SettingsDropdown
-            store={store}
-            autoScroll={autoScroll}
-            onSetAutoScroll={setAutoScroll}
-            onSelectStrategy={setUserStrategy}
-          />
-        )}
-      </div>
-
-      {error ? (
-        <div className="flex h-full items-center justify-center text-sm text-destructive">
-          {String(error)}
-        </div>
-      ) : !store ? (
-        <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
-          Loading subtitles…
-        </div>
-      ) : (
-        <CaptionPanelContent
+    <CaptionPanelLayout
+      tracks={tracks}
+      selectedVssId1={selectedVssId1}
+      selectedVssId2={selectedVssId2}
+      onSelectTracks={onSelectTracks}
+      disabled={store.bookmarks.length > 0}
+      menu={
+        <SettingsDropdown
           store={store}
-          player={player}
           autoScroll={autoScroll}
+          onSetAutoScroll={setAutoScroll}
+          onSelectStrategy={onSelectStrategy}
         />
-      )}
-    </div>
+      }
+    >
+      <CaptionPanelContent
+        store={store}
+        player={player}
+        autoScroll={autoScroll}
+      />
+    </CaptionPanelLayout>
   );
 }
 
