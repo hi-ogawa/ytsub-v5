@@ -213,6 +213,7 @@ export class CaptionSessionStore {
       vssId2: this.vssId2,
       language1: langFromVssId(this.vssId1),
       language2: langFromVssId(this.vssId2),
+      strategy: this.strategy,
       captions: this.rows,
       bookmarks: this.bookmarks,
     };

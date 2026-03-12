@@ -1,4 +1,4 @@
-import type { MergedCaption } from "./caption-merge.ts";
+import type { MergeStrategy, MergedCaption } from "./caption-merge.ts";
 import type { ExtensionBookmark } from "./extension-bookmarks.ts";
 
 export interface CaptionSession {
@@ -7,6 +7,7 @@ export interface CaptionSession {
   vssId2: string;
   language1: string;
   language2: string;
+  strategy?: MergeStrategy;
   captions: MergedCaption[];
   bookmarks: ExtensionBookmark[];
 }

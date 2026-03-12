@@ -246,7 +246,7 @@ export function CaptionPanel(props: CaptionPanelProps) {
         vssId1: session.vssId1,
         vssId2: session.vssId2,
         rows: session.captions,
-        strategy: "partition",
+        strategy: session.strategy ?? "partition",
         bookmarks: session.bookmarks,
       });
     },
@@ -296,7 +296,7 @@ function CaptionPanelWithSession({
           store={store}
           autoScroll={autoScroll}
           onSetAutoScroll={setAutoScroll}
-          onSelectStrategy={() => {}}
+          onSelectStrategy={() => setStore(null)}
         />
       </div>
 
