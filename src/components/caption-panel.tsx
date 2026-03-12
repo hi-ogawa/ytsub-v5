@@ -256,11 +256,7 @@ export function CaptionPanel(props: CaptionPanelProps) {
 
   if (store) {
     return (
-      <CaptionPanelWithSession
-        {...props}
-        store={store}
-        setStore={setStore}
-      />
+      <CaptionPanelWithSession {...props} store={store} setStore={setStore} />
     );
   }
   return <CaptionPanelWithoutSession {...props} />;
@@ -275,10 +271,7 @@ function CaptionPanelWithSession({
   store: CaptionSessionStore;
   setStore: (store: CaptionSessionStore | null) => void;
 }) {
-  useSyncExternalStore(
-    (cb) => store.subscribe(cb),
-    () => store.version,
-  );
+  useSyncExternalStore(store.subscribe, () => store.version);
 
   useZamakApi(store);
 
@@ -410,13 +403,15 @@ function CaptionPanelWithoutSession({
             disabled={tracksLocked}
           />
         </div>
-        {store && (
+        {store ? (
           <SettingsDropdown
             store={store}
             autoScroll={autoScroll}
             onSetAutoScroll={setAutoScroll}
             onSelectStrategy={setUserStrategy}
           />
+        ) : (
+          <SettingsDropdownSkeleton />
         )}
       </div>
 
@@ -440,6 +435,14 @@ function CaptionPanelWithoutSession({
 }
 
 // --- SettingsDropdown ---
+
+function SettingsDropdownSkeleton() {
+  return (
+    <div className="mr-1 shrink-0 rounded p-0.5 text-muted-foreground opacity-50">
+      <EllipsisVertical className="h-4 w-4" />
+    </div>
+  );
+}
 
 function SettingsDropdown({
   store,
