@@ -27,7 +27,7 @@ import {
   type MergedCaption,
   mergeCaptions,
 } from "../lib/caption-merge.ts";
-import { getSession, type CaptionSession } from "../lib/caption-session-db.ts";
+import { getSession } from "../lib/caption-session-db.ts";
 import {
   CaptionSessionStore,
   getInitialTracks,
@@ -238,17 +238,28 @@ export function CaptionPanel(props: CaptionPanelProps) {
   // Hydration from IndexedDB (suspends until resolved, gcTime: 0 for fresh data)
   const hydrationQuery = useSuspenseQuery({
     queryKey: ["caption-session", youtubeId],
-    queryFn: async () => (await getSession(youtubeId)) ?? null,
+    queryFn: async () => {
+      const session = await getSession(youtubeId);
+      if (!session) return null;
+      return new CaptionSessionStore({
+        videoMeta: props.videoMeta,
+        vssId1: session.vssId1,
+        vssId2: session.vssId2,
+        rows: session.captions,
+        strategy: "partition",
+        bookmarks: session.bookmarks,
+      });
+    },
     gcTime: 0,
   });
-  const [session, setSession] = useState(hydrationQuery.data);
+  const [store, setStore] = useState(hydrationQuery.data);
 
-  if (session) {
+  if (store) {
     return (
       <CaptionPanelWithSession
         {...props}
-        session={session}
-        setSession={setSession}
+        store={store}
+        setStore={setStore}
       />
     );
   }
@@ -258,26 +269,12 @@ export function CaptionPanel(props: CaptionPanelProps) {
 function CaptionPanelWithSession({
   tracks,
   player,
-  videoMeta,
-  session,
-  setSession,
+  store,
+  setStore,
 }: CaptionPanelProps & {
-  session: CaptionSession;
-  setSession: (session: CaptionSession | null) => void;
+  store: CaptionSessionStore;
+  setStore: (store: CaptionSessionStore | null) => void;
 }) {
-  const store = useMemo(
-    () =>
-      new CaptionSessionStore({
-        videoMeta,
-        vssId1: session.vssId1,
-        vssId2: session.vssId2,
-        rows: session.captions,
-        strategy: "partition" as MergeStrategy,
-        bookmarks: session.bookmarks,
-      }),
-    [session, videoMeta],
-  );
-
   useSyncExternalStore(
     (cb) => store.subscribe(cb),
     () => store.version,
@@ -296,9 +293,9 @@ function CaptionPanelWithSession({
         <div className="min-w-0 flex-1">
           <TrackPicker
             tracks={tracks}
-            selectedVssId1={session.vssId1}
-            selectedVssId2={session.vssId2}
-            onSelect={() => setSession(null)}
+            selectedVssId1={store.vssId1}
+            selectedVssId2={store.vssId2}
+            onSelect={() => setStore(null)}
             disabled={store.bookmarks.length > 0}
           />
         </div>

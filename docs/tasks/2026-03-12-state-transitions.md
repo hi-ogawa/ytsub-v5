@@ -198,7 +198,7 @@ CaptionPanel
 └── content: skeleton / spinner
 ```
 
-Problem: TrackPicker needs `vssId1`/`vssId2` to show selection. We can derive from localStorage immediately (synchronous), so TrackPicker can show the *guessed* selection even before hydration completes. This is actually what happens today — `initialTracks` from localStorage is synchronous.
+Problem: TrackPicker needs `vssId1`/`vssId2` to show selection. We can derive from localStorage immediately (synchronous), so TrackPicker can show the _guessed_ selection even before hydration completes. This is actually what happens today — `initialTracks` from localStorage is synchronous.
 
 ### State 2: Fetching json3 (tracks known, no store yet)
 
@@ -247,6 +247,7 @@ CaptionPanel (outer)
 ```
 
 The key insight: **CaptionSession should only mount when the store exists**. This means:
+
 - No null store inside CaptionSession — ever
 - useSyncExternalStore always has a real store
 - useZamakApi always has a real store
@@ -264,6 +265,7 @@ Option A keeps it simple — two layers, not three. The outer CaptionPanel is "r
 ### Open question: what about track/strategy changes?
 
 When user changes tracks on an active store:
+
 1. Old store is abandoned (store → null)
 2. New json3 fetch starts
 3. CaptionSession unmounts (store is null)
