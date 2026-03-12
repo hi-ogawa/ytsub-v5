@@ -316,41 +316,38 @@ function CaptionPanelWithoutSession({
   videoMeta,
 }: CaptionPanelProps) {
   const { youtubeId } = videoMeta;
+  const initialTracks = useMemo(
+    () => getInitialTracks(tracks, youtubeId),
+    [tracks, youtubeId],
+  );
+  const [vssId1, setVssId1] = useState(initialTracks.vssId1);
+  const [vssId2, setVssId2] = useState(initialTracks.vssId2);
+  const track1 = tracks.find((t) => t.vssId === vssId1);
+  const track2 = tracks.find((t) => t.vssId === vssId2);
 
-  const [userVssId1, setUserVssId1] = useState<string | undefined>();
-  const [userVssId2, setUserVssId2] = useState<string | undefined>();
   const [userStrategy, setUserStrategy] = useState<MergeStrategy | undefined>();
 
   const selectTracks = useCallback(
     (v1: string | undefined, v2: string | undefined) => {
-      setUserVssId1(v1);
-      setUserVssId2(v2);
+      setVssId1(v1);
+      setVssId2(v2);
       if (v1 && v2) saveSelectedTracks(tracks, v1, v2, youtubeId);
     },
     [tracks, youtubeId],
   );
 
-  const initialTracks = useMemo(
-    () => getInitialTracks(tracks, youtubeId),
-    [tracks, youtubeId],
-  );
-
-  const vssId1 = userVssId1 ?? initialTracks.vssId1;
-  const vssId2 = userVssId2 ?? initialTracks.vssId2;
-
-  const sel1 = tracks.find((t) => t.vssId === vssId1);
-  const sel2 = tracks.find((t) => t.vssId === vssId2);
-
   const json3Query1 = useQuery({
-    queryKey: ["json3", youtubeId, sel1?.vssId],
-    queryFn: () => fetchJson3(sel1!).then((json3) => ({ json3, track: sel1! })),
-    enabled: !!sel1,
+    queryKey: ["json3", youtubeId, track1?.vssId],
+    queryFn: () =>
+      fetchJson3(track1!).then((json3) => ({ json3, track: track1! })),
+    enabled: !!track1,
   });
 
   const json3Query2 = useQuery({
-    queryKey: ["json3", youtubeId, sel2?.vssId],
-    queryFn: () => fetchJson3(sel2!).then((json3) => ({ json3, track: sel2! })),
-    enabled: !!sel2,
+    queryKey: ["json3", youtubeId, track2?.vssId],
+    queryFn: () =>
+      fetchJson3(track2!).then((json3) => ({ json3, track: track2! })),
+    enabled: !!track2,
   });
 
   const json3_1 = json3Query1.data;

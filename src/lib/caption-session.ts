@@ -102,7 +102,7 @@ export class CaptionSessionStore {
     for (const cb of this.listeners) cb();
   }
 
-  subscribe(cb: () => void) {
+  subscribe = (cb: () => void) => {
     this.listeners.add(cb);
     return () => {
       this.listeners.delete(cb);
