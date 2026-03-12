@@ -321,6 +321,15 @@ function CaptionPanelWithoutSession({
   const [userVssId2, setUserVssId2] = useState<string | undefined>();
   const [userStrategy, setUserStrategy] = useState<MergeStrategy | undefined>();
 
+  const selectTracks = useCallback(
+    (v1: string | undefined, v2: string | undefined) => {
+      setUserVssId1(v1);
+      setUserVssId2(v2);
+      if (v1 && v2) saveSelectedTracks(tracks, v1, v2, youtubeId);
+    },
+    [tracks, youtubeId],
+  );
+
   const initialTracks = useMemo(
     () => getInitialTracks(tracks, youtubeId),
     [tracks, youtubeId],
@@ -369,15 +378,6 @@ function CaptionPanelWithoutSession({
   useSyncExternalStore(
     (cb) => store?.subscribe(cb) ?? (() => {}),
     () => store?.version ?? 0,
-  );
-
-  const selectTracks = useCallback(
-    (v1: string | undefined, v2: string | undefined) => {
-      setUserVssId1(v1);
-      setUserVssId2(v2);
-      if (v1 && v2) saveSelectedTracks(tracks, v1, v2, youtubeId);
-    },
-    [tracks, youtubeId],
   );
 
   const error = json3Query1.error ?? json3Query2.error ?? null;
