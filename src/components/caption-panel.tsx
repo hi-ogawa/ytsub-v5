@@ -342,13 +342,13 @@ function CaptionPanelWithoutSession({
   const sel2 = tracks.find((t) => t.vssId === vssId2);
 
   const json3Query1 = useQuery({
-    queryKey: ["json3", sel1?.vssId],
+    queryKey: ["json3", youtubeId, sel1?.vssId],
     queryFn: () => fetchJson3(sel1!),
     enabled: !!sel1,
   });
 
   const json3Query2 = useQuery({
-    queryKey: ["json3", sel2?.vssId],
+    queryKey: ["json3", youtubeId, sel2?.vssId],
     queryFn: () => fetchJson3(sel2!),
     enabled: !!sel2,
   });
@@ -356,8 +356,7 @@ function CaptionPanelWithoutSession({
   const json3_1 = json3Query1.data;
   const json3_2 = json3Query2.data;
   const store = useMemo(() => {
-    if (!vssId1 || !vssId2 || !json3_1 || !json3_2 || !sel1 || !sel2)
-      return undefined;
+    if (!json3_1 || !json3_2 || !sel1 || !sel2) return undefined;
 
     const merged = mergeCaptions(
       { json3: json3_1, vssId: sel1.vssId },
@@ -367,13 +366,13 @@ function CaptionPanelWithoutSession({
 
     return new CaptionSessionStore({
       videoMeta,
-      vssId1,
-      vssId2,
+      vssId1: sel1.vssId,
+      vssId2: sel2.vssId,
       rows: merged.captions,
       strategy: merged.strategy,
       bookmarks: [],
     });
-  }, [vssId1, vssId2, json3_1, json3_2, sel1, sel2, userStrategy, videoMeta]);
+  }, [json3_1, json3_2, sel1, sel2, userStrategy, videoMeta]);
 
   useSyncExternalStore(
     (cb) => store?.subscribe(cb) ?? (() => {}),
