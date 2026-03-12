@@ -375,7 +375,7 @@ function CaptionPanelWithoutSession({
   }, [json3_1, json3_2, sel1, sel2, userStrategy, videoMeta]);
 
   useSyncExternalStore(
-    (cb) => store?.subscribe(cb) ?? (() => {}),
+    useCallback(store ? store.subscribe : () => () => {}, [store]),
     () => store?.version ?? 0,
   );
 
