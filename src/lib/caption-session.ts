@@ -107,7 +107,7 @@ export class CaptionSessionStore {
     return () => {
       this.listeners.delete(cb);
     };
-  }
+  };
 
   // --- Operations ---
 
