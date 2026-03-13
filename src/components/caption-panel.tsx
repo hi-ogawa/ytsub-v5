@@ -251,6 +251,7 @@ export function CaptionPanel(props: CaptionPanelProps) {
       });
     },
     gcTime: 0,
+    staleTime: Infinity,
   });
   const [store, setStore] = useState(hydrationQuery.data);
 
