@@ -237,7 +237,15 @@ export function useVideoSync() {
           orpc.videos.getFullSession.queryOptions({ input: { youtubeId } }),
         );
         if (!data) throw new Error("Video not found on server");
-        await pullServerSession(data);
+        const session = serverSessionToLocal(data);
+        await saveSession(session);
+        updateVideoIndex(
+          session.youtubeId,
+          session.title,
+          session.channelName,
+          session.bookmarks.length,
+        );
+        setSyncedAt(session.youtubeId);
       });
     },
     onSuccess: () => {
@@ -284,6 +292,7 @@ function serverSessionToLocal(
     channelName: data.video.channelName,
     channelId: data.video.channelId,
     duration: data.video.duration,
+    // TODO: add vssId to server db
     vssId1: `-.${data.video.language1}`,
     vssId2: `-.${data.video.language2}`,
     language1: data.video.language1,
@@ -313,16 +322,4 @@ function serverSessionToLocal(
       createdAt: b.createdAt,
     })),
   };
-}
-
-async function pullServerSession(data: GetFullSessionOutput): Promise<void> {
-  const session = serverSessionToLocal(data);
-  await saveSession(session);
-  updateVideoIndex(
-    session.youtubeId,
-    session.title,
-    session.channelName,
-    session.bookmarks.length,
-  );
-  setSyncedAt(session.youtubeId);
 }
