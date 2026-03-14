@@ -4,7 +4,10 @@ import { useMemo, useState } from "react";
 import { orpc } from "../rpc.ts";
 import type { Router } from "../server/rpc.ts";
 import type { MergedCaption } from "./caption-merge.ts";
-import { saveSession } from "./caption-session-db.ts";
+import {
+  saveSession,
+  type PersistedCaptionSession,
+} from "./caption-session-db.ts";
 import type { CaptionSessionManager } from "./caption-session.ts";
 import type { ExtensionBookmark } from "./extension-bookmarks.ts";
 import { useStore } from "./external-store.ts";
@@ -52,35 +55,35 @@ type GetFullSessionResult = NonNullable<
   InferRouterOutputs<Router>["videos"]["getFullSession"]
 >;
 
-function serverSessionToLocal(data: GetFullSessionResult): {
-  captions: MergedCaption[];
-  bookmarks: ExtensionBookmark[];
-} {
-  const captions: MergedCaption[] = data.captions.map((c) => ({
-    idx: c.idx,
-    begin: c.begin,
-    end: c.end,
-    text1: c.text1,
-    text2: c.text2,
-    cue1Indices: [],
-    cue2Indices: [],
-    text1Segments: [c.text1],
-    text2Segments: [c.text2],
-  }));
-  const bookmarks: ExtensionBookmark[] = data.bookmarks.map((b) => ({
-    id: String(b.id),
-    text: b.text,
-    side: b.side,
-    offset: b.offset,
-    captionIndex: data.captions.findIndex((c) => c.id === b.captionId),
-    timestamp: b.timestamp,
-    context: b.context,
-    translation: b.translation,
-    etymology: b.etymology,
-    notes: b.notes,
-    createdAt: b.createdAt,
-  }));
-  return { captions, bookmarks };
+function serverSessionToLocal(
+  data: GetFullSessionResult,
+): Pick<PersistedCaptionSession, "bookmarks" | "captions"> {
+  return {
+    captions: data.captions.map((c) => ({
+      idx: c.idx,
+      begin: c.begin,
+      end: c.end,
+      text1: c.text1,
+      text2: c.text2,
+      cue1Indices: [],
+      cue2Indices: [],
+      text1Segments: [c.text1],
+      text2Segments: [c.text2],
+    })),
+    bookmarks: data.bookmarks.map((b) => ({
+      id: String(b.id),
+      text: b.text,
+      side: b.side,
+      offset: b.offset,
+      captionIndex: data.captions.findIndex((c) => c.id === b.captionId),
+      timestamp: b.timestamp,
+      context: b.context,
+      translation: b.translation,
+      etymology: b.etymology,
+      notes: b.notes,
+      createdAt: b.createdAt,
+    })),
+  };
 }
 
 type SyncDirection = "push" | "pull";
@@ -144,21 +147,22 @@ export function useSyncState({ youtubeId }: { youtubeId: string }) {
         }),
       );
       if (!data) return;
-      const { captions, bookmarks } = serverSessionToLocal(data);
+      // TODO: instead of save + update-index + store.rehydrate,
+      // why not just store.update (which auto triggers save + update-index)?
+      const local = serverSessionToLocal(data);
       await saveSession({
         youtubeId,
         vssId1: store.vssId1,
         vssId2: store.vssId2,
         language1: data.video.language1,
         language2: data.video.language2,
-        captions,
-        bookmarks,
+        ...local,
       });
       updateVideoIndex(
         youtubeId,
         data.video.title,
         data.video.channelName,
-        bookmarks.length,
+        local.bookmarks.length,
       );
       setSyncedAt(youtubeId);
       setSyncVersion((v) => v + 1);

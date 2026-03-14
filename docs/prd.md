@@ -91,6 +91,7 @@ A web app for language learning via YouTube subtitles. Watch videos with dual ca
 - [ ] feat: repeatable eval process for ytsub agent skill — run skill against sample videos, check for common failure modes (wrong offsets, API errors, subtitle quality issues, payload format), track success rate across runs
 - [ ] feat: Bookmark export — export to import bookmarks for Anki study
 - [ ] test: test skills/scripts
+- [ ] feat: add `vssId1/vssId2` to db
 
 ## TODO: Extension
 
