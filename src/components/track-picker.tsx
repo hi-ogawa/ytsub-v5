@@ -21,6 +21,7 @@ export function TrackPicker({
 }) {
   return (
     <div
+      data-testid="track-picker"
       className="flex items-center gap-1 px-2 py-1.5 text-sm"
       title={
         disabled ? "Cannot change tracks while bookmarks exist" : undefined
