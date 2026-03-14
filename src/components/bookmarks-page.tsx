@@ -27,8 +27,13 @@ export function BookmarksPage({
 
   return (
     <div className="mx-auto max-w-5xl p-8">
-      <h1 className="mb-6 text-2xl font-bold">Bookmarked Videos</h1>
-      {sorted.length === 0 ? (
+      <div className="mb-6 flex items-center gap-2">
+        <h1 className="text-2xl font-bold">Bookmarked Videos</h1>
+        {sync?.isPending && (
+          <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+        )}
+      </div>
+      {sorted.length === 0 && !sync?.isPending ? (
         <p className="text-sm text-muted-foreground">
           No bookmarked videos yet. Open a YouTube video and create bookmarks to
           see them here.

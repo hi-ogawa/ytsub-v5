@@ -307,12 +307,11 @@ export function useVideoSync() {
 
   const isPending =
     authQuery.isLoading || (authenticated && serverQuery.isLoading);
+  const entries: VideoSyncEntry[] = serverQuery.data ?? videoIndex;
 
   return {
     isPending,
-    entries: (isPending
-      ? []
-      : (serverQuery.data ?? videoIndex)) as VideoSyncEntry[],
+    entries,
     syncing,
     onPull: (youtubeId: string) => pullMutation.mutate(youtubeId),
     onPush,
