@@ -13,7 +13,7 @@ import {
 import { useVideoSync } from "../lib/sync.ts";
 import { useTheme } from "../lib/theme.ts";
 import type { VideoIndexEntry } from "../lib/video-index.ts";
-import { orpc } from "../rpc.ts";
+import { orpc, setRpcConfig } from "../rpc.ts";
 import { getServerUrl } from "./server-url.ts";
 import "../styles.css";
 
@@ -25,11 +25,35 @@ declare const chrome: {
         cb: (result: Record<string, unknown>) => void,
       ) => void;
       set: (items: Record<string, unknown>) => void;
-      remove: (keys: string[]) => void;
+      remove: (keys: string[], cb?: () => void) => void;
     };
   };
   tabs: { create: (opts: { url: string }) => void };
 };
+
+function getStorageValue(key: string): Promise<string | undefined> {
+  return new Promise((resolve) =>
+    chrome.storage.local.get([key], (r) =>
+      resolve(r[key] as string | undefined),
+    ),
+  );
+}
+
+// Configure RPC to use extension server URL + bearer token auth
+setRpcConfig({
+  url: getServerUrl() + "/api",
+  fetch: async (request) => {
+    const token = await getStorageValue("session-token");
+    if (token) {
+      const headers = new Headers(
+        request instanceof Request ? request.headers : undefined,
+      );
+      headers.set("authorization", `Bearer ${token}`);
+      request = new Request(request, { headers });
+    }
+    return fetch(request);
+  },
+});
 
 function getStorage(keys: string | string[]): Promise<Record<string, unknown>> {
   return new Promise((resolve) => chrome.storage.local.get(keys, resolve));
@@ -53,8 +77,11 @@ function ExtensionBookmarksPage() {
     });
   }, []);
 
-  const handleLogout = () => {
-    chrome.storage.local.remove(["session-token", "username"]);
+  const handleLogout = async () => {
+    await orpc.auth.logout.call({});
+    await new Promise<void>((resolve) =>
+      chrome.storage.local.remove(["session-token", "username"], resolve),
+    );
     setUsername(undefined);
     sync.refetch();
   };
@@ -65,10 +92,18 @@ function ExtensionBookmarksPage() {
         <span className="text-sm font-semibold">Zamak</span>
         <div className="flex items-center gap-1">
           {sync.authenticated && username && (
-            <span className="text-xs text-muted-foreground">{username}</span>
+            <span
+              data-testid="auth-username"
+              className="text-xs text-muted-foreground"
+            >
+              {username}
+            </span>
           )}
           <DropdownMenu>
-            <DropdownMenuTrigger className="flex h-7 w-7 items-center justify-center rounded text-muted-foreground hover:bg-muted">
+            <DropdownMenuTrigger
+              data-testid="header-menu"
+              className="flex h-7 w-7 items-center justify-center rounded text-muted-foreground hover:bg-muted"
+            >
               <EllipsisVertical className="h-4 w-4" />
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-44">
@@ -84,12 +119,17 @@ function ExtensionBookmarksPage() {
               </DropdownMenuItem>
               <div className="my-1 h-px bg-border" />
               {sync.authenticated ? (
-                <DropdownMenuItem onSelect={handleLogout} className="gap-2">
+                <DropdownMenuItem
+                  data-testid="sign-out"
+                  onSelect={handleLogout}
+                  className="gap-2"
+                >
                   <LogOut className="h-4 w-4" />
                   Sign out
                 </DropdownMenuItem>
               ) : (
                 <DropdownMenuItem
+                  data-testid="sign-in"
                   onSelect={() => setShowLogin(true)}
                   className="gap-2"
                 >

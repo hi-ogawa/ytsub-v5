@@ -29,7 +29,7 @@ export function LoginDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent aria-describedby={undefined}>
+      <DialogContent data-testid="login-dialog" aria-describedby={undefined}>
         <DialogTitle>Sign in</DialogTitle>
         <form onSubmit={handleSubmit} className="space-y-3">
           <input
@@ -49,13 +49,14 @@ export function LoginDialog({
           />
           <button
             type="submit"
+            data-testid="login-submit"
             disabled={mutation.isPending}
             className="w-full rounded bg-primary px-3 py-2 text-sm text-primary-foreground hover:bg-primary-hover disabled:opacity-50"
           >
             {mutation.isPending ? "..." : "Sign in"}
           </button>
           {mutation.isError && (
-            <p className="text-xs text-destructive">
+            <p data-testid="login-error" className="text-xs text-destructive">
               {mutation.error instanceof Error
                 ? mutation.error.message
                 : "Invalid username or password"}

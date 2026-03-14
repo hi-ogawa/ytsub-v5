@@ -55,13 +55,6 @@ export default defineConfig({
     __BUILD_TIME__: JSON.stringify(buildTime.toISOString()),
     __GIT_REV__: JSON.stringify(rev + dirty),
   },
-  resolve: {
-    alias: {
-      // Extension bookmarks page uses extension-specific oRPC client
-      // with bearer token auth via direct fetch (not cookie-based)
-      [resolve("src/rpc.ts")]: resolve("src/extension/rpc.ts"),
-    },
-  },
   plugins: [react(), tailwindcss()],
   builder: {
     async buildApp(builder) {
