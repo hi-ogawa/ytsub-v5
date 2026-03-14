@@ -178,7 +178,7 @@ function SyncBadge({
               ? "Server only — pull to local"
               : "Pull server changes"
           }
-          className="rounded p-1 text-muted-foreground hover:bg-muted"
+          className="rounded p-1.5 text-muted-foreground hover:bg-muted"
           onClick={(e) => {
             e.preventDefault();
             e.stopPropagation();
@@ -199,7 +199,7 @@ function SyncBadge({
               ? "Local only — push to server"
               : "Push local changes to server"
           }
-          className="rounded p-1 text-muted-foreground hover:bg-muted"
+          className="rounded p-1.5 text-muted-foreground hover:bg-muted"
           onClick={(e) => {
             e.preventDefault();
             e.stopPropagation();
