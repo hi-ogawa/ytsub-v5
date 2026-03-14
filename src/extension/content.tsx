@@ -18,9 +18,9 @@ declare const __GIT_REV__: string;
 console.log(`[zamak] build: ${__BUILD_TIME__} (${__GIT_REV__})`);
 
 // Adapter: wrap the page's <video> element as YTPlayer
-function getVideoPlayer(): YTPlayer | null {
+function getVideoPlayer(): YTPlayer | undefined {
   const video = document.querySelector("video");
-  if (!video) return null;
+  if (!video) return undefined;
   return {
     playVideo: () => void video.play(),
     pauseVideo: () => video.pause(),
@@ -71,7 +71,7 @@ function getUserLangs(): string[] {
 }
 
 function ExtensionViewer({ videoId }: { videoId: string }) {
-  const [player] = useState<YTPlayer | null>(() => getVideoPlayer());
+  const [player] = useState(() => getVideoPlayer());
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["extension-metadata", videoId],
@@ -106,7 +106,7 @@ function ExtensionSession({
   player,
 }: {
   data: YouTubeExtractionResult;
-  player: YTPlayer | null;
+  player?: YTPlayer;
 }) {
   return (
     <CaptionPanel
@@ -174,7 +174,7 @@ function applyTheme(host: HTMLElement, container: HTMLElement) {
   host.classList.toggle("dark", dark);
 }
 
-let themeObserver: MutationObserver | null = null;
+let themeObserver: MutationObserver | undefined;
 
 function inject() {
   if (document.getElementById("zamak-host")) return;
@@ -227,7 +227,7 @@ function inject() {
 
 function remove() {
   themeObserver?.disconnect();
-  themeObserver = null;
+  themeObserver = undefined;
   document.getElementById("zamak-host")?.remove();
 }
 

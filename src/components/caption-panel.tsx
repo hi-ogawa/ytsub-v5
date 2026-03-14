@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Bookmark,
   Check,
@@ -229,7 +229,7 @@ function formatTimestamp(seconds: number): string {
 
 type CaptionPanelProps = {
   tracks: YouTubeCaptionTrack[];
-  player: YTPlayer | null;
+  player?: YTPlayer;
   fetchJson3: (track: YouTubeCaptionTrack) => Promise<Json3File>;
   videoMeta: YouTubeVideoData;
 };
@@ -283,26 +283,27 @@ function CaptionPanelInner({
 }) {
   const { youtubeId } = videoMeta;
 
-  const initialTracks = useMemo(
-    () => getInitialTracks(tracks, youtubeId),
-    [tracks, youtubeId],
-  );
-
   const [store, setStore] = useState(() => initialStore);
-  const [vssId1, setVssId1] = useState(
-    () => initialStore?.vssId1 ?? initialTracks.vssId1,
-  );
-  const [vssId2, setVssId2] = useState(
-    () => initialStore?.vssId2 ?? initialTracks.vssId2,
-  );
+  const [selectedTracks, setSelectedTracks] = useState(() => {
+    const { vssId1, vssId2 } =
+      initialStore ?? getInitialTracks(tracks, youtubeId);
+    return {
+      track1: tracks.find((t) => t.vssId === vssId1),
+      track2: tracks.find((t) => t.vssId === vssId2),
+    };
+  });
   const [userStrategy, setUserStrategy] = useState<MergeStrategy>();
 
   const selectTracks = useCallback(
-    (v1: string | undefined, v2: string | undefined) => {
-      setVssId1(v1);
-      setVssId2(v2);
+    (v1?: string, v2?: string) => {
+      setSelectedTracks({
+        track1: tracks.find((t) => t.vssId === v1),
+        track2: tracks.find((t) => t.vssId === v2),
+      });
       setStore(undefined);
-      if (v1 && v2) saveSelectedTracks(tracks, v1, v2, youtubeId);
+      if (v1 && v2) {
+        saveSelectedTracks(tracks, v1, v2, youtubeId);
+      }
     },
     [tracks, youtubeId],
   );
@@ -313,11 +314,11 @@ function CaptionPanelInner({
         tracks={tracks}
         fetchJson3={fetchJson3}
         videoMeta={videoMeta}
-        vssId1={vssId1}
-        vssId2={vssId2}
+        track1={selectedTracks.track1}
+        track2={selectedTracks.track2}
         userStrategy={userStrategy}
         onSelectTracks={selectTracks}
-        onStoreReady={setStore}
+        setStore={setStore}
       />
     );
   }
@@ -336,66 +337,82 @@ function CaptionPanelInner({
   );
 }
 
-/** State B: tracks selected, fetching json3 → builds store and calls onStoreReady */
+async function buildCaptionSession(options: {
+  track1: YouTubeCaptionTrack;
+  track2: YouTubeCaptionTrack;
+  fetchJson3: (track: YouTubeCaptionTrack) => Promise<Json3File>;
+  videoMeta: YouTubeVideoData;
+  strategy?: MergeStrategy;
+}): Promise<CaptionSessionManager> {
+  const [json3_1, json3_2] = await Promise.all([
+    options.fetchJson3(options.track1),
+    options.fetchJson3(options.track2),
+  ]);
+  const merged = mergeCaptions(
+    { json3: json3_1, vssId: options.track1.vssId },
+    { json3: json3_2, vssId: options.track2.vssId },
+    options.strategy,
+  );
+  return new CaptionSessionManager({
+    videoMeta: options.videoMeta,
+    vssId1: options.track1.vssId,
+    vssId2: options.track2.vssId,
+    rows: merged.captions,
+    strategy: merged.strategy,
+    bookmarks: [],
+  });
+}
+
+/** State B: tracks selected, fetching json3 → builds store and calls setStore */
 function CaptionPanelLoading({
   tracks,
   fetchJson3,
   videoMeta,
-  vssId1,
-  vssId2,
+  track1,
+  track2,
   userStrategy,
   onSelectTracks,
-  onStoreReady,
-}: {
-  tracks: YouTubeCaptionTrack[];
-  fetchJson3: (track: YouTubeCaptionTrack) => Promise<Json3File>;
-  videoMeta: YouTubeVideoData;
-  vssId1: string | undefined;
-  vssId2: string | undefined;
-  userStrategy: MergeStrategy | undefined;
-  onSelectTracks: (v1: string | undefined, v2: string | undefined) => void;
-  onStoreReady: (store: CaptionSessionManager) => void;
+  setStore,
+}: CaptionPanelProps & {
+  track1?: YouTubeCaptionTrack;
+  track2?: YouTubeCaptionTrack;
+  userStrategy?: MergeStrategy;
+  onSelectTracks: (v1?: string, v2?: string) => void;
+  setStore: (store: CaptionSessionManager) => void;
 }) {
-  const { youtubeId } = videoMeta;
-  const track1 = tracks.find((t) => t.vssId === vssId1);
-  const track2 = tracks.find((t) => t.vssId === vssId2);
-
-  const json3Query1 = useQuery({
-    queryKey: ["json3", youtubeId, track1?.vssId],
-    queryFn: () =>
-      fetchJson3(track1!).then((json3) => ({ json3, track: track1! })),
-    enabled: !!track1,
-  });
-
-  const json3Query2 = useQuery({
-    queryKey: ["json3", youtubeId, track2?.vssId],
-    queryFn: () =>
-      fetchJson3(track2!).then((json3) => ({ json3, track: track2! })),
-    enabled: !!track2,
-  });
-
-  const json3_1 = json3Query1.data;
-  const json3_2 = json3Query2.data;
-  useEffect(() => {
-    if (!json3_1 || !json3_2) return;
-
-    const merged = mergeCaptions(
-      { json3: json3_1.json3, vssId: json3_1.track.vssId },
-      { json3: json3_2.json3, vssId: json3_2.track.vssId },
+  const queryClient = useQueryClient();
+  const storeQuery = useQuery({
+    queryKey: [
+      "caption-session-build",
+      videoMeta.youtubeId,
+      track1?.vssId,
+      track2?.vssId,
       userStrategy,
-    );
-
-    onStoreReady(
-      new CaptionSessionManager({
+    ],
+    queryFn: () => {
+      return buildCaptionSession({
+        track1: track1!,
+        track2: track2!,
         videoMeta,
-        vssId1: json3_1.track.vssId,
-        vssId2: json3_2.track.vssId,
-        rows: merged.captions,
-        strategy: merged.strategy,
-        bookmarks: [],
-      }),
-    );
-  }, [json3_1, json3_2, userStrategy, videoMeta, onStoreReady]);
+        strategy: userStrategy,
+        fetchJson3: (track) => {
+          return queryClient.fetchQuery({
+            queryKey: ["json3", videoMeta.youtubeId, track.vssId],
+            queryFn: () => fetchJson3(track),
+          });
+        },
+      });
+    },
+    enabled: !!track1 && !!track2,
+    gcTime: 0,
+    staleTime: Infinity,
+  });
+
+  useEffect(() => {
+    if (storeQuery.data) {
+      setStore(storeQuery.data);
+    }
+  }, [storeQuery.data, setStore]);
 
   return (
     <div className="flex h-full flex-col">
@@ -403,27 +420,23 @@ function CaptionPanelLoading({
         <div className="min-w-0 flex-1">
           <TrackPicker
             tracks={tracks}
-            selectedVssId1={vssId1}
-            selectedVssId2={vssId2}
+            selectedVssId1={track1?.vssId}
+            selectedVssId2={track2?.vssId}
             onSelect={(v1, v2) => onSelectTracks(v1, v2)}
-            disabled={false}
           />
         </div>
         <SettingsDropdownSkeleton />
       </div>
 
-      {json3Query1.error || json3Query2.error ? (
+      {storeQuery.error ? (
         <div className="flex h-full items-center justify-center text-sm text-destructive">
-          <div>
-            {json3Query1.error && <div>{String(json3Query1.error)}</div>}
-            {json3Query2.error && <div>{String(json3Query2.error)}</div>}
-          </div>
+          {String(storeQuery.error)}
         </div>
-      ) : (
+      ) : storeQuery.isLoading ? (
         <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
           Loading subtitles…
         </div>
-      )}
+      ) : null}
     </div>
   );
 }
@@ -437,8 +450,8 @@ function CaptionPanelWithStore({
 }: {
   store: CaptionSessionManager;
   tracks: YouTubeCaptionTrack[];
-  player: YTPlayer | null;
-  onSelectTracks: (v1: string | undefined, v2: string | undefined) => void;
+  player?: YTPlayer;
+  onSelectTracks: (v1?: string, v2?: string) => void;
   onSelectStrategy: (s: MergeStrategy) => void;
 }) {
   useSyncExternalStore(store.subscribe, () => store.version);
@@ -583,7 +596,7 @@ function CaptionPanelContent({
   autoScroll,
 }: {
   store: CaptionSessionManager;
-  player: YTPlayer | null;
+  player?: YTPlayer;
   autoScroll: boolean;
 }) {
   // --- Tab state ---
@@ -630,7 +643,7 @@ function CaptionPanelContent({
   const captionListRef = useRef<{ scrollToIndex: (index: number) => void }>(
     null,
   );
-  const [flashBookmarkId, setFlashBookmarkId] = useState<string | null>(null);
+  const [flashBookmarkId, setFlashBookmarkId] = useState<string>();
   const flashBookmarkCounter = useRef(0);
 
   function onGoToCaption(captionIndex: number) {
@@ -645,7 +658,8 @@ function CaptionPanelContent({
     setFlashBookmarkId(bookmarkId);
     setActiveTab("bookmarks");
     setTimeout(() => {
-      if (flashBookmarkCounter.current === counter) setFlashBookmarkId(null);
+      if (flashBookmarkCounter.current === counter)
+        setFlashBookmarkId(undefined);
     }, 1000);
   }
 
@@ -835,14 +849,14 @@ function ExtensionBookmarksList({
 }: {
   bookmarks: ExtensionBookmark[];
   rows: MergedCaption[];
-  player: YTPlayer | null;
+  player?: YTPlayer;
   onDeleteBookmark: (id: string) => void;
   onGoToCaption: (captionIndex: number) => void;
-  flashBookmarkId: string | null;
+  flashBookmarkId?: string;
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    if (flashBookmarkId === null || !scrollRef.current) return;
+    if (!flashBookmarkId || !scrollRef.current) return;
     const el = scrollRef.current.querySelector(
       `[data-bookmark-id="${flashBookmarkId}"]`,
     );
@@ -967,7 +981,7 @@ function CaptionViewer({
 }: {
   ref?: React.Ref<CaptionViewerHandle>;
   rows: MergedCaption[];
-  player: YTPlayer | null;
+  player?: YTPlayer;
   autoScroll: boolean;
   bookmarks: ExtensionBookmark[];
   onGoToBookmark: (bookmarkId: string) => void;

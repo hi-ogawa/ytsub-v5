@@ -25,7 +25,7 @@ export interface YTPlayer {
 
 // --- YouTube IFrame API loader (singleton) ---
 
-let iframeApiPromise: Promise<void> | null = null;
+let iframeApiPromise: Promise<void> | undefined;
 
 function loadYoutubeIframeApi(): Promise<void> {
   if (iframeApiPromise) return iframeApiPromise;
@@ -41,9 +41,9 @@ function loadYoutubeIframeApi(): Promise<void> {
 
 // --- Hook ---
 
-export function useYouTubePlayer(youtubeId: string | undefined) {
-  const [player, setPlayer] = useState<YTPlayer | null>(null);
-  const playerRef = useRef<YTPlayer | null>(null);
+export function useYouTubePlayer(youtubeId?: string) {
+  const [player, setPlayer] = useState<YTPlayer>();
+  const playerRef = useRef<YTPlayer>(undefined);
 
   const ref: RefCallback<HTMLDivElement> = (el) => {
     if (!el || !youtubeId || playerRef.current) return;
@@ -65,7 +65,7 @@ export function useYouTubePlayer(youtubeId: string | undefined) {
   useEffect(() => {
     return () => {
       playerRef.current?.destroy();
-      playerRef.current = null;
+      playerRef.current = undefined;
     };
   }, []);
 
