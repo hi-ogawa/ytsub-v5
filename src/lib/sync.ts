@@ -294,9 +294,8 @@ function serverSessionToLocal(
     channelName: data.video.channelName,
     channelId: data.video.channelId,
     duration: data.video.duration,
-    // TODO: add vssId to server db
-    vssId1: `-.${data.video.language1}`,
-    vssId2: `-.${data.video.language2}`,
+    vssId1: data.video.vssId1,
+    vssId2: data.video.vssId2,
     language1: data.video.language1,
     language2: data.video.language2,
     captions: data.captions.map((c) => ({
