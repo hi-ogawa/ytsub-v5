@@ -406,6 +406,7 @@ type CaptionPanelProps = {
   fetchJson3: (track: YouTubeCaptionTrack) => Promise<Json3File>;
   videoMeta: YouTubeVideoData;
   sync?: SyncHandle;
+  sessionOnly?: boolean;
 };
 
 export function CaptionPanel(props: CaptionPanelProps) {
@@ -452,6 +453,7 @@ function CaptionPanelInner({
   fetchJson3,
   videoMeta,
   sync,
+  sessionOnly,
   initialStore,
 }: CaptionPanelProps & {
   initialStore?: CaptionSessionManager;
@@ -484,6 +486,13 @@ function CaptionPanelInner({
   );
 
   if (!store) {
+    if (sessionOnly) {
+      return (
+        <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
+          No session available
+        </div>
+      );
+    }
     return (
       <CaptionPanelLoading
         tracks={tracks}
@@ -501,6 +510,7 @@ function CaptionPanelInner({
   return (
     <CaptionPanelWithStore
       store={store}
+      sessionOnly={!!sessionOnly}
       tracks={tracks}
       player={player}
       onSelectTracks={selectTracks}
@@ -549,7 +559,10 @@ function CaptionPanelLoading({
   userStrategy,
   onSelectTracks,
   setStore,
-}: CaptionPanelProps & {
+}: {
+  tracks: YouTubeCaptionTrack[];
+  fetchJson3: (track: YouTubeCaptionTrack) => Promise<Json3File>;
+  videoMeta: YouTubeVideoData;
   track1?: YouTubeCaptionTrack;
   track2?: YouTubeCaptionTrack;
   userStrategy?: MergeStrategy;
@@ -619,6 +632,7 @@ function CaptionPanelLoading({
 
 function CaptionPanelWithStore({
   store,
+  sessionOnly,
   tracks,
   player,
   onSelectTracks,
@@ -626,6 +640,7 @@ function CaptionPanelWithStore({
   sync,
 }: {
   store: CaptionSessionManager;
+  sessionOnly: boolean;
   tracks: YouTubeCaptionTrack[];
   player?: YTPlayer;
   onSelectTracks: (v1?: string, v2?: string) => void;
@@ -638,24 +653,26 @@ function CaptionPanelWithStore({
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex items-center border-b gap-1">
-        <div className="min-w-0 flex-1">
-          <TrackPicker
-            tracks={tracks}
-            selectedVssId1={store.vssId1}
-            selectedVssId2={store.vssId2}
-            onSelect={(v1, v2) => onSelectTracks(v1, v2)}
-            disabled={store.bookmarks.length > 0}
+      {!sessionOnly && (
+        <div className="flex items-center border-b gap-1">
+          <div className="min-w-0 flex-1">
+            <TrackPicker
+              tracks={tracks}
+              selectedVssId1={store.vssId1}
+              selectedVssId2={store.vssId2}
+              onSelect={(v1, v2) => onSelectTracks(v1, v2)}
+              disabled={store.bookmarks.length > 0}
+            />
+          </div>
+          {sync && <SyncButton sync={sync} store={store} />}
+          <SettingsDropdown
+            store={store}
+            autoScroll={autoScroll}
+            onSetAutoScroll={setAutoScroll}
+            onSelectStrategy={onSelectStrategy}
           />
         </div>
-        {sync && <SyncButton sync={sync} store={store} />}
-        <SettingsDropdown
-          store={store}
-          autoScroll={autoScroll}
-          onSetAutoScroll={setAutoScroll}
-          onSelectStrategy={onSelectStrategy}
-        />
-      </div>
+      )}
       <CaptionPanelContent
         store={store}
         player={player}

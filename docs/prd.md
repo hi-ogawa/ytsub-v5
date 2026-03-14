@@ -98,14 +98,18 @@ A web app for language learning via YouTube subtitles. Watch videos with dual ca
 
 - [x] persiste fab open/close state per video
 - [ ] consolidate captions panel for extension/dev-viewer/video-viewer
-  - [ ] virtualized caption list (extension uses plain render, video-viewer uses `@tanstack/react-virtual`)
+  - [x] video-viewer rewritten to use shared `CaptionPanel` with `sessionOnly` flag
+  - [x] drop `@tanstack/react-virtual` (no virtualization)
   - [x] flash-highlight + auto-scroll pause on bookmark→caption navigation (video-viewer only)
-  - [ ] data layer abstraction (server DB vs IndexedDB)
+  - [ ] settings dropdown for video-viewer (auto-scroll toggle, etc. — currently hidden when `sessionOnly`)
+  - [ ] sync button for video-viewer (push/pull with server)
+  - [x] e2e: rework after video-viewer consolidation — delete `bookmark-viewer.spec.ts`, fix route patterns, remove server-dependent viewer assertions
+  - [ ] e2e: restore delete-bookmark test (`delete.spec.ts`) — needs IndexedDB-based viewer or dev-viewer route
+  - [ ] e2e: restore etymology import test (`import.spec.ts`) — viewer no longer loads from server after import
 - [x] feat: bookmarks page server sync — merge server videos with per-video push/pull (`useVideoSync`)
-- [ ] feat: web app as browser client — retire server-rendered video-list/video-viewer in favor of client storage
+- [ ] feat: web app as browser client — retire server-rendered video-list in favor of client storage
   - **video list (`/`)**: replace current server-only `listVideos` page with `BookmarksPage` + `useVideoSync` (already built for dev-bookmarks). Shows merged local+server videos, sync badges, push/pull. This becomes the app home page.
-  - **video viewer (`/videos/:id`)**: load `PersistedCaptionSession` from IndexedDB instead of fetching from server DB. Caption panel renders pre-merged captions directly — no track selection, no `fetchJson3`. Bookmarks work via IndexedDB.
-  - existing server-only routes become dead code once client routes are wired up
+  - video viewer already done (`sessionOnly` flag, loads from IndexedDB)
 
 ## TODO: Backlog
 

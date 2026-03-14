@@ -55,12 +55,12 @@ function ImportDialog({
 
   const importMutation = useMutation(
     orpc.videos.importVideo.mutationOptions({
-      onSuccess: async (data) => {
+      onSuccess: async () => {
         await queryClient.invalidateQueries({
           queryKey: orpc.videos.listVideos.queryOptions({ input: {} }).queryKey,
         });
         onOpenChange(false);
-        navigate(`/videos/${data.videoId}`);
+        if (parsed) navigate(`/videos/${parsed.video.youtubeId}`);
       },
     }),
   );
@@ -218,7 +218,7 @@ export function VideoListPage() {
                 <VideoCard
                   key={video.id}
                   youtubeId={video.youtubeId}
-                  href={`/videos/${video.id}`}
+                  href={`/videos/${video.youtubeId}`}
                   title={video.title}
                   channelName={video.channelName || "Unknown channel"}
                   titleRight={
@@ -270,7 +270,7 @@ export function VideoListPage() {
                   }
                   onClick={(e) => {
                     e.preventDefault();
-                    navigate(`/videos/${video.id}`);
+                    navigate(`/videos/${video.youtubeId}`);
                   }}
                 />
               ))}
