@@ -26,4 +26,4 @@ The extension is a thin shell. Core logic (subtitle extraction, json3 parsing, c
 
 ## Dev-viewer
 
-Loading/reloading a Chrome extension on every change is slow. The dev-viewer (`/dev/youtube/:videoId`) renders the same caption panel using local fixture data (`/scripts/youtube-json/`), so UI iteration happens via `pnpm dev` without touching the extension. The dev-viewer uses the exact same shared components as the extension.
+Loading/reloading a Chrome extension on every change is slow. The dev-viewer (`/dev/videos/:videoId`) renders the same caption panel using local fixture data (`/scripts/youtube-json/`), so UI iteration happens via `pnpm dev` without touching the extension. The dev-viewer uses the exact same shared components as the extension.

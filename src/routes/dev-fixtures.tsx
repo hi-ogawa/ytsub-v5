@@ -1,13 +1,8 @@
-import { Link, useNavigate } from "react-router";
+import { useNavigate } from "react-router";
 import { VideoCard } from "../components/video-card.tsx";
-import type { YouTubeExtractionResult } from "../lib/youtube.ts";
+import { fixtureMetadata } from "../lib/dev-fixtures.ts";
 
-const fixtureModules = import.meta.glob<YouTubeExtractionResult>(
-  "/scripts/youtube-json/*/metadata.json",
-  { eager: true, import: "default" },
-);
-
-const fixtures = Object.values(fixtureModules);
+const fixtures = Object.values(fixtureMetadata);
 
 function formatDuration(seconds: number): string {
   if (seconds <= 0) return "—";
@@ -16,25 +11,19 @@ function formatDuration(seconds: number): string {
   return `${m}:${String(s).padStart(2, "0")}`;
 }
 
-export function DevIndexPage() {
+export function DevFixturesPage() {
   const navigate = useNavigate();
   return (
     <div className="mx-auto max-w-5xl p-8">
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Dev Viewer</h1>
-        <Link
-          to="/dev/bookmarks"
-          className="rounded border border-border px-3 py-1.5 text-sm hover:bg-muted"
-        >
-          Bookmarks Page
-        </Link>
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold">Dev Fixtures</h1>
       </div>
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
         {fixtures.map((meta) => (
           <VideoCard
             key={meta.video.youtubeId}
             youtubeId={meta.video.youtubeId}
-            href={`/dev/youtube/${meta.video.youtubeId}`}
+            href={`/dev/videos/${meta.video.youtubeId}`}
             title={meta.video.title}
             channelName={meta.video.channelName || "Unknown channel"}
             badge={
@@ -47,7 +36,7 @@ export function DevIndexPage() {
             }
             onClick={(e) => {
               e.preventDefault();
-              navigate(`/dev/youtube/${meta.video.youtubeId}`);
+              navigate(`/dev/videos/${meta.video.youtubeId}`);
             }}
           />
         ))}

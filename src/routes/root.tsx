@@ -111,7 +111,8 @@ function HeaderMenu({ authenticated }: { authenticated: boolean }) {
             <DropdownMenuItem
               data-testid="bootstrap-fixtures"
               onSelect={async () => {
-                const { bootstrapFixtures } = await import("./dev-fixtures.ts");
+                const { bootstrapFixtures } =
+                  await import("../lib/dev-fixtures.ts");
                 await bootstrapFixtures();
               }}
               className="gap-2"

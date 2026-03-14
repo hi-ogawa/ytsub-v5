@@ -39,7 +39,7 @@ async function createBookmarkAt(
 test.describe("dev-viewer caption panel", () => {
   test.beforeEach(async ({ page }) => {
     await login(page);
-    await page.goto("/dev/youtube/7GU_VQfgMT0");
+    await page.goto("/dev/videos/7GU_VQfgMT0");
   });
 
   test("FAB toggles caption panel open and closed", async ({ page }) => {
@@ -76,11 +76,11 @@ test.describe("dev-viewer caption panel", () => {
     await expect(page.getByTitle("Hide captions")).toBeVisible();
 
     // Navigate to a different video — should default to closed
-    await page.goto("/dev/youtube/DtK-CkwNHSY");
+    await page.goto("/dev/videos/DtK-CkwNHSY");
     await expect(page.getByTitle("Show captions")).toBeVisible();
 
     // Go back to first video — should still be open
-    await page.goto("/dev/youtube/7GU_VQfgMT0");
+    await page.goto("/dev/videos/7GU_VQfgMT0");
     await expect(page.getByTitle("Hide captions")).toBeVisible();
   });
 
@@ -609,14 +609,14 @@ test.describe("dev-viewer caption panel", () => {
     await expect(bookmarkCard).toHaveClass(/flash-highlight/);
   });
 
-  test("creating bookmark populates dev-bookmarks page via video-index", async ({
+  test("creating bookmark populates video-list page via video-index", async ({
     page,
   }) => {
     await openPanelWithTracks(page);
     await createBookmarkAt(page, 0, 0, 2);
 
-    // Navigate to bookmarks page and verify the video card
-    await page.goto("/dev/bookmarks");
+    // Navigate to video list and verify the video card
+    await page.goto("/");
     const card = page.getByTestId("video-card-7GU_VQfgMT0");
     await expect(card).toBeVisible();
     await expect(card.getByTestId("video-card-title")).toHaveText(
@@ -626,11 +626,11 @@ test.describe("dev-viewer caption panel", () => {
     await expect(card.getByTestId("video-card-badge")).toHaveText("1 bookmark");
 
     // Create another bookmark, verify count updates on revisit
-    await page.goto("/dev/youtube/7GU_VQfgMT0");
+    await page.goto("/dev/videos/7GU_VQfgMT0");
     // Panel stays open (FAB state persisted from earlier in this test)
     await expect(page.locator("[data-index='0']")).toBeVisible();
     await createBookmarkAt(page, 1, 0, 2);
-    await page.goto("/dev/bookmarks");
+    await page.goto("/");
     await expect(
       page
         .getByTestId("video-card-7GU_VQfgMT0")
@@ -643,7 +643,7 @@ test.describe("dev-viewer sync", () => {
   test.beforeEach(async ({ page }) => {
     await setupDb({ seed: true });
     await login(page);
-    await page.goto("/dev/youtube/7GU_VQfgMT0");
+    await page.goto("/dev/videos/7GU_VQfgMT0");
   });
 
   test("sync button shows push state after creating bookmark, synced after push", async ({
@@ -720,7 +720,7 @@ test.describe("dev-viewer sync", () => {
     }, "7GU_VQfgMT0");
 
     // Reload to pick up cleared state (panel stays open via persisted FAB state)
-    await page.goto("/dev/youtube/7GU_VQfgMT0");
+    await page.goto("/dev/videos/7GU_VQfgMT0");
     await expect(page.locator("[data-index='0']")).toBeVisible();
 
     // Should show pull state (server has data, local doesn't)
@@ -732,7 +732,7 @@ test.describe("dev-viewer sync", () => {
     await expect(syncBtn2).toHaveAttribute("data-sync-state", "synced");
 
     // After pull + page reload, bookmarks should be restored from IndexedDB
-    await page.goto("/dev/youtube/7GU_VQfgMT0");
+    await page.goto("/dev/videos/7GU_VQfgMT0");
     // Panel stays open via persisted FAB state, session hydrates from IndexedDB
     await expect(page.locator("[data-index='0']")).toBeVisible();
     const panel2 = page.getByTestId("resizable-panel");
