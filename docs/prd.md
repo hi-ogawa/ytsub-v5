@@ -111,7 +111,7 @@ A web app for language learning via YouTube subtitles. Watch videos with dual ca
   - [x] video list (`/`): replaced with `BookmarksPage` + `useVideoSync`, import moved to header menu (saves to IndexedDB)
   - [x] video viewer: `sessionOnly` flag, loads from IndexedDB
 - [ ] rework "Bookmarked Videos" heading/framing — home page is just "Videos"; empty state text assumes extension but web app uses import/sync
-- [ ] consolidate dev-index and dev-bookmarks into single dev home page — dev-index (fixture list) is redundant now that dev-bookmarks has bootstrap; merge them
+- [ ] remove dev-bookmarks (redundant with video-list) and dev-index — keep only dev-viewer for extension-specific testing (track picker, FAB, overlay). Move bootstrap fixtures button elsewhere (dev-viewer or header menu).
 - [ ] video card design improvements
   - sync badge placement: move to bottom-right (status, not title action)
   - delete should support both client (IndexedDB) and server storage — e.g. "Delete locally" / "Delete from server" / "Delete everywhere"
