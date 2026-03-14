@@ -80,7 +80,13 @@ English
 
 ## Screenshots
 
-Take screenshots at 1280×800 showing:
+**How to capture:**
+
+1. Open Chrome with the `chrome-extension-screenshot` profile — it's configured for 1280×800 at 1x pixel density (non-mobile)
+2. Set up the scene (navigate to the right page, open panels, etc.)
+3. DevTools → Cmd+Shift+P → "Capture full size screenshot" (or "Capture screenshot" for viewport only)
+
+**Scenes to capture:**
 
 1. The extension panel open on a YouTube video with dual subtitles visible
 2. Close-up of the caption panel showing two language columns
