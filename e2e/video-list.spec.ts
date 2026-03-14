@@ -30,7 +30,7 @@ const fixtureEntries = [
 
 test.describe("video-list page", () => {
   test.beforeEach(async ({ page }) => {
-    await setupDb({ seed: true });
+    await setupDb();
     await login(page);
   });
 
@@ -95,7 +95,7 @@ function syncBadge(page: Page, youtubeId: string) {
 
 test.describe("video-list bootstrap", () => {
   test.beforeEach(async ({ page }) => {
-    await setupDb({ seed: true });
+    await setupDb();
     await login(page);
   });
 
