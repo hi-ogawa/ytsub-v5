@@ -26,9 +26,10 @@ The extension is a thin shell. Core logic (extraction, json3 parsing, alignment)
 
 ## Dev-viewer for iteration without extension
 
-Loading/reloading a Chrome extension on every change is slow. The **dev-viewer** (`/dev-viewer/:videoId`) provides the same caption panel experience using local fixture data, so UI iteration happens via `pnpm dev` without touching the extension.
+Loading/reloading a Chrome extension on every change is slow. The **dev-viewer** (`/dev/youtube/:videoId`) provides the same caption panel experience using local fixture data, so UI iteration happens via `pnpm dev` without touching the extension.
 
-- Shared components (`src/components/caption-panel.tsx`, `caption-list.tsx`, `track-picker.tsx`) are used by both the extension content script and the dev-viewer route
+- Shared components (`src/components/caption-panel.tsx`, `caption-list.tsx`, `track-picker.tsx`) are used by the extension, dev-viewer, and web app viewer
 - The dev-viewer reads pre-fetched YouTube metadata/tracks from `/scripts/youtube-json/` fixtures instead of calling YouTube APIs
-- UI features (FAB toggle, panel layout, auto-scroll) should be implemented in the shared components so both environments stay in sync
+- The web app viewer uses the same `CaptionPanel` with `sessionOnly` flag — loads from IndexedDB, no caption fetching
+- UI features (FAB toggle, panel layout, auto-scroll) should be implemented in the shared components so all environments stay in sync
 - Extension-specific code (`src/extension/content.tsx`) should be a thin wrapper: Shadow DOM injection, `pointer-events` layering, and data fetching — delegating all UI to shared components
