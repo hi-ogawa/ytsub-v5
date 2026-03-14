@@ -6,13 +6,12 @@ import {
   CaptionFab,
   CaptionPanel,
   ResizablePanel,
+  useFabOpen,
 } from "../components/caption-panel.tsx";
 import { PortalContainerProvider } from "../components/ui/portal-container.tsx";
 import type { YTPlayer } from "../components/youtube-player.tsx";
-import { useCaptionSession } from "../lib/caption-session.ts";
 import type { YouTubeExtractionResult } from "../lib/youtube.ts";
 import { fetchPlayerApi, fetchTrackJson3 } from "../lib/youtube.ts";
-import { useZamakApi } from "../lib/zamak-api.ts";
 import contentCss from "./content.css?inline";
 
 declare const __BUILD_TIME__: string;
@@ -20,9 +19,9 @@ declare const __GIT_REV__: string;
 console.log(`[zamak] build: ${__BUILD_TIME__} (${__GIT_REV__})`);
 
 // Adapter: wrap the page's <video> element as YTPlayer
-function getVideoPlayer(): YTPlayer | null {
+function getVideoPlayer(): YTPlayer | undefined {
   const video = document.querySelector("video");
-  if (!video) return null;
+  if (!video) return undefined;
   return {
     playVideo: () => void video.play(),
     pauseVideo: () => video.pause(),
@@ -36,7 +35,7 @@ function getVideoPlayer(): YTPlayer | null {
 }
 
 function App({ videoId }: { videoId: string }) {
-  const [open, setOpen] = useState(false);
+  const [open, toggleOpen] = useFabOpen(videoId);
 
   return (
     <div>
@@ -54,7 +53,7 @@ function App({ videoId }: { videoId: string }) {
           <ExtensionViewer videoId={videoId} />
         </ResizablePanel>
       )}
-      <CaptionFab open={open} onClick={() => setOpen((v) => !v)} />
+      <CaptionFab open={open} onClick={toggleOpen} />
     </div>
   );
 }
@@ -73,7 +72,7 @@ function getUserLangs(): string[] {
 }
 
 function ExtensionViewer({ videoId }: { videoId: string }) {
-  const [player] = useState<YTPlayer | null>(() => getVideoPlayer());
+  const [player] = useState(() => getVideoPlayer());
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["extension-metadata", videoId],
@@ -98,49 +97,24 @@ function ExtensionViewer({ videoId }: { videoId: string }) {
 
   return (
     <div className="flex h-full flex-col">
-      {data && (
-        <ExtensionSession videoId={videoId} data={data} player={player} />
-      )}
+      {data && <ExtensionSession data={data} player={player} />}
     </div>
   );
 }
 
 function ExtensionSession({
-  videoId,
   data,
   player,
 }: {
-  videoId: string;
   data: YouTubeExtractionResult;
-  player: YTPlayer | null;
+  player?: YTPlayer;
 }) {
-  const session = useCaptionSession({
-    youtubeId: videoId,
-    tracks: data.captionTracks,
-    fetchJson3: (track) => fetchTrackJson3(track.baseUrl),
-    videoMeta: data.video,
-  });
-
-  const sel1 = data.captionTracks.find(
-    (t) => t.vssId === session.selectedVssId1,
-  );
-  const sel2 = data.captionTracks.find(
-    (t) => t.vssId === session.selectedVssId2,
-  );
-
-  useZamakApi({
-    session,
-    rows: session.rows,
-    videoMeta: data.video,
-    language1: sel1?.languageCode ?? "ko",
-    language2: sel2?.languageCode ?? "en",
-  });
-
   return (
     <CaptionPanel
       tracks={data.captionTracks}
       player={player}
-      session={session}
+      fetchJson3={(track) => fetchTrackJson3(track.baseUrl)}
+      videoMeta={data.video}
     />
   );
 }
@@ -201,7 +175,7 @@ function applyTheme(host: HTMLElement, container: HTMLElement) {
   host.classList.toggle("dark", dark);
 }
 
-let themeObserver: MutationObserver | null = null;
+let themeObserver: MutationObserver | undefined;
 
 function inject() {
   if (document.getElementById("zamak-host")) return;
@@ -254,7 +228,7 @@ function inject() {
 
 function remove() {
   themeObserver?.disconnect();
-  themeObserver = null;
+  themeObserver = undefined;
   document.getElementById("zamak-host")?.remove();
 }
 

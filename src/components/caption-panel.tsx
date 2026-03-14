@@ -1,3 +1,4 @@
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   AlertTriangle,
   ArrowDownToLine,
@@ -7,6 +8,7 @@ import {
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
+  ClipboardPaste,
   Copy,
   Download,
   EllipsisVertical,
@@ -23,17 +25,40 @@ import {
   useMemo,
   useRef,
   useState,
+  useSyncExternalStore,
 } from "react";
-import type { MergeStrategy, MergedCaption } from "../lib/caption-merge.ts";
-import type { CaptionSessionManager } from "../lib/caption-session.ts";
+import {
+  type AiTask,
+  AI_TASKS,
+  makeAiPrompt,
+  parseAiResult,
+  pickFillToBookmarks,
+} from "../lib/ai-prompt.ts";
+import {
+  ALL_STRATEGIES,
+  type MergeStrategy,
+  type MergedCaption,
+  mergeCaptions,
+} from "../lib/caption-merge.ts";
+import { getSession } from "../lib/caption-session-db.ts";
+import {
+  CaptionSessionManager,
+  getInitialTracks,
+  saveSelectedTracks,
+} from "../lib/caption-session.ts";
 import {
   type BookmarkSelection,
   type ExtensionBookmark,
   extractBookmarkSelection,
 } from "../lib/extension-bookmarks.ts";
+import { createLocalStorageStore, useStore } from "../lib/external-store.ts";
 import type { SyncState } from "../lib/sync.ts";
-import type { YouTubeCaptionTrack } from "../lib/youtube.ts";
-import { CaptionList } from "./caption-list.tsx";
+import type {
+  Json3File,
+  YouTubeCaptionTrack,
+  YouTubeVideoData,
+} from "../lib/youtube.ts";
+import { CaptionList, type CaptionListHandle } from "./caption-list.tsx";
 import { TrackPicker } from "./track-picker.tsx";
 import {
   DropdownMenu,
@@ -42,6 +67,19 @@ import {
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu.tsx";
 import type { YTPlayer } from "./youtube-player.tsx";
+
+const autoScrollStore = createLocalStorageStore("zamak:auto-scroll", true);
+const fabOpenStore = createLocalStorageStore<Record<string, boolean>>(
+  "zamak:fab-open",
+  {},
+);
+
+export function useFabOpen(videoId: string) {
+  const [state, setState] = useStore(fabOpenStore);
+  const open = state[videoId] ?? false;
+  const toggle = () => setState((prev) => ({ ...prev, [videoId]: !open }));
+  return [open, toggle] as const;
+}
 
 export function CaptionFab({
   open,
@@ -148,24 +186,43 @@ export function ResizablePanel({
 
 // --- AI prompt copy (inline dropdown widget) ---
 
-const AI_PROMPTS: { label: string; task: string }[] = [
-  { label: "Pick & Fill", task: "Pick & Fill" },
-  { label: "Fill Bookmarks", task: "Fill Bookmarks" },
-  { label: "Fix Korean ASR", task: "Fix Korean ASR" },
-];
-
-function makePrompt(task: string): string {
-  return `This page has a language learning tool (zamak) injected as window.__zamak. It exposes methods to read captions/bookmarks and write bookmark metadata. Run window.__zamak.log.skillPrompt() and read the console output — it contains the full API reference and task instructions. Follow the "${task}" task. All data is read via console logs (prefixed ZAMAK:), not return values. If any API call errors, stop and report — do not try to fix it.`;
-}
-
-function AiPromptCopy() {
-  const [selected, setSelected] = useState(AI_PROMPTS[0].task);
+function AiPromptCopy({
+  rows,
+  bookmarks,
+  title,
+  duration,
+  youtubeId,
+}: {
+  rows: MergedCaption[] | undefined;
+  bookmarks: ExtensionBookmark[];
+  title: string;
+  duration: number | undefined;
+  youtubeId: string;
+}) {
+  const [selected, setSelected] = useState<AiTask>(AI_TASKS[0].task);
   const [copied, setCopied] = useState(false);
 
-  function copyPrompt(task: string) {
-    navigator.clipboard.writeText(makePrompt(task));
+  function getPrompt(task: AiTask) {
+    if (!rows) return "";
+    return makeAiPrompt(task, rows, bookmarks, title, duration);
+  }
+
+  function copyPrompt(task: AiTask) {
+    navigator.clipboard.writeText(getPrompt(task));
     setCopied(true);
     setTimeout(() => setCopied(false), 1500);
+  }
+
+  function downloadPrompt(task: AiTask) {
+    const text = getPrompt(task);
+    if (!text) return;
+    const blob = new Blob([text], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `zamak-${youtubeId}-prompt-${task}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
   }
 
   return (
@@ -178,11 +235,11 @@ function AiPromptCopy() {
           className="min-w-0 flex-1 rounded border bg-background px-1 py-0.5 text-sm"
           value={selected}
           onChange={(e) => {
-            setSelected(e.target.value);
-            copyPrompt(e.target.value);
+            setSelected(e.target.value as AiTask);
+            copyPrompt(e.target.value as AiTask);
           }}
         >
-          {AI_PROMPTS.map((p) => (
+          {AI_TASKS.map((p) => (
             <option key={p.task} value={p.task}>
               {p.label}
             </option>
@@ -193,6 +250,7 @@ function AiPromptCopy() {
           className="shrink-0 rounded p-0.5 text-muted-foreground hover:bg-muted"
           title="Copy prompt"
           onClick={() => copyPrompt(selected)}
+          disabled={!rows}
         >
           {copied ? (
             <Check className="h-4 w-4 text-green-500" />
@@ -200,9 +258,56 @@ function AiPromptCopy() {
             <Copy className="h-4 w-4" />
           )}
         </button>
+        <button
+          type="button"
+          className="shrink-0 rounded p-0.5 text-muted-foreground hover:bg-muted"
+          title="Download prompt"
+          onClick={() => downloadPrompt(selected)}
+          disabled={!rows}
+        >
+          <Download className="h-4 w-4" />
+        </button>
       </div>
     </div>
   );
+}
+
+// --- AI import paste ---
+
+function importAiResult(store: CaptionSessionManager): void {
+  const raw = window.prompt("Paste AI result JSON");
+  if (!raw) return;
+  try {
+    const result = parseAiResult(raw);
+    switch (result.type) {
+      case "pick-fill": {
+        const { bookmarks, warnings } = pickFillToBookmarks(
+          result.entries,
+          store.rows,
+        );
+        if (bookmarks.length > 0) {
+          store.createBookmarks(bookmarks);
+        }
+        alert(
+          `Created ${bookmarks.length} bookmarks` +
+            (warnings.length > 0
+              ? `\n\n${warnings.length} skipped:\n${warnings.join("\n")}`
+              : ""),
+        );
+        break;
+      }
+      case "fill":
+        store.updateBookmarks(result.entries);
+        alert(`Filled ${result.entries.length} bookmarks`);
+        break;
+      case "fix-asr":
+        store.updateCaptions(result.entries);
+        alert(`Updated ${result.entries.length} captions`);
+        break;
+    }
+  } catch (e) {
+    alert(e instanceof Error ? e.message : "Invalid JSON");
+  }
 }
 
 // --- CaptionPanel: display component ---
@@ -212,6 +317,8 @@ function formatTimestamp(seconds: number): string {
   const s = Math.floor(seconds % 60);
   return `${m}:${String(s).padStart(2, "0")}`;
 }
+
+// --- SyncButton ---
 
 function SyncButton({
   state,
@@ -226,7 +333,7 @@ function SyncButton({
   let icon: React.ReactNode;
   let title: string;
   let disabled = false;
-  let onClick = () => onSync();
+  let onClick: () => void = () => onSync();
 
   switch (state) {
     case "checking":
@@ -281,66 +388,415 @@ function SyncButton({
   );
 }
 
-export function CaptionPanel({
-  tracks,
-  player,
-  session,
-  sync,
-}: {
+type SyncProps = {
+  state: SyncState;
+  onSync: (
+    direction: "push" | "pull" | undefined,
+    store: CaptionSessionManager,
+  ) => void;
+  error: Error | null;
+};
+
+type CaptionPanelProps = {
   tracks: YouTubeCaptionTrack[];
-  player: YTPlayer | null;
-  session: CaptionSessionManager;
-  sync?: {
-    state: SyncState;
-    onSync: (direction?: "push" | "pull") => void;
-    error: Error | null;
-  };
-}) {
-  const {
-    selectedVssId1,
-    selectedVssId2,
-    onSelectTracks,
-    tracksLocked,
-    rows,
-    error,
-    activeStrategy,
-    isAutoStrategy,
-    forceStrategy,
-    onSetForceStrategy,
-    fallbackStrategies,
-    bookmarks,
-    bookmarksByIndex,
-    onCreateBookmarks,
-    onDeleteBookmark,
-    onClearBookmarks,
-    hasBookmarks,
-    onExport,
-  } = session;
-  const [autoScroll, setAutoScroll] = useState(() => {
-    try {
-      const stored = localStorage.getItem("zamak:auto-scroll");
-      return stored !== null ? (JSON.parse(stored) as boolean) : true;
-    } catch {
-      return true;
-    }
+  player?: YTPlayer;
+  fetchJson3: (track: YouTubeCaptionTrack) => Promise<Json3File>;
+  videoMeta: YouTubeVideoData;
+  sync?: SyncProps;
+};
+
+export function CaptionPanel(props: CaptionPanelProps) {
+  const { youtubeId } = props.videoMeta;
+
+  // Restore last session
+  // - always fetch on mount
+  // - always spinner until ready
+  // - never refetch after mount
+  const initialStoreQuery = useQuery({
+    queryKey: ["caption-session", youtubeId],
+    queryFn: async () => {
+      const session = await getSession(youtubeId);
+      if (!session) return null;
+      return new CaptionSessionManager({
+        videoMeta: props.videoMeta,
+        vssId1: session.vssId1,
+        vssId2: session.vssId2,
+        rows: session.captions,
+        strategy: session.strategy ?? "partition",
+        bookmarks: session.bookmarks,
+      });
+    },
+    gcTime: 0,
+    staleTime: Infinity,
   });
 
-  function toggleAutoScroll() {
-    setAutoScroll((prev) => {
-      const next = !prev;
-      localStorage.setItem("zamak:auto-scroll", JSON.stringify(next));
-      return next;
-    });
+  // TODO: better indicator?
+  if (initialStoreQuery.isPending) {
+    return null;
   }
 
+  return (
+    <CaptionPanelInner
+      {...props}
+      initialStore={initialStoreQuery.data ?? undefined}
+    />
+  );
+}
+
+function CaptionPanelInner({
+  tracks,
+  player,
+  fetchJson3,
+  videoMeta,
+  sync,
+  initialStore,
+}: CaptionPanelProps & {
+  initialStore?: CaptionSessionManager;
+}) {
+  const { youtubeId } = videoMeta;
+
+  const [store, setStore] = useState(() => initialStore);
+  const [selectedTracks, setSelectedTracks] = useState(() => {
+    const { vssId1, vssId2 } =
+      initialStore ?? getInitialTracks(tracks, youtubeId);
+    return {
+      track1: tracks.find((t) => t.vssId === vssId1),
+      track2: tracks.find((t) => t.vssId === vssId2),
+    };
+  });
+  const [userStrategy, setUserStrategy] = useState<MergeStrategy>();
+
+  const selectTracks = useCallback(
+    (v1?: string, v2?: string) => {
+      setSelectedTracks({
+        track1: tracks.find((t) => t.vssId === v1),
+        track2: tracks.find((t) => t.vssId === v2),
+      });
+      setStore(undefined);
+      if (v1 && v2) {
+        saveSelectedTracks(tracks, v1, v2, youtubeId);
+      }
+    },
+    [tracks, youtubeId],
+  );
+
+  if (!store) {
+    return (
+      <CaptionPanelLoading
+        tracks={tracks}
+        fetchJson3={fetchJson3}
+        videoMeta={videoMeta}
+        track1={selectedTracks.track1}
+        track2={selectedTracks.track2}
+        userStrategy={userStrategy}
+        onSelectTracks={selectTracks}
+        setStore={setStore}
+      />
+    );
+  }
+
+  return (
+    <CaptionPanelWithStore
+      store={store}
+      tracks={tracks}
+      player={player}
+      onSelectTracks={selectTracks}
+      onSelectStrategy={(s) => {
+        setUserStrategy(s);
+        setStore(undefined);
+      }}
+      sync={sync}
+    />
+  );
+}
+
+async function buildCaptionSession(options: {
+  track1: YouTubeCaptionTrack;
+  track2: YouTubeCaptionTrack;
+  fetchJson3: (track: YouTubeCaptionTrack) => Promise<Json3File>;
+  videoMeta: YouTubeVideoData;
+  strategy?: MergeStrategy;
+}): Promise<CaptionSessionManager> {
+  const [json3_1, json3_2] = await Promise.all([
+    options.fetchJson3(options.track1),
+    options.fetchJson3(options.track2),
+  ]);
+  const merged = mergeCaptions(
+    { json3: json3_1, vssId: options.track1.vssId },
+    { json3: json3_2, vssId: options.track2.vssId },
+    options.strategy,
+  );
+  return new CaptionSessionManager({
+    videoMeta: options.videoMeta,
+    vssId1: options.track1.vssId,
+    vssId2: options.track2.vssId,
+    rows: merged.captions,
+    strategy: merged.strategy,
+    bookmarks: [],
+  });
+}
+
+/** State B: tracks selected, fetching json3 → builds store and calls setStore */
+function CaptionPanelLoading({
+  tracks,
+  fetchJson3,
+  videoMeta,
+  track1,
+  track2,
+  userStrategy,
+  onSelectTracks,
+  setStore,
+}: CaptionPanelProps & {
+  track1?: YouTubeCaptionTrack;
+  track2?: YouTubeCaptionTrack;
+  userStrategy?: MergeStrategy;
+  onSelectTracks: (v1?: string, v2?: string) => void;
+  setStore: (store: CaptionSessionManager) => void;
+}) {
+  const queryClient = useQueryClient();
+  const storeQuery = useQuery({
+    queryKey: [
+      "caption-session-build",
+      videoMeta.youtubeId,
+      track1?.vssId,
+      track2?.vssId,
+      userStrategy,
+    ],
+    queryFn: () => {
+      return buildCaptionSession({
+        track1: track1!,
+        track2: track2!,
+        videoMeta,
+        strategy: userStrategy,
+        fetchJson3: (track) => {
+          return queryClient.fetchQuery({
+            queryKey: ["json3", videoMeta.youtubeId, track.vssId],
+            queryFn: () => fetchJson3(track),
+          });
+        },
+      });
+    },
+    enabled: !!track1 && !!track2,
+    gcTime: 0,
+    staleTime: Infinity,
+  });
+
+  useEffect(() => {
+    if (storeQuery.data) {
+      setStore(storeQuery.data);
+    }
+  }, [storeQuery.data, setStore]);
+
+  return (
+    <div className="flex h-full flex-col">
+      <div className="flex items-center border-b">
+        <div className="min-w-0 flex-1">
+          <TrackPicker
+            tracks={tracks}
+            selectedVssId1={track1?.vssId}
+            selectedVssId2={track2?.vssId}
+            onSelect={(v1, v2) => onSelectTracks(v1, v2)}
+          />
+        </div>
+        <SettingsDropdownSkeleton />
+      </div>
+
+      {storeQuery.error ? (
+        <div className="flex h-full items-center justify-center text-sm text-destructive">
+          {String(storeQuery.error)}
+        </div>
+      ) : storeQuery.isLoading ? (
+        <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
+          Loading subtitles…
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function CaptionPanelWithStore({
+  store,
+  tracks,
+  player,
+  onSelectTracks,
+  onSelectStrategy,
+  sync,
+}: {
+  store: CaptionSessionManager;
+  tracks: YouTubeCaptionTrack[];
+  player?: YTPlayer;
+  onSelectTracks: (v1?: string, v2?: string) => void;
+  onSelectStrategy: (s: MergeStrategy) => void;
+  sync?: SyncProps;
+}) {
+  useSyncExternalStore(store.subscribe, () => store.version);
+
+  const [autoScroll, setAutoScroll] = useStore(autoScrollStore);
+
+  return (
+    <div className="flex h-full flex-col">
+      <div className="flex items-center border-b">
+        <div className="min-w-0 flex-1">
+          <TrackPicker
+            tracks={tracks}
+            selectedVssId1={store.vssId1}
+            selectedVssId2={store.vssId2}
+            onSelect={(v1, v2) => onSelectTracks(v1, v2)}
+            disabled={store.bookmarks.length > 0}
+          />
+        </div>
+        {sync && (
+          <SyncButton
+            state={sync.state}
+            onSync={(direction) => sync.onSync(direction, store)}
+            error={sync.error}
+          />
+        )}
+        <SettingsDropdown
+          store={store}
+          autoScroll={autoScroll}
+          onSetAutoScroll={setAutoScroll}
+          onSelectStrategy={onSelectStrategy}
+        />
+      </div>
+      <CaptionPanelContent
+        store={store}
+        player={player}
+        autoScroll={autoScroll}
+      />
+    </div>
+  );
+}
+
+// --- SettingsDropdown ---
+
+function SettingsDropdownSkeleton() {
+  return (
+    <div className="mr-1 shrink-0 rounded p-0.5 text-muted-foreground opacity-50">
+      <EllipsisVertical className="h-4 w-4" />
+    </div>
+  );
+}
+
+function SettingsDropdown({
+  store,
+  autoScroll,
+  onSetAutoScroll,
+  onSelectStrategy,
+}: {
+  store: CaptionSessionManager;
+  autoScroll: boolean;
+  onSetAutoScroll: (value: boolean | ((prev: boolean) => boolean)) => void;
+  onSelectStrategy: (s: MergeStrategy) => void;
+}) {
+  const hasBookmarks = store.bookmarks.length > 0;
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        className="mr-1 shrink-0 rounded p-0.5 text-muted-foreground hover:bg-muted"
+        title="Settings"
+      >
+        <EllipsisVertical className="h-4 w-4" />
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuItem
+          data-checked={autoScroll}
+          onSelect={(e) => {
+            e.preventDefault();
+            onSetAutoScroll((v) => !v);
+          }}
+        >
+          <Check
+            className={`mr-2 h-4 w-4 ${autoScroll ? "opacity-100" : "opacity-0"}`}
+          />
+          Auto-scroll
+        </DropdownMenuItem>
+        <div className="px-2 py-1.5">
+          <label className="mb-1 block text-xs text-muted-foreground">
+            Track alignment
+          </label>
+          <select
+            className={`w-full rounded border bg-background px-1 py-0.5 text-sm ${hasBookmarks ? "cursor-not-allowed opacity-50" : ""}`}
+            value={store.strategy}
+            onChange={(e) => onSelectStrategy(e.target.value as MergeStrategy)}
+            title={
+              hasBookmarks
+                ? "Cannot change while bookmarks exist"
+                : "Alignment strategy"
+            }
+            disabled={hasBookmarks}
+          >
+            {ALL_STRATEGIES.map((st) => (
+              <option key={st} value={st}>
+                {st}
+              </option>
+            ))}
+          </select>
+        </div>
+        <AiPromptCopy
+          rows={store.rows}
+          bookmarks={store.bookmarks}
+          title={store.videoMeta.title}
+          duration={store.videoMeta.duration}
+          youtubeId={store.videoMeta.youtubeId}
+        />
+        <DropdownMenuItem onSelect={() => importAiResult(store)}>
+          <ClipboardPaste className="mr-2 h-4 w-4" />
+          Import AI result
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          onClick={() => {
+            const data = store.toExportData();
+            const blob = new Blob([JSON.stringify(data, null, 2)], {
+              type: "application/json",
+            });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `import-${store.videoMeta.youtubeId}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+          }}
+        >
+          <Download className="mr-2 h-4 w-4" />
+          Export import.json
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          onClick={() => {
+            if (confirm("Clear all bookmarks for this video?")) {
+              store.clearBookmarks();
+            }
+          }}
+          disabled={!hasBookmarks}
+        >
+          <Trash2 className="mr-2 h-4 w-4" />
+          Clear bookmarks
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+// --- CaptionPanelContent: store-dependent viewer ---
+
+function CaptionPanelContent({
+  store,
+  player,
+  autoScroll,
+}: {
+  store: CaptionSessionManager;
+  player?: YTPlayer;
+  autoScroll: boolean;
+}) {
   // --- Tab state ---
   const [activeTab, setActiveTab] = useState<"captions" | "bookmarks">(
     "captions",
   );
 
   const sortedBookmarks = useMemo(
-    () => [...bookmarks].sort((a, b) => a.timestamp - b.timestamp),
-    [bookmarks],
+    () => [...store.bookmarks].sort((a, b) => a.timestamp - b.timestamp),
+    [store.bookmarks],
   );
 
   // --- Bookmark navigation ---
@@ -374,26 +830,21 @@ export function CaptionPanel({
   }
 
   // --- Cross-tab navigation ---
-  const captionListRef = useRef<{ scrollToIndex: (index: number) => void }>(
-    null,
-  );
-  const [flashBookmarkId, setFlashBookmarkId] = useState<string | null>(null);
-  const flashBookmarkCounter = useRef(0);
+  const captionListRef = useRef<CaptionListHandle>(null);
+  const bookmarksListRef = useRef<BookmarksListHandle>(null);
 
   function onGoToCaption(captionIndex: number) {
     setActiveTab("captions");
-    requestAnimationFrame(() => {
+    setTimeout(() => {
       captionListRef.current?.scrollToIndex(captionIndex);
     });
   }
 
   function onGoToBookmark(bookmarkId: string) {
-    const counter = ++flashBookmarkCounter.current;
-    setFlashBookmarkId(bookmarkId);
     setActiveTab("bookmarks");
     setTimeout(() => {
-      if (flashBookmarkCounter.current === counter) setFlashBookmarkId(null);
-    }, 1000);
+      bookmarksListRef.current?.scrollToBookmark(bookmarkId);
+    });
   }
 
   // Pause auto-scroll when bookmark popover is open
@@ -406,11 +857,11 @@ export function CaptionPanel({
   const [bookmarkSelection, setBookmarkSelection] =
     useState<BookmarkSelection>();
   const [isCreating, setIsCreating] = useState(false);
-  const panelRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
 
   // Shadow DOM requires getSelection() on the shadow root, not document
   const getSelection = useCallback((): Selection | null => {
-    const root = panelRef.current?.getRootNode();
+    const root = contentRef.current?.getRootNode();
     if (root && "getSelection" in root) {
       return (
         root as unknown as { getSelection(): Selection | null }
@@ -429,11 +880,12 @@ export function CaptionPanel({
   }, [getSelection]);
 
   function onClickBookmark() {
-    if (!bookmarkSelection || !rows) return;
+    if (!bookmarkSelection) return;
+    const rows = store.rows;
     const row = rows[bookmarkSelection.captionIndex];
     if (!row) return;
     setIsCreating(true);
-    onCreateBookmarks([
+    store.createBookmarks([
       {
         ...bookmarkSelection,
         timestamp: row.begin,
@@ -450,94 +902,8 @@ export function CaptionPanel({
     setBookmarkSelection(undefined);
   }
 
-  function handleClearBookmarks() {
-    if (!confirm("Clear all bookmarks for this video?")) return;
-    onClearBookmarks();
-  }
-
   return (
-    <div ref={panelRef} className="flex h-full flex-col">
-      <div className="flex items-center border-b">
-        <div className="min-w-0 flex-1">
-          <TrackPicker
-            tracks={tracks}
-            selectedVssId1={selectedVssId1}
-            selectedVssId2={selectedVssId2}
-            onSelect={onSelectTracks}
-            disabled={tracksLocked}
-          />
-        </div>
-        {sync && (
-          <SyncButton
-            state={sync.state}
-            onSync={sync.onSync}
-            error={sync.error}
-          />
-        )}
-        <DropdownMenu>
-          <DropdownMenuTrigger
-            className="mr-1 shrink-0 rounded p-0.5 text-muted-foreground hover:bg-muted"
-            title="Settings"
-          >
-            <EllipsisVertical className="h-4 w-4" />
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem
-              data-checked={autoScroll}
-              onSelect={(e) => {
-                e.preventDefault();
-                toggleAutoScroll();
-              }}
-            >
-              <Check
-                className={`mr-2 h-4 w-4 ${autoScroll ? "opacity-100" : "opacity-0"}`}
-              />
-              Auto-scroll
-            </DropdownMenuItem>
-            {!isAutoStrategy && (
-              <div className="px-2 py-1.5">
-                <label className="mb-1 block text-xs text-muted-foreground">
-                  Track alignment
-                </label>
-                <select
-                  className={`w-full rounded border bg-background px-1 py-0.5 text-sm ${tracksLocked ? "cursor-not-allowed opacity-50" : ""}`}
-                  value={forceStrategy ?? activeStrategy ?? ""}
-                  onChange={(e) =>
-                    onSetForceStrategy(
-                      (e.target.value as MergeStrategy) || undefined,
-                    )
-                  }
-                  title={
-                    tracksLocked
-                      ? "Cannot change while bookmarks exist"
-                      : "Alignment strategy"
-                  }
-                  disabled={tracksLocked}
-                >
-                  {fallbackStrategies.map((s) => (
-                    <option key={s} value={s}>
-                      {s}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
-            <AiPromptCopy />
-            <DropdownMenuItem onClick={onExport}>
-              <Download className="mr-2 h-4 w-4" />
-              Export import.json
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={handleClearBookmarks}
-              disabled={!hasBookmarks}
-            >
-              <Trash2 className="mr-2 h-4 w-4" />
-              Clear bookmarks
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
-
+    <div ref={contentRef} className="flex min-h-0 flex-[1_0_0] flex-col">
       {/* Tab bar */}
       <div className="flex flex-none items-center gap-1 border-b px-2 py-1">
         <button
@@ -586,53 +952,46 @@ export function CaptionPanel({
       </div>
 
       <div className="relative flex min-h-0 flex-[1_0_0] flex-col">
-        {error ? (
-          <div className="flex h-full items-center justify-center text-sm text-destructive">
-            {String(error)}
-          </div>
-        ) : rows ? (
-          <>
-            {/* Captions — hidden (not unmounted) to preserve scroll position */}
-            <div
-              className="flex min-h-0 flex-[1_0_0] flex-col"
-              style={{
-                display: activeTab === "captions" ? undefined : "none",
-              }}
-            >
-              <CaptionViewer
-                ref={captionListRef}
-                rows={rows}
-                player={player}
-                autoScroll={autoScroll}
-                bookmarksByIndex={bookmarksByIndex}
-                onGoToBookmark={onGoToBookmark}
-                onPopoverOpenChange={onPopoverOpenChange}
-              />
-            </div>
+        {/* Captions — hidden (not unmounted) to preserve scroll position */}
+        <div
+          className="flex min-h-0 flex-[1_0_0] flex-col"
+          style={{
+            display: activeTab === "captions" ? undefined : "none",
+          }}
+        >
+          <CaptionViewer
+            ref={captionListRef}
+            rows={store.rows}
+            player={player}
+            autoScroll={autoScroll}
+            bookmarks={store.bookmarks}
+            onGoToBookmark={onGoToBookmark}
+            onPopoverOpenChange={onPopoverOpenChange}
+          />
+        </div>
 
-            {/* Bookmarks list */}
-            {activeTab === "bookmarks" && (
-              <div className="flex-[1_0_0] overflow-y-auto">
-                {sortedBookmarks.length === 0 ? (
-                  <div className="flex h-full items-center justify-center">
-                    <p className="text-sm text-muted-foreground">
-                      No bookmarks yet
-                    </p>
-                  </div>
-                ) : (
-                  <ExtensionBookmarksList
-                    bookmarks={sortedBookmarks}
-                    rows={rows}
-                    player={player}
-                    onDeleteBookmark={onDeleteBookmark}
-                    onGoToCaption={onGoToCaption}
-                    flashBookmarkId={flashBookmarkId}
-                  />
-                )}
-              </div>
-            )}
-          </>
-        ) : null}
+        {/* Bookmarks — hidden (not unmounted) to preserve scroll position */}
+        <div
+          className="flex-[1_0_0] overflow-y-auto"
+          style={{
+            display: activeTab === "bookmarks" ? undefined : "none",
+          }}
+        >
+          {sortedBookmarks.length === 0 ? (
+            <div className="flex h-full items-center justify-center">
+              <p className="text-sm text-muted-foreground">No bookmarks yet</p>
+            </div>
+          ) : (
+            <ExtensionBookmarksList
+              ref={bookmarksListRef}
+              bookmarks={sortedBookmarks}
+              rows={store.rows}
+              player={player}
+              onDeleteBookmark={(id) => store.deleteBookmark(id)}
+              onGoToCaption={onGoToCaption}
+            />
+          )}
+        </div>
 
         {/* Floating bookmark action buttons */}
         {(bookmarkSelection || isCreating) && (
@@ -665,33 +1024,40 @@ export function CaptionPanel({
 
 // --- ExtensionBookmarksList ---
 
+type BookmarksListHandle = {
+  scrollToBookmark: (bookmarkId: string) => void;
+};
+
 function ExtensionBookmarksList({
+  ref,
   bookmarks,
   rows,
   player,
   onDeleteBookmark,
   onGoToCaption,
-  flashBookmarkId,
 }: {
+  ref: React.Ref<BookmarksListHandle>;
   bookmarks: ExtensionBookmark[];
   rows: MergedCaption[];
-  player: YTPlayer | null;
+  player?: YTPlayer;
   onDeleteBookmark: (id: string) => void;
   onGoToCaption: (captionIndex: number) => void;
-  flashBookmarkId: string | null;
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (flashBookmarkId === null || !scrollRef.current) return;
-    const el = scrollRef.current.querySelector(
-      `[data-bookmark-id="${flashBookmarkId}"]`,
-    );
-    if (!el) return;
-    el.scrollIntoView({ behavior: "smooth", block: "center" });
-    el.classList.remove("flash-highlight");
-    void (el as HTMLElement).offsetWidth;
-    el.classList.add("flash-highlight");
-  }, [flashBookmarkId]);
+
+  useImperativeHandle(ref, () => ({
+    scrollToBookmark: (bookmarkId: string) => {
+      const el = scrollRef.current?.querySelector(
+        `[data-bookmark-id="${bookmarkId}"]`,
+      ) as HTMLElement | null;
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+        el.classList.remove("flash-highlight");
+        void el.offsetWidth;
+        el.classList.add("flash-highlight");
+      }
+    },
+  }));
 
   return (
     <div ref={scrollRef} className="flex flex-col gap-1.5 p-1.5">
@@ -792,38 +1158,25 @@ function ExtensionBookmarksList({
 
 // --- CaptionViewer: playback-synced caption list ---
 
-interface CaptionViewerHandle {
-  scrollToIndex: (index: number) => void;
-}
-
 function CaptionViewer({
   ref,
   rows,
   player,
   autoScroll,
-  bookmarksByIndex,
+  bookmarks,
   onGoToBookmark,
   onPopoverOpenChange,
 }: {
-  ref?: React.Ref<CaptionViewerHandle>;
+  ref: React.Ref<CaptionListHandle>;
   rows: MergedCaption[];
-  player: YTPlayer | null;
+  player?: YTPlayer;
   autoScroll: boolean;
-  bookmarksByIndex?: Map<number, ExtensionBookmark[]>;
-  onGoToBookmark?: (bookmarkId: string) => void;
-  onPopoverOpenChange?: (open: boolean) => void;
+  bookmarks: ExtensionBookmark[];
+  onGoToBookmark: (bookmarkId: string) => void;
+  onPopoverOpenChange: (open: boolean) => void;
 }) {
   const [currentIndex, setCurrentIndex] = useState<number>();
   const [isPlaying, setIsPlaying] = useState(false);
-  const captionListRef = useRef<{ scrollToIndex: (index: number) => void }>(
-    null,
-  );
-
-  useImperativeHandle(ref, () => ({
-    scrollToIndex: (index: number) => {
-      captionListRef.current?.scrollToIndex(index);
-    },
-  }));
 
   useEffect(() => {
     if (!player || rows.length === 0) return;
@@ -849,13 +1202,13 @@ function CaptionViewer({
 
   return (
     <CaptionList
-      ref={captionListRef}
+      ref={ref}
       rows={rows}
       currentIndex={currentIndex}
       isPlaying={isPlaying}
       player={player}
       autoScroll={autoScroll}
-      bookmarksByIndex={bookmarksByIndex}
+      bookmarks={bookmarks}
       onGoToBookmark={onGoToBookmark}
       onPopoverOpenChange={onPopoverOpenChange}
     />

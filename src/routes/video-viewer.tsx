@@ -31,7 +31,10 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "../components/ui/popover.tsx";
+import { createLocalStorageStore, useStore } from "../lib/external-store.ts";
 import { orpc } from "../rpc.ts";
+
+const autoScrollStore = createLocalStorageStore("zamak:auto-scroll", true);
 
 // --- YouTube IFrame API types ---
 
@@ -58,7 +61,7 @@ interface YTPlayer {
 
 // --- YouTube IFrame API loader (singleton) ---
 
-let iframeApiPromise: Promise<void> | null = null;
+let iframeApiPromise: Promise<void> | undefined;
 
 function loadYoutubeIframeApi(): Promise<void> {
   if (iframeApiPromise) return iframeApiPromise;
@@ -90,9 +93,9 @@ async function createYoutubePlayer(
 
 // --- useYouTubePlayer hook ---
 
-function useYouTubePlayer(youtubeId: string | undefined) {
-  const [player, setPlayer] = useState<YTPlayer | null>(null);
-  const playerRef = useRef<YTPlayer | null>(null);
+function useYouTubePlayer(youtubeId?: string) {
+  const [player, setPlayer] = useState<YTPlayer>();
+  const playerRef = useRef<YTPlayer>(undefined);
 
   const ref: RefCallback<HTMLDivElement> = useCallback(
     (el) => {
@@ -108,7 +111,7 @@ function useYouTubePlayer(youtubeId: string | undefined) {
   useEffect(() => {
     return () => {
       playerRef.current?.destroy();
-      playerRef.current = null;
+      playerRef.current = undefined;
     };
   }, []);
 
@@ -334,9 +337,9 @@ function BookmarksList({
 }: {
   bookmarks: Bookmark[];
   captions: Caption[];
-  player: YTPlayer | null;
+  player?: YTPlayer;
   videoId: number;
-  flashBookmarkId: number | null;
+  flashBookmarkId?: number;
   onGoToCaption: (captionId: number) => void;
 }) {
   const queryClient = useQueryClient();
@@ -359,7 +362,7 @@ function BookmarksList({
 
   const scrollRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    if (flashBookmarkId === null || !scrollRef.current) return;
+    if (flashBookmarkId === undefined || !scrollRef.current) return;
     const el = scrollRef.current.querySelector(
       `[data-bookmark-id="${flashBookmarkId}"]`,
     );
@@ -514,11 +517,9 @@ export function VideoViewerPage() {
   const currentTimeRef = useRef(0);
   const [bookmarkSelection, setBookmarkSelection] =
     useState<BookmarkSelection>();
-  const [flashBookmarkId, setFlashBookmarkId] = useState<number | null>(null);
+  const [flashBookmarkId, setFlashBookmarkId] = useState<number>();
   const flashBookmarkCounter = useRef(0);
-  const [flashCaptionIndex, setFlashCaptionIndex] = useState<number | null>(
-    null,
-  );
+  const [flashCaptionIndex, setFlashCaptionIndex] = useState<number>();
   const flashCaptionCounter = useRef(0);
 
   const queryClient = useQueryClient();
@@ -571,21 +572,7 @@ export function VideoViewerPage() {
   }
 
   // Auto-scroll toggle (persisted)
-  const [autoScroll, setAutoScroll] = useState(() => {
-    try {
-      const stored = localStorage.getItem("zamak:auto-scroll");
-      return stored !== null ? (JSON.parse(stored) as boolean) : true;
-    } catch {
-      return true;
-    }
-  });
-  function toggleAutoScroll() {
-    setAutoScroll((prev) => {
-      const next = !prev;
-      localStorage.setItem("zamak:auto-scroll", JSON.stringify(next));
-      return next;
-    });
-  }
+  const [autoScroll, setAutoScroll] = useStore(autoScrollStore);
 
   // Pause auto-scroll when bookmark popover is open
   const isPopoverOpenRef = useRef(false);
@@ -630,7 +617,8 @@ export function VideoViewerPage() {
       virtualizer.scrollToIndex(index, { align: "center", behavior: "smooth" });
     });
     setTimeout(() => {
-      if (flashCaptionCounter.current === counter) setFlashCaptionIndex(null);
+      if (flashCaptionCounter.current === counter)
+        setFlashCaptionIndex(undefined);
     }, 1000);
   }
 
@@ -639,7 +627,8 @@ export function VideoViewerPage() {
     setFlashBookmarkId(bookmarkId);
     setActiveTab("bookmarks");
     setTimeout(() => {
-      if (flashBookmarkCounter.current === counter) setFlashBookmarkId(null);
+      if (flashBookmarkCounter.current === counter)
+        setFlashBookmarkId(undefined);
     }, 1000);
   }
 
@@ -810,7 +799,7 @@ export function VideoViewerPage() {
                   ? "text-accent hover:bg-highlight-bg"
                   : "text-muted-foreground hover:bg-muted",
               ].join(" ")}
-              onClick={toggleAutoScroll}
+              onClick={() => setAutoScroll((v) => !v)}
               title={autoScroll ? "Auto-scroll on" : "Auto-scroll off"}
             >
               <ArrowDown className="h-4 w-4" />
@@ -978,14 +967,14 @@ export function VideoViewerPage() {
 }
 
 function useDebouncedTimeout() {
-  const ref = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const ref = useRef<ReturnType<typeof setTimeout>>(undefined);
   return (callback: () => void, timeoutMs: number) => {
-    if (ref.current !== null) {
+    if (ref.current) {
       clearTimeout(ref.current);
     }
     ref.current = setTimeout(() => {
       callback();
-      ref.current = null;
+      ref.current = undefined;
     }, timeoutMs);
   };
 }

@@ -14,9 +14,9 @@ export function TrackPicker({
   disabled,
 }: {
   tracks: YouTubeCaptionTrack[];
-  selectedVssId1: string | undefined;
-  selectedVssId2: string | undefined;
-  onSelect: (vssId1: string | undefined, vssId2: string | undefined) => void;
+  selectedVssId1?: string;
+  selectedVssId2?: string;
+  onSelect: (vssId1?: string, vssId2?: string) => void;
   disabled?: boolean;
 }) {
   return (

@@ -1,3 +1,5 @@
+import { createLocalStorageStore } from "./external-store.ts";
+
 export type VideoIndexEntry = {
   youtubeId: string;
   title: string;
@@ -7,22 +9,10 @@ export type VideoIndexEntry = {
   syncedAt?: string;
 };
 
-const KEY = "zamak:video-index";
-export const VIDEO_INDEX_EVENT = "zamak:video-index-updated";
-
-export function getVideoIndex(): VideoIndexEntry[] {
-  try {
-    const raw = localStorage.getItem(KEY);
-    return raw ? (JSON.parse(raw) as VideoIndexEntry[]) : [];
-  } catch {
-    return [];
-  }
-}
-
-function writeIndex(entries: VideoIndexEntry[]) {
-  localStorage.setItem(KEY, JSON.stringify(entries));
-  window.dispatchEvent(new Event(VIDEO_INDEX_EVENT));
-}
+export const videoIndexStore = createLocalStorageStore<VideoIndexEntry[]>(
+  "zamak:video-index",
+  [],
+);
 
 export function updateVideoIndex(
   youtubeId: string,
@@ -30,36 +20,40 @@ export function updateVideoIndex(
   channelName: string,
   bookmarkCount: number,
 ) {
-  const entries = getVideoIndex();
-  const idx = entries.findIndex((e) => e.youtubeId === youtubeId);
-  const entry: VideoIndexEntry = {
-    youtubeId,
-    title,
-    channelName,
-    bookmarkCount,
-    updatedAt: new Date().toISOString(),
-  };
-  if (idx >= 0) entries[idx] = entry;
-  else entries.push(entry);
-  writeIndex(entries);
+  videoIndexStore.set((entries) => {
+    const idx = entries.findIndex((e) => e.youtubeId === youtubeId);
+    const entry: VideoIndexEntry = {
+      youtubeId,
+      title,
+      channelName,
+      bookmarkCount,
+      updatedAt: new Date().toISOString(),
+    };
+    const next = [...entries];
+    if (idx >= 0) next[idx] = entry;
+    else next.push(entry);
+    return next;
+  });
 }
 
 export function removeFromVideoIndex(youtubeId: string) {
-  const entries = getVideoIndex().filter((e) => e.youtubeId !== youtubeId);
-  writeIndex(entries);
+  videoIndexStore.set((entries) =>
+    entries.filter((e) => e.youtubeId !== youtubeId),
+  );
 }
 
 export function setSyncedAt(youtubeId: string) {
-  const entries = getVideoIndex();
-  const entry = entries.find((e) => e.youtubeId === youtubeId);
-  if (entry) {
-    entry.syncedAt = new Date().toISOString();
-    writeIndex(entries);
-  }
+  videoIndexStore.set((entries) =>
+    entries.map((e) =>
+      e.youtubeId === youtubeId
+        ? { ...e, syncedAt: new Date().toISOString() }
+        : e,
+    ),
+  );
 }
 
 export function getVideoIndexEntry(
   youtubeId: string,
 ): VideoIndexEntry | undefined {
-  return getVideoIndex().find((e) => e.youtubeId === youtubeId);
+  return videoIndexStore.get().find((e) => e.youtubeId === youtubeId);
 }

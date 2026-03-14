@@ -7,7 +7,7 @@
 
 // === Types ===
 
-interface YouTubeVideoData {
+export interface YouTubeVideoData {
   youtubeId: string;
   title: string;
   channelName: string;

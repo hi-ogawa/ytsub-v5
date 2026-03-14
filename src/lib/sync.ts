@@ -28,31 +28,26 @@ interface VideoMeta {
   duration?: number;
 }
 
-function buildExportPayload(
-  videoMeta: VideoMeta,
-  rows: MergedCaption[],
-  bookmarks: ExtensionBookmark[],
-  language1: string,
-  language2: string,
-) {
+function buildExportPayload(store: CaptionSessionManager) {
+  const langFromVssId = (vssId: string) => vssId.split(".").pop()!;
   return {
     video: {
-      youtubeId: videoMeta.youtubeId,
-      title: videoMeta.title,
-      channelName: videoMeta.channelName ?? "",
-      channelId: videoMeta.channelId ?? "",
-      duration: videoMeta.duration ?? 0,
-      language1,
-      language2,
+      youtubeId: store.videoMeta.youtubeId,
+      title: store.videoMeta.title,
+      channelName: store.videoMeta.channelName ?? "",
+      channelId: store.videoMeta.channelId ?? "",
+      duration: store.videoMeta.duration ?? 0,
+      language1: langFromVssId(store.vssId1),
+      language2: langFromVssId(store.vssId2),
     },
-    captions: rows.map((r, i) => ({
+    captions: store.rows.map((r, i) => ({
       idx: i,
       begin: r.begin,
       end: r.end,
       text1: r.text1,
       text2: r.text2,
     })),
-    bookmarks: bookmarks.map((b) => ({
+    bookmarks: store.bookmarks.map((b) => ({
       text: b.text,
       translation: b.translation,
       etymology: b.etymology,
@@ -68,22 +63,13 @@ function buildExportPayload(
 
 export function useSyncState({
   youtubeId,
-  session,
-  videoMeta,
-  language1,
-  language2,
 }: {
   youtubeId: string;
-  session: CaptionSessionManager;
   videoMeta: VideoMeta;
-  language1: string;
-  language2: string;
 }) {
   const queryClient = useQueryClient();
-  // Bump to force recomputation of sync state after sync completes
   const [syncVersion, setSyncVersion] = useState(0);
 
-  // Fetch server's updatedAt for this video
   const serverQuery = useQuery(
     orpc.videos.getVideoUpdatedAt.queryOptions({
       input: { youtubeId },
@@ -99,14 +85,11 @@ export function useSyncState({
     const localUpdatedAt = localEntry?.updatedAt;
     const serverUpdatedAt = serverQuery.data?.updatedAt ?? null;
 
-    // Never synced, no local data, no server data
     if (!localUpdatedAt && !serverUpdatedAt) return "synced";
 
-    // Never synced but has local data → push
     if (!syncedAt) {
       if (localUpdatedAt && !serverUpdatedAt) return "push";
       if (!localUpdatedAt && serverUpdatedAt) return "pull";
-      // Both exist but never synced → conflict
       if (localUpdatedAt && serverUpdatedAt) return "conflict";
       return "synced";
     }
@@ -123,11 +106,9 @@ export function useSyncState({
     serverQuery.isLoading,
     serverQuery.isError,
     serverQuery.data,
-    session.bookmarks,
     syncVersion,
   ]);
 
-  // Push mutation
   const pushMutation = useMutation(
     orpc.videos.importVideo.mutationOptions({
       onSuccess: () => {
@@ -142,19 +123,17 @@ export function useSyncState({
     }),
   );
 
-  // Pull mutation
   const pullMutation = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (store: CaptionSessionManager) => {
       const result = await queryClient.fetchQuery(
         orpc.videos.getFullSession.queryOptions({
           input: { youtubeId },
         }),
       );
-      return result;
+      return { result, store };
     },
-    onSuccess: async (data) => {
+    onSuccess: async ({ result: data, store }) => {
       if (!data) return;
-      // Overwrite local IndexedDB session with server data
       const mergedCaptions: MergedCaption[] = data.captions.map((c) => ({
         idx: c.idx,
         begin: c.begin,
@@ -183,8 +162,8 @@ export function useSyncState({
       );
       await saveSession({
         youtubeId,
-        vssId1: session.selectedVssId1 ?? "",
-        vssId2: session.selectedVssId2 ?? "",
+        vssId1: store.vssId1,
+        vssId2: store.vssId2,
         language1: data.video.language1,
         language2: data.video.language2,
         captions: mergedCaptions,
@@ -198,8 +177,8 @@ export function useSyncState({
       );
       setSyncedAt(youtubeId);
       setSyncVersion((v) => v + 1);
-      // Rehydrate React state from IndexedDB
-      session.rehydrate();
+      // Rehydrate store from IndexedDB
+      store.rehydrate();
       queryClient.invalidateQueries({
         queryKey: orpc.videos.getVideoUpdatedAt.queryOptions({
           input: { youtubeId },
@@ -211,34 +190,16 @@ export function useSyncState({
   const isSyncing = pushMutation.isPending || pullMutation.isPending;
 
   const sync = useCallback(
-    (direction?: "push" | "pull") => {
-      if (isSyncing || !session.rows) return;
+    (direction: "push" | "pull" | undefined, store: CaptionSessionManager) => {
+      if (isSyncing) return;
       const action = direction ?? computedState;
       if (action === "push" || action === "conflict") {
-        pushMutation.mutate(
-          buildExportPayload(
-            videoMeta,
-            session.rows,
-            session.bookmarks,
-            language1,
-            language2,
-          ),
-        );
+        pushMutation.mutate(buildExportPayload(store));
       } else if (action === "pull") {
-        pullMutation.mutate();
+        pullMutation.mutate(store);
       }
     },
-    [
-      isSyncing,
-      computedState,
-      session.rows,
-      session.bookmarks,
-      videoMeta,
-      language1,
-      language2,
-      pushMutation,
-      pullMutation,
-    ],
+    [isSyncing, computedState, pushMutation, pullMutation],
   );
 
   const state: SyncState = isSyncing ? "syncing" : computedState;

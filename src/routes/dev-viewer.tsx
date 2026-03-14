@@ -1,15 +1,18 @@
-import { useState } from "react";
+import { useCallback } from "react";
 import { useParams } from "react-router";
 import {
   CaptionFab,
   CaptionPanel,
   ResizablePanel,
+  useFabOpen,
 } from "../components/caption-panel.tsx";
 import { useYouTubePlayer } from "../components/youtube-player.tsx";
-import { useCaptionSession } from "../lib/caption-session.ts";
 import { useSyncState } from "../lib/sync.ts";
-import type { Json3File, YouTubeExtractionResult } from "../lib/youtube.ts";
-import { useZamakApi } from "../lib/zamak-api.ts";
+import type {
+  Json3File,
+  YouTubeCaptionTrack,
+  YouTubeExtractionResult,
+} from "../lib/youtube.ts";
 
 const metadataModules = import.meta.glob<YouTubeExtractionResult>(
   "/scripts/youtube-json/*/metadata.json",
@@ -22,7 +25,7 @@ const trackModules = import.meta.glob<{ default: Json3File }>(
 
 export function DevViewerPage() {
   const { videoId } = useParams<"videoId">();
-  const [panelOpen, setPanelOpen] = useState(false);
+  const [panelOpen, togglePanel] = useFabOpen(videoId ?? "");
 
   const meta = videoId
     ? metadataModules[`/scripts/youtube-json/${videoId}/metadata.json`]
@@ -56,7 +59,7 @@ export function DevViewerPage() {
           <DevViewerSession videoId={videoId} meta={meta} player={player} />
         </ResizablePanel>
       )}
-      <CaptionFab open={panelOpen} onClick={() => setPanelOpen((v) => !v)} />
+      <CaptionFab open={panelOpen} onClick={togglePanel} />
     </div>
   );
 }
@@ -70,50 +73,28 @@ function DevViewerSession({
   meta: YouTubeExtractionResult;
   player: ReturnType<typeof useYouTubePlayer>["player"];
 }) {
-  const session = useCaptionSession({
-    youtubeId: videoId,
-    tracks: meta.captionTracks,
-    fetchJson3: async (track) => {
+  const fetchJson3 = useCallback(
+    async (track: YouTubeCaptionTrack) => {
       const key = `/scripts/youtube-json/${videoId}/track-${track.vssId}.json`;
       const loader = trackModules[key];
       if (!loader) throw new Error(`No track fixture for ${track.vssId}`);
       const mod = await loader();
       return mod.default;
     },
-    videoMeta: meta.video,
-  });
-
-  const sel1 = meta.captionTracks.find(
-    (t) => t.vssId === session.selectedVssId1,
+    [videoId],
   );
-  const sel2 = meta.captionTracks.find(
-    (t) => t.vssId === session.selectedVssId2,
-  );
-
-  const language1 = sel1?.languageCode ?? "ko";
-  const language2 = sel2?.languageCode ?? "en";
-
-  useZamakApi({
-    session,
-    rows: session.rows,
-    videoMeta: meta.video,
-    language1,
-    language2,
-  });
 
   const syncState = useSyncState({
     youtubeId: videoId,
-    session,
     videoMeta: meta.video,
-    language1,
-    language2,
   });
 
   return (
     <CaptionPanel
       tracks={meta.captionTracks}
       player={player}
-      session={session}
+      fetchJson3={fetchJson3}
+      videoMeta={meta.video}
       sync={syncState}
     />
   );

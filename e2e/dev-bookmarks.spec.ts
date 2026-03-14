@@ -1,5 +1,6 @@
 import { expect, type Page, test } from "@playwright/test";
 
+// TODO: e2e shouldn't probe internal
 const VIDEO_INDEX_KEY = "zamak:video-index";
 
 function seedVideoIndex(page: Page, entries: Record<string, unknown>[]) {
@@ -33,12 +34,10 @@ test.describe("dev-bookmarks page", () => {
   });
 
   test("shows video cards from localStorage", async ({ page }) => {
+    // Seed localStorage before navigating so the store initializes with data
     await page.goto("/dev/bookmarks");
     await seedVideoIndex(page, fixtureEntries);
-    // Trigger re-render by dispatching the event
-    await page.evaluate(() =>
-      window.dispatchEvent(new Event("zamak:video-index-updated")),
-    );
+    await page.goto("/dev/bookmarks");
     await expect(page.getByText("Test Video One")).toBeVisible();
     await expect(page.getByText("Test Video Two")).toBeVisible();
     await expect(page.getByText("3 bookmarks")).toBeVisible();
