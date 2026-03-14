@@ -865,27 +865,28 @@ function CaptionPanelContent({
           />
         </div>
 
-        {/* Bookmarks list */}
-        {activeTab === "bookmarks" && (
-          <div className="flex-[1_0_0] overflow-y-auto">
-            {sortedBookmarks.length === 0 ? (
-              <div className="flex h-full items-center justify-center">
-                <p className="text-sm text-muted-foreground">
-                  No bookmarks yet
-                </p>
-              </div>
-            ) : (
-              <ExtensionBookmarksList
-                bookmarks={sortedBookmarks}
-                rows={store.rows}
-                player={player}
-                onDeleteBookmark={(id) => store.deleteBookmark(id)}
-                onGoToCaption={onGoToCaption}
-                flashBookmarkId={flashBookmarkId}
-              />
-            )}
-          </div>
-        )}
+        {/* Bookmarks — hidden (not unmounted) to preserve scroll position */}
+        <div
+          className="flex-[1_0_0] overflow-y-auto"
+          style={{
+            display: activeTab === "bookmarks" ? undefined : "none",
+          }}
+        >
+          {sortedBookmarks.length === 0 ? (
+            <div className="flex h-full items-center justify-center">
+              <p className="text-sm text-muted-foreground">No bookmarks yet</p>
+            </div>
+          ) : (
+            <ExtensionBookmarksList
+              bookmarks={sortedBookmarks}
+              rows={store.rows}
+              player={player}
+              onDeleteBookmark={(id) => store.deleteBookmark(id)}
+              onGoToCaption={onGoToCaption}
+              flashBookmarkId={flashBookmarkId}
+            />
+          )}
+        </div>
 
         {/* Floating bookmark action buttons */}
         {(bookmarkSelection || isCreating) && (
