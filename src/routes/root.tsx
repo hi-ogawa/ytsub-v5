@@ -1,6 +1,5 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Database, EllipsisVertical, LogIn, Upload } from "lucide-react";
-import type { SubmitEvent } from "react";
 import { useState } from "react";
 import {
   Link,
@@ -10,6 +9,7 @@ import {
   useRouteLoaderData,
 } from "react-router";
 import { ImportDialog } from "../components/import-dialog.tsx";
+import { LoginDialog } from "../components/login-dialog.tsx";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -68,6 +68,8 @@ export function DevLayout() {
   const authenticated = authQuery.data?.authenticated === true;
   const [showLogin, setShowLogin] = useState(false);
 
+  const loginMutation = useMutation(orpc.auth.login.mutationOptions());
+
   return (
     <div className="flex h-screen flex-col">
       <header className="flex h-10 flex-none items-center justify-between border-b px-3">
@@ -75,7 +77,7 @@ export function DevLayout() {
           Zamak <span className="text-muted-foreground">(dev)</span>
         </Link>
         <div className="flex items-center gap-1">
-          {!authenticated && !showLogin && (
+          {!authenticated && (
             <button
               type="button"
               onClick={() => setShowLogin(true)}
@@ -88,83 +90,17 @@ export function DevLayout() {
           <HeaderMenu authenticated={authenticated} />
         </div>
       </header>
-      {showLogin && !authenticated && (
-        <DevLoginBanner
-          onSuccess={() => {
-            setShowLogin(false);
-            authQuery.refetch();
-          }}
-          onCancel={() => setShowLogin(false)}
-        />
-      )}
+      <LoginDialog
+        open={showLogin}
+        onOpenChange={setShowLogin}
+        onLogin={async (username, password) => {
+          await loginMutation.mutateAsync({ username, password });
+          authQuery.refetch();
+        }}
+      />
       <main className="flex-1 overflow-auto">
         <Outlet />
       </main>
-    </div>
-  );
-}
-
-function DevLoginBanner({
-  onSuccess,
-  onCancel,
-}: {
-  onSuccess: () => void;
-  onCancel: () => void;
-}) {
-  const loginMutation = useMutation(
-    orpc.auth.login.mutationOptions({ onSuccess }),
-  );
-
-  function handleSubmit(e: SubmitEvent<HTMLFormElement>) {
-    e.preventDefault();
-    const form = new FormData(e.currentTarget);
-    loginMutation.mutate({
-      username: form.get("username") as string,
-      password: form.get("password") as string,
-    });
-  }
-
-  return (
-    <div className="border-b bg-muted/30 px-4 py-3">
-      <form
-        onSubmit={handleSubmit}
-        className="mx-auto flex max-w-lg items-center gap-2"
-      >
-        <input
-          name="username"
-          type="text"
-          placeholder="Username"
-          autoFocus
-          required
-          className="h-8 w-32 rounded border px-2 text-sm"
-        />
-        <input
-          name="password"
-          type="password"
-          placeholder="Password"
-          required
-          className="h-8 w-32 rounded border px-2 text-sm"
-        />
-        <button
-          type="submit"
-          disabled={loginMutation.isPending}
-          className="h-8 rounded bg-primary px-3 text-sm text-primary-foreground hover:bg-primary-hover disabled:opacity-50"
-        >
-          {loginMutation.isPending ? "..." : "Sign in"}
-        </button>
-        <button
-          type="button"
-          onClick={onCancel}
-          className="h-8 rounded px-2 text-sm text-muted-foreground hover:bg-muted"
-        >
-          Cancel
-        </button>
-        {loginMutation.isError && (
-          <span className="text-xs text-destructive">
-            Invalid username or password
-          </span>
-        )}
-      </form>
     </div>
   );
 }

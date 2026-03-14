@@ -1,8 +1,9 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { EllipsisVertical, LogIn, LogOut } from "lucide-react";
-import { type SubmitEvent, StrictMode, useEffect, useState } from "react";
+import { StrictMode, useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { BookmarksPage } from "../components/bookmarks-page.tsx";
+import { LoginDialog } from "../components/login-dialog.tsx";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -55,13 +56,6 @@ function ExtensionBookmarksPage() {
   const handleLogout = () => {
     chrome.storage.local.remove(["session-token", "username"]);
     setUsername(undefined);
-    setShowLogin(false);
-    sync.refetch();
-  };
-
-  const handleLoginSuccess = (name: string) => {
-    setUsername(name);
-    setShowLogin(false);
     sync.refetch();
   };
 
@@ -107,12 +101,26 @@ function ExtensionBookmarksPage() {
           </DropdownMenu>
         </div>
       </header>
-      {showLogin && !sync.authenticated && (
-        <LoginBanner
-          onSuccess={handleLoginSuccess}
-          onCancel={() => setShowLogin(false)}
-        />
-      )}
+      <LoginDialog
+        open={showLogin}
+        onOpenChange={setShowLogin}
+        onLogin={async (user, password) => {
+          const res = await fetch(`${__SERVER_URL__}/api/auth/login`, {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ json: { username: user, password } }),
+          });
+          if (!res.ok) throw new Error("Invalid username or password");
+          const data = (await res.json()) as { json: { token: string } };
+          chrome.storage.local.set({
+            "session-token": data.json.token,
+            username: user,
+          });
+          setUsername(user);
+          sync.refetch();
+        }}
+        signUpUrl={`${__SERVER_URL__}/register`}
+      />
       <main className="flex-1 overflow-auto">
         <BookmarksPage
           entries={entries}
@@ -124,103 +132,6 @@ function ExtensionBookmarksPage() {
           sync={sync}
         />
       </main>
-    </div>
-  );
-}
-
-function LoginBanner({
-  onSuccess,
-  onCancel,
-}: {
-  onSuccess: (username: string) => void;
-  onCancel: () => void;
-}) {
-  const [error, setError] = useState<string>();
-  const [pending, setPending] = useState(false);
-
-  async function handleSubmit(e: SubmitEvent<HTMLFormElement>) {
-    e.preventDefault();
-    setError(undefined);
-    setPending(true);
-
-    const form = new FormData(e.currentTarget);
-    const username = form.get("username") as string;
-    const password = form.get("password") as string;
-
-    try {
-      const res = await fetch(`${__SERVER_URL__}/api/auth/login`, {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ json: { username, password } }),
-      });
-
-      if (!res.ok) {
-        setError("Invalid username or password");
-        setPending(false);
-        return;
-      }
-
-      const data = (await res.json()) as { json: { token: string } };
-      chrome.storage.local.set({
-        "session-token": data.json.token,
-        username,
-      });
-      setPending(false);
-      onSuccess(username);
-    } catch {
-      setError("Network error");
-      setPending(false);
-    }
-  }
-
-  return (
-    <div className="border-b bg-muted/30 px-4 py-3">
-      <form
-        onSubmit={handleSubmit}
-        className="mx-auto flex max-w-lg items-center gap-2"
-      >
-        <input
-          name="username"
-          type="text"
-          placeholder="Username"
-          autoFocus
-          required
-          className="h-8 w-32 rounded border px-2 text-sm"
-        />
-        <input
-          name="password"
-          type="password"
-          placeholder="Password"
-          required
-          className="h-8 w-32 rounded border px-2 text-sm"
-        />
-        <button
-          type="submit"
-          disabled={pending}
-          className="h-8 rounded bg-primary px-3 text-sm text-primary-foreground hover:bg-primary-hover disabled:opacity-50"
-        >
-          {pending ? "..." : "Sign in"}
-        </button>
-        <button
-          type="button"
-          onClick={onCancel}
-          className="h-8 rounded px-2 text-sm text-muted-foreground hover:bg-muted"
-        >
-          Cancel
-        </button>
-        {error && <span className="text-xs text-destructive">{error}</span>}
-      </form>
-      <p className="mx-auto mt-1.5 max-w-lg text-xs text-muted-foreground">
-        No account? Sign up at{" "}
-        <a
-          href={`${__SERVER_URL__}/register`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-primary underline"
-        >
-          {__SERVER_URL__.replace(/^https?:\/\//, "")}
-        </a>
-      </p>
     </div>
   );
 }
