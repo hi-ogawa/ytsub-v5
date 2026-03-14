@@ -150,9 +150,9 @@ export function CaptionList({
 }: {
   ref?: React.Ref<{ scrollToIndex: (index: number) => void }>;
   rows: MergedCaption[];
-  currentIndex: number | undefined;
+  currentIndex?: number;
   isPlaying: boolean;
-  player: YTPlayer | null;
+  player?: YTPlayer;
   autoScroll: boolean;
   bookmarks: ExtensionBookmark[];
   onGoToBookmark: (bookmarkId: string) => void;
@@ -181,7 +181,7 @@ export function CaptionList({
   const prevScrollIndex = useRef<number | undefined>(undefined);
   const isManualScrollRef = useRef(false);
   const isPopoverOpenRef = useRef(false);
-  const manualScrollTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const manualScrollTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   const wrappedPopoverOpenChange = (open: boolean) => {
     isPopoverOpenRef.current = open;
@@ -190,12 +190,12 @@ export function CaptionList({
 
   function onManualScroll() {
     isManualScrollRef.current = true;
-    if (manualScrollTimer.current !== null) {
+    if (manualScrollTimer.current) {
       clearTimeout(manualScrollTimer.current);
     }
     manualScrollTimer.current = setTimeout(() => {
       isManualScrollRef.current = false;
-      manualScrollTimer.current = null;
+      manualScrollTimer.current = undefined;
     }, 2000);
   }
 
