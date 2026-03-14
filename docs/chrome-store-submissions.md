@@ -5,7 +5,7 @@ Full listing details for the next Chrome Web Store submission. Copy-paste into t
 ## Build & Package
 
 ```sh
-npm build-ext   # build with production name "Zamak"
+pnpm build-ext   # build with production name "Zamak"
 ```
 
 Upload `dist/extension.zip` to Chrome Web Store Developer Dashboard.
@@ -39,15 +39,19 @@ Features:
 • Auto-scroll keeps the current caption visible as the video plays
 • Resizable panel — drag to adjust width
 • Floating action button to toggle the panel on/off
-• Bookmark caption lines for later review
+• Bookmark caption lines — select text to create bookmarks with notes
+• Bookmark editor — review and edit bookmarks with AI prompt support (copy context to clipboard, paste into your favorite LLM)
 • Bookmarks page — click the extension icon to see all videos with bookmarks
+• Settings dropdown — configure caption alignment, auto-scroll, and export data
+• Adapts to YouTube's dark and light theme automatically
 • Works with both manual and auto-generated YouTube subtitles
+• Auto-translated captions — works even when only one language track is available
 • No account required, no data collection — everything runs locally
 
 How it works:
-When you visit a YouTube video, Zamak fetches the available subtitle tracks and displays them in a side-by-side panel overlaid on the page. The panel syncs with video playback in real time. Bookmark any caption line, then click the Zamak icon to see all your bookmarked videos at a glance.
+When you visit a YouTube video, Zamak fetches the available subtitle tracks and displays them in a side-by-side panel overlaid on the page. The panel syncs with video playback in real time. Select any text to bookmark it, then use the built-in editor to add translations and notes — or copy an AI prompt to get help from your favorite LLM. Click the Zamak icon to see all your bookmarked videos at a glance.
 
-Supported: Any YouTube video with subtitles in two or more languages.
+Supported: Any YouTube video with subtitles. Works best with videos that have two or more language tracks, but also supports auto-translated captions for single-language videos.
 ```
 
 ## Category
@@ -123,11 +127,11 @@ This data handling is closely related to the extension's single stated purpose, 
 
 ## Submission Checklist
 
-- [ ] Bump version in manifest to 0.2.0
-- [ ] Update store description and summary
-- [ ] Update single purpose description
-- [ ] Add `storage` permission justification
-- [ ] Take new screenshots (including bookmarks page)
+- [x] Bump version in manifest to 0.2.0
+- [x] Update manifest description
+- [x] Update store description and summary
+- [x] Add `storage` permission justification
+- [ ] Take new screenshots (including bookmarks page, bookmark editor, settings dropdown)
 - [ ] Build and zip: `pnpm build-ext`
 - [ ] Upload and submit for review
 - [ ] Confirm approval
