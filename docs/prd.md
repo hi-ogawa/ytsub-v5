@@ -103,7 +103,7 @@ A web app for language learning via YouTube subtitles. Watch videos with dual ca
   - [x] flash-highlight + auto-scroll pause on bookmark→caption navigation (video-viewer only)
   - [ ] settings dropdown for video-viewer (auto-scroll toggle, etc. — currently hidden when `sessionOnly`)
   - [ ] sync button for video-viewer (push/pull with server)
-  - [ ] dev-viewer: bootstrap button to seed IndexedDB from fixtures, then use `sessionOnly` like video-viewer
+  - [ ] e2e: rework after video-viewer consolidation — delete `bookmark-viewer.spec.ts` (dev-viewer tests cover same UI), fix `/videos/:youtubeId` route in `import.spec.ts`, `delete.spec.ts`, `basic.spec.ts`
 - [ ] feat: bookmarks page server sync — merge server videos into `BookmarksPage`
   - `BookmarksPage` (`src/components/bookmarks-page.tsx`) fetches `listVideos` from server (when authenticated) and merges with local `videoIndexStore` entries
   - each video row shows sync status (local-only / server-only / synced) with per-video pull button
