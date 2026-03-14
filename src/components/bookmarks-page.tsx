@@ -1,8 +1,7 @@
 import {
   ArrowDownToLine,
+  ArrowUpFromLine,
   CheckCircle2,
-  Cloud,
-  CloudOff,
   Loader2,
 } from "lucide-react";
 import type { VideoSyncEntry, VideoSyncHandle } from "../lib/sync.ts";
@@ -47,8 +46,9 @@ export function BookmarksPage({
                 sync?.authenticated ? (
                   <SyncBadge
                     status={entry.syncStatus}
-                    pulling={sync.pulling.has(entry.youtubeId)}
+                    syncing={sync.syncing.has(entry.youtubeId)}
                     onPull={() => sync.onPull(entry.youtubeId)}
+                    onPush={() => sync.onPush(entry.youtubeId)}
                   />
                 ) : undefined
               }
@@ -72,16 +72,18 @@ export function BookmarksPage({
 
 function SyncBadge({
   status,
-  pulling,
+  syncing,
   onPull,
+  onPush,
 }: {
   status: VideoSyncEntry["syncStatus"];
-  pulling: boolean;
+  syncing: boolean;
   onPull: () => void;
+  onPush: () => void;
 }) {
-  if (pulling) {
+  if (syncing) {
     return (
-      <span title="Pulling from server...">
+      <span title="Syncing...">
         <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
       </span>
     );
@@ -114,16 +116,24 @@ function SyncBadge({
         </button>
       );
     case "push":
-      return (
-        <span title="Local changes not pushed">
-          <Cloud className="h-4 w-4 text-muted-foreground" />
-        </span>
-      );
     case "local-only":
       return (
-        <span title="Local only">
-          <CloudOff className="h-4 w-4 text-muted-foreground" />
-        </span>
+        <button
+          type="button"
+          title={
+            status === "local-only"
+              ? "Local only — push to server"
+              : "Push local changes to server"
+          }
+          className="rounded p-0.5 text-muted-foreground hover:bg-muted"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onPush();
+          }}
+        >
+          <ArrowUpFromLine className="h-4 w-4" />
+        </button>
       );
   }
 }

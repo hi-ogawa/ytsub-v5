@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { orpc } from "../rpc.ts";
-import { saveSession } from "./caption-session-db.ts";
+import { getSession, saveSession } from "./caption-session-db.ts";
 import type { CaptionSessionManager } from "./caption-session.ts";
 import { useStore } from "./external-store.ts";
 import {
@@ -181,29 +181,81 @@ export function useVideoSync() {
     enabled: authenticated,
   });
 
-  const [pulling, setPulling] = useState<Set<string>>(new Set());
+  const [syncing, setSyncing] = useState<Set<string>>(new Set());
+
+  const withSyncing = async (youtubeId: string, fn: () => Promise<void>) => {
+    setSyncing((s) => new Set(s).add(youtubeId));
+    try {
+      await fn();
+    } finally {
+      setSyncing((s) => {
+        const next = new Set(s);
+        next.delete(youtubeId);
+        return next;
+      });
+    }
+  };
 
   const pullMutation = useMutation({
     mutationFn: async (youtubeId: string) => {
-      setPulling((s) => new Set(s).add(youtubeId));
-      try {
+      await withSyncing(youtubeId, async () => {
         const data = await queryClient.fetchQuery(
           orpc.videos.getFullSession.queryOptions({ input: { youtubeId } }),
         );
         if (!data) throw new Error("Video not found on server");
         await pullServerSession(data);
-      } finally {
-        setPulling((s) => {
-          const next = new Set(s);
-          next.delete(youtubeId);
-          return next;
-        });
-      }
+      });
     },
     onSuccess: () => {
       serverQuery.refetch();
     },
   });
+
+  const pushMutation = useMutation(
+    orpc.videos.importVideo.mutationOptions({
+      onSuccess: () => {
+        serverQuery.refetch();
+      },
+    }),
+  );
+
+  const onPush = async (youtubeId: string) => {
+    await withSyncing(youtubeId, async () => {
+      const session = await getSession(youtubeId);
+      if (!session) throw new Error("No local session found");
+      const indexEntry = videoIndex.find((e) => e.youtubeId === youtubeId);
+      pushMutation.mutate({
+        video: {
+          youtubeId,
+          title: indexEntry?.title ?? "",
+          channelName: indexEntry?.channelName ?? "",
+          channelId: "",
+          duration: 0,
+          language1: session.language1,
+          language2: session.language2,
+        },
+        captions: session.captions.map((r, i) => ({
+          idx: i,
+          begin: r.begin,
+          end: r.end,
+          text1: r.text1,
+          text2: r.text2,
+        })),
+        bookmarks: session.bookmarks.map((b) => ({
+          text: b.text,
+          translation: b.translation,
+          etymology: b.etymology,
+          notes: b.notes,
+          captionIdx: b.captionIndex,
+          side: b.side,
+          offset: b.offset,
+          context: b.context,
+          status: "manual",
+        })),
+      });
+      setSyncedAt(youtubeId);
+    });
+  };
 
   const entries = useMemo((): VideoSyncEntry[] => {
     const serverVideos = serverQuery.data?.items ?? [];
@@ -250,8 +302,9 @@ export function useVideoSync() {
   return {
     authenticated,
     entries,
-    pulling,
+    syncing,
     onPull: (youtubeId: string) => pullMutation.mutate(youtubeId),
+    onPush,
   };
 }
 
