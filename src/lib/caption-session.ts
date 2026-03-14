@@ -174,6 +174,17 @@ export class CaptionSessionManager {
     await deleteSession(this.videoMeta.youtubeId);
   }
 
+  async replace(options: {
+    captions: MergedCaption[];
+    bookmarks: ExtensionBookmark[];
+  }): Promise<void> {
+    this.rows = options.captions;
+    this.bookmarks = options.bookmarks;
+    this.syncVideoIndex();
+    this.notify();
+    await this.persistSession();
+  }
+
   toExportData(): ExportData {
     return {
       video: {

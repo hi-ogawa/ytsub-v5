@@ -6,6 +6,7 @@ export type VideoIndexEntry = {
   channelName: string;
   bookmarkCount: number;
   updatedAt: string;
+  syncedAt?: string;
 };
 
 export const videoIndexStore = createLocalStorageStore<VideoIndexEntry[]>(
@@ -38,5 +39,15 @@ export function updateVideoIndex(
 export function removeFromVideoIndex(youtubeId: string) {
   videoIndexStore.set((entries) =>
     entries.filter((e) => e.youtubeId !== youtubeId),
+  );
+}
+
+export function setSyncedAt(youtubeId: string) {
+  videoIndexStore.set((entries) =>
+    entries.map((e) =>
+      e.youtubeId === youtubeId
+        ? { ...e, syncedAt: new Date().toISOString() }
+        : e,
+    ),
   );
 }

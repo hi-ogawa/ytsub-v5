@@ -7,6 +7,7 @@ import {
   useFabOpen,
 } from "../components/caption-panel.tsx";
 import { useYouTubePlayer } from "../components/youtube-player.tsx";
+import { useSyncState } from "../lib/sync.ts";
 import type {
   Json3File,
   YouTubeCaptionTrack,
@@ -83,12 +84,15 @@ function DevViewerSession({
     [videoId],
   );
 
+  const syncState = useSyncState({ youtubeId: videoId });
+
   return (
     <CaptionPanel
       tracks={meta.captionTracks}
       player={player}
       fetchJson3={fetchJson3}
       videoMeta={meta.video}
+      sync={syncState}
     />
   );
 }

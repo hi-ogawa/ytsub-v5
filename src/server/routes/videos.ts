@@ -30,6 +30,7 @@ export const videosRouter = authed.router({
             duration: input.duration,
             language1: input.language1,
             language2: input.language2,
+            updatedAt: sql`datetime('now')`,
           },
         })
         .returning();
@@ -193,6 +194,7 @@ export const videosRouter = authed.router({
             duration: input.video.duration,
             language1: input.video.language1,
             language2: input.video.language2,
+            updatedAt: sql`datetime('now')`,
           },
         })
         .returning();
@@ -250,6 +252,48 @@ export const videosRouter = authed.router({
         captions: insertedCaptions,
         bookmarks: input.bookmarks.length,
       };
+    }),
+
+  getFullSession: authed
+    .input(z.object({ youtubeId: z.string() }))
+    .handler(async ({ input, context }) => {
+      const video = await db
+        .select()
+        .from(videos)
+        .where(
+          and(
+            eq(videos.youtubeId, input.youtubeId),
+            eq(videos.userId, context.userId),
+          ),
+        )
+        .get();
+      if (!video) return null;
+      const videoCaptions = await db
+        .select()
+        .from(captions)
+        .where(eq(captions.videoId, video.id))
+        .orderBy(captions.idx);
+      const videoBookmarks = await db
+        .select()
+        .from(bookmarks)
+        .where(eq(bookmarks.videoId, video.id));
+      return { video, captions: videoCaptions, bookmarks: videoBookmarks };
+    }),
+
+  getVideoUpdatedAt: authed
+    .input(z.object({ youtubeId: z.string() }))
+    .handler(async ({ input, context }) => {
+      const video = await db
+        .select({ updatedAt: videos.updatedAt })
+        .from(videos)
+        .where(
+          and(
+            eq(videos.youtubeId, input.youtubeId),
+            eq(videos.userId, context.userId),
+          ),
+        )
+        .get();
+      return video ? { updatedAt: video.updatedAt } : null;
     }),
 
   deleteVideo: authed

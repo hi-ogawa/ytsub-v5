@@ -32,6 +32,9 @@ export const videos = sqliteTable(
     createdAt: text("created_at")
       .notNull()
       .default(sql`(datetime('now'))`),
+    updatedAt: text("updated_at")
+      .notNull()
+      .default(sql`(datetime('now'))`),
   },
   (t) => [index("idx_videos_user").on(t.userId)],
 );

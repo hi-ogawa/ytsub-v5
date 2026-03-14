@@ -25,6 +25,13 @@ async function assertBookmarkOwner(bookmarkId: number, userId: number) {
   if (!row) throw new Error(`Bookmark ${bookmarkId} not found`);
 }
 
+async function touchVideo(videoId: number) {
+  await db
+    .update(videos)
+    .set({ updatedAt: sql`datetime('now')` })
+    .where(eq(videos.id, videoId));
+}
+
 export const bookmarksRouter = authed.router({
   createBookmarks: authed
     .input(
@@ -72,6 +79,9 @@ export const bookmarksRouter = authed.router({
         const batch = rows.slice(i, i + BOOKMARK_BATCH_SIZE);
         const result = await db.insert(bookmarks).values(batch).returning();
         inserted += result.length;
+      }
+      for (const videoId of videoIds) {
+        await touchVideo(videoId);
       }
       return { inserted };
     }),
@@ -157,6 +167,7 @@ export const bookmarksRouter = authed.router({
       if (!row) {
         throw new Error(`Bookmark ${id} not found`);
       }
+      await touchVideo(row.videoId);
       return row;
     }),
 
@@ -171,6 +182,7 @@ export const bookmarksRouter = authed.router({
       if (!row) {
         throw new Error(`Bookmark ${input.id} not found`);
       }
+      await touchVideo(row.videoId);
       return row;
     }),
 });

@@ -1,7 +1,11 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+  AlertTriangle,
+  ArrowDownToLine,
+  ArrowUpFromLine,
   Bookmark,
   Check,
+  CheckCircle2,
   ChevronLeft,
   ChevronRight,
   ClipboardPaste,
@@ -10,6 +14,8 @@ import {
   EllipsisVertical,
   ExternalLink,
   Loader2,
+  LogIn,
+  RefreshCw,
   Trash2,
   X,
 } from "lucide-react";
@@ -47,6 +53,7 @@ import {
   extractBookmarkSelection,
 } from "../lib/extension-bookmarks.ts";
 import { createLocalStorageStore, useStore } from "../lib/external-store.ts";
+import type { SyncHandle } from "../lib/sync.ts";
 import type {
   Json3File,
   YouTubeCaptionTrack,
@@ -313,11 +320,92 @@ function formatTimestamp(seconds: number): string {
   return `${m}:${String(s).padStart(2, "0")}`;
 }
 
+// --- SyncButton ---
+
+function SyncButton({
+  sync: { state, error, onSync },
+  store,
+}: {
+  sync: SyncHandle;
+  store: CaptionSessionManager;
+}) {
+  const iconClass = "h-4 w-4";
+  let icon: React.ReactNode;
+  let title: string;
+  let disabled = false;
+  let onClick: () => void = () => onSync({ store });
+
+  switch (state) {
+    case "unauthenticated":
+      icon = <LogIn className={`${iconClass} text-muted-foreground`} />;
+      title = "Login required to sync";
+      disabled = true;
+      break;
+    case "checking":
+      icon = <Loader2 className={`${iconClass} animate-spin`} />;
+      title = "Checking sync status...";
+      disabled = true;
+      break;
+    case "synced":
+      icon = <CheckCircle2 className={`${iconClass} text-green-500`} />;
+      title = "Synced";
+      disabled = true;
+      break;
+    case "push":
+      icon = <ArrowUpFromLine className={iconClass} />;
+      title = "Push local changes to server";
+      onClick = () => onSync({ direction: "push", store });
+      break;
+    case "pull":
+      icon = <ArrowDownToLine className={iconClass} />;
+      title = "Pull server changes";
+      onClick = () => onSync({ direction: "pull", store });
+      break;
+    case "conflict":
+      icon = <AlertTriangle className={`${iconClass} text-yellow-500`} />;
+      title = "Both sides changed — click to resolve";
+      onClick = () => {
+        const choice = window.prompt(
+          "Both local and server have changes.\nType 'push' to keep local, 'pull' to keep server:",
+        );
+        if (choice === "push" || choice === "pull") {
+          onSync({ direction: choice, store });
+        }
+      };
+      break;
+    case "syncing":
+      icon = <RefreshCw className={`${iconClass} animate-spin`} />;
+      title = "Syncing...";
+      disabled = true;
+      break;
+    case "error":
+      icon = <AlertTriangle className={`${iconClass} text-destructive`} />;
+      title = error ? `Sync error: ${error.message}` : "Sync error";
+      disabled = true;
+      break;
+  }
+
+  return (
+    <button
+      type="button"
+      className="shrink-0 rounded p-0.5 text-muted-foreground hover:bg-muted disabled:opacity-50"
+      title={title}
+      disabled={disabled}
+      onClick={onClick}
+      data-testid="sync-button"
+      data-sync-state={state}
+    >
+      {icon}
+    </button>
+  );
+}
+
 type CaptionPanelProps = {
   tracks: YouTubeCaptionTrack[];
   player?: YTPlayer;
   fetchJson3: (track: YouTubeCaptionTrack) => Promise<Json3File>;
   videoMeta: YouTubeVideoData;
+  sync?: SyncHandle;
 };
 
 export function CaptionPanel(props: CaptionPanelProps) {
@@ -363,6 +451,7 @@ function CaptionPanelInner({
   player,
   fetchJson3,
   videoMeta,
+  sync,
   initialStore,
 }: CaptionPanelProps & {
   initialStore?: CaptionSessionManager;
@@ -419,6 +508,7 @@ function CaptionPanelInner({
         setUserStrategy(s);
         setStore(undefined);
       }}
+      sync={sync}
     />
   );
 }
@@ -533,12 +623,14 @@ function CaptionPanelWithStore({
   player,
   onSelectTracks,
   onSelectStrategy,
+  sync,
 }: {
   store: CaptionSessionManager;
   tracks: YouTubeCaptionTrack[];
   player?: YTPlayer;
   onSelectTracks: (v1?: string, v2?: string) => void;
   onSelectStrategy: (s: MergeStrategy) => void;
+  sync?: SyncHandle;
 }) {
   useSyncExternalStore(store.subscribe, () => store.version);
 
@@ -546,7 +638,7 @@ function CaptionPanelWithStore({
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex items-center border-b">
+      <div className="flex items-center border-b gap-1">
         <div className="min-w-0 flex-1">
           <TrackPicker
             tracks={tracks}
@@ -556,6 +648,7 @@ function CaptionPanelWithStore({
             disabled={store.bookmarks.length > 0}
           />
         </div>
+        {sync && <SyncButton sync={sync} store={store} />}
         <SettingsDropdown
           store={store}
           autoScroll={autoScroll}

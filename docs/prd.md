@@ -57,6 +57,7 @@ A web app for language learning via YouTube subtitles. Watch videos with dual ca
 - [x] fix: bookmark popover — allow upward or downward positioning to avoid clipping under the panel container
 - [x] Mobile-friendly layout
 - [x] Browser extension as data source (content script fetches subs from YouTube same-origin)
+- [x] Authentication (multi users)
 
 ### Extension
 
@@ -91,6 +92,7 @@ A web app for language learning via YouTube subtitles. Watch videos with dual ca
 - [ ] feat: repeatable eval process for ytsub agent skill — run skill against sample videos, check for common failure modes (wrong offsets, API errors, subtitle quality issues, payload format), track success rate across runs
 - [ ] feat: Bookmark export — export to import bookmarks for Anki study
 - [ ] test: test skills/scripts
+- [ ] feat: add `vssId1/vssId2` to db
 
 ## TODO: Extension
 
@@ -99,6 +101,12 @@ A web app for language learning via YouTube subtitles. Watch videos with dual ca
   - [ ] virtualized caption list (extension uses plain render, video-viewer uses `@tanstack/react-virtual`)
   - [x] flash-highlight + auto-scroll pause on bookmark→caption navigation (video-viewer only)
   - [ ] data layer abstraction (server DB vs IndexedDB)
+- [ ] feat: bookmarks page server sync — merge server videos into `BookmarksPage`
+  - `BookmarksPage` (`src/components/bookmarks-page.tsx`) fetches `listVideos` from server (when authenticated) and merges with local `videoIndexStore` entries
+  - each video row shows sync status (local-only / server-only / synced) with per-video pull button
+  - reuse `computeSyncState` from `src/lib/sync.ts` for per-video state
+  - pulling creates local IndexedDB session from server data (`serverSessionToLocal`)
+  - wire into `dev-bookmarks.tsx` and extension bookmarks (extension needs auth context forwarding)
 
 ## TODO: Backlog
 
@@ -110,5 +118,4 @@ A web app for language learning via YouTube subtitles. Watch videos with dual ca
 - [ ] feat: bookmark list page — browse/search all bookmarks across videos
 - [ ] Full-text search — search across captions and bookmarks (D1 FTS or LIKE)
 - [ ] Keyboard shortcuts — space (play/pause), arrow keys (prev/next caption), etc.
-- [ ] Authentication (multi users)
 - [ ] Typing practice (v3/v4 had this)
