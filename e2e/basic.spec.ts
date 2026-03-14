@@ -31,8 +31,8 @@ test("register then login as new user", async ({ page }) => {
   await page.getByPlaceholder("Password").fill("newpassword");
   await page.getByRole("button", { name: "Sign up" }).click();
   await expect(page).toHaveURL("/");
-  // New user should see empty video list
-  await expect(page.getByText("No videos yet.")).toBeVisible();
+  // New user should see empty bookmarks page
+  await expect(page.getByText("No bookmarked videos yet")).toBeVisible();
 
   // Logout
   await page.getByTestId("header-menu").click();
@@ -65,7 +65,7 @@ test("login with wrong then correct password", async ({ page }) => {
   await page.getByPlaceholder("Password").fill("devpassword");
   await page.getByRole("button", { name: "Login" }).click();
   await expect(page).toHaveURL("/");
-  await expect(page.locator("h1")).toHaveText("Videos");
+  await expect(page.locator("h1")).toHaveText("Bookmarked Videos");
 });
 
 test("navigate between login and register", async ({ page }) => {
@@ -98,8 +98,6 @@ test.describe("video list and navigation", () => {
       /img\.youtube\.com\/vi\/.+\/mqdefault\.jpg/,
     );
     await expect(card.locator("p", { hasText: "Billlie" })).toBeVisible();
-    await expect(card.getByText("ko / en")).toBeVisible();
-    await expect(card.getByText("3:30")).toBeVisible();
 
     await card.click();
     await expect(page).toHaveURL(/\/videos\/.+/);

@@ -14,11 +14,13 @@ export function BookmarksPage({
   onVideoClick,
   sync,
   actions,
+  titleRight,
 }: {
   entries: VideoIndexEntry[];
   onVideoClick: (youtubeId: string) => void;
   sync?: VideoSyncHandle;
   actions?: ReactNode;
+  titleRight?: (entry: VideoSyncEntry) => ReactNode;
 }) {
   const displayEntries: VideoSyncEntry[] = sync?.isPending
     ? []
@@ -52,14 +54,17 @@ export function BookmarksPage({
               title={entry.title}
               channelName={entry.channelName}
               titleRight={
-                sync && entry.syncStatus ? (
-                  <SyncBadge
-                    status={entry.syncStatus}
-                    syncing={sync.syncing.has(entry.youtubeId)}
-                    onPull={() => sync.onPull(entry.youtubeId)}
-                    onPush={() => sync.onPush(entry.youtubeId)}
-                  />
-                ) : undefined
+                <div className="flex items-center gap-0.5">
+                  {sync && entry.syncStatus && (
+                    <SyncBadge
+                      status={entry.syncStatus}
+                      syncing={sync.syncing.has(entry.youtubeId)}
+                      onPull={() => sync.onPull(entry.youtubeId)}
+                      onPush={() => sync.onPush(entry.youtubeId)}
+                    />
+                  )}
+                  {titleRight?.(entry)}
+                </div>
               }
               badge={
                 <span className="rounded bg-muted px-2 py-0.5 font-mono">

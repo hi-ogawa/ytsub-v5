@@ -14,13 +14,14 @@ test.describe("delete video", () => {
     const card = page.getByRole("link", { name: /cloud palace/ });
     await expect(card).toBeVisible();
 
+    const menuTrigger = card.locator("button").last();
     page.once("dialog", (dialog) => dialog.dismiss());
-    await card.getByRole("button").click();
+    await menuTrigger.click();
     await page.getByRole("menuitem", { name: /Delete/ }).click();
     await expect(card).toBeVisible();
 
     page.once("dialog", (dialog) => dialog.accept());
-    await card.getByRole("button").click();
+    await menuTrigger.click();
     await page.getByRole("menuitem", { name: /Delete/ }).click();
     await expect(card).not.toBeVisible();
   });

@@ -113,6 +113,55 @@ export function sessionToExportData(session: {
   };
 }
 
+// --- Import (export data → IndexedDB) ---
+
+export async function importExportData(data: ExportData): Promise<void> {
+  const session: PersistedCaptionSession = {
+    youtubeId: data.video.youtubeId,
+    title: data.video.title,
+    channelName: data.video.channelName ?? "",
+    channelId: data.video.channelId ?? "",
+    duration: data.video.duration ?? 0,
+    vssId1: data.video.vssId1 ?? "",
+    vssId2: data.video.vssId2 ?? "",
+    language1: data.video.language1 ?? "",
+    language2: data.video.language2 ?? "",
+    captions: data.captions.map((c) => ({
+      idx: c.idx,
+      begin: c.begin,
+      end: c.end,
+      text1: c.text1 ?? "",
+      text2: c.text2 ?? "",
+      cue1Indices: [] as number[],
+      cue2Indices: [] as number[],
+      text1Segments: [c.text1 ?? ""],
+      text2Segments: [c.text2 ?? ""],
+    })),
+    bookmarks: (data.bookmarks ?? []).map((b) => ({
+      id: crypto.randomUUID(),
+      text: b.text,
+      side: b.side ?? 0,
+      offset: b.offset ?? 0,
+      captionIndex: b.captionIdx,
+      timestamp: data.captions[b.captionIdx]?.begin ?? 0,
+      context: b.context ?? "",
+      translation: b.translation,
+      etymology: b.etymology,
+      notes: b.notes,
+      createdAt: new Date().toISOString(),
+    })),
+  };
+  await saveSession(session);
+  if (session.bookmarks.length > 0) {
+    updateVideoIndex(
+      session.youtubeId,
+      session.title,
+      session.channelName,
+      session.bookmarks.length,
+    );
+  }
+}
+
 // --- Store ---
 
 function langFromVssId(vssId: string): string {
