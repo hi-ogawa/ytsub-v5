@@ -229,7 +229,7 @@ function formatTimestamp(seconds: number): string {
 
 type CaptionPanelProps = {
   tracks: YouTubeCaptionTrack[];
-  player: YTPlayer | null;
+  player?: YTPlayer;
   fetchJson3: (track: YouTubeCaptionTrack) => Promise<Json3File>;
   videoMeta: YouTubeVideoData;
 };
@@ -283,26 +283,21 @@ function CaptionPanelInner({
 }) {
   const { youtubeId } = videoMeta;
 
-  const initialTracks = useMemo(
-    () => getInitialTracks(tracks, youtubeId),
-    [tracks, youtubeId],
-  );
-
   const [store, setStore] = useState(() => initialStore);
-  const [vssId1, setVssId1] = useState(
-    () => initialStore?.vssId1 ?? initialTracks.vssId1,
-  );
-  const [vssId2, setVssId2] = useState(
-    () => initialStore?.vssId2 ?? initialTracks.vssId2,
-  );
+  const [selectedTracks, setSelectedTracks] = useState(() => {
+    if (initialStore)
+      return { vssId1: initialStore.vssId1, vssId2: initialStore.vssId2 };
+    return getInitialTracks(tracks, youtubeId);
+  });
   const [userStrategy, setUserStrategy] = useState<MergeStrategy>();
 
   const selectTracks = useCallback(
-    (v1: string | undefined, v2: string | undefined) => {
-      setVssId1(v1);
-      setVssId2(v2);
+    (v1?: string, v2?: string) => {
+      setSelectedTracks({ vssId1: v1, vssId2: v2 });
       setStore(undefined);
-      if (v1 && v2) saveSelectedTracks(tracks, v1, v2, youtubeId);
+      if (v1 && v2) {
+        saveSelectedTracks(tracks, v1, v2, youtubeId);
+      }
     },
     [tracks, youtubeId],
   );
@@ -313,8 +308,8 @@ function CaptionPanelInner({
         tracks={tracks}
         fetchJson3={fetchJson3}
         videoMeta={videoMeta}
-        vssId1={vssId1}
-        vssId2={vssId2}
+        vssId1={selectedTracks.vssId1}
+        vssId2={selectedTracks.vssId2}
         userStrategy={userStrategy}
         onSelectTracks={selectTracks}
         onStoreReady={setStore}
@@ -350,10 +345,10 @@ function CaptionPanelLoading({
   tracks: YouTubeCaptionTrack[];
   fetchJson3: (track: YouTubeCaptionTrack) => Promise<Json3File>;
   videoMeta: YouTubeVideoData;
-  vssId1: string | undefined;
-  vssId2: string | undefined;
-  userStrategy: MergeStrategy | undefined;
-  onSelectTracks: (v1: string | undefined, v2: string | undefined) => void;
+  vssId1?: string;
+  vssId2?: string;
+  userStrategy?: MergeStrategy;
+  onSelectTracks: (v1?: string, v2?: string) => void;
   onStoreReady: (store: CaptionSessionManager) => void;
 }) {
   const { youtubeId } = videoMeta;
@@ -437,8 +432,8 @@ function CaptionPanelWithStore({
 }: {
   store: CaptionSessionManager;
   tracks: YouTubeCaptionTrack[];
-  player: YTPlayer | null;
-  onSelectTracks: (v1: string | undefined, v2: string | undefined) => void;
+  player?: YTPlayer;
+  onSelectTracks: (v1?: string, v2?: string) => void;
   onSelectStrategy: (s: MergeStrategy) => void;
 }) {
   useSyncExternalStore(store.subscribe, () => store.version);
@@ -583,7 +578,7 @@ function CaptionPanelContent({
   autoScroll,
 }: {
   store: CaptionSessionManager;
-  player: YTPlayer | null;
+  player?: YTPlayer;
   autoScroll: boolean;
 }) {
   // --- Tab state ---
@@ -630,7 +625,7 @@ function CaptionPanelContent({
   const captionListRef = useRef<{ scrollToIndex: (index: number) => void }>(
     null,
   );
-  const [flashBookmarkId, setFlashBookmarkId] = useState<string | null>(null);
+  const [flashBookmarkId, setFlashBookmarkId] = useState<string>();
   const flashBookmarkCounter = useRef(0);
 
   function onGoToCaption(captionIndex: number) {
@@ -645,7 +640,8 @@ function CaptionPanelContent({
     setFlashBookmarkId(bookmarkId);
     setActiveTab("bookmarks");
     setTimeout(() => {
-      if (flashBookmarkCounter.current === counter) setFlashBookmarkId(null);
+      if (flashBookmarkCounter.current === counter)
+        setFlashBookmarkId(undefined);
     }, 1000);
   }
 
@@ -835,14 +831,14 @@ function ExtensionBookmarksList({
 }: {
   bookmarks: ExtensionBookmark[];
   rows: MergedCaption[];
-  player: YTPlayer | null;
+  player?: YTPlayer;
   onDeleteBookmark: (id: string) => void;
   onGoToCaption: (captionIndex: number) => void;
-  flashBookmarkId: string | null;
+  flashBookmarkId?: string;
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    if (flashBookmarkId === null || !scrollRef.current) return;
+    if (!flashBookmarkId || !scrollRef.current) return;
     const el = scrollRef.current.querySelector(
       `[data-bookmark-id="${flashBookmarkId}"]`,
     );
@@ -967,7 +963,7 @@ function CaptionViewer({
 }: {
   ref?: React.Ref<CaptionViewerHandle>;
   rows: MergedCaption[];
-  player: YTPlayer | null;
+  player?: YTPlayer;
   autoScroll: boolean;
   bookmarks: ExtensionBookmark[];
   onGoToBookmark: (bookmarkId: string) => void;

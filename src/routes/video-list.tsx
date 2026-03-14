@@ -50,7 +50,7 @@ function ImportDialog({
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const fileRef = useRef<HTMLInputElement>(null);
-  const [parsed, setParsed] = useState<ImportData | null>(null);
+  const [parsed, setParsed] = useState<ImportData>();
   const [parseError, setParseError] = useState("");
 
   const importMutation = useMutation(
@@ -67,7 +67,7 @@ function ImportDialog({
 
   function handleFile(file: File) {
     setParseError("");
-    setParsed(null);
+    setParsed(undefined);
     const reader = new FileReader();
     reader.onload = () => {
       try {

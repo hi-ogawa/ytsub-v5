@@ -52,15 +52,14 @@ Task docs should enable **handoff to a fresh agent** - include enough context to
 2. Wait for user feedback
 3. Log feedback to task doc, iterate on plan
 4. Proceed with implementation after approval
-5. **Update status before ending session**
-
-To continue in fresh session: `Read docs/tasks/YYYY-MM-DD-<topic>.md and continue`
 
 ## Conventions
 
 - File names: kebab-case
 - Minimize file splits (multiple components per file when related)
 - Run `.ts` scripts with `node` (not `tsx`/`ts-node`) — Node natively supports TypeScript stripping
+- Prefer `undefined` over `null`
+- Prefer optional properties (`{ x?: T }`) over explicit undefined (`{ x: T | undefined }`)
 
 ## Agent Rules
 
