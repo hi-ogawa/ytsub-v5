@@ -107,17 +107,19 @@ function HeaderMenu({ authenticated }: { authenticated: boolean }) {
             <Upload className="h-4 w-4" />
             Import
           </DropdownMenuItem>
-          <DropdownMenuItem
-            data-testid="bootstrap-fixtures"
-            onSelect={async () => {
-              const { bootstrapFixtures } = await import("./dev-fixtures.ts");
-              await bootstrapFixtures();
-            }}
-            className="gap-2"
-          >
-            <Database className="h-4 w-4" />
-            Bootstrap fixtures
-          </DropdownMenuItem>
+          {import.meta.env.DEV && (
+            <DropdownMenuItem
+              data-testid="bootstrap-fixtures"
+              onSelect={async () => {
+                const { bootstrapFixtures } = await import("./dev-fixtures.ts");
+                await bootstrapFixtures();
+              }}
+              className="gap-2"
+            >
+              <Database className="h-4 w-4" />
+              Dev Bootstrap
+            </DropdownMenuItem>
+          )}
           <DropdownMenuItem
             data-testid="theme-toggle"
             data-theme={theme}
