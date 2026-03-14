@@ -6,6 +6,7 @@ import {
   CaptionFab,
   CaptionPanel,
   ResizablePanel,
+  useFabOpen,
 } from "../components/caption-panel.tsx";
 import { PortalContainerProvider } from "../components/ui/portal-container.tsx";
 import type { YTPlayer } from "../components/youtube-player.tsx";
@@ -33,30 +34,8 @@ function getVideoPlayer(): YTPlayer | undefined {
   };
 }
 
-function fabStorageKey(videoId: string) {
-  return `zamak:fab-open:${videoId}`;
-}
-
-function readFabOpen(videoId: string): boolean {
-  try {
-    return localStorage.getItem(fabStorageKey(videoId)) === "true";
-  } catch {
-    return false;
-  }
-}
-
 function App({ videoId }: { videoId: string }) {
-  const [open, setOpen] = useState(() => readFabOpen(videoId));
-
-  const toggleOpen = () => {
-    setOpen((prev) => {
-      const next = !prev;
-      try {
-        localStorage.setItem(fabStorageKey(videoId), String(next));
-      } catch {}
-      return next;
-    });
-  };
+  const [open, toggleOpen] = useFabOpen(videoId);
 
   return (
     <div>

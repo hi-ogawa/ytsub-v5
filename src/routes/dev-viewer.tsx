@@ -1,9 +1,10 @@
-import { useCallback, useState } from "react";
+import { useCallback } from "react";
 import { useParams } from "react-router";
 import {
   CaptionFab,
   CaptionPanel,
   ResizablePanel,
+  useFabOpen,
 } from "../components/caption-panel.tsx";
 import { useYouTubePlayer } from "../components/youtube-player.tsx";
 import type {
@@ -23,23 +24,7 @@ const trackModules = import.meta.glob<{ default: Json3File }>(
 
 export function DevViewerPage() {
   const { videoId } = useParams<"videoId">();
-  const [panelOpen, setPanelOpen] = useState(() => {
-    try {
-      return localStorage.getItem(`zamak:fab-open:${videoId}`) === "true";
-    } catch {
-      return false;
-    }
-  });
-
-  const togglePanel = () => {
-    setPanelOpen((prev) => {
-      const next = !prev;
-      try {
-        localStorage.setItem(`zamak:fab-open:${videoId}`, String(next));
-      } catch {}
-      return next;
-    });
-  };
+  const [panelOpen, togglePanel] = useFabOpen(videoId ?? "");
 
   const meta = videoId
     ? metadataModules[`/scripts/youtube-json/${videoId}/metadata.json`]
