@@ -2,10 +2,20 @@
 
 Full listing details for the next Chrome Web Store submission. Copy-paste into the Developer Dashboard.
 
+## Agent Workflow
+
+When preparing a new version for submission:
+
+1. **Review this doc** against the current codebase — check manifest version, feature list, privacy disclosures
+2. **Diff against `docs/prd.md`** — identify features shipped since the last submission that aren't reflected in the store description
+3. **Update this doc** — bump version, add new features to the description, fix any stale info
+4. **Update the manifest** — bump `version` in `src/extension/public/manifest.json`, sync `description` with the store summary
+5. **Commit and PR** — the user handles screenshots, build, upload, and submission manually
+
 ## Build & Package
 
 ```sh
-npm build-ext   # build with production name "Zamak"
+pnpm build-ext   # build with production name "Zamak"
 ```
 
 Upload `dist/extension.zip` to Chrome Web Store Developer Dashboard.
@@ -39,15 +49,21 @@ Features:
 • Auto-scroll keeps the current caption visible as the video plays
 • Resizable panel — drag to adjust width
 • Floating action button to toggle the panel on/off
-• Bookmark caption lines for later review
+• Bookmark caption lines — select text to create bookmarks with notes
+• Bookmark editor — review and edit bookmarks with AI prompt support (copy context to clipboard, paste into your favorite LLM)
 • Bookmarks page — click the extension icon to see all videos with bookmarks
+• Settings dropdown — configure caption alignment, auto-scroll, and export data
+• Adapts to YouTube's dark and light theme automatically
 • Works with both manual and auto-generated YouTube subtitles
+• Auto-translated captions — works even when only one language track is available
 • No account required, no data collection — everything runs locally
 
 How it works:
-When you visit a YouTube video, Zamak fetches the available subtitle tracks and displays them in a side-by-side panel overlaid on the page. The panel syncs with video playback in real time. Bookmark any caption line, then click the Zamak icon to see all your bookmarked videos at a glance.
+When you visit a YouTube video, Zamak fetches the available subtitle tracks and displays them in a side-by-side panel overlaid on the page. The panel syncs with video playback in real time. Select any text to bookmark it, then use the built-in editor to add translations and notes — or copy an AI prompt to get help from your favorite LLM. Click the Zamak icon to see all your bookmarked videos at a glance.
 
-Supported: Any YouTube video with subtitles in two or more languages.
+Supported: Any YouTube video with subtitles. Works best with videos that have two or more language tracks, but also supports auto-translated captions for single-language videos.
+
+The project is open source and the source code is available on https://github.com/hi-ogawa/ytsub-v5.
 ```
 
 ## Category
@@ -64,7 +80,13 @@ English
 
 ## Screenshots
 
-Take screenshots at 1280×800 showing:
+**How to capture:**
+
+1. Open Chrome with the `chrome-extension-screenshot` profile — it's configured for 1280×800 at 1x pixel density (non-mobile)
+2. Set up the scene (navigate to the right page, open panels, etc.)
+3. DevTools → Cmd+Shift+P → "Capture full size screenshot" (or "Capture screenshot" for viewport only)
+
+**Scenes to capture:**
 
 1. The extension panel open on a YouTube video with dual subtitles visible
 2. Close-up of the caption panel showing two language columns
@@ -123,11 +145,11 @@ This data handling is closely related to the extension's single stated purpose, 
 
 ## Submission Checklist
 
-- [ ] Bump version in manifest to 0.2.0
-- [ ] Update store description and summary
-- [ ] Update single purpose description
-- [ ] Add `storage` permission justification
-- [ ] Take new screenshots (including bookmarks page)
+- [x] Bump version in manifest to 0.2.0
+- [x] Update manifest description
+- [x] Update store description and summary
+- [x] Add `storage` permission justification
+- [ ] Take new screenshots (including bookmarks page, bookmark editor, settings dropdown)
 - [ ] Build and zip: `pnpm build-ext`
 - [ ] Upload and submit for review
 - [ ] Confirm approval

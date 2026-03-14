@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Zamak",
-  "version": "0.1.0",
-  "description": "Watch YouTube with dual-language subtitles side by side. Click to seek, auto-scroll, resizable panel.",
+  "version": "0.2.0",
+  "description": "Watch YouTube with dual-language subtitles side by side. Bookmark captions, view all bookmarks. For language learners.",
   "icons": {
     "16": "icons/icon-16.png",
     "48": "icons/icon-48.png",

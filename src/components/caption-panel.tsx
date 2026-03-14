@@ -90,6 +90,7 @@ export function CaptionFab({
 }) {
   return (
     <button
+      data-testid="caption-fab"
       type="button"
       onClick={onClick}
       className={`fixed right-3 bottom-3 flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border-none shadow-lg pointer-events-auto ${open ? "bg-accent text-accent-foreground" : "bg-primary text-primary-foreground"}`}
