@@ -363,8 +363,15 @@ function SyncButton({
       break;
     case "conflict":
       icon = <AlertTriangle className={`${iconClass} text-yellow-500`} />;
-      title = "Both sides changed — click to push (keep local)";
-      onClick = () => onSync({ direction: "push", store });
+      title = "Both sides changed — click to resolve";
+      onClick = () => {
+        const choice = window.prompt(
+          "Both local and server have changes.\nType 'push' to keep local, 'pull' to keep server:",
+        );
+        if (choice === "push" || choice === "pull") {
+          onSync({ direction: choice, store });
+        }
+      };
       break;
     case "syncing":
       icon = <RefreshCw className={`${iconClass} animate-spin`} />;
