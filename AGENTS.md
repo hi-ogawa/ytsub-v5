@@ -60,6 +60,7 @@ Task docs should enable **handoff to a fresh agent** - include enough context to
 - Run `.ts` scripts with `node` (not `tsx`/`ts-node`) — Node natively supports TypeScript stripping
 - Prefer `undefined` over `null`
 - Prefer optional properties (`{ x?: T }`) over explicit undefined (`{ x: T | undefined }`)
+- Make props/params required when all call sites always pass them — don't default to optional
 
 ## Agent Rules
 

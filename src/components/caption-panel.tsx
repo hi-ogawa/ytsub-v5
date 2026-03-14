@@ -52,7 +52,7 @@ import type {
   YouTubeCaptionTrack,
   YouTubeVideoData,
 } from "../lib/youtube.ts";
-import { CaptionList } from "./caption-list.tsx";
+import { CaptionList, type CaptionListHandle } from "./caption-list.tsx";
 import { TrackPicker } from "./track-picker.tsx";
 import {
   DropdownMenu,
@@ -733,27 +733,21 @@ function CaptionPanelContent({
   }
 
   // --- Cross-tab navigation ---
-  const captionListRef = useRef<{ scrollToIndex: (index: number) => void }>(
-    null,
-  );
-  const [flashBookmarkId, setFlashBookmarkId] = useState<string>();
-  const flashBookmarkCounter = useRef(0);
+  const captionListRef = useRef<CaptionListHandle>(null);
+  const bookmarksListRef = useRef<BookmarksListHandle>(null);
 
   function onGoToCaption(captionIndex: number) {
     setActiveTab("captions");
-    requestAnimationFrame(() => {
+    setTimeout(() => {
       captionListRef.current?.scrollToIndex(captionIndex);
     });
   }
 
   function onGoToBookmark(bookmarkId: string) {
-    const counter = ++flashBookmarkCounter.current;
-    setFlashBookmarkId(bookmarkId);
     setActiveTab("bookmarks");
     setTimeout(() => {
-      if (flashBookmarkCounter.current === counter)
-        setFlashBookmarkId(undefined);
-    }, 1000);
+      bookmarksListRef.current?.scrollToBookmark(bookmarkId);
+    });
   }
 
   // Pause auto-scroll when bookmark popover is open
@@ -879,27 +873,28 @@ function CaptionPanelContent({
           />
         </div>
 
-        {/* Bookmarks list */}
-        {activeTab === "bookmarks" && (
-          <div className="flex-[1_0_0] overflow-y-auto">
-            {sortedBookmarks.length === 0 ? (
-              <div className="flex h-full items-center justify-center">
-                <p className="text-sm text-muted-foreground">
-                  No bookmarks yet
-                </p>
-              </div>
-            ) : (
-              <ExtensionBookmarksList
-                bookmarks={sortedBookmarks}
-                rows={store.rows}
-                player={player}
-                onDeleteBookmark={(id) => store.deleteBookmark(id)}
-                onGoToCaption={onGoToCaption}
-                flashBookmarkId={flashBookmarkId}
-              />
-            )}
-          </div>
-        )}
+        {/* Bookmarks — hidden (not unmounted) to preserve scroll position */}
+        <div
+          className="flex-[1_0_0] overflow-y-auto"
+          style={{
+            display: activeTab === "bookmarks" ? undefined : "none",
+          }}
+        >
+          {sortedBookmarks.length === 0 ? (
+            <div className="flex h-full items-center justify-center">
+              <p className="text-sm text-muted-foreground">No bookmarks yet</p>
+            </div>
+          ) : (
+            <ExtensionBookmarksList
+              ref={bookmarksListRef}
+              bookmarks={sortedBookmarks}
+              rows={store.rows}
+              player={player}
+              onDeleteBookmark={(id) => store.deleteBookmark(id)}
+              onGoToCaption={onGoToCaption}
+            />
+          )}
+        </div>
 
         {/* Floating bookmark action buttons */}
         {(bookmarkSelection || isCreating) && (
@@ -932,33 +927,40 @@ function CaptionPanelContent({
 
 // --- ExtensionBookmarksList ---
 
+type BookmarksListHandle = {
+  scrollToBookmark: (bookmarkId: string) => void;
+};
+
 function ExtensionBookmarksList({
+  ref,
   bookmarks,
   rows,
   player,
   onDeleteBookmark,
   onGoToCaption,
-  flashBookmarkId,
 }: {
+  ref: React.Ref<BookmarksListHandle>;
   bookmarks: ExtensionBookmark[];
   rows: MergedCaption[];
   player?: YTPlayer;
   onDeleteBookmark: (id: string) => void;
   onGoToCaption: (captionIndex: number) => void;
-  flashBookmarkId?: string;
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (!flashBookmarkId || !scrollRef.current) return;
-    const el = scrollRef.current.querySelector(
-      `[data-bookmark-id="${flashBookmarkId}"]`,
-    );
-    if (!el) return;
-    el.scrollIntoView({ behavior: "smooth", block: "center" });
-    el.classList.remove("flash-highlight");
-    void (el as HTMLElement).offsetWidth;
-    el.classList.add("flash-highlight");
-  }, [flashBookmarkId]);
+
+  useImperativeHandle(ref, () => ({
+    scrollToBookmark: (bookmarkId: string) => {
+      const el = scrollRef.current?.querySelector(
+        `[data-bookmark-id="${bookmarkId}"]`,
+      ) as HTMLElement | null;
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+        el.classList.remove("flash-highlight");
+        void el.offsetWidth;
+        el.classList.add("flash-highlight");
+      }
+    },
+  }));
 
   return (
     <div ref={scrollRef} className="flex flex-col gap-1.5 p-1.5">
@@ -1059,10 +1061,6 @@ function ExtensionBookmarksList({
 
 // --- CaptionViewer: playback-synced caption list ---
 
-interface CaptionViewerHandle {
-  scrollToIndex: (index: number) => void;
-}
-
 function CaptionViewer({
   ref,
   rows,
@@ -1072,7 +1070,7 @@ function CaptionViewer({
   onGoToBookmark,
   onPopoverOpenChange,
 }: {
-  ref?: React.Ref<CaptionViewerHandle>;
+  ref: React.Ref<CaptionListHandle>;
   rows: MergedCaption[];
   player?: YTPlayer;
   autoScroll: boolean;
@@ -1082,15 +1080,6 @@ function CaptionViewer({
 }) {
   const [currentIndex, setCurrentIndex] = useState<number>();
   const [isPlaying, setIsPlaying] = useState(false);
-  const captionListRef = useRef<{ scrollToIndex: (index: number) => void }>(
-    null,
-  );
-
-  useImperativeHandle(ref, () => ({
-    scrollToIndex: (index: number) => {
-      captionListRef.current?.scrollToIndex(index);
-    },
-  }));
 
   useEffect(() => {
     if (!player || rows.length === 0) return;
@@ -1116,7 +1105,7 @@ function CaptionViewer({
 
   return (
     <CaptionList
-      ref={captionListRef}
+      ref={ref}
       rows={rows}
       currentIndex={currentIndex}
       isPlaying={isPlaying}

@@ -137,6 +137,10 @@ function highlightText(
   return <>{parts}</>;
 }
 
+export type CaptionListHandle = {
+  scrollToIndex: (index: number) => void;
+};
+
 export function CaptionList({
   ref,
   rows,
@@ -148,7 +152,7 @@ export function CaptionList({
   onGoToBookmark,
   onPopoverOpenChange,
 }: {
-  ref?: React.Ref<{ scrollToIndex: (index: number) => void }>;
+  ref: React.Ref<CaptionListHandle>;
   rows: MergedCaption[];
   currentIndex?: number;
   isPlaying: boolean;
@@ -172,10 +176,16 @@ export function CaptionList({
 
   useImperativeHandle(ref, () => ({
     scrollToIndex: (index: number) => {
-      const el = scrollRef.current?.querySelector(`[data-index="${index}"]`);
+      const el = scrollRef.current?.querySelector(
+        `[data-index="${index}"]`,
+      ) as HTMLElement | null;
       if (el) {
         el.scrollIntoView({ behavior: "smooth", block: "center" });
+        el.classList.remove("flash-highlight");
+        void el.offsetWidth; // Force reflow to restart animation
+        el.classList.add("flash-highlight");
       }
+      onManualScroll();
     },
   }));
   const prevScrollIndex = useRef<number | undefined>(undefined);
