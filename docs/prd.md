@@ -107,9 +107,14 @@ A web app for language learning via YouTube subtitles. Watch videos with dual ca
   - [ ] e2e: restore delete-bookmark test (`delete.spec.ts`) — needs IndexedDB-based viewer or dev-viewer route
   - [ ] e2e: restore etymology import test (`import.spec.ts`) — viewer no longer loads from server after import
 - [x] feat: bookmarks page server sync — merge server videos with per-video push/pull (`useVideoSync`)
-- [ ] feat: web app as browser client — retire server-rendered video-list in favor of client storage
-  - **video list (`/`)**: replace current server-only `listVideos` page with `BookmarksPage` + `useVideoSync` (already built for dev-bookmarks). Shows merged local+server videos, sync badges, push/pull. This becomes the app home page.
-  - video viewer already done (`sessionOnly` flag, loads from IndexedDB)
+- [x] feat: web app as browser client — retire server-rendered video-list in favor of client storage
+  - [x] video list (`/`): replaced with `BookmarksPage` + `useVideoSync`, import moved to header menu (saves to IndexedDB)
+  - [x] video viewer: `sessionOnly` flag, loads from IndexedDB
+- [ ] rework "Bookmarked Videos" heading/framing — home page is just "Videos"; empty state text assumes extension but web app uses import/sync
+- [ ] consolidate dev-index and dev-bookmarks into single dev home page — dev-index (fixture list) is redundant now that dev-bookmarks has bootstrap; merge them
+- [ ] video card design improvements
+  - sync badge placement: move to bottom-right (status, not title action)
+  - delete should support both client (IndexedDB) and server storage — e.g. "Delete locally" / "Delete from server" / "Delete everywhere"
 
 ## TODO: Backlog
 
