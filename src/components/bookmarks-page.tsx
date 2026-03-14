@@ -17,10 +17,9 @@ export function BookmarksPage({
   onVideoClick: (youtubeId: string) => void;
   sync?: VideoSyncHandle;
 }) {
-  const displayEntries = sync
-    ? sync.entries
-    : entries.map((e): VideoSyncEntry => ({ ...e }));
-
+  const displayEntries: VideoSyncEntry[] = sync?.isPending
+    ? []
+    : (sync?.entries ?? entries);
   const sorted = [...displayEntries].sort(
     (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
   );
