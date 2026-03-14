@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Bookmark,
   Check,
@@ -337,7 +337,33 @@ function CaptionPanelInner({
   );
 }
 
-/** State B: tracks selected, fetching json3 → builds store and calls onStoreReady */
+async function buildCaptionSession(options: {
+  track1: YouTubeCaptionTrack;
+  track2: YouTubeCaptionTrack;
+  fetchJson3: (track: YouTubeCaptionTrack) => Promise<Json3File>;
+  videoMeta: YouTubeVideoData;
+  strategy?: MergeStrategy;
+}): Promise<CaptionSessionManager> {
+  const [json3_1, json3_2] = await Promise.all([
+    options.fetchJson3(options.track1),
+    options.fetchJson3(options.track2),
+  ]);
+  const merged = mergeCaptions(
+    { json3: json3_1, vssId: options.track1.vssId },
+    { json3: json3_2, vssId: options.track2.vssId },
+    options.strategy,
+  );
+  return new CaptionSessionManager({
+    videoMeta: options.videoMeta,
+    vssId1: options.track1.vssId,
+    vssId2: options.track2.vssId,
+    rows: merged.captions,
+    strategy: merged.strategy,
+    bookmarks: [],
+  });
+}
+
+/** State B: tracks selected, fetching json3 → builds store and calls setStore */
 function CaptionPanelLoading({
   tracks,
   fetchJson3,
@@ -354,48 +380,37 @@ function CaptionPanelLoading({
   onSelectTracks: (v1?: string, v2?: string) => void;
   setStore: (store: CaptionSessionManager) => void;
 }) {
-  const { youtubeId } = videoMeta;
-
-  const json3Query1 = useQuery({
-    queryKey: ["json3", youtubeId, track1?.vssId],
-    queryFn: () => fetchJson3(track1!),
-    enabled: !!track1,
-  });
-
-  const json3Query2 = useQuery({
-    queryKey: ["json3", youtubeId, track2?.vssId],
-    queryFn: () => fetchJson3(track2!),
-    enabled: !!track2,
+  const queryClient = useQueryClient();
+  const storeQuery = useQuery({
+    queryKey: [
+      "caption-session-build",
+      videoMeta.youtubeId,
+      track1?.vssId,
+      track2?.vssId,
+      userStrategy,
+    ],
+    queryFn: () => {
+      return buildCaptionSession({
+        track1: track1!,
+        track2: track2!,
+        videoMeta,
+        strategy: userStrategy,
+        fetchJson3: (track) => {
+          return queryClient.fetchQuery({
+            queryKey: ["json3", videoMeta.youtubeId, track.vssId],
+            queryFn: () => fetchJson3(track),
+          });
+        },
+      });
+    },
+    enabled: !!track1 && !!track2,
   });
 
   useEffect(() => {
-    if (!json3Query1.data || !json3Query2.data || !track1 || !track2) return;
-
-    const merged = mergeCaptions(
-      { json3: json3Query1.data, vssId: track1.vssId },
-      { json3: json3Query2.data, vssId: track2.vssId },
-      userStrategy,
-    );
-
-    setStore(
-      new CaptionSessionManager({
-        videoMeta,
-        vssId1: track1.vssId,
-        vssId2: track2.vssId,
-        rows: merged.captions,
-        strategy: merged.strategy,
-        bookmarks: [],
-      }),
-    );
-  }, [
-    json3Query1.data,
-    json3Query2.data,
-    track1,
-    track2,
-    userStrategy,
-    videoMeta,
-    setStore,
-  ]);
+    if (storeQuery.data) {
+      setStore(storeQuery.data);
+    }
+  }, [storeQuery.data, setStore]);
 
   return (
     <div className="flex h-full flex-col">
@@ -411,12 +426,9 @@ function CaptionPanelLoading({
         <SettingsDropdownSkeleton />
       </div>
 
-      {json3Query1.error || json3Query2.error ? (
+      {storeQuery.error ? (
         <div className="flex h-full items-center justify-center text-sm text-destructive">
-          <div>
-            {json3Query1.error && <div>{String(json3Query1.error)}</div>}
-            {json3Query2.error && <div>{String(json3Query2.error)}</div>}
-          </div>
+          {String(storeQuery.error)}
         </div>
       ) : (
         <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
