@@ -936,7 +936,6 @@ function ExtensionBookmarksList({
   onGoToCaption: (captionIndex: number) => void;
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
-  const flashTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   useImperativeHandle(ref, () => ({
     scrollToBookmark: (bookmarkId: string) => {
@@ -948,10 +947,6 @@ function ExtensionBookmarksList({
         el.classList.remove("flash-highlight");
         void el.offsetWidth;
         el.classList.add("flash-highlight");
-        clearTimeout(flashTimer.current);
-        flashTimer.current = setTimeout(() => {
-          el.classList.remove("flash-highlight");
-        }, 3000);
       }
     },
   }));
