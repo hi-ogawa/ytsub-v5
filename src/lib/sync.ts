@@ -1,14 +1,22 @@
+import type { InferRouterOutputs } from "@orpc/server";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { orpc } from "../rpc.ts";
+import type { Router } from "../server/rpc.ts";
 import { getSession, saveSession } from "./caption-session-db.ts";
 import type { CaptionSessionManager } from "./caption-session.ts";
 import { useStore } from "./external-store.ts";
 import {
+  type VideoIndexEntry,
   setSyncedAt,
   updateVideoIndex,
   videoIndexStore,
 } from "./video-index.ts";
+
+type ListVideosOutput = InferRouterOutputs<Router>["videos"]["listVideos"];
+type GetFullSessionOutput = NonNullable<
+  InferRouterOutputs<Router>["videos"]["getFullSession"]
+>;
 
 type SyncState =
   | "unauthenticated"
@@ -167,6 +175,50 @@ export type VideoSyncEntry = {
   syncStatus?: "local-only" | "server-only" | "synced" | "pull" | "push";
 };
 
+function mergeVideoEntries(
+  localEntries: VideoIndexEntry[],
+  serverVideos: ListVideosOutput["items"],
+): VideoSyncEntry[] {
+  const merged = new Map<string, VideoSyncEntry>();
+
+  for (const local of localEntries) {
+    const server = serverVideos.find((v) => v.youtubeId === local.youtubeId);
+    const status = computeSyncState({
+      localUpdatedAt: local.updatedAt,
+      syncedAt: local.syncedAt,
+      serverUpdatedAt: server?.updatedAt ?? undefined,
+    });
+    merged.set(local.youtubeId, {
+      youtubeId: local.youtubeId,
+      title: local.title,
+      channelName: local.channelName,
+      bookmarkCount: local.bookmarkCount,
+      updatedAt: local.updatedAt,
+      syncStatus:
+        status === "synced" || status === "push" || status === "pull"
+          ? status
+          : status === "conflict"
+            ? "push"
+            : "local-only",
+    });
+  }
+
+  for (const server of serverVideos) {
+    if (!merged.has(server.youtubeId)) {
+      merged.set(server.youtubeId, {
+        youtubeId: server.youtubeId,
+        title: server.title,
+        channelName: server.channelName,
+        bookmarkCount: 0,
+        updatedAt: server.updatedAt,
+        syncStatus: "server-only",
+      });
+    }
+  }
+
+  return Array.from(merged.values());
+}
+
 export type VideoSyncHandle = ReturnType<typeof useVideoSync>;
 
 export function useVideoSync() {
@@ -270,46 +322,7 @@ export function useVideoSync() {
         updatedAt: e.updatedAt,
       }));
     }
-
-    const serverVideos = serverQuery.data?.items ?? [];
-    const merged = new Map<string, VideoSyncEntry>();
-
-    for (const local of videoIndex) {
-      const server = serverVideos.find((v) => v.youtubeId === local.youtubeId);
-      const status = computeSyncState({
-        localUpdatedAt: local.updatedAt,
-        syncedAt: local.syncedAt,
-        serverUpdatedAt: server?.updatedAt ?? undefined,
-      });
-      merged.set(local.youtubeId, {
-        youtubeId: local.youtubeId,
-        title: local.title,
-        channelName: local.channelName,
-        bookmarkCount: local.bookmarkCount,
-        updatedAt: local.updatedAt,
-        syncStatus:
-          status === "synced" || status === "push" || status === "pull"
-            ? status
-            : status === "conflict"
-              ? "push"
-              : "local-only",
-      });
-    }
-
-    for (const server of serverVideos) {
-      if (!merged.has(server.youtubeId)) {
-        merged.set(server.youtubeId, {
-          youtubeId: server.youtubeId,
-          title: server.title,
-          channelName: server.channelName,
-          bookmarkCount: 0,
-          updatedAt: server.updatedAt,
-          syncStatus: "server-only",
-        });
-      }
-    }
-
-    return Array.from(merged.values());
+    return mergeVideoEntries(videoIndex, serverQuery.data?.items ?? []);
   }, [authenticated, isPending, videoIndex, serverQuery.data]);
 
   return {
@@ -321,15 +334,7 @@ export function useVideoSync() {
   };
 }
 
-async function pullServerSession(
-  data: NonNullable<
-    Awaited<
-      ReturnType<
-        ReturnType<typeof orpc.videos.getFullSession.queryOptions>["queryFn"]
-      >
-    >
-  >,
-): Promise<void> {
+async function pullServerSession(data: GetFullSessionOutput): Promise<void> {
   const captions = data.captions.map((c) => ({
     idx: c.idx,
     begin: c.begin,
