@@ -409,6 +409,19 @@ function CaptionPanelLoading({
         </div>
         <SettingsDropdownSkeleton />
       </div>
+
+      {json3Query1.error || json3Query2.error ? (
+        <div className="flex h-full items-center justify-center text-sm text-destructive">
+          <div>
+            {json3Query1.error && <div>{String(json3Query1.error)}</div>}
+            {json3Query2.error && <div>{String(json3Query2.error)}</div>}
+          </div>
+        </div>
+      ) : (
+        <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
+          Loading subtitles…
+        </div>
+      )}
     </div>
   );
 }
