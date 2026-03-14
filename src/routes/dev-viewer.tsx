@@ -1,9 +1,10 @@
-import { useCallback, useState } from "react";
+import { useCallback } from "react";
 import { useParams } from "react-router";
 import {
   CaptionFab,
   CaptionPanel,
   ResizablePanel,
+  useFabOpen,
 } from "../components/caption-panel.tsx";
 import { useYouTubePlayer } from "../components/youtube-player.tsx";
 import type {
@@ -23,7 +24,7 @@ const trackModules = import.meta.glob<{ default: Json3File }>(
 
 export function DevViewerPage() {
   const { videoId } = useParams<"videoId">();
-  const [panelOpen, setPanelOpen] = useState(false);
+  const [panelOpen, togglePanel] = useFabOpen(videoId ?? "");
 
   const meta = videoId
     ? metadataModules[`/scripts/youtube-json/${videoId}/metadata.json`]
@@ -57,7 +58,7 @@ export function DevViewerPage() {
           <DevViewerSession videoId={videoId} meta={meta} player={player} />
         </ResizablePanel>
       )}
-      <CaptionFab open={panelOpen} onClick={() => setPanelOpen((v) => !v)} />
+      <CaptionFab open={panelOpen} onClick={togglePanel} />
     </div>
   );
 }

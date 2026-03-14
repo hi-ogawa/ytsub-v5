@@ -94,6 +94,7 @@ A web app for language learning via YouTube subtitles. Watch videos with dual ca
 
 ## TODO: Extension
 
+- [x] persiste fab open/close state per video
 - [ ] consolidate captions panel for extension/dev-viewer/video-viewer
   - [ ] virtualized caption list (extension uses plain render, video-viewer uses `@tanstack/react-virtual`)
   - [ ] data layer abstraction (server DB vs IndexedDB)
