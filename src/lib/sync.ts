@@ -14,7 +14,7 @@ import {
   videoIndexStore,
 } from "./video-index.ts";
 
-export type SyncState =
+type SyncState =
   | "checking"
   | "synced"
   | "push"
@@ -47,11 +47,11 @@ function computeSyncState(params: {
   return "conflict";
 }
 
-type ServerSession = NonNullable<
+type GetFullSessionResult = NonNullable<
   InferRouterOutputs<Router>["videos"]["getFullSession"]
 >;
 
-function serverSessionToLocal(data: ServerSession): {
+function serverSessionToLocal(data: GetFullSessionResult): {
   captions: MergedCaption[];
   bookmarks: ExtensionBookmark[];
 } {
@@ -82,7 +82,7 @@ function serverSessionToLocal(data: ServerSession): {
   return { captions, bookmarks };
 }
 
-export type SyncDirection = "push" | "pull";
+type SyncDirection = "push" | "pull";
 
 export type SyncHandle = ReturnType<typeof useSyncState>;
 
