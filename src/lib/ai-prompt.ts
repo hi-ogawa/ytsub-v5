@@ -41,14 +41,14 @@ function formatBookmarks(
   return JSON.stringify(bms, null, 2);
 }
 
-export function extractJson(text: string): string {
+function extractJson(text: string): string {
   const match = text.match(/```(?:json)?\s*\n([\s\S]*?)\n```/);
   return match ? match[1].trim() : text.trim();
 }
 
 // --- AI result import (parse raw AI response → typed action) ---
 
-export type AiImportPickFillEntry = {
+type AiImportPickFillEntry = {
   captionIndex: number;
   text: string;
   translation?: string;
@@ -56,19 +56,19 @@ export type AiImportPickFillEntry = {
   notes?: string;
 };
 
-export type AiImportFillEntry = {
+type AiImportFillEntry = {
   id: string;
   translation?: string;
   etymology?: string;
   notes?: string;
 };
 
-export type AiImportCaptionEntry = {
+type AiImportCaptionEntry = {
   idx: number;
   text1?: string;
 };
 
-export type AiImportResult =
+type AiImportResult =
   | { type: "pick-fill"; entries: AiImportPickFillEntry[] }
   | { type: "fill"; entries: AiImportFillEntry[] }
   | { type: "fix-asr"; entries: AiImportCaptionEntry[] };
