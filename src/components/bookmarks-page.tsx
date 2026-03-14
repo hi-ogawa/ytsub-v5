@@ -156,7 +156,7 @@ function SyncBadge({
 
   if (syncing) {
     return (
-      <span title="Syncing..." {...testAttrs}>
+      <span className="inline-flex p-1.5" title="Syncing..." {...testAttrs}>
         <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
       </span>
     );
@@ -164,7 +164,7 @@ function SyncBadge({
   switch (status) {
     case "synced":
       return (
-        <span title="Synced" {...testAttrs}>
+        <span className="inline-flex p-1.5" title="Synced" {...testAttrs}>
           <CheckCircle2 className="h-4 w-4 text-green-500" />
         </span>
       );
