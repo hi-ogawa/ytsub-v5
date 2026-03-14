@@ -52,7 +52,7 @@ import type {
   YouTubeCaptionTrack,
   YouTubeVideoData,
 } from "../lib/youtube.ts";
-import { CaptionList } from "./caption-list.tsx";
+import { CaptionList, type CaptionListHandle } from "./caption-list.tsx";
 import { TrackPicker } from "./track-picker.tsx";
 import {
   DropdownMenu,
@@ -722,9 +722,7 @@ function CaptionPanelContent({
   }
 
   // --- Cross-tab navigation ---
-  const captionListRef = useRef<{ scrollToIndex: (index: number) => void }>(
-    null,
-  );
+  const captionListRef = useRef<CaptionListHandle>(null);
   const [flashBookmarkId, setFlashBookmarkId] = useState<string>();
   const flashBookmarkCounter = useRef(0);
   const [flashCaptionIndex, setFlashCaptionIndex] = useState<number>();
@@ -1057,9 +1055,7 @@ function ExtensionBookmarksList({
 
 // --- CaptionViewer: playback-synced caption list ---
 
-interface CaptionViewerHandle {
-  scrollToIndex: (index: number) => void;
-}
+type CaptionViewerHandle = CaptionListHandle;
 
 function CaptionViewer({
   ref,
@@ -1082,9 +1078,7 @@ function CaptionViewer({
 }) {
   const [currentIndex, setCurrentIndex] = useState<number>();
   const [isPlaying, setIsPlaying] = useState(false);
-  const captionListRef = useRef<{ scrollToIndex: (index: number) => void }>(
-    null,
-  );
+  const captionListRef = useRef<CaptionListHandle>(null);
 
   useImperativeHandle(ref, () => ({
     scrollToIndex: (index: number) => {
