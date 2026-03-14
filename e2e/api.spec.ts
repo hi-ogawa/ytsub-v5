@@ -44,6 +44,13 @@ const json = async (res: any) => {
 
 const uid = () => Math.random().toString(36).slice(2);
 
+const defaultTrackFields = {
+  language1: "ko",
+  language2: "en",
+  vssId1: ".ko",
+  vssId2: ".en",
+};
+
 test.describe("videos API", () => {
   test("create, list, and get video", async ({ request }) => {
     const youtubeId = `test-${uid()}`;
@@ -52,6 +59,7 @@ test.describe("videos API", () => {
       title: "Test Video",
       channelName: "Test Channel",
       duration: 300,
+      ...defaultTrackFields,
     });
     expect(createRes.ok()).toBe(true);
     const video = await json(createRes);
@@ -80,11 +88,13 @@ test.describe("videos API", () => {
       youtubeId,
       title: "Original",
       channelName: "Ch",
+      ...defaultTrackFields,
     });
     const res = await rpc(request, "videos/createVideo", {
       youtubeId,
       title: "Updated",
       channelName: "Ch",
+      ...defaultTrackFields,
     });
     expect(res.ok()).toBe(true);
     const video = await json(res);
@@ -97,6 +107,7 @@ test.describe("videos API", () => {
       await rpc(request, "videos/createVideo", {
         youtubeId,
         title: "To Delete",
+        ...defaultTrackFields,
       }),
     );
 
@@ -118,6 +129,7 @@ test.describe("videos API", () => {
       await rpc(request, "videos/createVideo", {
         youtubeId,
         title: "Caption Video",
+        ...defaultTrackFields,
       }),
     );
 
@@ -149,6 +161,7 @@ test.describe("importVideo API", () => {
         title: "Import Test",
         channelName: "Test Channel",
         duration: 100,
+        ...defaultTrackFields,
       },
       captions: [
         { idx: 0, begin: 0, end: 3, text1: "안녕하세요", text2: "Hello" },
@@ -203,7 +216,7 @@ test.describe("importVideo API", () => {
       text2: `caption${i}`,
     }));
     const res = await rpc(request, "videos/importVideo", {
-      video: { youtubeId, title: "Large Video" },
+      video: { youtubeId, title: "Large Video", ...defaultTrackFields },
       captions: caps,
     });
     expect(res.ok()).toBe(true);
@@ -237,7 +250,11 @@ test.describe("importVideo API", () => {
       context: `자막${i}`,
     }));
     const res = await rpc(request, "videos/importVideo", {
-      video: { youtubeId, title: "Large Bookmark Video" },
+      video: {
+        youtubeId,
+        title: "Large Bookmark Video",
+        ...defaultTrackFields,
+      },
       captions: caps,
       bookmarks: bms,
     });
@@ -260,7 +277,7 @@ test.describe("importVideo API", () => {
     // First import
     const res1 = await json(
       await rpc(request, "videos/importVideo", {
-        video: { youtubeId, title: "V1" },
+        video: { youtubeId, title: "V1", ...defaultTrackFields },
         captions: [
           { idx: 0, begin: 0, end: 1, text1: "원본", text2: "original" },
         ],
@@ -270,7 +287,7 @@ test.describe("importVideo API", () => {
     // Re-import with different data
     const res2 = await json(
       await rpc(request, "videos/importVideo", {
-        video: { youtubeId, title: "V2" },
+        video: { youtubeId, title: "V2", ...defaultTrackFields },
         captions: [
           { idx: 0, begin: 0, end: 2, text1: "갱신", text2: "updated" },
           { idx: 1, begin: 2, end: 4, text1: "추가", text2: "added" },
@@ -303,6 +320,7 @@ test.describe("bookmarks API", () => {
       await rpc(request, "videos/createVideo", {
         youtubeId,
         title: "Bookmark Video",
+        ...defaultTrackFields,
       }),
     );
 
@@ -356,7 +374,11 @@ test.describe("bookmarks API", () => {
   test("delete bookmark", async ({ request }) => {
     const youtubeId = `del-bm-${uid()}`;
     const video = await json(
-      await rpc(request, "videos/createVideo", { youtubeId, title: "BM Del" }),
+      await rpc(request, "videos/createVideo", {
+        youtubeId,
+        title: "BM Del",
+        ...defaultTrackFields,
+      }),
     );
     await rpc(request, "bookmarks/createBookmarks", {
       bookmarks: [{ videoId: video.id, text: "삭제", timestamp: 0 }],

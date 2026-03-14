@@ -101,6 +101,8 @@ export function useSyncState({ youtubeId }: { youtubeId: string }) {
       );
       if (!data) return;
       await store.replace({
+        vssId1: data.video.vssId1,
+        vssId2: data.video.vssId2,
         captions: data.captions.map((c) => ({
           idx: c.idx,
           begin: c.begin,

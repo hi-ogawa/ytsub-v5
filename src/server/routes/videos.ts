@@ -13,8 +13,10 @@ export const videosRouter = authed.router({
         channelName: z.string().optional().default(""),
         channelId: z.string().optional().default(""),
         duration: z.number().int().optional().default(0),
-        language1: z.string().optional().default("ko"),
-        language2: z.string().optional().default("en"),
+        language1: z.string(),
+        language2: z.string(),
+        vssId1: z.string(),
+        vssId2: z.string(),
       }),
     )
     .handler(async ({ input, context }) => {
@@ -30,6 +32,8 @@ export const videosRouter = authed.router({
             duration: input.duration,
             language1: input.language1,
             language2: input.language2,
+            vssId1: input.vssId1,
+            vssId2: input.vssId2,
             updatedAt: sql`datetime('now')`,
           },
         })
@@ -150,8 +154,10 @@ export const videosRouter = authed.router({
           channelName: z.string().optional().default(""),
           channelId: z.string().optional().default(""),
           duration: z.number().int().optional().default(0),
-          language1: z.string().optional().default("ko"),
-          language2: z.string().optional().default("en"),
+          language1: z.string(),
+          language2: z.string(),
+          vssId1: z.string(),
+          vssId2: z.string(),
         }),
         captions: z.array(
           z.object({
@@ -194,6 +200,8 @@ export const videosRouter = authed.router({
             duration: input.video.duration,
             language1: input.video.language1,
             language2: input.video.language2,
+            vssId1: input.video.vssId1,
+            vssId2: input.video.vssId2,
             updatedAt: sql`datetime('now')`,
           },
         })

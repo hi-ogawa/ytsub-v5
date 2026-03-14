@@ -14,6 +14,8 @@ interface ImportData {
     duration: number;
     language1: string;
     language2: string;
+    vssId1?: string;
+    vssId2?: string;
   };
   captions: {
     idx: number;
@@ -45,8 +47,8 @@ function toSql(data: ImportData): string {
   const lines: string[] = [];
 
   lines.push(
-    `INSERT INTO videos (user_id, youtube_id, title, channel_name, channel_id, duration, language1, language2)`,
-    `VALUES ((SELECT id FROM users WHERE username = 'dev'), '${esc(id)}', '${esc(video.title)}', '${esc(video.channelName)}', '${esc(video.channelId)}', ${video.duration}, '${esc(video.language1)}', '${esc(video.language2)}');`,
+    `INSERT INTO videos (user_id, youtube_id, title, channel_name, channel_id, duration, language1, language2, vss_id1, vss_id2)`,
+    `VALUES ((SELECT id FROM users WHERE username = 'dev'), '${esc(id)}', '${esc(video.title)}', '${esc(video.channelName)}', '${esc(video.channelId)}', ${video.duration}, '${esc(video.language1)}', '${esc(video.language2)}', '${esc(video.vssId1 ?? "")}', '${esc(video.vssId2 ?? "")}');`,
     "",
   );
 
