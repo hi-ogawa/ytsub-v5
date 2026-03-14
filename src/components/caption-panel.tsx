@@ -233,13 +233,10 @@ type CaptionPanelProps = {
 };
 
 export function CaptionPanel(props: CaptionPanelProps) {
-  const { youtubeId } = props.videoMeta;
-
-  // Hydration from IndexedDB (suspends until resolved, gcTime: 0 for fresh data)
-  const hydrationQuery = useSuspenseQuery({
-    queryKey: ["caption-session", youtubeId],
+  const restoredSessionQuery = useSuspenseQuery({
+    queryKey: ["caption-session", props.videoMeta.youtubeId],
     queryFn: async () => {
-      const session = await getSession(youtubeId);
+      const session = await getSession(props.videoMeta.youtubeId);
       if (!session) return null;
       return new CaptionSessionManager({
         videoMeta: props.videoMeta,
@@ -253,7 +250,7 @@ export function CaptionPanel(props: CaptionPanelProps) {
     gcTime: 0,
     staleTime: Infinity,
   });
-  const [store, setStore] = useState(hydrationQuery.data);
+  const [store, setStore] = useState(restoredSessionQuery.data);
 
   if (store) {
     return (
