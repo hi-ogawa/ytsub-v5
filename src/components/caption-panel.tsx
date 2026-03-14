@@ -16,6 +16,7 @@ import {
 import {
   useCallback,
   useEffect,
+  useImperativeHandle,
   useMemo,
   useRef,
   useState,
@@ -722,8 +723,7 @@ function CaptionPanelContent({
 
   // --- Cross-tab navigation ---
   const captionListRef = useRef<CaptionListHandle>(null);
-  const [flashBookmarkId, setFlashBookmarkId] = useState<string>();
-  const flashBookmarkCounter = useRef(0);
+  const bookmarksListRef = useRef<BookmarksListHandle>(null);
 
   function onGoToCaption(captionIndex: number) {
     setActiveTab("captions");
@@ -733,13 +733,10 @@ function CaptionPanelContent({
   }
 
   function onGoToBookmark(bookmarkId: string) {
-    const counter = ++flashBookmarkCounter.current;
-    setFlashBookmarkId(bookmarkId);
     setActiveTab("bookmarks");
     setTimeout(() => {
-      if (flashBookmarkCounter.current === counter)
-        setFlashBookmarkId(undefined);
-    }, 1000);
+      bookmarksListRef.current?.scrollToBookmark(bookmarkId);
+    });
   }
 
   // Pause auto-scroll when bookmark popover is open
@@ -878,12 +875,12 @@ function CaptionPanelContent({
             </div>
           ) : (
             <ExtensionBookmarksList
+              ref={bookmarksListRef}
               bookmarks={sortedBookmarks}
               rows={store.rows}
               player={player}
               onDeleteBookmark={(id) => store.deleteBookmark(id)}
               onGoToCaption={onGoToCaption}
-              flashBookmarkId={flashBookmarkId}
             />
           )}
         </div>
@@ -919,33 +916,45 @@ function CaptionPanelContent({
 
 // --- ExtensionBookmarksList ---
 
+type BookmarksListHandle = {
+  scrollToBookmark: (bookmarkId: string) => void;
+};
+
 function ExtensionBookmarksList({
+  ref,
   bookmarks,
   rows,
   player,
   onDeleteBookmark,
   onGoToCaption,
-  flashBookmarkId,
 }: {
+  ref: React.Ref<BookmarksListHandle>;
   bookmarks: ExtensionBookmark[];
   rows: MergedCaption[];
   player?: YTPlayer;
   onDeleteBookmark: (id: string) => void;
   onGoToCaption: (captionIndex: number) => void;
-  flashBookmarkId?: string;
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (!flashBookmarkId || !scrollRef.current) return;
-    const el = scrollRef.current.querySelector(
-      `[data-bookmark-id="${flashBookmarkId}"]`,
-    );
-    if (!el) return;
-    el.scrollIntoView({ behavior: "smooth", block: "center" });
-    el.classList.remove("flash-highlight");
-    void (el as HTMLElement).offsetWidth;
-    el.classList.add("flash-highlight");
-  }, [flashBookmarkId]);
+  const flashTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+
+  useImperativeHandle(ref, () => ({
+    scrollToBookmark: (bookmarkId: string) => {
+      const el = scrollRef.current?.querySelector(
+        `[data-bookmark-id="${bookmarkId}"]`,
+      ) as HTMLElement | null;
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+        el.classList.remove("flash-highlight");
+        void el.offsetWidth;
+        el.classList.add("flash-highlight");
+        clearTimeout(flashTimer.current);
+        flashTimer.current = setTimeout(() => {
+          el.classList.remove("flash-highlight");
+        }, 3000);
+      }
+    },
+  }));
 
   return (
     <div ref={scrollRef} className="flex flex-col gap-1.5 p-1.5">
