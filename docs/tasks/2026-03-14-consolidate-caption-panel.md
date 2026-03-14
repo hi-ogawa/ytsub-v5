@@ -142,7 +142,8 @@ After: merges local IndexedDB `videoIndexStore` entries with server video list. 
 
 ## Status
 
-- Planning phase — awaiting feedback before implementation
+- Video-viewer migration done (PR #104)
+- Follow-up: dev-viewer IndexedDB bootstrap → `docs/tasks/2026-03-14-dev-viewer-bootstrap.md`
 
 ## Feedback Log
 
