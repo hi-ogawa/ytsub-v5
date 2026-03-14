@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useState, useSyncExternalStore } from "react";
 import { orpc } from "../rpc.ts";
 import type { MergedCaption } from "./caption-merge.ts";
 import { saveSession } from "./caption-session-db.ts";
@@ -9,6 +9,7 @@ import {
   getVideoIndexEntry,
   setSyncedAt,
   updateVideoIndex,
+  videoIndexStore,
 } from "./video-index.ts";
 
 export type SyncState =
@@ -70,6 +71,12 @@ export function useSyncState({
   const queryClient = useQueryClient();
   const [syncVersion, setSyncVersion] = useState(0);
 
+  // Re-run sync state when video index changes (e.g. bookmark created)
+  const videoIndex = useSyncExternalStore(
+    videoIndexStore.subscribe,
+    videoIndexStore.get,
+  );
+
   const serverQuery = useQuery(
     orpc.videos.getVideoUpdatedAt.queryOptions({
       input: { youtubeId },
@@ -106,6 +113,7 @@ export function useSyncState({
     serverQuery.isLoading,
     serverQuery.isError,
     serverQuery.data,
+    videoIndex,
     syncVersion,
   ]);
 

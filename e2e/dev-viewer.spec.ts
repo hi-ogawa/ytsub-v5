@@ -729,9 +729,9 @@ test.describe("dev-viewer sync", () => {
       localStorage.setItem("zamak:video-index", JSON.stringify(filtered));
     }, "7GU_VQfgMT0");
 
-    // Reload to pick up cleared state
+    // Reload to pick up cleared state (panel stays open via persisted FAB state)
     await page.goto("/dev/youtube/7GU_VQfgMT0");
-    await openPanelWithTracks(page);
+    await expect(page.locator("[data-index='0']")).toBeVisible();
 
     // Should show pull state (server has data, local doesn't)
     const syncBtn2 = page.getByTestId("sync-button");
@@ -743,8 +743,7 @@ test.describe("dev-viewer sync", () => {
 
     // After pull + page reload, bookmarks should be restored from IndexedDB
     await page.goto("/dev/youtube/7GU_VQfgMT0");
-    await page.getByTitle("Show captions").click();
-    // Session should hydrate from IndexedDB with pulled data
+    // Panel stays open via persisted FAB state, session hydrates from IndexedDB
     await expect(page.locator("[data-index='0']")).toBeVisible();
     const panel2 = page.getByTestId("resizable-panel");
     await expect(
