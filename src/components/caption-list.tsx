@@ -149,7 +149,6 @@ export function CaptionList({
   player,
   autoScroll,
   bookmarks,
-  flashIndex,
   onGoToBookmark,
   onPopoverOpenChange,
 }: {
@@ -160,7 +159,6 @@ export function CaptionList({
   player?: YTPlayer;
   autoScroll: boolean;
   bookmarks: ExtensionBookmark[];
-  flashIndex?: number;
   onGoToBookmark: (bookmarkId: string) => void;
   onPopoverOpenChange: (open: boolean) => void;
 }) {
@@ -178,9 +176,14 @@ export function CaptionList({
 
   useImperativeHandle(ref, () => ({
     scrollToIndex: (index: number) => {
-      const el = scrollRef.current?.querySelector(`[data-index="${index}"]`);
+      const el = scrollRef.current?.querySelector(
+        `[data-index="${index}"]`,
+      ) as HTMLElement | null;
       if (el) {
         el.scrollIntoView({ behavior: "smooth", block: "center" });
+        el.classList.remove("flash-highlight");
+        void el.offsetWidth; // Force reflow to restart animation
+        el.classList.add("flash-highlight");
       }
       onManualScroll();
     },
@@ -285,7 +288,6 @@ export function CaptionList({
                 "flex w-full cursor-pointer flex-col gap-1 border p-1 px-2 hover:bg-muted",
                 i === currentIndex && isPlaying && "ring-2 ring-ring",
                 i === currentIndex ? "border-ring" : "border-border",
-                i === flashIndex && "flash-highlight",
               ]
                 .filter(Boolean)
                 .join(" ")}
