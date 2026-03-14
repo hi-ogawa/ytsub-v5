@@ -2,25 +2,33 @@ import {
   ArrowDownToLine,
   ArrowUpFromLine,
   CheckCircle2,
+  EllipsisVertical,
   Loader2,
+  Trash2,
 } from "lucide-react";
 import type { ReactNode } from "react";
 import type { VideoSyncEntry, VideoSyncHandle } from "../lib/sync.ts";
 import type { VideoIndexEntry } from "../lib/video-index.ts";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "./ui/dropdown-menu.tsx";
 import { VideoCard } from "./video-card.tsx";
 
 export function BookmarksPage({
   entries,
   onVideoClick,
+  onDelete,
   sync,
   actions,
-  titleRight,
 }: {
   entries: VideoIndexEntry[];
   onVideoClick: (youtubeId: string) => void;
+  onDelete?: (entry: VideoSyncEntry) => void;
   sync?: VideoSyncHandle;
   actions?: ReactNode;
-  titleRight?: (entry: VideoSyncEntry) => ReactNode;
 }) {
   const displayEntries: VideoSyncEntry[] = sync?.isPending
     ? []
@@ -54,23 +62,27 @@ export function BookmarksPage({
               title={entry.title}
               channelName={entry.channelName}
               titleRight={
-                <div className="flex items-center gap-0.5">
-                  {sync && entry.syncStatus && (
-                    <SyncBadge
-                      status={entry.syncStatus}
-                      syncing={sync.syncing.has(entry.youtubeId)}
-                      onPull={() => sync.onPull(entry.youtubeId)}
-                      onPush={() => sync.onPush(entry.youtubeId)}
-                    />
-                  )}
-                  {titleRight?.(entry)}
-                </div>
+                onDelete && (
+                  <CardMenu entry={entry} onDelete={() => onDelete(entry)} />
+                )
               }
               badge={
-                <span className="rounded bg-muted px-2 py-0.5 font-mono">
-                  {entry.bookmarkCount} bookmark
-                  {entry.bookmarkCount === 1 ? "" : "s"}
-                </span>
+                <div className="flex w-full items-center gap-2">
+                  <span className="rounded bg-muted px-2 py-0.5 font-mono">
+                    {entry.bookmarkCount} bookmark
+                    {entry.bookmarkCount === 1 ? "" : "s"}
+                  </span>
+                  <div className="ml-auto">
+                    {sync && entry.syncStatus && (
+                      <SyncBadge
+                        status={entry.syncStatus}
+                        syncing={sync.syncing.has(entry.youtubeId)}
+                        onPull={() => sync.onPull(entry.youtubeId)}
+                        onPush={() => sync.onPush(entry.youtubeId)}
+                      />
+                    )}
+                  </div>
+                </div>
               }
               onClick={(e) => {
                 e.preventDefault();
@@ -81,6 +93,48 @@ export function BookmarksPage({
         </div>
       )}
     </div>
+  );
+}
+
+function CardMenu({
+  entry,
+  onDelete,
+}: {
+  entry: VideoSyncEntry;
+  onDelete: () => void;
+}) {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        data-testid="video-card-menu"
+        className="-mr-1.5 -mt-1 shrink-0 rounded p-1.5 text-muted-foreground hover:bg-muted"
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+        }}
+      >
+        <EllipsisVertical className="h-4 w-4" />
+      </DropdownMenuTrigger>
+      <DropdownMenuContent
+        align="end"
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+        }}
+      >
+        <DropdownMenuItem
+          className="text-destructive focus:text-destructive"
+          onClick={() => {
+            if (window.confirm(`Delete "${entry.title}"?`)) {
+              onDelete();
+            }
+          }}
+        >
+          <Trash2 className="mr-2 h-4 w-4" />
+          Delete
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
 

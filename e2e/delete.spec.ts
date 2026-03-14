@@ -14,7 +14,7 @@ test.describe("delete video", () => {
     const card = page.getByRole("link", { name: /cloud palace/ });
     await expect(card).toBeVisible();
 
-    const menuTrigger = card.locator("button").last();
+    const menuTrigger = card.getByTestId("video-card-menu");
     page.once("dialog", (dialog) => dialog.dismiss());
     await menuTrigger.click();
     await page.getByRole("menuitem", { name: /Delete/ }).click();
