@@ -2,6 +2,16 @@
 
 Full listing details for the next Chrome Web Store submission. Copy-paste into the Developer Dashboard.
 
+## Agent Workflow
+
+When preparing a new version for submission:
+
+1. **Review this doc** against the current codebase — check manifest version, feature list, privacy disclosures
+2. **Diff against `docs/prd.md`** — identify features shipped since the last submission that aren't reflected in the store description
+3. **Update this doc** — bump version, add new features to the description, fix any stale info
+4. **Update the manifest** — bump `version` in `src/extension/public/manifest.json`, sync `description` with the store summary
+5. **Commit and PR** — the user handles screenshots, build, upload, and submission manually
+
 ## Build & Package
 
 ```sh
