@@ -71,7 +71,7 @@ Task docs should enable **handoff to a fresh agent** - include enough context to
 
 ## E2E Tests
 
-- **dev-viewer tests** use fixture data — no DB setup needed, just `login(page)` + `goto("/dev/youtube/...")`
+- **dev-viewer tests** use fixture data — no DB setup needed, just `login(page)` + `goto("/dev/videos/...")`
 - **video-viewer tests** need `setupDb({ seed: true })` for server data
 - **Text selection** (for bookmark creation) requires DOM Range API via `page.evaluate` — mouse drag doesn't work reliably
 - **Selector preference**: scope to `data-testid` or panel containers to avoid ambiguity (e.g. FAB text can collide with tab button names). Prefer `getByTestId` > `getByRole` scoped to a container > page-wide `getByText`.

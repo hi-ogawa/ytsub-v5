@@ -1,6 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createBrowserRouter, RouterProvider } from "react-router";
-import { DevIndexPage } from "./routes/dev-index.tsx";
+import { DevFixturesPage } from "./routes/dev-fixtures-page.tsx";
 import { DevViewerPage } from "./routes/dev-viewer.tsx";
 import { LoginPage, RegisterPage } from "./routes/login.tsx";
 import {
@@ -20,9 +20,9 @@ const router = createBrowserRouter([
     path: "/dev",
     Component: DevLayout,
     children: [
-      { index: true, Component: DevIndexPage },
-      { path: "youtube/:videoId", Component: DevViewerPage },
-      { path: "videos", Component: VideoListPage },
+      { index: true, Component: VideoListPage },
+      { path: "fixtures", Component: DevFixturesPage },
+      { path: "videos/:videoId", Component: DevViewerPage },
     ],
   },
   {

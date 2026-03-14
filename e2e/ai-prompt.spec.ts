@@ -41,7 +41,7 @@ async function openSettings(page: Page) {
 test.describe("AI prompt copy & import", () => {
   test.beforeEach(async ({ page }) => {
     await login(page);
-    await page.goto("/dev/youtube/7GU_VQfgMT0");
+    await page.goto("/dev/videos/7GU_VQfgMT0");
     await openPanelWithTracks(page);
   });
 

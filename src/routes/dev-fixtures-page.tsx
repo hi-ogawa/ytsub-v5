@@ -16,7 +16,7 @@ function formatDuration(seconds: number): string {
   return `${m}:${String(s).padStart(2, "0")}`;
 }
 
-export function DevIndexPage() {
+export function DevFixturesPage() {
   const navigate = useNavigate();
   return (
     <div className="mx-auto max-w-5xl p-8">
@@ -28,7 +28,7 @@ export function DevIndexPage() {
           <VideoCard
             key={meta.video.youtubeId}
             youtubeId={meta.video.youtubeId}
-            href={`/dev/youtube/${meta.video.youtubeId}`}
+            href={`/dev/videos/${meta.video.youtubeId}`}
             title={meta.video.title}
             channelName={meta.video.channelName || "Unknown channel"}
             badge={
@@ -41,7 +41,7 @@ export function DevIndexPage() {
             }
             onClick={(e) => {
               e.preventDefault();
-              navigate(`/dev/youtube/${meta.video.youtubeId}`);
+              navigate(`/dev/videos/${meta.video.youtubeId}`);
             }}
           />
         ))}

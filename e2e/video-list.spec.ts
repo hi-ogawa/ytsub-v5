@@ -116,9 +116,9 @@ test.describe("video-list bootstrap", () => {
 
 test.describe("video-list unauthenticated", () => {
   test("no sync badges when unauthenticated", async ({ page }) => {
-    await page.goto("/dev/videos");
+    await page.goto("/dev");
     await seedVideoIndex(page, fixtureEntries);
-    await page.goto("/dev/videos");
+    await page.goto("/dev");
     await expect(page.getByText("Test Video One")).toBeVisible();
     await expect(page.getByTestId("video-sync-badge")).toHaveCount(0);
   });
@@ -132,7 +132,7 @@ test.describe("video-list sync", () => {
 
   test("local video shows push badge, synced after push", async ({ page }) => {
     // Create a bookmark via dev-viewer
-    await page.goto(`/dev/youtube/${FIXTURE_VIDEO_ID}`);
+    await page.goto(`/dev/videos/${FIXTURE_VIDEO_ID}`);
     await openPanelWithTracks(page);
     await createBookmarkAt(page, 0, 0, 3);
 
@@ -150,7 +150,7 @@ test.describe("video-list sync", () => {
     page,
   }) => {
     // Create bookmark and push from dev-viewer
-    await page.goto(`/dev/youtube/${FIXTURE_VIDEO_ID}`);
+    await page.goto(`/dev/videos/${FIXTURE_VIDEO_ID}`);
     await openPanelWithTracks(page);
     await createBookmarkAt(page, 0, 0, 3);
     const devSyncBtn = page.getByTestId("sync-button");
@@ -178,7 +178,7 @@ test.describe("video-list sync", () => {
     await expect(badge).toHaveAttribute("data-sync-status", "synced");
 
     // Verify bookmark data was pulled into local
-    await page.goto(`/dev/youtube/${FIXTURE_VIDEO_ID}`);
+    await page.goto(`/dev/videos/${FIXTURE_VIDEO_ID}`);
     await expect(page.locator("[data-index='0']")).toBeVisible();
     const panel = page.getByTestId("resizable-panel");
     await expect(
@@ -188,7 +188,7 @@ test.describe("video-list sync", () => {
 
   test("pushed video appears on server video list", async ({ page }) => {
     // Create bookmark and push via video list
-    await page.goto(`/dev/youtube/${FIXTURE_VIDEO_ID}`);
+    await page.goto(`/dev/videos/${FIXTURE_VIDEO_ID}`);
     await openPanelWithTracks(page);
     await createBookmarkAt(page, 0, 0, 3);
 
