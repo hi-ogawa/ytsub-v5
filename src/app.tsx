@@ -22,6 +22,7 @@ const router = createBrowserRouter([
     children: [
       { index: true, Component: DevIndexPage },
       { path: "youtube/:videoId", Component: DevViewerPage },
+      { path: "videos", Component: VideoListPage },
     ],
   },
   {

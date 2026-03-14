@@ -114,6 +114,16 @@ test.describe("video-list bootstrap", () => {
   });
 });
 
+test.describe("video-list unauthenticated", () => {
+  test("no sync badges when unauthenticated", async ({ page }) => {
+    await page.goto("/dev/videos");
+    await seedVideoIndex(page, fixtureEntries);
+    await page.goto("/dev/videos");
+    await expect(page.getByText("Test Video One")).toBeVisible();
+    await expect(page.getByTestId("video-sync-badge")).toHaveCount(0);
+  });
+});
+
 test.describe("video-list sync", () => {
   test.beforeEach(async ({ page }) => {
     await setupDb({ seed: true });
