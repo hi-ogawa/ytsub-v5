@@ -263,6 +263,8 @@ export function CaptionList({
     >
       <div
         className="relative w-full"
+        data-testid="caption-list"
+        data-row-count={rows.length}
         style={{ height: virtualizer.getTotalSize() }}
       >
         <div
