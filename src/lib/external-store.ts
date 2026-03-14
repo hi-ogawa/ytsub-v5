@@ -52,6 +52,7 @@ export function createLocalStorageStore<T>(
     set(value) {
       inner.set(value);
       localStorage.setItem(key, JSON.stringify(inner.get()));
+      window.dispatchEvent(new Event(`zamak:store:${key}`));
     },
     subscribe: inner.subscribe,
   };
