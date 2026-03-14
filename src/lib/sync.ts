@@ -3,7 +3,11 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { orpc } from "../rpc.ts";
 import type { Router } from "../server/rpc.ts";
-import { getSession, saveSession } from "./caption-session-db.ts";
+import {
+  type PersistedCaptionSession,
+  getSession,
+  saveSession,
+} from "./caption-session-db.ts";
 import {
   type CaptionSessionManager,
   sessionToExportData,
@@ -116,31 +120,10 @@ export function useSyncState({ youtubeId }: { youtubeId: string }) {
         }),
       );
       if (!data) return;
+      const session = serverSessionToLocal(data);
       await store.replace({
-        captions: data.captions.map((c) => ({
-          idx: c.idx,
-          begin: c.begin,
-          end: c.end,
-          text1: c.text1,
-          text2: c.text2,
-          cue1Indices: [],
-          cue2Indices: [],
-          text1Segments: [c.text1],
-          text2Segments: [c.text2],
-        })),
-        bookmarks: data.bookmarks.map((b) => ({
-          id: String(b.id),
-          text: b.text,
-          side: b.side,
-          offset: b.offset,
-          captionIndex: data.captions.findIndex((c) => c.id === b.captionId),
-          timestamp: b.timestamp,
-          context: b.context,
-          translation: b.translation,
-          etymology: b.etymology,
-          notes: b.notes,
-          createdAt: b.createdAt,
-        })),
+        captions: session.captions,
+        bookmarks: session.bookmarks,
       });
       setSyncedAt(youtubeId);
       setSyncVersion((v) => v + 1);
@@ -292,32 +275,10 @@ export function useVideoSync() {
   };
 }
 
-async function pullServerSession(data: GetFullSessionOutput): Promise<void> {
-  const captions = data.captions.map((c) => ({
-    idx: c.idx,
-    begin: c.begin,
-    end: c.end,
-    text1: c.text1,
-    text2: c.text2,
-    cue1Indices: [] as number[],
-    cue2Indices: [] as number[],
-    text1Segments: [c.text1],
-    text2Segments: [c.text2],
-  }));
-  const bookmarks = data.bookmarks.map((b) => ({
-    id: String(b.id),
-    text: b.text,
-    side: b.side,
-    offset: b.offset,
-    captionIndex: data.captions.findIndex((c) => c.id === b.captionId),
-    timestamp: b.timestamp,
-    context: b.context,
-    translation: b.translation,
-    etymology: b.etymology,
-    notes: b.notes,
-    createdAt: b.createdAt,
-  }));
-  await saveSession({
+function serverSessionToLocal(
+  data: GetFullSessionOutput,
+): PersistedCaptionSession {
+  return {
     youtubeId: data.video.youtubeId,
     title: data.video.title,
     channelName: data.video.channelName,
@@ -327,14 +288,41 @@ async function pullServerSession(data: GetFullSessionOutput): Promise<void> {
     vssId2: `-.${data.video.language2}`,
     language1: data.video.language1,
     language2: data.video.language2,
-    captions,
-    bookmarks,
-  });
+    captions: data.captions.map((c) => ({
+      idx: c.idx,
+      begin: c.begin,
+      end: c.end,
+      text1: c.text1,
+      text2: c.text2,
+      cue1Indices: [] as number[],
+      cue2Indices: [] as number[],
+      text1Segments: [c.text1],
+      text2Segments: [c.text2],
+    })),
+    bookmarks: data.bookmarks.map((b) => ({
+      id: String(b.id),
+      text: b.text,
+      side: b.side,
+      offset: b.offset,
+      captionIndex: data.captions.findIndex((c) => c.id === b.captionId),
+      timestamp: b.timestamp,
+      context: b.context,
+      translation: b.translation,
+      etymology: b.etymology,
+      notes: b.notes,
+      createdAt: b.createdAt,
+    })),
+  };
+}
+
+async function pullServerSession(data: GetFullSessionOutput): Promise<void> {
+  const session = serverSessionToLocal(data);
+  await saveSession(session);
   updateVideoIndex(
-    data.video.youtubeId,
-    data.video.title,
-    data.video.channelName,
-    bookmarks.length,
+    session.youtubeId,
+    session.title,
+    session.channelName,
+    session.bookmarks.length,
   );
-  setSyncedAt(data.video.youtubeId);
+  setSyncedAt(session.youtubeId);
 }
