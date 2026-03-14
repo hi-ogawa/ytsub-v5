@@ -1,12 +1,13 @@
-import type { MergedCaption } from "./caption-merge.ts";
+import type { MergeStrategy, MergedCaption } from "./caption-merge.ts";
 import type { ExtensionBookmark } from "./extension-bookmarks.ts";
 
-export interface CaptionSession {
+export interface PersistedCaptionSession {
   youtubeId: string;
   vssId1: string;
   vssId2: string;
   language1: string;
   language2: string;
+  strategy?: MergeStrategy;
   captions: MergedCaption[];
   bookmarks: ExtensionBookmark[];
 }
@@ -28,17 +29,20 @@ function openDb(): Promise<IDBDatabase> {
 
 export async function getSession(
   youtubeId: string,
-): Promise<CaptionSession | undefined> {
+): Promise<PersistedCaptionSession | undefined> {
   const db = await openDb();
   return new Promise((resolve, reject) => {
     const tx = db.transaction(STORE_NAME, "readonly");
     const req = tx.objectStore(STORE_NAME).get(youtubeId);
-    req.onsuccess = () => resolve(req.result as CaptionSession | undefined);
+    req.onsuccess = () =>
+      resolve(req.result as PersistedCaptionSession | undefined);
     req.onerror = () => reject(req.error);
   });
 }
 
-export async function saveSession(session: CaptionSession): Promise<void> {
+export async function saveSession(
+  session: PersistedCaptionSession,
+): Promise<void> {
   const db = await openDb();
   return new Promise((resolve, reject) => {
     const tx = db.transaction(STORE_NAME, "readwrite");

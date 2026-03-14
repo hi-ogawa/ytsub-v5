@@ -9,10 +9,8 @@ import {
 } from "../components/caption-panel.tsx";
 import { PortalContainerProvider } from "../components/ui/portal-container.tsx";
 import type { YTPlayer } from "../components/youtube-player.tsx";
-import { useCaptionSession } from "../lib/caption-session.ts";
 import type { YouTubeExtractionResult } from "../lib/youtube.ts";
 import { fetchPlayerApi, fetchTrackJson3 } from "../lib/youtube.ts";
-import { useZamakApi } from "../lib/zamak-api.ts";
 import contentCss from "./content.css?inline";
 
 declare const __BUILD_TIME__: string;
@@ -98,43 +96,24 @@ function ExtensionViewer({ videoId }: { videoId: string }) {
 
   return (
     <div className="flex h-full flex-col">
-      {data && (
-        <ExtensionSession videoId={videoId} data={data} player={player} />
-      )}
+      {data && <ExtensionSession data={data} player={player} />}
     </div>
   );
 }
 
 function ExtensionSession({
-  videoId,
   data,
   player,
 }: {
-  videoId: string;
   data: YouTubeExtractionResult;
   player: YTPlayer | null;
 }) {
-  const session = useCaptionSession({
-    youtubeId: videoId,
-    tracks: data.captionTracks,
-    fetchJson3: (track) => fetchTrackJson3(track.baseUrl),
-    videoMeta: data.video,
-  });
-  const { store } = session;
-
-  useZamakApi({
-    session: store,
-    rows: store.rows(),
-    videoMeta: data.video,
-    language1: store.selectedTrack1()?.languageCode ?? "ko",
-    language2: store.selectedTrack2()?.languageCode ?? "en",
-  });
-
   return (
     <CaptionPanel
       tracks={data.captionTracks}
       player={player}
-      session={session}
+      fetchJson3={(track) => fetchTrackJson3(track.baseUrl)}
+      videoMeta={data.video}
     />
   );
 }

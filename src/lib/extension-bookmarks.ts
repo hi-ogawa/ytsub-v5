@@ -1,41 +1,19 @@
-export type ExtensionBookmark = {
-  id: string;
-  text: string;
-  side: number;
-  offset: number;
-  captionIndex: number;
-  timestamp: number;
-  context: string;
-  translation: string;
-  etymology: string;
-  notes: string;
-  createdAt: string;
-};
-
-export function createBookmark(
-  data: Omit<
-    ExtensionBookmark,
-    "id" | "createdAt" | "translation" | "etymology" | "notes"
-  > & { translation?: string; etymology?: string; notes?: string },
-): ExtensionBookmark {
-  return {
-    id: crypto.randomUUID(),
-    createdAt: new Date().toISOString(),
-    translation: "",
-    etymology: "",
-    notes: "",
-    ...data,
-  };
-}
-
-// --- Text selection for bookmarking ---
-
 export interface BookmarkSelection {
   captionIndex: number;
   side: number;
   offset: number;
   text: string;
 }
+
+export type ExtensionBookmark = BookmarkSelection & {
+  id: string;
+  timestamp: number;
+  context: string;
+  translation?: string;
+  etymology?: string;
+  notes?: string;
+  createdAt: string;
+};
 
 // Walk up: text node → span[data-offset] → div[data-side] → div(flex) → div[data-index]
 export function extractBookmarkSelection(

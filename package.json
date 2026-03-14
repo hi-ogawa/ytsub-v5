@@ -10,7 +10,7 @@
     "dev-ext": "node --watch --watch-path=./src scripts/dev-ext.ts",
     "build-ext": "vite build --config vite.ext.config.ts && cd dist/extension && zip -r ../extension.zip .",
     "tsc": "tsc -b",
-    "lint": "oxfmt && knip --fix",
+    "lint": "oxfmt",
     "lint-check": "oxfmt --check && knip",
     "test": "vitest",
     "test-e2e": "playwright test",

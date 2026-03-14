@@ -5,7 +5,7 @@
 
 const KEY = "zamak:video-index";
 
-window.addEventListener("zamak:video-index-updated", () => {
+window.addEventListener(`zamak:store:${KEY}`, () => {
   try {
     const raw = localStorage.getItem(KEY);
     const entries = raw ? JSON.parse(raw) : [];
