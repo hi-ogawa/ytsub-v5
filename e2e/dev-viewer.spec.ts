@@ -140,8 +140,7 @@ test.describe("dev-viewer caption panel", () => {
 
     // Reload and verify it persists as off
     await page.reload();
-    // Tracks should be restored from per-video preference (saved above)
-    await page.getByTitle("Show captions").click();
+    // Panel stays open (FAB state persisted), tracks restored from per-video preference
     await expect(page.locator("[data-index='0']")).toBeVisible();
     await page.getByTitle("Settings").click();
     await expect(autoScrollItem).toHaveAttribute("data-checked", "false");
@@ -628,7 +627,7 @@ test.describe("dev-viewer caption panel", () => {
 
     // Create another bookmark, verify count updates on revisit
     await page.goto("/dev/youtube/7GU_VQfgMT0");
-    await page.getByTitle("Show captions").click();
+    // Panel stays open (FAB state persisted from earlier in this test)
     await expect(page.locator("[data-index='0']")).toBeVisible();
     await createBookmarkAt(page, 1, 0, 2);
     await page.goto("/dev/bookmarks");
