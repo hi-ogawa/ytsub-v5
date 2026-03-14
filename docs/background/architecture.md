@@ -3,23 +3,32 @@
 ## Problem
 
 - YouTube is a rich source of language input (Korean), but passive watching doesn't convert to active learning
-- LLM-powered vocab extraction (korean-vocab skill) works well but outputs plain text — no connection back to the video
+- LLM-powered vocab extraction (e.g. local agent with custom skill) works well but outputs plain text — no connection back to the video
 - Prior ytsub versions died due to YouTube API restrictions (v3) or extension complexity (v4)
 - Existing tools (Language Reactor, etc.) focus on click-to-translate; none do intelligent batch vocab extraction
 
 ## Core concept
 
-A local-first language learning tool built around YouTube subtitles. Users watch videos with a dual caption panel, bookmark words/phrases, and curate vocabulary. Data lives in the browser (IndexedDB) and optionally syncs to a server for cross-device access.
+A local-first language learning tool built around YouTube subtitles. The core workflow:
+
+1. **Watch** a video with dual caption panel (target language + translation)
+2. **Bookmark** words/phrases — manually select, or let AI pick interesting vocab
+3. **AI-fill** metadata — export prompt with captions+bookmarks baked in, paste into any LLM (Claude, ChatGPT, Gemini), copy result JSON back. AI provides translations, etymology, usage notes.
+4. **Review & study** — curated vocabulary with full video context
+
+The AI prompt clipboard flow is what makes the tool powerful: model/provider-agnostic, prompt is inspectable, works with any chat UI. See `src/lib/ai-prompt.ts` for prompt generation and `docs/tasks/2026-03-11-ai-prompt-clipboard-flow.md` for the design.
 
 ```
 Browser extension (YouTube page)
-  └── Fetches subtitles, renders caption panel, creates bookmarks
+  └── Fetches subtitles, renders caption panel
+      └── User bookmarks words (manual or AI pick-and-fill)
+      └── AI prompt copy → paste into LLM → import result JSON
       └── Stores locally in IndexedDB
           └── Optionally syncs to server (push/pull)
 
 Web app (browser)
   └── Same caption panel UI, reads from IndexedDB
-      └── Import: load export.json into IndexedDB (manual transfer without login)
+      └── Import: load export.json into IndexedDB
       └── Sync: push/pull with server when logged in
 ```
 
@@ -76,9 +85,14 @@ See [architecture-extension.md](./architecture-extension.md) for how the extensi
 
 The dev-viewer (`/dev/:videoId`) provides the same caption panel experience using local fixture data, so UI iteration happens via `pnpm dev` without loading the extension. It uses the exact same shared components as both the extension and the web app.
 
-## Agent skill as data pipeline (legacy)
+## AI workflow evolution
 
-The original import pipeline: a local AI agent (ytsub skill) runs yt-dlp, parses subtitles, aligns bilingual captions, and extracts vocabulary. Still works but is slow (~3-7 min per video). Being replaced by the browser extension for subtitle fetching and manual bookmarking.
+1. **Agent skill** (legacy): local AI agent runs yt-dlp, parses subtitles, extracts vocabulary end-to-end. Slow (~3-7 min), fragile. See `docs/skills/`.
+2. **`window.__zamak` API** (`docs/tasks/2026-03-09-ai-extension-integration.md`): expose bookmarks to AI browser extensions (Claude for Chrome) via `window.__zamak.fillBookmarks()`. Works but heavy — Chrome debugger banner, no model choice.
+3. **AI prompt clipboard flow** (current, `docs/tasks/2026-03-11-ai-prompt-clipboard-flow.md`): generate self-contained prompt file with captions+bookmarks+instructions, user pastes into any LLM chat, copies result JSON back. Model-agnostic, inspectable, no infrastructure. Three task types:
+   - **Pick & Fill**: AI selects interesting vocab from captions and provides translations/etymology
+   - **Fill Bookmarks**: AI fills metadata for existing manually-created bookmarks
+   - **Fix ASR**: AI corrects auto-generated subtitle text
 
 ## Data model
 
