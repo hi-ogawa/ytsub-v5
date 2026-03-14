@@ -4,7 +4,6 @@ import { type MergeStrategy, type MergedCaption } from "./caption-merge.ts";
 import {
   type PersistedCaptionSession,
   deleteSession,
-  getSession,
   saveSession,
 } from "./caption-session-db.ts";
 import type { ExtensionBookmark } from "./extension-bookmarks.ts";
@@ -175,13 +174,15 @@ export class CaptionSessionManager {
     await deleteSession(this.videoMeta.youtubeId);
   }
 
-  async rehydrate(): Promise<void> {
-    const session = await getSession(this.videoMeta.youtubeId);
-    if (session) {
-      this.rows = session.captions;
-      this.bookmarks = session.bookmarks;
-      this.notify();
-    }
+  async replace(options: {
+    captions: MergedCaption[];
+    bookmarks: ExtensionBookmark[];
+  }): Promise<void> {
+    this.rows = options.captions;
+    this.bookmarks = options.bookmarks;
+    this.syncVideoIndex();
+    this.notify();
+    await this.persistSession();
   }
 
   toExportData(): ExportData {

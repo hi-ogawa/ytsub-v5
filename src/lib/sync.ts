@@ -1,19 +1,9 @@
-import type { InferRouterOutputs } from "@orpc/server";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { orpc } from "../rpc.ts";
-import type { Router } from "../server/rpc.ts";
-import {
-  saveSession,
-  type PersistedCaptionSession,
-} from "./caption-session-db.ts";
 import type { CaptionSessionManager } from "./caption-session.ts";
 import { useStore } from "./external-store.ts";
-import {
-  setSyncedAt,
-  updateVideoIndex,
-  videoIndexStore,
-} from "./video-index.ts";
+import { setSyncedAt, videoIndexStore } from "./video-index.ts";
 
 type SyncState =
   | "unauthenticated"
@@ -47,41 +37,6 @@ function computeSyncState(params: {
   if (localChanged && !serverChanged) return "push";
   if (!localChanged && serverChanged) return "pull";
   return "conflict";
-}
-
-type GetFullSessionResult = NonNullable<
-  InferRouterOutputs<Router>["videos"]["getFullSession"]
->;
-
-function serverSessionToLocal(
-  data: GetFullSessionResult,
-): Pick<PersistedCaptionSession, "bookmarks" | "captions"> {
-  return {
-    captions: data.captions.map((c) => ({
-      idx: c.idx,
-      begin: c.begin,
-      end: c.end,
-      text1: c.text1,
-      text2: c.text2,
-      cue1Indices: [],
-      cue2Indices: [],
-      text1Segments: [c.text1],
-      text2Segments: [c.text2],
-    })),
-    bookmarks: data.bookmarks.map((b) => ({
-      id: String(b.id),
-      text: b.text,
-      side: b.side,
-      offset: b.offset,
-      captionIndex: data.captions.findIndex((c) => c.id === b.captionId),
-      timestamp: b.timestamp,
-      context: b.context,
-      translation: b.translation,
-      etymology: b.etymology,
-      notes: b.notes,
-      createdAt: b.createdAt,
-    })),
-  };
 }
 
 type SyncDirection = "push" | "pull";
@@ -145,26 +100,34 @@ export function useSyncState({ youtubeId }: { youtubeId: string }) {
         }),
       );
       if (!data) return;
-      // TODO: instead of save + update-index + store.rehydrate,
-      // why not just store.update (which auto triggers save + update-index)?
-      const local = serverSessionToLocal(data);
-      await saveSession({
-        youtubeId,
-        vssId1: store.vssId1,
-        vssId2: store.vssId2,
-        language1: data.video.language1,
-        language2: data.video.language2,
-        ...local,
+      await store.replace({
+        captions: data.captions.map((c) => ({
+          idx: c.idx,
+          begin: c.begin,
+          end: c.end,
+          text1: c.text1,
+          text2: c.text2,
+          cue1Indices: [],
+          cue2Indices: [],
+          text1Segments: [c.text1],
+          text2Segments: [c.text2],
+        })),
+        bookmarks: data.bookmarks.map((b) => ({
+          id: String(b.id),
+          text: b.text,
+          side: b.side,
+          offset: b.offset,
+          captionIndex: data.captions.findIndex((c) => c.id === b.captionId),
+          timestamp: b.timestamp,
+          context: b.context,
+          translation: b.translation,
+          etymology: b.etymology,
+          notes: b.notes,
+          createdAt: b.createdAt,
+        })),
       });
-      updateVideoIndex(
-        youtubeId,
-        data.video.title,
-        data.video.channelName,
-        local.bookmarks.length,
-      );
       setSyncedAt(youtubeId);
       setSyncVersion((v) => v + 1);
-      store.rehydrate();
       serverQuery.refetch();
     },
   });
