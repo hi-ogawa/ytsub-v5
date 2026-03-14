@@ -1,11 +1,10 @@
 import { useNavigate } from "react-router";
 import { BookmarksPage } from "../components/bookmarks-page.tsx";
-import { useLocalStorage } from "../lib/use-local-storage.ts";
-import type { VideoIndexEntry } from "../lib/video-index.ts";
+import { useStore } from "../lib/external-store.ts";
+import { videoIndexStore } from "../lib/video-index.ts";
 
 export function DevBookmarksPage() {
-  const [entries] = useLocalStorage<VideoIndexEntry[]>("zamak:video-index", []);
-
+  const entries = useStore(videoIndexStore);
   const navigate = useNavigate();
   return (
     <BookmarksPage

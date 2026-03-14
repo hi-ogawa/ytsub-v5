@@ -31,7 +31,8 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "../components/ui/popover.tsx";
-import { useLocalStorage } from "../lib/use-local-storage.ts";
+import { autoScrollStore } from "../lib/auto-scroll-store.ts";
+import { useStore } from "../lib/external-store.ts";
 import { orpc } from "../rpc.ts";
 
 // --- YouTube IFrame API types ---
@@ -572,10 +573,8 @@ export function VideoViewerPage() {
   }
 
   // Auto-scroll toggle (persisted)
-  const [autoScroll, setAutoScroll] = useLocalStorage(
-    "zamak:auto-scroll",
-    true,
-  );
+  const autoScroll = useStore(autoScrollStore);
+  const setAutoScroll = autoScrollStore.set;
 
   // Pause auto-scroll when bookmark popover is open
   const isPopoverOpenRef = useRef(false);
