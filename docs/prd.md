@@ -104,7 +104,7 @@ A web app for language learning via YouTube subtitles. Watch videos with dual ca
 - [x] feat: bookmarks page server sync — merge server videos with per-video push/pull (`useVideoSync`)
 - [ ] feat: web app as browser client — retire server-rendered video-list/video-viewer in favor of client storage
   - **video list (`/`)**: replace current server-only `listVideos` page with `BookmarksPage` + `useVideoSync` (already built for dev-bookmarks). Shows merged local+server videos, sync badges, push/pull. This becomes the app home page.
-  - **video viewer (`/videos/:id`)**: load `PersistedCaptionSession` from IndexedDB instead of fetching from server DB. Synthesize `videoMeta`/`tracks` from session. Caption panel renders pre-merged captions, bookmarks work via IndexedDB. No track switching (session is pre-merged).
+  - **video viewer (`/videos/:id`)**: load `PersistedCaptionSession` from IndexedDB instead of fetching from server DB. Caption panel renders pre-merged captions directly — no track selection, no `fetchJson3`. Bookmarks work via IndexedDB.
   - existing server-only routes become dead code once client routes are wired up
 
 ## TODO: Backlog
