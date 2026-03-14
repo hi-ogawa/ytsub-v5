@@ -23,7 +23,23 @@ const trackModules = import.meta.glob<{ default: Json3File }>(
 
 export function DevViewerPage() {
   const { videoId } = useParams<"videoId">();
-  const [panelOpen, setPanelOpen] = useState(false);
+  const [panelOpen, setPanelOpen] = useState(() => {
+    try {
+      return localStorage.getItem(`zamak:fab-open:${videoId}`) === "true";
+    } catch {
+      return false;
+    }
+  });
+
+  const togglePanel = () => {
+    setPanelOpen((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem(`zamak:fab-open:${videoId}`, String(next));
+      } catch {}
+      return next;
+    });
+  };
 
   const meta = videoId
     ? metadataModules[`/scripts/youtube-json/${videoId}/metadata.json`]
@@ -57,7 +73,7 @@ export function DevViewerPage() {
           <DevViewerSession videoId={videoId} meta={meta} player={player} />
         </ResizablePanel>
       )}
-      <CaptionFab open={panelOpen} onClick={() => setPanelOpen((v) => !v)} />
+      <CaptionFab open={panelOpen} onClick={togglePanel} />
     </div>
   );
 }

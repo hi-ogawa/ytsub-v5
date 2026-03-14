@@ -33,8 +33,30 @@ function getVideoPlayer(): YTPlayer | undefined {
   };
 }
 
+function fabStorageKey(videoId: string) {
+  return `zamak:fab-open:${videoId}`;
+}
+
+function readFabOpen(videoId: string): boolean {
+  try {
+    return localStorage.getItem(fabStorageKey(videoId)) === "true";
+  } catch {
+    return false;
+  }
+}
+
 function App({ videoId }: { videoId: string }) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(() => readFabOpen(videoId));
+
+  const toggleOpen = () => {
+    setOpen((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem(fabStorageKey(videoId), String(next));
+      } catch {}
+      return next;
+    });
+  };
 
   return (
     <div>
@@ -52,7 +74,7 @@ function App({ videoId }: { videoId: string }) {
           <ExtensionViewer videoId={videoId} />
         </ResizablePanel>
       )}
-      <CaptionFab open={open} onClick={() => setOpen((v) => !v)} />
+      <CaptionFab open={open} onClick={toggleOpen} />
     </div>
   );
 }
