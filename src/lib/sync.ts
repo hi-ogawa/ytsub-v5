@@ -66,18 +66,18 @@ function serverSessionToLocal(data: GetFullSessionResult): {
     text1Segments: [c.text1],
     text2Segments: [c.text2],
   }));
-  const bookmarks: ExtensionBookmark[] = data.bookmarks.map((b, i) => ({
-    id: `pulled-${i}-${Date.now()}`,
+  const bookmarks: ExtensionBookmark[] = data.bookmarks.map((b) => ({
+    id: String(b.id),
     text: b.text,
     side: b.side,
     offset: b.offset,
-    captionIndex: b.captionIdx,
+    captionIndex: data.captions.findIndex((c) => c.id === b.captionId),
     timestamp: b.timestamp,
     context: b.context,
-    translation: b.translation ?? undefined,
-    etymology: b.etymology ?? undefined,
-    notes: b.notes ?? undefined,
-    createdAt: new Date().toISOString(),
+    translation: b.translation,
+    etymology: b.etymology,
+    notes: b.notes,
+    createdAt: b.createdAt,
   }));
   return { captions, bookmarks };
 }

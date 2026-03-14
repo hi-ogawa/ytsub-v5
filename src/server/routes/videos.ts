@@ -277,37 +277,7 @@ export const videosRouter = authed.router({
         .select()
         .from(bookmarks)
         .where(eq(bookmarks.videoId, video.id));
-      return {
-        video: {
-          youtubeId: video.youtubeId,
-          title: video.title,
-          channelName: video.channelName,
-          channelId: video.channelId,
-          duration: video.duration,
-          language1: video.language1,
-          language2: video.language2,
-          updatedAt: video.updatedAt,
-        },
-        captions: videoCaptions.map((c) => ({
-          idx: c.idx,
-          begin: c.begin,
-          end: c.end,
-          text1: c.text1,
-          text2: c.text2,
-        })),
-        bookmarks: videoBookmarks.map((b) => ({
-          text: b.text,
-          translation: b.translation,
-          captionIdx: videoCaptions.findIndex((c) => c.id === b.captionId),
-          side: b.side,
-          offset: b.offset,
-          context: b.context,
-          timestamp: b.timestamp,
-          etymology: b.etymology,
-          notes: b.notes,
-          status: b.status,
-        })),
-      };
+      return { video, captions: videoCaptions, bookmarks: videoBookmarks };
     }),
 
   getVideoUpdatedAt: authed
