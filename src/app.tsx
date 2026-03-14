@@ -30,6 +30,7 @@ const router = createBrowserRouter([
     id: "root",
     Component: RootLayout,
     loader: authLoader,
+    HydrateFallback: () => null,
     children: [
       {
         Component: GuestLayout,
