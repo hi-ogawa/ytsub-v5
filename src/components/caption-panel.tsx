@@ -16,7 +16,6 @@ import {
 import {
   useCallback,
   useEffect,
-  useImperativeHandle,
   useMemo,
   useRef,
   useState,
@@ -732,7 +731,7 @@ function CaptionPanelContent({
     setActiveTab("captions");
     const counter = ++flashCaptionCounter.current;
     setFlashCaptionIndex(captionIndex);
-    requestAnimationFrame(() => {
+    setTimeout(() => {
       captionListRef.current?.scrollToIndex(captionIndex);
     });
     setTimeout(() => {
@@ -1055,8 +1054,6 @@ function ExtensionBookmarksList({
 
 // --- CaptionViewer: playback-synced caption list ---
 
-type CaptionViewerHandle = CaptionListHandle;
-
 function CaptionViewer({
   ref,
   rows,
@@ -1067,7 +1064,7 @@ function CaptionViewer({
   onGoToBookmark,
   onPopoverOpenChange,
 }: {
-  ref?: React.Ref<CaptionViewerHandle>;
+  ref?: React.Ref<CaptionListHandle>;
   rows: MergedCaption[];
   player?: YTPlayer;
   autoScroll: boolean;
@@ -1078,13 +1075,6 @@ function CaptionViewer({
 }) {
   const [currentIndex, setCurrentIndex] = useState<number>();
   const [isPlaying, setIsPlaying] = useState(false);
-  const captionListRef = useRef<CaptionListHandle>(null);
-
-  useImperativeHandle(ref, () => ({
-    scrollToIndex: (index: number) => {
-      captionListRef.current?.scrollToIndex(index);
-    },
-  }));
 
   useEffect(() => {
     if (!player || rows.length === 0) return;
@@ -1110,7 +1100,7 @@ function CaptionViewer({
 
   return (
     <CaptionList
-      ref={captionListRef}
+      ref={ref}
       rows={rows}
       currentIndex={currentIndex}
       isPlaying={isPlaying}
