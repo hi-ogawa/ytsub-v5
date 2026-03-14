@@ -75,6 +75,8 @@ export function sessionToExportData(session: {
   duration: number;
   language1: string;
   language2: string;
+  vssId1: string;
+  vssId2: string;
   captions: MergedCaption[];
   bookmarks: ExtensionBookmark[];
 }): ExportData {
@@ -87,6 +89,8 @@ export function sessionToExportData(session: {
       duration: session.duration,
       language1: session.language1,
       language2: session.language2,
+      vssId1: session.vssId1,
+      vssId2: session.vssId2,
     },
     captions: session.captions.map((r, i) => ({
       idx: i,
@@ -117,8 +121,8 @@ function langFromVssId(vssId: string): string {
 
 export class CaptionSessionManager {
   readonly videoMeta: YouTubeVideoData;
-  readonly vssId1: string;
-  readonly vssId2: string;
+  vssId1: string;
+  vssId2: string;
   rows: MergedCaption[];
   readonly strategy: MergeStrategy; // TODO: smells
   bookmarks: ExtensionBookmark[];
@@ -221,9 +225,13 @@ export class CaptionSessionManager {
   async replace(options: {
     captions: MergedCaption[];
     bookmarks: ExtensionBookmark[];
+    vssId1?: string;
+    vssId2?: string;
   }): Promise<void> {
     this.rows = options.captions;
     this.bookmarks = options.bookmarks;
+    if (options.vssId1 !== undefined) this.vssId1 = options.vssId1;
+    if (options.vssId2 !== undefined) this.vssId2 = options.vssId2;
     this.syncVideoIndex();
     this.notify();
     await this.persistSession();
@@ -238,6 +246,8 @@ export class CaptionSessionManager {
       duration: this.videoMeta.duration,
       language1: langFromVssId(this.vssId1),
       language2: langFromVssId(this.vssId2),
+      vssId1: this.vssId1,
+      vssId2: this.vssId2,
       captions: this.rows,
       bookmarks: this.bookmarks,
     });

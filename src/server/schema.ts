@@ -27,8 +27,10 @@ export const videos = sqliteTable(
     channelName: text("channel_name").notNull().default(""),
     channelId: text("channel_id").notNull().default(""),
     duration: int().notNull().default(0),
-    language1: text().notNull().default("ko"),
-    language2: text().notNull().default("en"),
+    language1: text().notNull(),
+    language2: text().notNull(),
+    vssId1: text("vss_id1").notNull(),
+    vssId2: text("vss_id2").notNull(),
     createdAt: text("created_at")
       .notNull()
       .default(sql`(datetime('now'))`),

@@ -122,6 +122,8 @@ export function useSyncState({ youtubeId }: { youtubeId: string }) {
       if (!data) return;
       const session = serverSessionToLocal(data);
       await store.replace({
+        vssId1: session.vssId1,
+        vssId2: session.vssId2,
         captions: session.captions,
         bookmarks: session.bookmarks,
       });
