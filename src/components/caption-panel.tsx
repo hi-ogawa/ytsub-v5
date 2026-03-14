@@ -1064,7 +1064,7 @@ function CaptionViewer({
   onGoToBookmark,
   onPopoverOpenChange,
 }: {
-  ref?: React.Ref<CaptionListHandle>;
+  ref: React.Ref<CaptionListHandle>;
   rows: MergedCaption[];
   player?: YTPlayer;
   autoScroll: boolean;

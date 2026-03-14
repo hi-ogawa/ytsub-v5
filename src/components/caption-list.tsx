@@ -138,7 +138,9 @@ function highlightText(
   return <>{parts}</>;
 }
 
-export type CaptionListHandle = { scrollToIndex: (index: number) => void };
+export type CaptionListHandle = {
+  scrollToIndex: (index: number) => void;
+};
 
 export function CaptionList({
   ref,
@@ -152,7 +154,7 @@ export function CaptionList({
   onGoToBookmark,
   onPopoverOpenChange,
 }: {
-  ref?: React.Ref<CaptionListHandle>;
+  ref: React.Ref<CaptionListHandle>;
   rows: MergedCaption[];
   currentIndex?: number;
   isPlaying: boolean;
