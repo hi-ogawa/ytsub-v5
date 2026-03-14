@@ -11,15 +11,7 @@ You are helping me learn Korean from a YouTube video. Scan the captions below an
 - Hanja-based words where etymology aids memorization
 - Context-dependent meanings
 
-## Video
-
-Title: {{TITLE}}
-
-## Captions
-
-{{CAPTIONS}}
-
-## Output format — STRICT
+## Output format (CRITICAL)
 
 Your ENTIRE response must be a single JSON code block. No prose, no tables, no explanations outside the JSON. The output is machine-parsed — anything outside the code fence will cause an error.
 
@@ -37,9 +29,23 @@ Each entry:
     "text": "체중",
     "translation": "body weight",
     "etymology": "體重"
+  },
+  {
+    "captionIndex": 12,
+    "text": "어이없다",
+    "translation": "absurd, dumbfounded",
+    "etymology": ""
   }
 ]
 ```
+
+## Video
+
+Title: {{TITLE}}
+
+## Captions
+
+{{CAPTIONS}}
 
 # --- fill ---
 
@@ -47,19 +53,7 @@ Each entry:
 
 You are helping me learn Korean from a YouTube video. Fill translation and metadata for the bookmarks below.
 
-## Video
-
-Title: {{TITLE}}
-
-## Bookmarks to fill
-
-{{BOOKMARKS}}
-
-## Captions (for context)
-
-{{CAPTIONS}}
-
-## Output format — STRICT
+## Output format (CRITICAL)
 
 Your ENTIRE response must be a single JSON code block. No prose, no tables, no explanations outside the JSON. The output is machine-parsed — anything outside the code fence will cause an error.
 
@@ -79,6 +73,18 @@ Each entry:
 ]
 ```
 
+## Video
+
+Title: {{TITLE}}
+
+## Bookmarks to fill
+
+{{BOOKMARKS}}
+
+## Captions (for context)
+
+{{CAPTIONS}}
+
 # --- fix-asr ---
 
 # Task: Fix Korean ASR subtitles
@@ -89,15 +95,7 @@ Fix: misheard syllables, wrong spacing, `>>` markers, truncated words, repeated 
 Do NOT fix: correct casual/informal Korean, filler words, stylistic choices.
 If unsure about a correction, skip it and mention it separately.
 
-## Video
-
-Title: {{TITLE}}
-
-## Captions
-
-{{CAPTIONS}}
-
-## Output format — STRICT
+## Output format (CRITICAL)
 
 Your ENTIRE response must be a single JSON code block. No prose, no tables, no explanations outside the JSON. The output is machine-parsed — anything outside the code fence will cause an error.
 
@@ -106,3 +104,11 @@ Include ONLY the rows that need fixing:
 ```json
 [{ "idx": 3, "text1": "두바이 쿠키 먹어봤어?" }]
 ```
+
+## Video
+
+Title: {{TITLE}}
+
+## Captions
+
+{{CAPTIONS}}
