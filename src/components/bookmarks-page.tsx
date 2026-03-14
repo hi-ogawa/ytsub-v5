@@ -18,7 +18,7 @@ export function BookmarksPage({
   onVideoClick: (youtubeId: string) => void;
   sync?: BookmarksSyncHandle;
 }) {
-  const displayEntries: BookmarkSyncEntry[] = sync
+  const displayEntries: BookmarkSyncEntry[] = sync?.authenticated
     ? sync.entries
     : entries.map((e) => ({ ...e, syncStatus: "local-only" as const }));
 
@@ -44,7 +44,7 @@ export function BookmarksPage({
               title={entry.title}
               channelName={entry.channelName}
               titleRight={
-                sync ? (
+                sync?.authenticated ? (
                   <SyncBadge
                     status={entry.syncStatus}
                     pulling={sync.pulling.has(entry.youtubeId)}

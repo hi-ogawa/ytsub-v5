@@ -247,13 +247,12 @@ export function useBookmarksSync() {
     return Array.from(merged.values());
   }, [videoIndex, serverQuery.data]);
 
-  return authenticated
-    ? {
-        entries,
-        pulling,
-        onPull: (youtubeId: string) => pullMutation.mutate(youtubeId),
-      }
-    : undefined;
+  return {
+    authenticated,
+    entries,
+    pulling,
+    onPull: (youtubeId: string) => pullMutation.mutate(youtubeId),
+  };
 }
 
 async function pullServerSession(
