@@ -231,6 +231,7 @@ export function useVideoSync() {
   const serverQuery = useQuery({
     ...orpc.videos.listVideos.queryOptions({ input: { limit: 200 } }),
     enabled: authenticated,
+    select: (data) => mergeVideoEntries(videoIndex, data.items),
   });
 
   const [syncing, setSyncing] = useState<Set<string>>(new Set());
@@ -312,22 +313,21 @@ export function useVideoSync() {
   const isPending =
     authQuery.isLoading || (authenticated && serverQuery.isLoading);
 
-  const entries = useMemo((): VideoSyncEntry[] => {
-    if (!authenticated || isPending) {
-      return videoIndex.map((e) => ({
+  const localOnlyEntries = useMemo(
+    (): VideoSyncEntry[] =>
+      videoIndex.map((e) => ({
         youtubeId: e.youtubeId,
         title: e.title,
         channelName: e.channelName,
         bookmarkCount: e.bookmarkCount,
         updatedAt: e.updatedAt,
-      }));
-    }
-    return mergeVideoEntries(videoIndex, serverQuery.data?.items ?? []);
-  }, [authenticated, isPending, videoIndex, serverQuery.data]);
+      })),
+    [videoIndex],
+  );
 
   return {
     isPending,
-    entries,
+    entries: isPending ? [] : (serverQuery.data ?? localOnlyEntries),
     syncing,
     onPull: (youtubeId: string) => pullMutation.mutate(youtubeId),
     onPush,
