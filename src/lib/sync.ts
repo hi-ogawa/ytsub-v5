@@ -166,12 +166,7 @@ export function useSyncState({ youtubeId }: { youtubeId: string }) {
   return { state, onSync, error };
 }
 
-export type VideoSyncEntry = {
-  youtubeId: string;
-  title: string;
-  channelName: string;
-  bookmarkCount: number;
-  updatedAt: string;
+export type VideoSyncEntry = VideoIndexEntry & {
   syncStatus?: "local-only" | "server-only" | "synced" | "pull" | "push";
 };
 
@@ -313,21 +308,11 @@ export function useVideoSync() {
   const isPending =
     authQuery.isLoading || (authenticated && serverQuery.isLoading);
 
-  const localOnlyEntries = useMemo(
-    (): VideoSyncEntry[] =>
-      videoIndex.map((e) => ({
-        youtubeId: e.youtubeId,
-        title: e.title,
-        channelName: e.channelName,
-        bookmarkCount: e.bookmarkCount,
-        updatedAt: e.updatedAt,
-      })),
-    [videoIndex],
-  );
-
   return {
     isPending,
-    entries: isPending ? [] : (serverQuery.data ?? localOnlyEntries),
+    entries: (isPending
+      ? []
+      : (serverQuery.data ?? videoIndex)) as VideoSyncEntry[],
     syncing,
     onPull: (youtubeId: string) => pullMutation.mutate(youtubeId),
     onPush,
