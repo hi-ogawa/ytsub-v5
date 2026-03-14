@@ -85,9 +85,14 @@ function SyncBadge({
   onPull: () => void;
   onPush: () => void;
 }) {
+  const testAttrs = {
+    "data-testid": "video-sync-badge",
+    "data-sync-status": syncing ? "syncing" : status,
+  };
+
   if (syncing) {
     return (
-      <span title="Syncing...">
+      <span title="Syncing..." {...testAttrs}>
         <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
       </span>
     );
@@ -95,7 +100,7 @@ function SyncBadge({
   switch (status) {
     case "synced":
       return (
-        <span title="Synced">
+        <span title="Synced" {...testAttrs}>
           <CheckCircle2 className="h-4 w-4 text-green-500" />
         </span>
       );
@@ -115,6 +120,7 @@ function SyncBadge({
             e.stopPropagation();
             onPull();
           }}
+          {...testAttrs}
         >
           <ArrowDownToLine className="h-4 w-4" />
         </button>
@@ -135,6 +141,7 @@ function SyncBadge({
             e.stopPropagation();
             onPush();
           }}
+          {...testAttrs}
         >
           <ArrowUpFromLine className="h-4 w-4" />
         </button>
