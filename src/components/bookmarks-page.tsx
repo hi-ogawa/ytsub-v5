@@ -157,7 +157,7 @@ function SyncBadge({
   if (syncing) {
     return (
       <span title="Syncing..." {...testAttrs}>
-        <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
       </span>
     );
   }
@@ -165,7 +165,7 @@ function SyncBadge({
     case "synced":
       return (
         <span title="Synced" {...testAttrs}>
-          <CheckCircle2 className="h-4 w-4 text-green-500" />
+          <CheckCircle2 className="h-5 w-5 text-green-500" />
         </span>
       );
     case "server-only":
@@ -178,7 +178,7 @@ function SyncBadge({
               ? "Server only — pull to local"
               : "Pull server changes"
           }
-          className="rounded p-0.5 text-muted-foreground hover:bg-muted"
+          className="rounded p-1 text-muted-foreground hover:bg-muted"
           onClick={(e) => {
             e.preventDefault();
             e.stopPropagation();
@@ -186,7 +186,7 @@ function SyncBadge({
           }}
           {...testAttrs}
         >
-          <ArrowDownToLine className="h-4 w-4" />
+          <ArrowDownToLine className="h-5 w-5" />
         </button>
       );
     case "push":
@@ -199,7 +199,7 @@ function SyncBadge({
               ? "Local only — push to server"
               : "Push local changes to server"
           }
-          className="rounded p-0.5 text-muted-foreground hover:bg-muted"
+          className="rounded p-1 text-muted-foreground hover:bg-muted"
           onClick={(e) => {
             e.preventDefault();
             e.stopPropagation();
@@ -207,7 +207,7 @@ function SyncBadge({
           }}
           {...testAttrs}
         >
-          <ArrowUpFromLine className="h-4 w-4" />
+          <ArrowUpFromLine className="h-5 w-5" />
         </button>
       );
   }
