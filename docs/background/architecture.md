@@ -18,42 +18,43 @@ A local-first language learning tool built around YouTube subtitles. The core wo
 
 The AI prompt clipboard flow is what makes the tool powerful: model/provider-agnostic, prompt is inspectable, works with any chat UI. See `src/lib/ai-prompt.ts` for prompt generation and `docs/tasks/2026-03-11-ai-prompt-clipboard-flow.md` for the design.
 
+## Three layers
+
 ```
-Browser extension (YouTube page)
-  └── Fetches subtitles, renders caption panel
-      └── User bookmarks words (manual or AI pick-and-fill)
-      └── AI prompt copy → paste into LLM → import result JSON
-      └── Stores locally in IndexedDB
-          └── Optionally syncs to server (push/pull)
+Extension (primary client)
+  └── Self-sufficient: fetches subtitles, caption panel, bookmarks, AI workflow
+  └── Stores locally in IndexedDB
+  └── Optionally syncs to server
 
-Web app (browser)
-  └── Same caption panel UI, reads from IndexedDB
-      └── Import: load export.json into IndexedDB
-      └── Sync: push/pull with server when logged in
+Server (persistence for cross-device access)
+  └── Stores videos, captions, bookmarks in D1 (SQLite)
+  └── Login required — no anonymous access
+
+Web app (view into server-synced data)
+  └── Always requires login — its purpose is cross-device access
+  └── Pulls server data into IndexedDB, then renders same UI as extension
+  └── For when you can't install the extension (mobile, shared computers)
 ```
 
-## Architecture: local-first, server-optional
+### Extension — the primary client
 
-Both the browser extension and the web app are **equivalent local clients**. They use the same components (`CaptionPanel`, `CaptionList`) and the same local storage (`CaptionSessionManager` → IndexedDB + `videoIndexStore` → localStorage).
+The extension is self-sufficient. It fetches YouTube subtitles (same-origin), renders the caption panel, handles bookmarking, AI prompt workflow, and stores everything locally in IndexedDB. It works standalone without a server account.
 
-### Data flow
+The extension is the **only** way data enters the system — the web app cannot call YouTube APIs.
 
-- **Extension** (primary): fetches subtitles from YouTube same-origin → `CaptionSessionManager` → IndexedDB. User creates bookmarks. Optionally syncs to server.
-- **Web app**: reads from IndexedDB. Data gets there via:
-  - Import (upload `export.json` from extension → IndexedDB, no login required)
-  - Sync pull (fetch from server → IndexedDB, requires login)
-- **Server**: a sync target, not the primary data source. Stores videos, captions, bookmarks in D1 (SQLite). Used for cross-device access and backup.
+### Server — persistence layer
 
-### Why local-first
+The server stores synced data for cross-device access and backup. It's not the primary data source for any UI. Login is always required.
 
-- The extension is the only way to fetch YouTube subtitle data (same-origin requirement)
-- The web app cannot call YouTube APIs — it can only display data that originated from the extension
-- Making both clients local-first means zero divergent code paths in the UI
-- The web app works without login — login only needed for server sync
+### Web app — cross-device viewer
+
+The web app exists for accessing your data from devices where the extension isn't available (mobile, other browsers). It always requires login because without server sync there's no data to show — the web app can't fetch from YouTube.
+
+The web app pulls server data into IndexedDB, then renders the same `CaptionPanel` UI as the extension (`sessionOnly` mode — no track picker, no caption fetching).
 
 ### Shared components
 
-Both extension and web app render the same UI components:
+Extension and web app render the same UI components:
 
 | Component               | Purpose                                                   |
 | ----------------------- | --------------------------------------------------------- |
@@ -61,21 +62,6 @@ Both extension and web app render the same UI components:
 | `CaptionList`           | Caption rows with bookmark highlights, auto-scroll        |
 | `BookmarksPage`         | Video list with sync badges                               |
 | `CaptionSessionManager` | In-memory store backed by IndexedDB                       |
-
-The extension uses `CaptionPanel` with track picker (fetches captions from YouTube). The web app uses `CaptionPanel` with `sessionOnly` flag (loads existing session from IndexedDB, no caption fetching).
-
-### Web app without login
-
-The web app works without authentication:
-
-- Import `export.json` → IndexedDB → view/bookmark locally
-- No sync badges, no server interaction
-
-With login:
-
-- Same local functionality + server sync
-- Merged local+server video list with sync badges (push/pull per video)
-- Header menu shows "Log out" instead of "Log in"
 
 ## Browser extension as data source
 
