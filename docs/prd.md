@@ -57,6 +57,7 @@ A web app for language learning via YouTube subtitles. Watch videos with dual ca
 - [x] fix: bookmark popover — allow upward or downward positioning to avoid clipping under the panel container
 - [x] Mobile-friendly layout
 - [x] Browser extension as data source (content script fetches subs from YouTube same-origin)
+- [x] Authentication (multi users)
 
 ### Extension
 
@@ -117,5 +118,4 @@ A web app for language learning via YouTube subtitles. Watch videos with dual ca
 - [ ] feat: bookmark list page — browse/search all bookmarks across videos
 - [ ] Full-text search — search across captions and bookmarks (D1 FTS or LIKE)
 - [ ] Keyboard shortcuts — space (play/pause), arrow keys (prev/next caption), etc.
-- [ ] Authentication (multi users)
 - [ ] Typing practice (v3/v4 had this)
