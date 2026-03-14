@@ -4,7 +4,10 @@ import { useMemo, useState } from "react";
 import { orpc } from "../rpc.ts";
 import type { Router } from "../server/rpc.ts";
 import { getSession, saveSession } from "./caption-session-db.ts";
-import type { CaptionSessionManager } from "./caption-session.ts";
+import {
+  type CaptionSessionManager,
+  sessionToExportData,
+} from "./caption-session.ts";
 import { useStore } from "./external-store.ts";
 import {
   type VideoIndexEntry,
@@ -271,36 +274,7 @@ export function useVideoSync() {
     await withSyncing(youtubeId, async () => {
       const session = await getSession(youtubeId);
       if (!session) throw new Error("No local session found");
-      const indexEntry = videoIndex.find((e) => e.youtubeId === youtubeId);
-      pushMutation.mutate({
-        video: {
-          youtubeId,
-          title: indexEntry?.title ?? "",
-          channelName: indexEntry?.channelName ?? "",
-          channelId: "",
-          duration: 0,
-          language1: session.language1,
-          language2: session.language2,
-        },
-        captions: session.captions.map((r, i) => ({
-          idx: i,
-          begin: r.begin,
-          end: r.end,
-          text1: r.text1,
-          text2: r.text2,
-        })),
-        bookmarks: session.bookmarks.map((b) => ({
-          text: b.text,
-          translation: b.translation,
-          etymology: b.etymology,
-          notes: b.notes,
-          captionIdx: b.captionIndex,
-          side: b.side,
-          offset: b.offset,
-          context: b.context,
-          status: "manual",
-        })),
-      });
+      pushMutation.mutate(sessionToExportData(session));
       setSyncedAt(youtubeId);
     });
   };
@@ -345,6 +319,10 @@ async function pullServerSession(data: GetFullSessionOutput): Promise<void> {
   }));
   await saveSession({
     youtubeId: data.video.youtubeId,
+    title: data.video.title,
+    channelName: data.video.channelName,
+    channelId: data.video.channelId,
+    duration: data.video.duration,
     vssId1: `-.${data.video.language1}`,
     vssId2: `-.${data.video.language2}`,
     language1: data.video.language1,

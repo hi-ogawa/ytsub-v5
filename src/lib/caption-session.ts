@@ -65,6 +65,50 @@ export function saveSelectedTracks(
   }
 }
 
+// --- Export ---
+
+export function sessionToExportData(session: {
+  youtubeId: string;
+  title: string;
+  channelName: string;
+  channelId: string;
+  duration: number;
+  language1: string;
+  language2: string;
+  captions: MergedCaption[];
+  bookmarks: ExtensionBookmark[];
+}): ExportData {
+  return {
+    video: {
+      youtubeId: session.youtubeId,
+      title: session.title,
+      channelName: session.channelName,
+      channelId: session.channelId,
+      duration: session.duration,
+      language1: session.language1,
+      language2: session.language2,
+    },
+    captions: session.captions.map((r, i) => ({
+      idx: i,
+      begin: r.begin,
+      end: r.end,
+      text1: r.text1,
+      text2: r.text2,
+    })),
+    bookmarks: session.bookmarks.map((b) => ({
+      text: b.text,
+      translation: b.translation,
+      etymology: b.etymology,
+      notes: b.notes,
+      captionIdx: b.captionIndex,
+      side: b.side,
+      offset: b.offset,
+      context: b.context,
+      status: "manual",
+    })),
+  };
+}
+
 // --- Store ---
 
 function langFromVssId(vssId: string): string {
@@ -186,40 +230,26 @@ export class CaptionSessionManager {
   }
 
   toExportData(): ExportData {
-    return {
-      video: {
-        youtubeId: this.videoMeta.youtubeId,
-        title: this.videoMeta.title,
-        channelName: this.videoMeta.channelName,
-        channelId: this.videoMeta.channelId,
-        duration: this.videoMeta.duration,
-        language1: langFromVssId(this.vssId1),
-        language2: langFromVssId(this.vssId2),
-      },
-      captions: this.rows.map((r, i) => ({
-        idx: i,
-        begin: r.begin,
-        end: r.end,
-        text1: r.text1,
-        text2: r.text2,
-      })),
-      bookmarks: this.bookmarks.map((b) => ({
-        text: b.text,
-        translation: b.translation,
-        etymology: b.etymology,
-        notes: b.notes,
-        captionIdx: b.captionIndex,
-        side: b.side,
-        offset: b.offset,
-        context: b.context,
-        status: "manual",
-      })),
-    };
+    return sessionToExportData({
+      youtubeId: this.videoMeta.youtubeId,
+      title: this.videoMeta.title,
+      channelName: this.videoMeta.channelName,
+      channelId: this.videoMeta.channelId,
+      duration: this.videoMeta.duration,
+      language1: langFromVssId(this.vssId1),
+      language2: langFromVssId(this.vssId2),
+      captions: this.rows,
+      bookmarks: this.bookmarks,
+    });
   }
 
   async persistSession(): Promise<void> {
     const session: PersistedCaptionSession = {
       youtubeId: this.videoMeta.youtubeId,
+      title: this.videoMeta.title,
+      channelName: this.videoMeta.channelName,
+      channelId: this.videoMeta.channelId,
+      duration: this.videoMeta.duration,
       vssId1: this.vssId1,
       vssId2: this.vssId2,
       language1: langFromVssId(this.vssId1),
