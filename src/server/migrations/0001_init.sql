@@ -5,8 +5,8 @@ CREATE TABLE IF NOT EXISTS videos (
   channel_name TEXT NOT NULL DEFAULT '',
   channel_id TEXT NOT NULL DEFAULT '',
   duration INTEGER NOT NULL DEFAULT 0,
-  language1 TEXT NOT NULL DEFAULT 'ko',
-  language2 TEXT NOT NULL DEFAULT 'en',
+  language1 TEXT NOT NULL,
+  language2 TEXT NOT NULL,
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 

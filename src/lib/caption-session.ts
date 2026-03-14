@@ -65,6 +65,54 @@ export function saveSelectedTracks(
   }
 }
 
+// --- Export ---
+
+export function sessionToExportData(session: {
+  youtubeId: string;
+  title: string;
+  channelName: string;
+  channelId: string;
+  duration: number;
+  language1: string;
+  language2: string;
+  vssId1: string;
+  vssId2: string;
+  captions: MergedCaption[];
+  bookmarks: ExtensionBookmark[];
+}): ExportData {
+  return {
+    video: {
+      youtubeId: session.youtubeId,
+      title: session.title,
+      channelName: session.channelName,
+      channelId: session.channelId,
+      duration: session.duration,
+      language1: session.language1,
+      language2: session.language2,
+      vssId1: session.vssId1,
+      vssId2: session.vssId2,
+    },
+    captions: session.captions.map((r, i) => ({
+      idx: i,
+      begin: r.begin,
+      end: r.end,
+      text1: r.text1,
+      text2: r.text2,
+    })),
+    bookmarks: session.bookmarks.map((b) => ({
+      text: b.text,
+      translation: b.translation,
+      etymology: b.etymology,
+      notes: b.notes,
+      captionIdx: b.captionIndex,
+      side: b.side,
+      offset: b.offset,
+      context: b.context,
+      status: "manual",
+    })),
+  };
+}
+
 // --- Store ---
 
 function langFromVssId(vssId: string): string {
@@ -73,8 +121,8 @@ function langFromVssId(vssId: string): string {
 
 export class CaptionSessionManager {
   readonly videoMeta: YouTubeVideoData;
-  readonly vssId1: string;
-  readonly vssId2: string;
+  vssId1: string;
+  vssId2: string;
   rows: MergedCaption[];
   readonly strategy: MergeStrategy; // TODO: smells
   bookmarks: ExtensionBookmark[];
@@ -177,49 +225,41 @@ export class CaptionSessionManager {
   async replace(options: {
     captions: MergedCaption[];
     bookmarks: ExtensionBookmark[];
+    vssId1?: string;
+    vssId2?: string;
   }): Promise<void> {
     this.rows = options.captions;
     this.bookmarks = options.bookmarks;
+    if (options.vssId1 !== undefined) this.vssId1 = options.vssId1;
+    if (options.vssId2 !== undefined) this.vssId2 = options.vssId2;
     this.syncVideoIndex();
     this.notify();
     await this.persistSession();
   }
 
   toExportData(): ExportData {
-    return {
-      video: {
-        youtubeId: this.videoMeta.youtubeId,
-        title: this.videoMeta.title,
-        channelName: this.videoMeta.channelName,
-        channelId: this.videoMeta.channelId,
-        duration: this.videoMeta.duration,
-        language1: langFromVssId(this.vssId1),
-        language2: langFromVssId(this.vssId2),
-      },
-      captions: this.rows.map((r, i) => ({
-        idx: i,
-        begin: r.begin,
-        end: r.end,
-        text1: r.text1,
-        text2: r.text2,
-      })),
-      bookmarks: this.bookmarks.map((b) => ({
-        text: b.text,
-        translation: b.translation,
-        etymology: b.etymology,
-        notes: b.notes,
-        captionIdx: b.captionIndex,
-        side: b.side,
-        offset: b.offset,
-        context: b.context,
-        status: "manual",
-      })),
-    };
+    return sessionToExportData({
+      youtubeId: this.videoMeta.youtubeId,
+      title: this.videoMeta.title,
+      channelName: this.videoMeta.channelName,
+      channelId: this.videoMeta.channelId,
+      duration: this.videoMeta.duration,
+      language1: langFromVssId(this.vssId1),
+      language2: langFromVssId(this.vssId2),
+      vssId1: this.vssId1,
+      vssId2: this.vssId2,
+      captions: this.rows,
+      bookmarks: this.bookmarks,
+    });
   }
 
   async persistSession(): Promise<void> {
     const session: PersistedCaptionSession = {
       youtubeId: this.videoMeta.youtubeId,
+      title: this.videoMeta.title,
+      channelName: this.videoMeta.channelName,
+      channelId: this.videoMeta.channelId,
+      duration: this.videoMeta.duration,
       vssId1: this.vssId1,
       vssId2: this.vssId2,
       language1: langFromVssId(this.vssId1),

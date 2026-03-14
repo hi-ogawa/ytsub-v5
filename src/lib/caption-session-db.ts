@@ -3,6 +3,10 @@ import type { ExtensionBookmark } from "./extension-bookmarks.ts";
 
 export interface PersistedCaptionSession {
   youtubeId: string;
+  title: string;
+  channelName: string;
+  channelId: string;
+  duration: number;
   vssId1: string;
   vssId2: string;
   language1: string;
@@ -34,8 +38,17 @@ export async function getSession(
   return new Promise((resolve, reject) => {
     const tx = db.transaction(STORE_NAME, "readonly");
     const req = tx.objectStore(STORE_NAME).get(youtubeId);
-    req.onsuccess = () =>
-      resolve(req.result as PersistedCaptionSession | undefined);
+    req.onsuccess = () => {
+      const raw = req.result as PersistedCaptionSession | undefined;
+      if (raw) {
+        // Backfill fields added after initial schema
+        raw.title ??= "";
+        raw.channelName ??= "";
+        raw.channelId ??= "";
+        raw.duration ??= 0;
+      }
+      resolve(raw);
+    };
     req.onerror = () => reject(req.error);
   });
 }

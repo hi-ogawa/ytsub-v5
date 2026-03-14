@@ -106,12 +106,10 @@ A web app for language learning via YouTube subtitles. Watch videos with dual ca
   - [x] e2e: rework after video-viewer consolidation — delete `bookmark-viewer.spec.ts`, fix route patterns, remove server-dependent viewer assertions
   - [ ] e2e: restore delete-bookmark test (`delete.spec.ts`) — needs IndexedDB-based viewer or dev-viewer route
   - [ ] e2e: restore etymology import test (`import.spec.ts`) — viewer no longer loads from server after import
-- [ ] feat: bookmarks page server sync — merge server videos into `BookmarksPage`
-  - `BookmarksPage` (`src/components/bookmarks-page.tsx`) fetches `listVideos` from server (when authenticated) and merges with local `videoIndexStore` entries
-  - each video row shows sync status (local-only / server-only / synced) with per-video pull button
-  - reuse `computeSyncState` from `src/lib/sync.ts` for per-video state
-  - pulling creates local IndexedDB session from server data (`serverSessionToLocal`)
-  - wire into `dev-bookmarks.tsx` and extension bookmarks (extension needs auth context forwarding)
+- [x] feat: bookmarks page server sync — merge server videos with per-video push/pull (`useVideoSync`)
+- [ ] feat: web app as browser client — retire server-rendered video-list in favor of client storage
+  - **video list (`/`)**: replace current server-only `listVideos` page with `BookmarksPage` + `useVideoSync` (already built for dev-bookmarks). Shows merged local+server videos, sync badges, push/pull. This becomes the app home page.
+  - video viewer already done (`sessionOnly` flag, loads from IndexedDB)
 
 ## TODO: Backlog
 
