@@ -13,9 +13,9 @@ import {
 import { useVideoSync } from "../lib/sync.ts";
 import { useTheme } from "../lib/theme.ts";
 import type { VideoIndexEntry } from "../lib/video-index.ts";
+import { orpc } from "../rpc.ts";
+import { getServerUrl } from "./server-url.ts";
 import "../styles.css";
-
-declare const __SERVER_URL__: string;
 
 declare const chrome: {
   storage: {
@@ -104,22 +104,16 @@ function ExtensionBookmarksPage() {
       <LoginDialog
         open={showLogin}
         onOpenChange={setShowLogin}
-        onLogin={async (user, password) => {
-          const res = await fetch(`${__SERVER_URL__}/api/auth/login`, {
-            method: "POST",
-            headers: { "content-type": "application/json" },
-            body: JSON.stringify({ json: { username: user, password } }),
-          });
-          if (!res.ok) throw new Error("Invalid username or password");
-          const data = (await res.json()) as { json: { token: string } };
+        onLogin={async (input) => {
+          const { token } = await orpc.auth.login.call(input);
           chrome.storage.local.set({
-            "session-token": data.json.token,
-            username: user,
+            "session-token": token,
+            username: input.username,
           });
-          setUsername(user);
+          setUsername(input.username);
           sync.refetch();
         }}
-        signUpUrl={`${__SERVER_URL__}/register`}
+        signUpUrl={`${getServerUrl()}/register`}
       />
       <main className="flex-1 overflow-auto">
         <BookmarksPage

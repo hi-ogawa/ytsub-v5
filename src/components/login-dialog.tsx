@@ -1,5 +1,5 @@
+import { useMutation } from "@tanstack/react-query";
 import type { SubmitEvent } from "react";
-import { useState } from "react";
 import { Dialog, DialogContent, DialogTitle } from "./ui/dialog.tsx";
 
 export function LoginDialog({
@@ -10,31 +10,21 @@ export function LoginDialog({
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onLogin: (username: string, password: string) => Promise<void>;
+  onLogin: (input: { username: string; password: string }) => Promise<void>;
   signUpUrl?: string;
 }) {
-  const [error, setError] = useState<string>();
-  const [pending, setPending] = useState(false);
+  const mutation = useMutation({
+    mutationFn: onLogin,
+    onSuccess: () => onOpenChange(false),
+  });
 
-  async function handleSubmit(e: SubmitEvent<HTMLFormElement>) {
+  function handleSubmit(e: SubmitEvent<HTMLFormElement>) {
     e.preventDefault();
-    setError(undefined);
-    setPending(true);
-
     const form = new FormData(e.currentTarget);
-    try {
-      await onLogin(
-        form.get("username") as string,
-        form.get("password") as string,
-      );
-      onOpenChange(false);
-    } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Invalid username or password",
-      );
-    } finally {
-      setPending(false);
-    }
+    mutation.mutate({
+      username: form.get("username") as string,
+      password: form.get("password") as string,
+    });
   }
 
   return (
@@ -59,12 +49,18 @@ export function LoginDialog({
           />
           <button
             type="submit"
-            disabled={pending}
+            disabled={mutation.isPending}
             className="w-full rounded bg-primary px-3 py-2 text-sm text-primary-foreground hover:bg-primary-hover disabled:opacity-50"
           >
-            {pending ? "..." : "Sign in"}
+            {mutation.isPending ? "..." : "Sign in"}
           </button>
-          {error && <p className="text-xs text-destructive">{error}</p>}
+          {mutation.isError && (
+            <p className="text-xs text-destructive">
+              {mutation.error instanceof Error
+                ? mutation.error.message
+                : "Invalid username or password"}
+            </p>
+          )}
           {signUpUrl && (
             <p className="text-center text-xs text-muted-foreground">
               No account?{" "}

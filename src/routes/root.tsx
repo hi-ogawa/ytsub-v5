@@ -68,8 +68,6 @@ export function DevLayout() {
   const authenticated = authQuery.data?.authenticated === true;
   const [showLogin, setShowLogin] = useState(false);
 
-  const loginMutation = useMutation(orpc.auth.login.mutationOptions());
-
   return (
     <div className="flex h-screen flex-col">
       <header className="flex h-10 flex-none items-center justify-between border-b px-3">
@@ -93,8 +91,8 @@ export function DevLayout() {
       <LoginDialog
         open={showLogin}
         onOpenChange={setShowLogin}
-        onLogin={async (username, password) => {
-          await loginMutation.mutateAsync({ username, password });
+        onLogin={async (input) => {
+          await orpc.auth.login.call(input);
           authQuery.refetch();
         }}
       />

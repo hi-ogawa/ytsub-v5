@@ -9,7 +9,9 @@ import { RPCLink } from "@orpc/client/fetch";
 import type { RouterClient } from "@orpc/server";
 import { createTanstackQueryUtils } from "@orpc/tanstack-query";
 import type { Router } from "../server/rpc.ts";
+import { getServerUrl } from "./server-url.ts";
 
+// TODO: don't duplicate
 declare const chrome: {
   storage: {
     local: {
@@ -21,14 +23,13 @@ declare const chrome: {
   };
 };
 
-declare const __SERVER_URL__: string;
-
+// TODO: don't duplicate
 function getStorageValues(keys: string[]): Promise<Record<string, unknown>> {
   return new Promise((resolve) => chrome.storage.local.get(keys, resolve));
 }
 
 const link = new RPCLink({
-  url: __SERVER_URL__ + "/api",
+  url: () => getServerUrl() + "/api",
   fetch: async (request) => {
     const { "session-token": token } = await getStorageValues([
       "session-token",
