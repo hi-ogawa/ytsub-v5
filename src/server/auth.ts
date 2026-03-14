@@ -12,18 +12,33 @@ interface AuthContext
 /** Public base — has request/response headers from plugins but no auth check */
 export const pub = os.$context<AuthContext>();
 
-/** Auth middleware — verifies session cookie, extracts userId */
+/** Extract token from cookie or Authorization header */
+function getToken(headers: Headers): string | undefined {
+  const cookie = getCookie(headers, "session");
+  if (cookie) return cookie;
+  const auth = headers.get("authorization");
+  if (auth?.startsWith("Bearer ")) return auth.slice(7);
+}
+
+/** Verify a signed session token, returning userId if valid */
+export async function verifySessionToken(
+  token: string,
+): Promise<number | undefined> {
+  const payload = await unsign(token, env.AUTH_SECRET);
+  if (!payload) return;
+  const [userIdStr, expStr] = payload.split(":");
+  const userId = Number(userIdStr);
+  const exp = Number(expStr);
+  if (userId && exp >= Date.now() / 1000) return userId;
+}
+
+/** Auth middleware — verifies session cookie or bearer token, extracts userId */
 const requireAuth = pub.middleware(async ({ context, next }) => {
-  const cookie = getCookie(context.reqHeaders, "session");
-  if (cookie) {
-    const payload = await unsign(cookie, env.AUTH_SECRET);
-    if (payload) {
-      const [userIdStr, expStr] = payload.split(":");
-      const userId = Number(userIdStr);
-      const exp = Number(expStr);
-      if (userId && exp >= Date.now() / 1000) {
-        return next({ context: { userId } });
-      }
+  if (context.reqHeaders) {
+    const token = getToken(context.reqHeaders);
+    if (token) {
+      const userId = await verifySessionToken(token);
+      if (userId) return next({ context: { userId } });
     }
   }
 

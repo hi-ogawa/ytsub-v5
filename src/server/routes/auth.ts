@@ -1,11 +1,5 @@
 import { ORPCError } from "@orpc/server";
-import {
-  deleteCookie,
-  getCookie,
-  setCookie,
-  unsign,
-} from "@orpc/server/helpers";
-import { env } from "cloudflare:workers";
+import { deleteCookie, getCookie, setCookie } from "@orpc/server/helpers";
 import { eq } from "drizzle-orm";
 import z from "zod";
 import {
@@ -13,6 +7,7 @@ import {
   hashPassword,
   pub,
   verifyPassword,
+  verifySessionToken,
 } from "../auth.ts";
 import { db } from "../db.ts";
 import { users } from "../schema.ts";
@@ -52,7 +47,7 @@ export const authRouter = pub.router({
         sameSite: "lax",
         maxAge: SESSION_MAX_AGE,
       });
-      return { ok: true };
+      return { ok: true, token };
     }),
 
   login: pub
@@ -83,7 +78,7 @@ export const authRouter = pub.router({
         sameSite: "lax",
         maxAge: SESSION_MAX_AGE,
       });
-      return { ok: true };
+      return { ok: true, token };
     }),
 
   logout: pub.handler(async ({ context }) => {
@@ -92,12 +87,13 @@ export const authRouter = pub.router({
   }),
 
   check: pub.handler(async ({ context }) => {
-    const token = getCookie(context.reqHeaders, "session");
+    if (!context.reqHeaders) return { authenticated: false };
+    const cookie = getCookie(context.reqHeaders, "session");
+    const auth = context.reqHeaders.get("authorization");
+    const token =
+      cookie ?? (auth?.startsWith("Bearer ") ? auth.slice(7) : undefined);
     if (!token) return { authenticated: false };
-    const payload = await unsign(token, env.AUTH_SECRET);
-    if (!payload) return { authenticated: false };
-    const [, expStr] = payload.split(":");
-    const valid = Number(expStr) >= Date.now() / 1000;
-    return { authenticated: valid };
+    const userId = await verifySessionToken(token);
+    return { authenticated: !!userId };
   }),
 });

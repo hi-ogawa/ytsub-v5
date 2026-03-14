@@ -1,3 +1,4 @@
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { EllipsisVertical } from "lucide-react";
 import { StrictMode, useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
@@ -8,6 +9,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "../components/ui/dropdown-menu.tsx";
+import { useVideoSync } from "../lib/sync.ts";
 import { useTheme } from "../lib/theme.ts";
 import type { VideoIndexEntry } from "../lib/video-index.ts";
 import "../styles.css";
@@ -21,9 +23,14 @@ declare const chrome: {
   tabs: { create: (opts: { url: string }) => void };
 };
 
+const queryClient = new QueryClient({
+  defaultOptions: { queries: { refetchOnWindowFocus: false } },
+});
+
 function ExtensionBookmarksPage() {
   const [entries, setEntries] = useState<VideoIndexEntry[]>([]);
   const { theme, cycle, Icon } = useTheme();
+  const sync = useVideoSync();
 
   useEffect(() => {
     chrome.storage.local.get("video-index", (result) => {
@@ -61,6 +68,7 @@ function ExtensionBookmarksPage() {
               url: `https://www.youtube.com/watch?v=${youtubeId}`,
             });
           }}
+          sync={sync}
         />
       </main>
     </div>
@@ -69,6 +77,8 @@ function ExtensionBookmarksPage() {
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <ExtensionBookmarksPage />
+    <QueryClientProvider client={queryClient}>
+      <ExtensionBookmarksPage />
+    </QueryClientProvider>
   </StrictMode>,
 );

@@ -49,24 +49,48 @@ export default defineConfig({
         },
       },
     },
+    popup: {
+      consumer: "client",
+      build: {
+        outDir: "./dist/extension",
+        minify: false,
+        emptyOutDir: false,
+        copyPublicDir: false,
+        rolldownOptions: {
+          input: {
+            popup: "./src/extension/popup.html",
+          },
+        },
+      },
+    },
   },
   define: {
     "process.env.NODE_ENV": JSON.stringify("production"),
     __BUILD_TIME__: JSON.stringify(buildTime.toISOString()),
     __GIT_REV__: JSON.stringify(rev + dirty),
   },
+  resolve: {
+    alias: {
+      // Extension builds use extension-specific oRPC client that routes
+      // through the background worker (bearer token auth, avoids YouTube CSP)
+      [resolve("src/rpc.ts")]: resolve("src/extension/rpc.ts"),
+    },
+  },
   plugins: [react(), tailwindcss()],
   builder: {
     async buildApp(builder) {
       await builder.build(builder.environments.client);
       await builder.build(builder.environments.bookmarks);
+      await builder.build(builder.environments.popup);
       const outDir = builder.environments.client.config.build.outDir;
 
-      // Move html
-      cpSync(
-        resolve(outDir, "src/extension/bookmarks.html"),
-        resolve(outDir, "bookmarks.html"),
-      );
+      // Move html files from nested src/extension/ to root
+      for (const page of ["bookmarks", "popup"]) {
+        cpSync(
+          resolve(outDir, `src/extension/${page}.html`),
+          resolve(outDir, `${page}.html`),
+        );
+      }
       rmSync(resolve(outDir, "src"), { force: true, recursive: true });
 
       // Copy raw assets
