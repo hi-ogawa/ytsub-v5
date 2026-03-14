@@ -84,10 +84,7 @@ function DevViewerSession({
     [videoId],
   );
 
-  const syncState = useSyncState({
-    youtubeId: videoId,
-    videoMeta: meta.video,
-  });
+  const syncState = useSyncState({ youtubeId: videoId });
 
   return (
     <CaptionPanel

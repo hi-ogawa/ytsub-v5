@@ -21,53 +21,7 @@ export type SyncState =
   | "syncing"
   | "error";
 
-interface VideoMeta {
-  youtubeId: string;
-  title: string;
-  channelName?: string;
-  channelId?: string;
-  duration?: number;
-}
-
-function buildExportPayload(store: CaptionSessionManager) {
-  const langFromVssId = (vssId: string) => vssId.split(".").pop()!;
-  return {
-    video: {
-      youtubeId: store.videoMeta.youtubeId,
-      title: store.videoMeta.title,
-      channelName: store.videoMeta.channelName ?? "",
-      channelId: store.videoMeta.channelId ?? "",
-      duration: store.videoMeta.duration ?? 0,
-      language1: langFromVssId(store.vssId1),
-      language2: langFromVssId(store.vssId2),
-    },
-    captions: store.rows.map((r, i) => ({
-      idx: i,
-      begin: r.begin,
-      end: r.end,
-      text1: r.text1,
-      text2: r.text2,
-    })),
-    bookmarks: store.bookmarks.map((b) => ({
-      text: b.text,
-      translation: b.translation,
-      etymology: b.etymology,
-      notes: b.notes,
-      captionIdx: b.captionIndex,
-      side: b.side,
-      offset: b.offset,
-      context: b.context,
-      status: "manual" as const,
-    })),
-  };
-}
-
-export function useSyncState({
-  youtubeId,
-}: {
-  youtubeId: string;
-  videoMeta: VideoMeta;
-}) {
+export function useSyncState({ youtubeId }: { youtubeId: string }) {
   const queryClient = useQueryClient();
   const [syncVersion, setSyncVersion] = useState(0);
 
@@ -202,7 +156,7 @@ export function useSyncState({
       if (isSyncing) return;
       const action = direction ?? computedState;
       if (action === "push" || action === "conflict") {
-        pushMutation.mutate(buildExportPayload(store));
+        pushMutation.mutate(store.toExportData());
       } else if (action === "pull") {
         pullMutation.mutate(store);
       }
