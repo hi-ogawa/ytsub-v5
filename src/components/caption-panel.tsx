@@ -285,15 +285,21 @@ function CaptionPanelInner({
 
   const [store, setStore] = useState(() => initialStore);
   const [selectedTracks, setSelectedTracks] = useState(() => {
-    if (initialStore)
-      return { vssId1: initialStore.vssId1, vssId2: initialStore.vssId2 };
-    return getInitialTracks(tracks, youtubeId);
+    const { vssId1, vssId2 } =
+      initialStore ?? getInitialTracks(tracks, youtubeId);
+    return {
+      track1: tracks.find((t) => t.vssId === vssId1),
+      track2: tracks.find((t) => t.vssId === vssId2),
+    };
   });
   const [userStrategy, setUserStrategy] = useState<MergeStrategy>();
 
   const selectTracks = useCallback(
     (v1?: string, v2?: string) => {
-      setSelectedTracks({ vssId1: v1, vssId2: v2 });
+      setSelectedTracks({
+        track1: tracks.find((t) => t.vssId === v1),
+        track2: tracks.find((t) => t.vssId === v2),
+      });
       setStore(undefined);
       if (v1 && v2) {
         saveSelectedTracks(tracks, v1, v2, youtubeId);
@@ -308,8 +314,8 @@ function CaptionPanelInner({
         tracks={tracks}
         fetchJson3={fetchJson3}
         videoMeta={videoMeta}
-        vssId1={selectedTracks.vssId1}
-        vssId2={selectedTracks.vssId2}
+        track1={selectedTracks.track1}
+        track2={selectedTracks.track2}
         userStrategy={userStrategy}
         onSelectTracks={selectTracks}
         onStoreReady={setStore}
@@ -336,8 +342,8 @@ function CaptionPanelLoading({
   tracks,
   fetchJson3,
   videoMeta,
-  vssId1,
-  vssId2,
+  track1,
+  track2,
   userStrategy,
   onSelectTracks,
   onStoreReady,
@@ -345,52 +351,54 @@ function CaptionPanelLoading({
   tracks: YouTubeCaptionTrack[];
   fetchJson3: (track: YouTubeCaptionTrack) => Promise<Json3File>;
   videoMeta: YouTubeVideoData;
-  vssId1?: string;
-  vssId2?: string;
+  track1?: YouTubeCaptionTrack;
+  track2?: YouTubeCaptionTrack;
   userStrategy?: MergeStrategy;
   onSelectTracks: (v1?: string, v2?: string) => void;
   onStoreReady: (store: CaptionSessionManager) => void;
 }) {
   const { youtubeId } = videoMeta;
-  const track1 = tracks.find((t) => t.vssId === vssId1);
-  const track2 = tracks.find((t) => t.vssId === vssId2);
 
   const json3Query1 = useQuery({
     queryKey: ["json3", youtubeId, track1?.vssId],
-    queryFn: () =>
-      fetchJson3(track1!).then((json3) => ({ json3, track: track1! })),
+    queryFn: () => fetchJson3(track1!),
     enabled: !!track1,
   });
 
   const json3Query2 = useQuery({
     queryKey: ["json3", youtubeId, track2?.vssId],
-    queryFn: () =>
-      fetchJson3(track2!).then((json3) => ({ json3, track: track2! })),
+    queryFn: () => fetchJson3(track2!),
     enabled: !!track2,
   });
 
-  const json3_1 = json3Query1.data;
-  const json3_2 = json3Query2.data;
   useEffect(() => {
-    if (!json3_1 || !json3_2) return;
+    if (!json3Query1.data || !json3Query2.data || !track1 || !track2) return;
 
     const merged = mergeCaptions(
-      { json3: json3_1.json3, vssId: json3_1.track.vssId },
-      { json3: json3_2.json3, vssId: json3_2.track.vssId },
+      { json3: json3Query1.data, vssId: track1.vssId },
+      { json3: json3Query2.data, vssId: track2.vssId },
       userStrategy,
     );
 
     onStoreReady(
       new CaptionSessionManager({
         videoMeta,
-        vssId1: json3_1.track.vssId,
-        vssId2: json3_2.track.vssId,
+        vssId1: track1.vssId,
+        vssId2: track2.vssId,
         rows: merged.captions,
         strategy: merged.strategy,
         bookmarks: [],
       }),
     );
-  }, [json3_1, json3_2, userStrategy, videoMeta, onStoreReady]);
+  }, [
+    json3Query1.data,
+    json3Query2.data,
+    track1,
+    track2,
+    userStrategy,
+    videoMeta,
+    onStoreReady,
+  ]);
 
   return (
     <div className="flex h-full flex-col">
@@ -398,10 +406,9 @@ function CaptionPanelLoading({
         <div className="min-w-0 flex-1">
           <TrackPicker
             tracks={tracks}
-            selectedVssId1={vssId1}
-            selectedVssId2={vssId2}
+            selectedVssId1={track1?.vssId}
+            selectedVssId2={track2?.vssId}
             onSelect={(v1, v2) => onSelectTracks(v1, v2)}
-            disabled={false}
           />
         </div>
         <SettingsDropdownSkeleton />
