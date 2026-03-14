@@ -45,4 +45,4 @@ The AI integration evolved through two approaches:
 
 **Server** — D1 (SQLite) stores videos, captions, bookmarks. Schema in `src/server/schema.ts`. Used for sync/backup, not direct UI rendering.
 
-**Export format** — `export.json` is the interchange format. Contains video metadata, merged captions, and bookmarks. Used by extension export, server import API, and sync.
+**Export format** — `import.json` is the interchange format. Contains video metadata, merged captions, and bookmarks. Used by extension export, server import API, and sync.
