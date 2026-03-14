@@ -175,11 +175,13 @@ function AiPromptCopy({
   bookmarks,
   title,
   duration,
+  youtubeId,
 }: {
   rows: MergedCaption[] | undefined;
   bookmarks: ExtensionBookmark[];
   title: string;
   duration: number | undefined;
+  youtubeId: string;
 }) {
   const [selected, setSelected] = useState<AiTask>(AI_TASKS[0].task);
   const [copied, setCopied] = useState(false);
@@ -202,7 +204,7 @@ function AiPromptCopy({
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `prompt-${task}.txt`;
+    a.download = `zamak-${youtubeId}-prompt-${task}.txt`;
     a.click();
     URL.revokeObjectURL(url);
   }
@@ -619,6 +621,7 @@ function SettingsDropdown({
           bookmarks={store.bookmarks}
           title={store.videoMeta.title}
           duration={store.videoMeta.duration}
+          youtubeId={store.videoMeta.youtubeId}
         />
         <DropdownMenuItem onSelect={() => importAiResult(store)}>
           <ClipboardPaste className="mr-2 h-4 w-4" />
