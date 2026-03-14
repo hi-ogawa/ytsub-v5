@@ -31,7 +31,10 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "../components/ui/popover.tsx";
+import { createLocalStorageStore, useStore } from "../lib/external-store.ts";
 import { orpc } from "../rpc.ts";
+
+const autoScrollStore = createLocalStorageStore("zamak:auto-scroll", true);
 
 // --- YouTube IFrame API types ---
 
@@ -571,21 +574,7 @@ export function VideoViewerPage() {
   }
 
   // Auto-scroll toggle (persisted)
-  const [autoScroll, setAutoScroll] = useState(() => {
-    try {
-      const stored = localStorage.getItem("zamak:auto-scroll");
-      return stored !== null ? (JSON.parse(stored) as boolean) : true;
-    } catch {
-      return true;
-    }
-  });
-  function toggleAutoScroll() {
-    setAutoScroll((prev) => {
-      const next = !prev;
-      localStorage.setItem("zamak:auto-scroll", JSON.stringify(next));
-      return next;
-    });
-  }
+  const [autoScroll, setAutoScroll] = useStore(autoScrollStore);
 
   // Pause auto-scroll when bookmark popover is open
   const isPopoverOpenRef = useRef(false);
@@ -810,7 +799,7 @@ export function VideoViewerPage() {
                   ? "text-accent hover:bg-highlight-bg"
                   : "text-muted-foreground hover:bg-muted",
               ].join(" ")}
-              onClick={toggleAutoScroll}
+              onClick={() => setAutoScroll((v) => !v)}
               title={autoScroll ? "Auto-scroll on" : "Auto-scroll off"}
             >
               <ArrowDown className="h-4 w-4" />

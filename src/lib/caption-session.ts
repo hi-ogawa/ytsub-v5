@@ -1,43 +1,27 @@
-import { useQuery } from "@tanstack/react-query";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import type { InferRouterInputs } from "@orpc/server";
+import type { Router } from "../server/rpc.ts";
+import { type MergeStrategy, type MergedCaption } from "./caption-merge.ts";
 import {
-  FALLBACK_STRATEGIES,
-  type MergeStrategy,
-  type MergedCaption,
-  mergeCaptions,
-} from "./caption-merge.ts";
-import {
-  type CaptionSession,
+  type PersistedCaptionSession,
   deleteSession,
-  getSession,
   saveSession,
 } from "./caption-session-db.ts";
-import {
-  type BookmarkSelection,
-  type ExtensionBookmark,
-  createBookmark,
-} from "./extension-bookmarks.ts";
+import type { ExtensionBookmark } from "./extension-bookmarks.ts";
 import { removeFromVideoIndex, updateVideoIndex } from "./video-index.ts";
 import {
-  type Json3File,
   type YouTubeCaptionTrack,
+  type YouTubeVideoData,
   pickBestTrack,
 } from "./youtube.ts";
 
-export interface VideoMeta {
-  youtubeId: string;
-  title: string;
-  channelName?: string;
-  channelId?: string;
-  duration?: number;
-}
+type ExportData = InferRouterInputs<Router>["videos"]["importVideo"];
 
 // --- Track preference persistence ---
 
 const TRACKS_KEY = "zamak:selected-tracks";
 const LANGS_KEY = "zamak:preferred-langs";
 
-function getInitialTracks(
+export function getInitialTracks(
   tracks: YouTubeCaptionTrack[],
   videoId: string,
 ): { vssId1?: string; vssId2?: string } {
@@ -61,7 +45,7 @@ function getInitialTracks(
   return {};
 }
 
-function saveSelectedTracks(
+export function saveSelectedTracks(
   tracks: YouTubeCaptionTrack[],
   vssId1: string,
   vssId2: string,
@@ -81,292 +65,134 @@ function saveSelectedTracks(
   }
 }
 
-// --- Hook ---
+// --- Store ---
 
-export function useCaptionSession({
-  youtubeId,
-  tracks,
-  fetchJson3,
-  videoMeta,
-}: {
-  youtubeId: string;
-  tracks: YouTubeCaptionTrack[];
-  fetchJson3: (track: YouTubeCaptionTrack) => Promise<Json3File>;
-  videoMeta: VideoMeta;
-}) {
-  // Hydrated session from IndexedDB (null = not loaded yet, undefined = no session)
-  const [hydrated, setHydrated] = useState<CaptionSession | null | undefined>(
-    null,
-  );
+export function langFromVssId(vssId: string): string {
+  return vssId.split(".").pop()!;
+}
 
-  useEffect(() => {
-    let cancelled = false;
-    getSession(youtubeId).then((s) => {
-      if (!cancelled) setHydrated(s ?? undefined);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [youtubeId]);
+export class CaptionSessionManager {
+  readonly videoMeta: YouTubeVideoData;
+  readonly vssId1: string;
+  readonly vssId2: string;
+  rows: MergedCaption[];
+  readonly strategy: MergeStrategy; // TODO: smells
+  bookmarks: ExtensionBookmark[];
+  version = 0;
+  private listeners = new Set<() => void>();
 
-  // Track selection
-  const [{ vssId1: selectedVssId1, vssId2: selectedVssId2 }, setSelectedPair] =
-    useState(() => getInitialTracks(tracks, youtubeId));
-
-  // Override track selection from hydrated session
-  useEffect(() => {
-    if (hydrated) {
-      setSelectedPair({ vssId1: hydrated.vssId1, vssId2: hydrated.vssId2 });
-    }
-  }, [hydrated]);
-
-  const [forceStrategy, setForceStrategy] = useState<
-    MergeStrategy | undefined
-  >();
-
-  const sel1 = tracks.find((t) => t.vssId === selectedVssId1);
-  const sel2 = tracks.find((t) => t.vssId === selectedVssId2);
-
-  // Fetch json3 — disabled when hydrated (captions already loaded)
-  const isHydrated = hydrated != null && hydrated !== undefined;
-
-  const json3Query1 = useQuery({
-    queryKey: ["json3", sel1?.vssId],
-    queryFn: () => fetchJson3(sel1!),
-    enabled: !!sel1 && !isHydrated,
-  });
-
-  const json3Query2 = useQuery({
-    queryKey: ["json3", sel2?.vssId],
-    queryFn: () => fetchJson3(sel2!),
-    enabled: !!sel2 && !isHydrated,
-  });
-
-  // Merge — either from hydrated session or fresh fetch
-  const [captionOverrides, setCaptionOverrides] = useState<
-    Map<number, { text1?: string; text2?: string }>
-  >(new Map());
-
-  let mergedRows: MergedCaption[] | undefined;
-  let activeStrategy: MergeStrategy | undefined;
-
-  if (isHydrated) {
-    mergedRows = hydrated.captions;
-    activeStrategy = undefined; // strategy was already applied
-  } else {
-    const json3_1 = json3Query1.data;
-    const json3_2 = json3Query2.data;
-    const mergeResult =
-      json3_1 && json3_2 && sel1 && sel2
-        ? mergeCaptions(
-            { json3: json3_1, vssId: sel1.vssId },
-            { json3: json3_2, vssId: sel2.vssId },
-            forceStrategy,
-          )
-        : undefined;
-    mergedRows = mergeResult?.captions;
-    activeStrategy = mergeResult?.strategy;
+  constructor(params: {
+    videoMeta: YouTubeVideoData;
+    vssId1: string;
+    vssId2: string;
+    rows: MergedCaption[];
+    strategy: MergeStrategy;
+    bookmarks: ExtensionBookmark[];
+  }) {
+    this.videoMeta = params.videoMeta;
+    this.vssId1 = params.vssId1;
+    this.vssId2 = params.vssId2;
+    this.rows = params.rows;
+    this.strategy = params.strategy;
+    this.bookmarks = params.bookmarks;
   }
 
-  // Apply caption overrides
-  const rows = useMemo(() => {
-    if (!mergedRows || captionOverrides.size === 0) return mergedRows;
-    return mergedRows.map((r) => {
-      const override = captionOverrides.get(r.idx);
-      if (!override) return r;
+  notify() {
+    this.version++;
+    for (const cb of this.listeners) cb();
+  }
+
+  subscribe = (cb: () => void) => {
+    this.listeners.add(cb);
+    return () => {
+      this.listeners.delete(cb);
+    };
+  };
+
+  // --- Operations ---
+
+  async updateCaptions(
+    entries: { idx: number; text1?: string; text2?: string }[],
+  ): Promise<void> {
+    const updates = new Map(entries.map((e) => [e.idx, e]));
+    this.rows = this.rows.map((r) => {
+      const u = updates.get(r.idx);
+      if (!u) return r;
       return {
         ...r,
-        ...(override.text1 !== undefined && { text1: override.text1 }),
-        ...(override.text2 !== undefined && { text2: override.text2 }),
+        ...(u.text1 !== undefined && { text1: u.text1 }),
+        ...(u.text2 !== undefined && { text2: u.text2 }),
       };
     });
-  }, [mergedRows, captionOverrides]);
+    this.notify();
+    await this.persistSession();
+  }
 
-  const isAutoStrategy =
-    !isHydrated &&
-    !forceStrategy &&
-    (activeStrategy === "strict" || activeStrategy === "relaxed-strict");
+  async createBookmarks(
+    selections: Omit<ExtensionBookmark, "id" | "createdAt">[],
+  ): Promise<void> {
+    const newBookmarks: ExtensionBookmark[] = selections.map((sel) => ({
+      id: crypto.randomUUID(),
+      createdAt: new Date().toISOString(),
+      ...sel,
+    }));
+    this.bookmarks = [...this.bookmarks, ...newBookmarks];
+    this.syncVideoIndex();
+    this.notify();
+    await this.persistSession();
+  }
 
-  const error = json3Query1.error ?? json3Query2.error ?? null;
-
-  // Bookmarks — loaded from IndexedDB session (no localStorage)
-  const [bookmarks, setBookmarks] = useState<ExtensionBookmark[]>([]);
-
-  useEffect(() => {
-    if (hydrated) {
-      setBookmarks(hydrated.bookmarks);
+  async deleteBookmark(bookmarkId: string): Promise<void> {
+    this.bookmarks = this.bookmarks.filter((b) => b.id !== bookmarkId);
+    if (this.bookmarks.length > 0) {
+      this.syncVideoIndex();
+      this.notify();
+      await this.persistSession();
+    } else {
+      this.syncVideoIndex();
+      this.notify();
+      await deleteSession(this.videoMeta.youtubeId);
     }
-  }, [hydrated]);
+  }
 
-  const bookmarksByIndex = useMemo(() => {
-    const map = new Map<number, ExtensionBookmark[]>();
-    for (const bm of bookmarks) {
-      const list = map.get(bm.captionIndex);
-      if (list) list.push(bm);
-      else map.set(bm.captionIndex, [bm]);
-    }
-    return map;
-  }, [bookmarks]);
+  async updateBookmarks(
+    entries: (Partial<ExtensionBookmark> & { id: string })[],
+  ): Promise<void> {
+    const updates = new Map(entries.map((e) => [e.id, e]));
+    this.bookmarks = this.bookmarks.map((b) => {
+      const u = updates.get(b.id);
+      return u ? { ...b, ...u } : b;
+    });
+    this.notify();
+    await this.persistSession();
+  }
 
-  const hasBookmarks = bookmarks.length > 0;
-  const tracksLocked = hasBookmarks;
+  async clearBookmarks(): Promise<void> {
+    this.bookmarks = [];
+    this.syncVideoIndex();
+    this.notify();
+    await deleteSession(this.videoMeta.youtubeId);
+  }
 
-  // Persist session to IndexedDB when bookmarks change
-  const persistSession = useCallback(
-    (updatedBookmarks: ExtensionBookmark[]) => {
-      if (!rows || !sel1 || !sel2) return;
-      const session: CaptionSession = {
-        youtubeId,
-        vssId1: sel1.vssId,
-        vssId2: sel2.vssId,
-        language1: sel1.languageCode,
-        language2: sel2.languageCode,
-        captions: rows,
-        bookmarks: updatedBookmarks,
-      };
-      saveSession(session);
-      setHydrated(session);
-    },
-    [youtubeId, rows, sel1, sel2],
-  );
-
-  const syncVideoIndex = useCallback(
-    (bookmarkCount: number) => {
-      if (bookmarkCount > 0) {
-        updateVideoIndex(
-          youtubeId,
-          videoMeta.title,
-          videoMeta.channelName ?? "",
-          bookmarkCount,
-        );
-      } else {
-        removeFromVideoIndex(youtubeId);
-      }
-    },
-    [youtubeId, videoMeta.title, videoMeta.channelName],
-  );
-
-  const addBookmarks = useCallback(
-    (
-      selections: (BookmarkSelection & {
-        timestamp: number;
-        context: string;
-        translation?: string;
-        etymology?: string;
-        notes?: string;
-      })[],
-    ) => {
-      const newBookmarks = selections.map((sel) =>
-        createBookmark({
-          text: sel.text,
-          side: sel.side,
-          offset: sel.offset,
-          captionIndex: sel.captionIndex,
-          timestamp: sel.timestamp,
-          context: sel.context,
-          translation: sel.translation,
-          etymology: sel.etymology,
-          notes: sel.notes,
-        }),
-      );
-      setBookmarks((prev) => {
-        const updated = [...prev, ...newBookmarks];
-        persistSession(updated);
-        syncVideoIndex(updated.length);
-        return updated;
-      });
-    },
-    [persistSession, syncVideoIndex],
-  );
-
-  const deleteBookmark = useCallback(
-    (bookmarkId: string) => {
-      setBookmarks((prev) => {
-        const updated = prev.filter((b) => b.id !== bookmarkId);
-        if (updated.length > 0) {
-          persistSession(updated);
-        } else {
-          deleteSession(youtubeId);
-          setHydrated(undefined);
-        }
-        syncVideoIndex(updated.length);
-        return updated;
-      });
-    },
-    [youtubeId, persistSession, syncVideoIndex],
-  );
-
-  const updateBookmarks = useCallback(
-    (
-      entries: {
-        id: string;
-        data: Partial<
-          Pick<ExtensionBookmark, "translation" | "etymology" | "notes">
-        >;
-      }[],
-    ) => {
-      setBookmarks((prev) => {
-        const updates = new Map(entries.map((e) => [e.id, e.data]));
-        const updated = prev.map((b) => {
-          const data = updates.get(b.id);
-          return data ? { ...b, ...data } : b;
-        });
-        persistSession(updated);
-        return updated;
-      });
-    },
-    [persistSession],
-  );
-
-  const updateCaptions = useCallback(
-    (entries: { idx: number; text1?: string; text2?: string }[]) => {
-      setCaptionOverrides((prev) => {
-        const next = new Map(prev);
-        for (const { idx, ...data } of entries) {
-          next.set(idx, { ...next.get(idx), ...data });
-        }
-        return next;
-      });
-    },
-    [],
-  );
-
-  const clearBookmarks = useCallback(() => {
-    setBookmarks([]);
-    deleteSession(youtubeId);
-    setHydrated(undefined);
-    syncVideoIndex(0);
-  }, [youtubeId, syncVideoIndex]);
-
-  const setTracks = useCallback(
-    (v1: string | undefined, v2: string | undefined) => {
-      setSelectedPair({ vssId1: v1, vssId2: v2 });
-      if (v1 && v2) saveSelectedTracks(tracks, v1, v2, youtubeId);
-    },
-    [tracks, youtubeId],
-  );
-
-  // Export
-  const handleExport = useCallback(() => {
-    if (!rows) return;
-    const data = {
+  toExportData(): ExportData {
+    return {
       video: {
-        youtubeId: videoMeta.youtubeId,
-        title: videoMeta.title,
-        channelName: videoMeta.channelName ?? "",
-        channelId: videoMeta.channelId ?? "",
-        duration: videoMeta.duration ?? 0,
-        language1: sel1?.languageCode ?? "ko",
-        language2: sel2?.languageCode ?? "en",
+        youtubeId: this.videoMeta.youtubeId,
+        title: this.videoMeta.title,
+        channelName: this.videoMeta.channelName,
+        channelId: this.videoMeta.channelId,
+        duration: this.videoMeta.duration,
+        language1: langFromVssId(this.vssId1),
+        language2: langFromVssId(this.vssId2),
       },
-      captions: rows.map((r, i) => ({
+      captions: this.rows.map((r, i) => ({
         idx: i,
         begin: r.begin,
         end: r.end,
         text1: r.text1,
         text2: r.text2,
       })),
-      bookmarks: bookmarks.map((b) => ({
+      bookmarks: this.bookmarks.map((b) => ({
         text: b.text,
         translation: b.translation,
         etymology: b.etymology,
@@ -378,49 +204,32 @@ export function useCaptionSession({
         status: "manual",
       })),
     };
-    const blob = new Blob([JSON.stringify(data, null, 2)], {
-      type: "application/json",
-    });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `import-${videoMeta.youtubeId}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-  }, [rows, bookmarks, videoMeta, sel1, sel2]);
+  }
 
-  return {
-    // Track selection
-    selectedVssId1,
-    selectedVssId2,
-    onSelectTracks: setTracks,
-    tracksLocked,
+  async persistSession(): Promise<void> {
+    const session: PersistedCaptionSession = {
+      youtubeId: this.videoMeta.youtubeId,
+      vssId1: this.vssId1,
+      vssId2: this.vssId2,
+      language1: langFromVssId(this.vssId1),
+      language2: langFromVssId(this.vssId2),
+      strategy: this.strategy,
+      captions: this.rows,
+      bookmarks: this.bookmarks,
+    };
+    await saveSession(session);
+  }
 
-    // Merge strategy
-    forceStrategy,
-    onSetForceStrategy: setForceStrategy,
-    activeStrategy,
-    isAutoStrategy,
-    fallbackStrategies: FALLBACK_STRATEGIES,
-
-    // Caption data
-    rows,
-    onUpdateCaptions: updateCaptions,
-    error,
-    loading: hydrated === null, // still checking IndexedDB
-
-    // Bookmarks
-    bookmarks,
-    bookmarksByIndex,
-    onCreateBookmarks: addBookmarks,
-    onDeleteBookmark: deleteBookmark,
-    onUpdateBookmarks: updateBookmarks,
-    onClearBookmarks: clearBookmarks,
-    hasBookmarks,
-
-    // Export
-    onExport: handleExport,
-  };
+  syncVideoIndex(): void {
+    if (this.bookmarks.length > 0) {
+      updateVideoIndex(
+        this.videoMeta.youtubeId,
+        this.videoMeta.title,
+        this.videoMeta.channelName,
+        this.bookmarks.length,
+      );
+    } else {
+      removeFromVideoIndex(this.videoMeta.youtubeId);
+    }
+  }
 }
-
-export type CaptionSessionManager = ReturnType<typeof useCaptionSession>;

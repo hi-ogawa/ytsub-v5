@@ -1,5 +1,5 @@
 import { ExternalLink } from "lucide-react";
-import { useEffect, useImperativeHandle, useRef } from "react";
+import { useEffect, useImperativeHandle, useMemo, useRef } from "react";
 import type { MergedCaption } from "../lib/caption-merge.ts";
 import type { ExtensionBookmark } from "../lib/extension-bookmarks.ts";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover.tsx";
@@ -21,8 +21,8 @@ function BookmarkWord({
   bookmark: ExtensionBookmark;
   offset: number;
   children: React.ReactNode;
-  onGoToBookmark?: (bookmarkId: string) => void;
-  onPopoverOpenChange?: (open: boolean) => void;
+  onGoToBookmark: (bookmarkId: string) => void;
+  onPopoverOpenChange: (open: boolean) => void;
 }) {
   const filled = !!bookmark.translation;
   return (
@@ -88,8 +88,8 @@ function BookmarkWord({
 function highlightText(
   text: string,
   marks: { offset: number; length: number; bookmark?: ExtensionBookmark }[],
-  onGoToBookmark?: (bookmarkId: string) => void,
-  onPopoverOpenChange?: (open: boolean) => void,
+  onGoToBookmark: (bookmarkId: string) => void,
+  onPopoverOpenChange: (open: boolean) => void,
 ) {
   if (marks.length === 0) return <span data-offset={0}>{text}</span>;
   const sorted = [...marks].sort((a, b) => a.offset - b.offset);
@@ -143,8 +143,8 @@ export function CaptionList({
   currentIndex,
   isPlaying,
   player,
-  autoScroll = true,
-  bookmarksByIndex,
+  autoScroll,
+  bookmarks,
   onGoToBookmark,
   onPopoverOpenChange,
 }: {
@@ -153,12 +153,22 @@ export function CaptionList({
   currentIndex: number | undefined;
   isPlaying: boolean;
   player: YTPlayer | null;
-  autoScroll?: boolean;
-  bookmarksByIndex?: Map<number, ExtensionBookmark[]>;
-  onGoToBookmark?: (bookmarkId: string) => void;
-  onPopoverOpenChange?: (open: boolean) => void;
+  autoScroll: boolean;
+  bookmarks: ExtensionBookmark[];
+  onGoToBookmark: (bookmarkId: string) => void;
+  onPopoverOpenChange: (open: boolean) => void;
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  const bookmarksByIndex = useMemo(() => {
+    const map = new Map<number, ExtensionBookmark[]>();
+    for (const bm of bookmarks) {
+      const list = map.get(bm.captionIndex);
+      if (list) list.push(bm);
+      else map.set(bm.captionIndex, [bm]);
+    }
+    return map;
+  }, [bookmarks]);
 
   useImperativeHandle(ref, () => ({
     scrollToIndex: (index: number) => {
@@ -173,12 +183,10 @@ export function CaptionList({
   const isPopoverOpenRef = useRef(false);
   const manualScrollTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const wrappedPopoverOpenChange = onPopoverOpenChange
-    ? (open: boolean) => {
-        isPopoverOpenRef.current = open;
-        onPopoverOpenChange(open);
-      }
-    : undefined;
+  const wrappedPopoverOpenChange = (open: boolean) => {
+    isPopoverOpenRef.current = open;
+    onPopoverOpenChange(open);
+  };
 
   function onManualScroll() {
     isManualScrollRef.current = true;
