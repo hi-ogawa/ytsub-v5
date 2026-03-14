@@ -641,7 +641,7 @@ test.describe("dev-viewer caption panel", () => {
 
 test.describe("dev-viewer sync", () => {
   test.beforeEach(async ({ page }) => {
-    await setupDb();
+    await setupDb({ seed: true });
     await login(page);
     // Clear IndexedDB and localStorage from previous tests
     await page.goto("/dev/youtube/7GU_VQfgMT0");
