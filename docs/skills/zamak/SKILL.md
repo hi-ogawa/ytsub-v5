@@ -80,7 +80,7 @@ Read console after calling. `ZAMAK:addBookmarks done` confirms how many were add
 **Fields:**
 
 - `translation` — contextual English meaning for **this caption**, not a dictionary dump. Concise.
-- `etymology` — Hanja breakdown if it aids memorization (e.g. `非現實的; 비(non) + 현실(reality) + 적(adj)`). Empty for native Korean words.
+- `etymology` — Hanja if applicable (e.g. `體重`). Empty for native Korean words.
 - `notes` — usage tips: formality, collocations, gotchas. 1-2 sentences max. Empty if nothing notable.
 
 Use caption context to disambiguate. Be concise — flashcard-style. Contextual meaning over generic dictionary.

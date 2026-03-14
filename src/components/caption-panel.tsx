@@ -4,6 +4,7 @@ import {
   Check,
   ChevronLeft,
   ChevronRight,
+  ClipboardPaste,
   Copy,
   Download,
   EllipsisVertical,
@@ -21,6 +22,13 @@ import {
   useState,
   useSyncExternalStore,
 } from "react";
+import {
+  type AiTask,
+  AI_TASKS,
+  makeAiPrompt,
+  parseAiResult,
+  pickFillToBookmarks,
+} from "../lib/ai-prompt.ts";
 import {
   ALL_STRATEGIES,
   type MergeStrategy,
@@ -162,24 +170,43 @@ export function ResizablePanel({
 
 // --- AI prompt copy (inline dropdown widget) ---
 
-const AI_PROMPTS: { label: string; task: string }[] = [
-  { label: "Pick & Fill", task: "Pick & Fill" },
-  { label: "Fill Bookmarks", task: "Fill Bookmarks" },
-  { label: "Fix Korean ASR", task: "Fix Korean ASR" },
-];
-
-function makePrompt(task: string): string {
-  return `This page has a language learning tool (zamak) injected as window.__zamak. It exposes methods to read captions/bookmarks and write bookmark metadata. Run window.__zamak.log.skillPrompt() and read the console output — it contains the full API reference and task instructions. Follow the "${task}" task. All data is read via console logs (prefixed ZAMAK:), not return values. If any API call errors, stop and report — do not try to fix it.`;
-}
-
-function AiPromptCopy() {
-  const [selected, setSelected] = useState(AI_PROMPTS[0].task);
+function AiPromptCopy({
+  rows,
+  bookmarks,
+  title,
+  duration,
+  youtubeId,
+}: {
+  rows: MergedCaption[] | undefined;
+  bookmarks: ExtensionBookmark[];
+  title: string;
+  duration: number | undefined;
+  youtubeId: string;
+}) {
+  const [selected, setSelected] = useState<AiTask>(AI_TASKS[0].task);
   const [copied, setCopied] = useState(false);
 
-  function copyPrompt(task: string) {
-    navigator.clipboard.writeText(makePrompt(task));
+  function getPrompt(task: AiTask) {
+    if (!rows) return "";
+    return makeAiPrompt(task, rows, bookmarks, title, duration);
+  }
+
+  function copyPrompt(task: AiTask) {
+    navigator.clipboard.writeText(getPrompt(task));
     setCopied(true);
     setTimeout(() => setCopied(false), 1500);
+  }
+
+  function downloadPrompt(task: AiTask) {
+    const text = getPrompt(task);
+    if (!text) return;
+    const blob = new Blob([text], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `zamak-${youtubeId}-prompt-${task}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
   }
 
   return (
@@ -192,11 +219,11 @@ function AiPromptCopy() {
           className="min-w-0 flex-1 rounded border bg-background px-1 py-0.5 text-sm"
           value={selected}
           onChange={(e) => {
-            setSelected(e.target.value);
-            copyPrompt(e.target.value);
+            setSelected(e.target.value as AiTask);
+            copyPrompt(e.target.value as AiTask);
           }}
         >
-          {AI_PROMPTS.map((p) => (
+          {AI_TASKS.map((p) => (
             <option key={p.task} value={p.task}>
               {p.label}
             </option>
@@ -207,6 +234,7 @@ function AiPromptCopy() {
           className="shrink-0 rounded p-0.5 text-muted-foreground hover:bg-muted"
           title="Copy prompt"
           onClick={() => copyPrompt(selected)}
+          disabled={!rows}
         >
           {copied ? (
             <Check className="h-4 w-4 text-green-500" />
@@ -214,9 +242,56 @@ function AiPromptCopy() {
             <Copy className="h-4 w-4" />
           )}
         </button>
+        <button
+          type="button"
+          className="shrink-0 rounded p-0.5 text-muted-foreground hover:bg-muted"
+          title="Download prompt"
+          onClick={() => downloadPrompt(selected)}
+          disabled={!rows}
+        >
+          <Download className="h-4 w-4" />
+        </button>
       </div>
     </div>
   );
+}
+
+// --- AI import paste ---
+
+function importAiResult(store: CaptionSessionManager): void {
+  const raw = window.prompt("Paste AI result JSON");
+  if (!raw) return;
+  try {
+    const result = parseAiResult(raw);
+    switch (result.type) {
+      case "pick-fill": {
+        const { bookmarks, warnings } = pickFillToBookmarks(
+          result.entries,
+          store.rows,
+        );
+        if (bookmarks.length > 0) {
+          store.createBookmarks(bookmarks);
+        }
+        alert(
+          `Created ${bookmarks.length} bookmarks` +
+            (warnings.length > 0
+              ? `\n\n${warnings.length} skipped:\n${warnings.join("\n")}`
+              : ""),
+        );
+        break;
+      }
+      case "fill":
+        store.updateBookmarks(result.entries);
+        alert(`Filled ${result.entries.length} bookmarks`);
+        break;
+      case "fix-asr":
+        store.updateCaptions(result.entries);
+        alert(`Updated ${result.entries.length} captions`);
+        break;
+    }
+  } catch (e) {
+    alert(e instanceof Error ? e.message : "Invalid JSON");
+  }
 }
 
 // --- CaptionPanel: display component ---
@@ -554,7 +629,17 @@ function SettingsDropdown({
             ))}
           </select>
         </div>
-        <AiPromptCopy />
+        <AiPromptCopy
+          rows={store.rows}
+          bookmarks={store.bookmarks}
+          title={store.videoMeta.title}
+          duration={store.videoMeta.duration}
+          youtubeId={store.videoMeta.youtubeId}
+        />
+        <DropdownMenuItem onSelect={() => importAiResult(store)}>
+          <ClipboardPaste className="mr-2 h-4 w-4" />
+          Import AI result
+        </DropdownMenuItem>
         <DropdownMenuItem
           onClick={() => {
             const data = store.toExportData();
