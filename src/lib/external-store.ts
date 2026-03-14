@@ -3,13 +3,13 @@ import { useSyncExternalStore } from "react";
 type Listener = () => void;
 type SetAction<T> = T | ((prev: T) => T);
 
-export interface ExternalStore<T> {
+interface ExternalStore<T> {
   get(): T;
   set(value: SetAction<T>): void;
   subscribe(listener: Listener): () => void;
 }
 
-export function createExternalStore<T>(initialValue: T): ExternalStore<T> {
+function createExternalStore<T>(initialValue: T): ExternalStore<T> {
   let current = initialValue;
   const listeners = new Set<Listener>();
 
