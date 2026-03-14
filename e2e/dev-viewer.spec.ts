@@ -126,22 +126,17 @@ test.describe("dev-viewer caption panel", () => {
     await expect(strategySelect).toBeVisible();
     await expect(strategySelect).toHaveValue("partition");
 
-    // Read total row count with partition strategy (default)
+    // Count rows with partition strategy (default)
+    // Close menu first to count rows
     await page.keyboard.press("Escape");
-    const captionList = page.getByTestId("caption-list");
-    await expect(page.locator("[data-index='0']")).toBeVisible();
-    const partitionCount = Number(
-      await captionList.getAttribute("data-row-count"),
-    );
+    const partitionCount = await page.locator("[data-index]").count();
 
-    // Switch to overlap — should produce more rows
+    // Reopen and switch to overlap — should produce more rows
     await page.getByTitle("Settings").click();
     await strategySelect.selectOption("overlap");
     await page.keyboard.press("Escape");
     await expect(page.locator("[data-index='0']")).toBeVisible();
-    const overlapCount = Number(
-      await captionList.getAttribute("data-row-count"),
-    );
+    const overlapCount = await page.locator("[data-index]").count();
     expect(overlapCount).toBeGreaterThan(partitionCount);
 
     // Switch to best-overlap

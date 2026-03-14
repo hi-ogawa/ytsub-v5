@@ -1,4 +1,3 @@
-import { useVirtualizer } from "@tanstack/react-virtual";
 import { ExternalLink } from "lucide-react";
 import { useEffect, useImperativeHandle, useMemo, useRef } from "react";
 import type { MergedCaption } from "../lib/caption-merge.ts";
@@ -167,13 +166,6 @@ export function CaptionList({
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  const virtualizer = useVirtualizer({
-    count: rows.length,
-    getScrollElement: () => scrollRef.current,
-    estimateSize: () => 100,
-    overscan: 5,
-  });
-
   const bookmarksByIndex = useMemo(() => {
     const map = new Map<number, ExtensionBookmark[]>();
     for (const bm of bookmarks) {
@@ -186,11 +178,10 @@ export function CaptionList({
 
   useImperativeHandle(ref, () => ({
     scrollToIndex: (index: number) => {
-      isManualScrollRef.current = true;
-      virtualizer.scrollToIndex(index, {
-        align: "center",
-        behavior: "smooth",
-      });
+      const el = scrollRef.current?.querySelector(`[data-index="${index}"]`);
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
       onManualScroll();
     },
   }));
@@ -227,17 +218,18 @@ export function CaptionList({
     const scrollEl = scrollRef.current;
     if (!scrollEl) return;
 
+    const el = scrollEl.querySelector(`[data-index="${currentIndex}"]`);
+    if (!el) return;
+
+    // Only scroll if item is far from viewport center
     const { scrollTop, clientHeight } = scrollEl;
     const currentCenter = scrollTop + clientHeight / 2;
+    const itemRect =
+      (el as HTMLElement).offsetTop + (el as HTMLElement).offsetHeight / 2;
     const threshold = clientHeight / 6;
-    const items = virtualizer.getVirtualItems();
-    const item = items.find((it) => it.index === currentIndex);
 
-    if (!item || Math.abs(item.start - currentCenter) > threshold) {
-      virtualizer.scrollToIndex(currentIndex, {
-        align: "center",
-        behavior: "smooth",
-      });
+    if (Math.abs(itemRect - currentCenter) > threshold) {
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
     }
   }, [currentIndex]);
 
@@ -260,8 +252,6 @@ export function CaptionList({
     }
   }
 
-  const virtualItems = virtualizer.getVirtualItems();
-
   return (
     <div
       className="flex-[1_0_0] overflow-y-auto"
@@ -269,79 +259,64 @@ export function CaptionList({
       onWheel={onManualScroll}
       onTouchStart={onManualScroll}
     >
-      <div
-        className="relative w-full"
-        data-testid="caption-list"
-        data-row-count={rows.length}
-        style={{ height: virtualizer.getTotalSize() }}
-      >
-        <div
-          className="absolute left-0 top-0 flex w-full flex-col gap-1.5 p-1.5"
-          style={{
-            transform: `translateY(${(virtualItems[0]?.start ?? 0) - virtualizer.options.scrollMargin}px)`,
-          }}
-        >
-          {virtualItems.map((virtualItem) => {
-            const i = virtualItem.index;
-            const row = rows[i];
-            const rowBookmarks = bookmarksByIndex?.get(i);
-            const text1Marks = rowBookmarks
-              ?.filter((b) => b.side === 0)
-              .map((b) => ({
-                offset: b.offset,
-                length: b.text.length,
-                bookmark: b,
-              }));
-            const text2Marks = rowBookmarks
-              ?.filter((b) => b.side === 1)
-              .map((b) => ({
-                offset: b.offset,
-                length: b.text.length,
-                bookmark: b,
-              }));
+      <div className="flex flex-col gap-1.5 p-1.5">
+        {rows.map((row, i) => {
+          const rowBookmarks = bookmarksByIndex?.get(i);
+          const text1Marks = rowBookmarks
+            ?.filter((b) => b.side === 0)
+            .map((b) => ({
+              offset: b.offset,
+              length: b.text.length,
+              bookmark: b,
+            }));
+          const text2Marks = rowBookmarks
+            ?.filter((b) => b.side === 1)
+            .map((b) => ({
+              offset: b.offset,
+              length: b.text.length,
+              bookmark: b,
+            }));
 
-            return (
-              <div
-                key={virtualItem.key}
-                ref={virtualizer.measureElement}
-                data-index={i}
-                className={[
-                  "flex w-full cursor-pointer flex-col gap-1 border p-1 px-2 hover:bg-muted",
-                  i === currentIndex && isPlaying && "ring-2 ring-ring",
-                  i === currentIndex ? "border-ring" : "border-border",
-                  i === flashIndex && "flash-highlight",
-                ]
-                  .filter(Boolean)
-                  .join(" ")}
-                onClick={() => onClickRow(i)}
-              >
-                <div className="text-xs text-muted-foreground">
-                  <span className="ml-auto">
-                    {formatTimestamp(row.begin)} – {formatTimestamp(row.end)}
-                  </span>
+          return (
+            <div
+              key={i}
+              data-index={i}
+              className={[
+                "flex w-full cursor-pointer flex-col gap-1 border p-1 px-2 hover:bg-muted",
+                i === currentIndex && isPlaying && "ring-2 ring-ring",
+                i === currentIndex ? "border-ring" : "border-border",
+                i === flashIndex && "flash-highlight",
+              ]
+                .filter(Boolean)
+                .join(" ")}
+              onClick={() => onClickRow(i)}
+            >
+              <div className="text-xs text-muted-foreground">
+                <span className="ml-auto">
+                  {formatTimestamp(row.begin)} – {formatTimestamp(row.end)}
+                </span>
+              </div>
+              <div className="flex text-sm">
+                <div className="flex-1 border-r pr-2" data-side="0">
+                  {highlightText(
+                    row.text1,
+                    text1Marks ?? [],
+                    onGoToBookmark,
+                    wrappedPopoverOpenChange,
+                  )}
                 </div>
-                <div className="flex text-sm">
-                  <div className="flex-1 border-r pr-2" data-side="0">
-                    {highlightText(
-                      row.text1,
-                      text1Marks ?? [],
-                      onGoToBookmark,
-                      wrappedPopoverOpenChange,
-                    )}
-                  </div>
-                  <div className="flex-1 pl-2" data-side="1">
-                    {highlightText(
-                      row.text2,
-                      text2Marks ?? [],
-                      onGoToBookmark,
-                      wrappedPopoverOpenChange,
-                    )}
-                  </div>
+                <div className="flex-1 pl-2" data-side="1">
+                  {highlightText(
+                    row.text2,
+                    text2Marks ?? [],
+                    onGoToBookmark,
+                    wrappedPopoverOpenChange,
+                  )}
                 </div>
               </div>
-            );
-          })}
-        </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
