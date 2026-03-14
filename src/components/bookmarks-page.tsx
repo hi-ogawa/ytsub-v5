@@ -5,23 +5,9 @@ import {
   CloudOff,
   Loader2,
 } from "lucide-react";
+import type { BookmarkSyncEntry, BookmarksSyncHandle } from "../lib/sync.ts";
 import type { VideoIndexEntry } from "../lib/video-index.ts";
 import { VideoCard } from "./video-card.tsx";
-
-export type BookmarkSyncEntry = {
-  youtubeId: string;
-  title: string;
-  channelName: string;
-  bookmarkCount: number;
-  updatedAt: string;
-  syncStatus: "local-only" | "server-only" | "synced" | "pull" | "push";
-};
-
-export type BookmarksSyncHandle = {
-  entries: BookmarkSyncEntry[];
-  pulling: Set<string>;
-  onPull: (youtubeId: string) => void;
-};
 
 export function BookmarksPage({
   entries,

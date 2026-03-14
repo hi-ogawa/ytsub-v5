@@ -158,6 +158,21 @@ export function useSyncState({ youtubeId }: { youtubeId: string }) {
   return { state, onSync, error };
 }
 
+export type BookmarkSyncEntry = {
+  youtubeId: string;
+  title: string;
+  channelName: string;
+  bookmarkCount: number;
+  updatedAt: string;
+  syncStatus: "local-only" | "server-only" | "synced" | "pull" | "push";
+};
+
+export type BookmarksSyncHandle = {
+  entries: BookmarkSyncEntry[];
+  pulling: Set<string>;
+  onPull: (youtubeId: string) => void;
+};
+
 export async function pullServerSession(
   data: NonNullable<
     Awaited<

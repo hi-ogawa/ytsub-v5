@@ -1,13 +1,14 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router";
+import { BookmarksPage } from "../components/bookmarks-page.tsx";
+import { useStore } from "../lib/external-store.ts";
 import {
-  BookmarksPage,
   type BookmarkSyncEntry,
   type BookmarksSyncHandle,
-} from "../components/bookmarks-page.tsx";
-import { useStore } from "../lib/external-store.ts";
-import { computeSyncState, pullServerSession } from "../lib/sync.ts";
+  computeSyncState,
+  pullServerSession,
+} from "../lib/sync.ts";
 import { videoIndexStore } from "../lib/video-index.ts";
 import { orpc } from "../rpc.ts";
 
