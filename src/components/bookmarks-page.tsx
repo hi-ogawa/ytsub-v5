@@ -4,6 +4,7 @@ import {
   CheckCircle2,
   Loader2,
 } from "lucide-react";
+import type { ReactNode } from "react";
 import type { VideoSyncEntry, VideoSyncHandle } from "../lib/sync.ts";
 import type { VideoIndexEntry } from "../lib/video-index.ts";
 import { VideoCard } from "./video-card.tsx";
@@ -12,10 +13,12 @@ export function BookmarksPage({
   entries,
   onVideoClick,
   sync,
+  actions,
 }: {
   entries: VideoIndexEntry[];
   onVideoClick: (youtubeId: string) => void;
   sync?: VideoSyncHandle;
+  actions?: ReactNode;
 }) {
   const displayEntries: VideoSyncEntry[] = sync?.isPending
     ? []
@@ -31,6 +34,8 @@ export function BookmarksPage({
         {sync?.isPending && (
           <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
         )}
+        <div className="flex-1" />
+        {actions}
       </div>
       {sorted.length === 0 && !sync?.isPending ? (
         <p className="text-sm text-muted-foreground">

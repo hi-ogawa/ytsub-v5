@@ -103,6 +103,21 @@ function syncBadge(page: Page, youtubeId: string) {
     .getByTestId("video-sync-badge");
 }
 
+test.describe("dev-bookmarks bootstrap", () => {
+  test("bootstrap fixtures seeds video index", async ({ page }) => {
+    await page.goto("/dev/bookmarks");
+    await expect(page.getByText("No bookmarked videos yet")).toBeVisible();
+
+    // Click bootstrap
+    await page.getByTestId("bootstrap-fixtures").click();
+
+    // All 3 fixture videos should appear in the video index
+    await expect(page.getByTestId("video-card-7GU_VQfgMT0")).toBeVisible();
+    await expect(page.getByTestId("video-card-aK8Yh3RTBUY")).toBeVisible();
+    await expect(page.getByTestId("video-card-DtK-CkwNHSY")).toBeVisible();
+  });
+});
+
 test.describe("dev-bookmarks sync", () => {
   test.beforeEach(async ({ page }) => {
     await setupDb({ seed: true });
