@@ -1,13 +1,8 @@
 import { useNavigate } from "react-router";
 import { VideoCard } from "../components/video-card.tsx";
-import type { YouTubeExtractionResult } from "../lib/youtube.ts";
+import { fixtureMetadata } from "../lib/dev-fixtures.ts";
 
-const fixtureModules = import.meta.glob<YouTubeExtractionResult>(
-  "/scripts/youtube-json/*/metadata.json",
-  { eager: true, import: "default" },
-);
-
-const fixtures = Object.values(fixtureModules);
+const fixtures = Object.values(fixtureMetadata);
 
 function formatDuration(seconds: number): string {
   if (seconds <= 0) return "—";
@@ -21,7 +16,7 @@ export function DevFixturesPage() {
   return (
     <div className="mx-auto max-w-5xl p-8">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold">Dev Viewer</h1>
+        <h1 className="text-2xl font-bold">Dev Fixtures</h1>
       </div>
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
         {fixtures.map((meta) => (

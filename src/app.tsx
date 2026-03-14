@@ -1,6 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createBrowserRouter, RouterProvider } from "react-router";
-import { DevFixturesPage } from "./routes/dev-fixtures-page.tsx";
+import { DevFixturesPage } from "./routes/dev-fixtures.tsx";
 import { DevViewerPage } from "./routes/dev-viewer.tsx";
 import { LoginPage, RegisterPage } from "./routes/login.tsx";
 import {
