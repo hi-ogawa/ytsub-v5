@@ -21,7 +21,6 @@ import {
   useState,
   useSyncExternalStore,
 } from "react";
-import { autoScrollStore } from "../lib/auto-scroll-store.ts";
 import {
   ALL_STRATEGIES,
   type MergeStrategy,
@@ -39,7 +38,7 @@ import {
   type ExtensionBookmark,
   extractBookmarkSelection,
 } from "../lib/extension-bookmarks.ts";
-import { useStore } from "../lib/external-store.ts";
+import { createLocalStorageStore, useStore } from "../lib/external-store.ts";
 import type {
   Json3File,
   YouTubeCaptionTrack,
@@ -55,6 +54,8 @@ import {
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu.tsx";
 import type { YTPlayer } from "./youtube-player.tsx";
+
+const autoScrollStore = createLocalStorageStore("zamak:auto-scroll", true);
 
 export function CaptionFab({
   open,
@@ -444,8 +445,7 @@ function CaptionPanelWithStore({
 
   useZamakApi(store);
 
-  const autoScroll = useStore(autoScrollStore);
-  const setAutoScroll = autoScrollStore.set;
+  const [autoScroll, setAutoScroll] = useStore(autoScrollStore);
 
   return (
     <div className="flex h-full flex-col">

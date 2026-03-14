@@ -57,6 +57,9 @@ export function createLocalStorageStore<T>(
   };
 }
 
-export function useStore<T>(store: ExternalStore<T>): T {
-  return useSyncExternalStore(store.subscribe, store.get);
+export function useStore<T>(
+  store: ExternalStore<T>,
+): [T, ExternalStore<T>["set"]] {
+  const value = useSyncExternalStore(store.subscribe, store.get);
+  return [value, store.set];
 }
