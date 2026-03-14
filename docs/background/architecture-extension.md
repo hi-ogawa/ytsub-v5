@@ -1,10 +1,10 @@
 # Browser Extension — Architecture
 
-A Chrome extension running on YouTube pages extracts subtitles and pushes them to the app. This replaces the agent skill pipeline (yt-dlp + LLM) with a faster, deterministic flow.
+The Chrome extension is the primary client. It runs on YouTube pages, fetches subtitles, renders a caption panel overlay, and handles the full bookmarking + AI workflow. All data is stored locally in IndexedDB and optionally synced to the server.
 
 ## Why an extension
 
-Content scripts on `youtube.com` have same-origin access — they can call YouTube's internal APIs (`youtubei/v1/player`, `timedtext`) without CORS restrictions. This is the same approach as v4 and Language Reactor.
+Content scripts on `youtube.com` have same-origin access — they can call YouTube's internal APIs (`youtubei/v1/player`, `timedtext`) without CORS restrictions. No external server can do this. The extension is the only way to get subtitle data.
 
 ## How subtitle fetching works
 
@@ -18,18 +18,12 @@ The workaround (from yt-dlp): call `youtubei/v1/player` with **iOS client header
 
 **Same-origin solves CORS, iOS client identity solves POT.** Two orthogonal problems.
 
-This approach is fragile — YouTube can break it by requiring SUBS POT for mobile clients. We track yt-dlp's workarounds (`docs/skills/yt-dlp/SKILL.md`) to stay current.
+This approach is fragile — YouTube can break it by requiring SUBS POT for mobile clients.
 
-## Architecture
+## Extension structure
 
-The extension is a thin shell. Core logic (extraction, json3 parsing, alignment) lives in shared modules (`src/lib/youtube.ts`) reusable by both the extension and tests. See `docs/tasks/2026-03-08-browser-extension.md` for the implementation plan.
+The extension is a thin shell. Core logic (subtitle extraction, json3 parsing, caption alignment, UI components) lives in shared modules under `src/lib/` and `src/components/`, reusable by the extension, dev-viewer, and web app. Extension-specific code (`src/extension/content.tsx`) is a thin wrapper: Shadow DOM injection, `pointer-events` layering, and YouTube data fetching — delegating all UI to shared components.
 
-## Dev-viewer for iteration without extension
+## Dev-viewer
 
-Loading/reloading a Chrome extension on every change is slow. The **dev-viewer** (`/dev/youtube/:videoId`) provides the same caption panel experience using local fixture data, so UI iteration happens via `pnpm dev` without touching the extension.
-
-- Shared components (`src/components/caption-panel.tsx`, `caption-list.tsx`, `track-picker.tsx`) are used by the extension, dev-viewer, and web app viewer
-- The dev-viewer reads pre-fetched YouTube metadata/tracks from `/scripts/youtube-json/` fixtures instead of calling YouTube APIs
-- The web app viewer uses the same `CaptionPanel` with `sessionOnly` flag — loads from IndexedDB, no caption fetching
-- UI features (FAB toggle, panel layout, auto-scroll) should be implemented in the shared components so all environments stay in sync
-- Extension-specific code (`src/extension/content.tsx`) should be a thin wrapper: Shadow DOM injection, `pointer-events` layering, and data fetching — delegating all UI to shared components
+Loading/reloading a Chrome extension on every change is slow. The dev-viewer (`/dev/youtube/:videoId`) renders the same caption panel using local fixture data (`/scripts/youtube-json/`), so UI iteration happens via `pnpm dev` without touching the extension. The dev-viewer uses the exact same shared components as the extension.
