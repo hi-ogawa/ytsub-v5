@@ -643,16 +643,6 @@ test.describe("dev-viewer sync", () => {
   test.beforeEach(async ({ page }) => {
     await setupDb({ seed: true });
     await login(page);
-    // Clear IndexedDB and localStorage from previous tests
-    await page.goto("/dev/youtube/7GU_VQfgMT0");
-    await page.evaluate(() => {
-      localStorage.removeItem("zamak:video-index");
-      const req = indexedDB.deleteDatabase("zamak");
-      return new Promise<void>((resolve) => {
-        req.onsuccess = () => resolve();
-        req.onerror = () => resolve();
-      });
-    });
     await page.goto("/dev/youtube/7GU_VQfgMT0");
   });
 
