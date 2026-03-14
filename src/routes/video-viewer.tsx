@@ -4,6 +4,11 @@ import { useYouTubePlayer } from "../components/youtube-player.tsx";
 import { useStore } from "../lib/external-store.ts";
 import { useSyncState } from "../lib/sync.ts";
 import { videoIndexStore } from "../lib/video-index.ts";
+import type { Json3File } from "../lib/youtube.ts";
+
+const neverFetchJson3 = (): Promise<Json3File> => {
+  throw new Error("Cannot fetch captions in web viewer");
+};
 
 export function VideoViewerPage() {
   const { youtubeId } = useParams<"youtubeId">();
@@ -47,7 +52,9 @@ export function VideoViewerPage() {
       <div className="flex min-h-0 flex-[1_0_0] flex-col border-t lg:w-1/3 lg:flex-none lg:rounded lg:border">
         <CaptionPanel
           sessionOnly
+          tracks={[]}
           player={player}
+          fetchJson3={neverFetchJson3}
           videoMeta={videoMeta}
           sync={syncState}
         />

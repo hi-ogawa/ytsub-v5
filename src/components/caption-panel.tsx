@@ -401,21 +401,13 @@ function SyncButton({
 }
 
 type CaptionPanelProps = {
+  tracks: YouTubeCaptionTrack[];
   player?: YTPlayer;
+  fetchJson3: (track: YouTubeCaptionTrack) => Promise<Json3File>;
   videoMeta: YouTubeVideoData;
   sync?: SyncHandle;
-} & (
-  | {
-      sessionOnly?: false;
-      tracks: YouTubeCaptionTrack[];
-      fetchJson3: (track: YouTubeCaptionTrack) => Promise<Json3File>;
-    }
-  | {
-      sessionOnly: true;
-      tracks?: never;
-      fetchJson3?: never;
-    }
-);
+  sessionOnly?: boolean;
+};
 
 export function CaptionPanel(props: CaptionPanelProps) {
   const { youtubeId } = props.videoMeta;
@@ -455,16 +447,18 @@ export function CaptionPanel(props: CaptionPanelProps) {
   );
 }
 
-function CaptionPanelInner(
-  props: CaptionPanelProps & {
-    initialStore?: CaptionSessionManager;
-  },
-) {
-  const { player, videoMeta, sync, initialStore } = props;
+function CaptionPanelInner({
+  tracks,
+  player,
+  fetchJson3,
+  videoMeta,
+  sync,
+  sessionOnly,
+  initialStore,
+}: CaptionPanelProps & {
+  initialStore?: CaptionSessionManager;
+}) {
   const { youtubeId } = videoMeta;
-
-  const tracks = props.sessionOnly ? [] : props.tracks;
-  const fetchJson3 = props.sessionOnly ? undefined : props.fetchJson3;
 
   const [store, setStore] = useState(() => initialStore);
   const [selectedTracks, setSelectedTracks] = useState(() => {
@@ -492,7 +486,7 @@ function CaptionPanelInner(
   );
 
   if (!store) {
-    if (props.sessionOnly) {
+    if (sessionOnly) {
       return (
         <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
           No session available
@@ -502,7 +496,7 @@ function CaptionPanelInner(
     return (
       <CaptionPanelLoading
         tracks={tracks}
-        fetchJson3={fetchJson3!}
+        fetchJson3={fetchJson3}
         videoMeta={videoMeta}
         track1={selectedTracks.track1}
         track2={selectedTracks.track2}
@@ -516,7 +510,7 @@ function CaptionPanelInner(
   return (
     <CaptionPanelWithStore
       store={store}
-      sessionOnly={!!props.sessionOnly}
+      sessionOnly={!!sessionOnly}
       tracks={tracks}
       player={player}
       onSelectTracks={selectTracks}
