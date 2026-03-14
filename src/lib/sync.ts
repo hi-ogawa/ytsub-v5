@@ -1,9 +1,14 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { orpc } from "../rpc.ts";
+import { saveSession } from "./caption-session-db.ts";
 import type { CaptionSessionManager } from "./caption-session.ts";
 import { useStore } from "./external-store.ts";
-import { setSyncedAt, videoIndexStore } from "./video-index.ts";
+import {
+  setSyncedAt,
+  updateVideoIndex,
+  videoIndexStore,
+} from "./video-index.ts";
 
 type SyncState =
   | "unauthenticated"
@@ -15,7 +20,7 @@ type SyncState =
   | "syncing"
   | "error";
 
-function computeSyncState(params: {
+export function computeSyncState(params: {
   localUpdatedAt?: string;
   syncedAt?: string;
   serverUpdatedAt?: string;
@@ -151,4 +156,55 @@ export function useSyncState({ youtubeId }: { youtubeId: string }) {
   const error = pushMutation.error ?? pullMutation.error ?? undefined;
 
   return { state, onSync, error };
+}
+
+export async function pullServerSession(
+  data: NonNullable<
+    Awaited<
+      ReturnType<
+        ReturnType<typeof orpc.videos.getFullSession.queryOptions>["queryFn"]
+      >
+    >
+  >,
+): Promise<void> {
+  const captions = data.captions.map((c) => ({
+    idx: c.idx,
+    begin: c.begin,
+    end: c.end,
+    text1: c.text1,
+    text2: c.text2,
+    cue1Indices: [] as number[],
+    cue2Indices: [] as number[],
+    text1Segments: [c.text1],
+    text2Segments: [c.text2],
+  }));
+  const bookmarks = data.bookmarks.map((b) => ({
+    id: String(b.id),
+    text: b.text,
+    side: b.side,
+    offset: b.offset,
+    captionIndex: data.captions.findIndex((c) => c.id === b.captionId),
+    timestamp: b.timestamp,
+    context: b.context,
+    translation: b.translation,
+    etymology: b.etymology,
+    notes: b.notes,
+    createdAt: b.createdAt,
+  }));
+  await saveSession({
+    youtubeId: data.video.youtubeId,
+    vssId1: `-.${data.video.language1}`,
+    vssId2: `-.${data.video.language2}`,
+    language1: data.video.language1,
+    language2: data.video.language2,
+    captions,
+    bookmarks,
+  });
+  updateVideoIndex(
+    data.video.youtubeId,
+    data.video.title,
+    data.video.channelName,
+    bookmarks.length,
+  );
+  setSyncedAt(data.video.youtubeId);
 }
