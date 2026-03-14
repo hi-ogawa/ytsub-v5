@@ -67,22 +67,22 @@ export function BookmarksPage({
                 )
               }
               badge={
-                <div className="flex w-full items-center gap-2">
+                <>
                   <span className="rounded bg-muted px-2 py-0.5 font-mono">
                     {entry.bookmarkCount} bookmark
                     {entry.bookmarkCount === 1 ? "" : "s"}
                   </span>
-                  <div className="ml-auto">
-                    {sync && entry.syncStatus && (
+                  {sync && entry.syncStatus && (
+                    <span className="ml-auto">
                       <SyncBadge
                         status={entry.syncStatus}
                         syncing={sync.syncing.has(entry.youtubeId)}
                         onPull={() => sync.onPull(entry.youtubeId)}
                         onPush={() => sync.onPush(entry.youtubeId)}
                       />
-                    )}
-                  </div>
-                </div>
+                    </span>
+                  )}
+                </>
               }
               onClick={(e) => {
                 e.preventDefault();
