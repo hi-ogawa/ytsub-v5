@@ -63,6 +63,17 @@ import {
 import type { YTPlayer } from "./youtube-player.tsx";
 
 const autoScrollStore = createLocalStorageStore("zamak:auto-scroll", true);
+const fabOpenStore = createLocalStorageStore<Record<string, boolean>>(
+  "zamak:fab-open",
+  {},
+);
+
+export function useFabOpen(videoId: string) {
+  const [state, setState] = useStore(fabOpenStore);
+  const open = state[videoId] ?? false;
+  const toggle = () => setState((prev) => ({ ...prev, [videoId]: !open }));
+  return [open, toggle] as const;
+}
 
 export function CaptionFab({
   open,

@@ -54,6 +54,36 @@ test.describe("dev-viewer caption panel", () => {
     await expect(page.locator("[data-index='0']")).not.toBeVisible();
   });
 
+  test("FAB open state persists across reload", async ({ page }) => {
+    // Open panel
+    await page.getByTitle("Show captions").click();
+
+    // Reload — panel should reopen automatically
+    await page.reload();
+    await expect(page.getByTitle("Hide captions")).toBeVisible();
+
+    // Close panel
+    await page.getByTitle("Hide captions").click();
+
+    // Reload — panel should stay closed
+    await page.reload();
+    await expect(page.getByTitle("Show captions")).toBeVisible();
+  });
+
+  test("FAB state is independent per video", async ({ page }) => {
+    // Open panel on first video
+    await page.getByTitle("Show captions").click();
+    await expect(page.getByTitle("Hide captions")).toBeVisible();
+
+    // Navigate to a different video — should default to closed
+    await page.goto("/dev/youtube/DtK-CkwNHSY");
+    await expect(page.getByTitle("Show captions")).toBeVisible();
+
+    // Go back to first video — should still be open
+    await page.goto("/dev/youtube/7GU_VQfgMT0");
+    await expect(page.getByTitle("Hide captions")).toBeVisible();
+  });
+
   test("panel shows merged caption rows from fixture data", async ({
     page,
   }) => {
@@ -110,8 +140,7 @@ test.describe("dev-viewer caption panel", () => {
 
     // Reload and verify it persists as off
     await page.reload();
-    // Tracks should be restored from per-video preference (saved above)
-    await page.getByTitle("Show captions").click();
+    // Panel stays open (FAB state persisted), tracks restored from per-video preference
     await expect(page.locator("[data-index='0']")).toBeVisible();
     await page.getByTitle("Settings").click();
     await expect(autoScrollItem).toHaveAttribute("data-checked", "false");
@@ -598,7 +627,7 @@ test.describe("dev-viewer caption panel", () => {
 
     // Create another bookmark, verify count updates on revisit
     await page.goto("/dev/youtube/7GU_VQfgMT0");
-    await page.getByTitle("Show captions").click();
+    // Panel stays open (FAB state persisted from earlier in this test)
     await expect(page.locator("[data-index='0']")).toBeVisible();
     await createBookmarkAt(page, 1, 0, 2);
     await page.goto("/dev/bookmarks");

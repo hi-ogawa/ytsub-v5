@@ -6,6 +6,7 @@ import {
   CaptionFab,
   CaptionPanel,
   ResizablePanel,
+  useFabOpen,
 } from "../components/caption-panel.tsx";
 import { PortalContainerProvider } from "../components/ui/portal-container.tsx";
 import type { YTPlayer } from "../components/youtube-player.tsx";
@@ -34,7 +35,7 @@ function getVideoPlayer(): YTPlayer | undefined {
 }
 
 function App({ videoId }: { videoId: string }) {
-  const [open, setOpen] = useState(false);
+  const [open, toggleOpen] = useFabOpen(videoId);
 
   return (
     <div>
@@ -52,7 +53,7 @@ function App({ videoId }: { videoId: string }) {
           <ExtensionViewer videoId={videoId} />
         </ResizablePanel>
       )}
-      <CaptionFab open={open} onClick={() => setOpen((v) => !v)} />
+      <CaptionFab open={open} onClick={toggleOpen} />
     </div>
   );
 }
