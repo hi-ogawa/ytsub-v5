@@ -1,6 +1,6 @@
 import type { InferRouterOutputs } from "@orpc/server";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useCallback, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { orpc } from "../rpc.ts";
 import type { Router } from "../server/rpc.ts";
 import type { MergedCaption } from "./caption-merge.ts";
@@ -82,6 +82,10 @@ function serverSessionToLocal(data: ServerSession): {
   return { captions, bookmarks };
 }
 
+export type SyncDirection = "push" | "pull";
+
+export type SyncHandle = ReturnType<typeof useSyncState>;
+
 export function useSyncState({ youtubeId }: { youtubeId: string }) {
   const queryClient = useQueryClient();
   const [syncVersion, setSyncVersion] = useState(0);
@@ -124,15 +128,14 @@ export function useSyncState({ youtubeId }: { youtubeId: string }) {
   );
 
   const pullMutation = useMutation({
-    mutationFn: async (store: CaptionSessionManager) => {
-      const result = await queryClient.fetchQuery(
+    mutationFn: async (_store: CaptionSessionManager) => {
+      return await queryClient.fetchQuery(
         orpc.videos.getFullSession.queryOptions({
           input: { youtubeId },
         }),
       );
-      return { result, store };
     },
-    onSuccess: async ({ result: data, store }) => {
+    onSuccess: async (data, store) => {
       if (!data) return;
       const { captions, bookmarks } = serverSessionToLocal(data);
       await saveSession({
@@ -159,21 +162,21 @@ export function useSyncState({ youtubeId }: { youtubeId: string }) {
 
   const isSyncing = pushMutation.isPending || pullMutation.isPending;
 
-  const sync = useCallback(
-    (direction: "push" | "pull" | undefined, store: CaptionSessionManager) => {
-      if (isSyncing) return;
-      const action = direction ?? computedState;
-      if (action === "push" || action === "conflict") {
-        pushMutation.mutate(store.toExportData());
-      } else if (action === "pull") {
-        pullMutation.mutate(store);
-      }
-    },
-    [isSyncing, computedState, pushMutation, pullMutation],
-  );
+  const onSync = (options: {
+    direction?: SyncDirection;
+    store: CaptionSessionManager;
+  }) => {
+    if (isSyncing) return;
+    const action = options.direction ?? computedState;
+    if (action === "push" || action === "conflict") {
+      pushMutation.mutate(options.store.toExportData());
+    } else if (action === "pull") {
+      pullMutation.mutate(options.store);
+    }
+  };
 
   const state: SyncState = isSyncing ? "syncing" : computedState;
-  const error = pushMutation.error ?? pullMutation.error ?? null;
+  const error = pushMutation.error ?? pullMutation.error ?? undefined;
 
-  return { state, onSync: sync, error };
+  return { state, onSync, error };
 }

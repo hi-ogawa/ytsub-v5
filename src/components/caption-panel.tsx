@@ -52,7 +52,7 @@ import {
   extractBookmarkSelection,
 } from "../lib/extension-bookmarks.ts";
 import { createLocalStorageStore, useStore } from "../lib/external-store.ts";
-import type { SyncState } from "../lib/sync.ts";
+import type { SyncHandle } from "../lib/sync.ts";
 import type {
   Json3File,
   YouTubeCaptionTrack,
@@ -322,19 +322,17 @@ function formatTimestamp(seconds: number): string {
 // --- SyncButton ---
 
 function SyncButton({
-  state,
-  onSync,
-  error,
+  sync: { state, error, onSync },
+  store,
 }: {
-  state: SyncState;
-  onSync: (direction?: "push" | "pull") => void;
-  error: Error | null;
+  sync: SyncHandle;
+  store: CaptionSessionManager;
 }) {
   const iconClass = "h-4 w-4";
   let icon: React.ReactNode;
   let title: string;
   let disabled = false;
-  let onClick: () => void = () => onSync();
+  let onClick: () => void = () => onSync({ store });
 
   switch (state) {
     case "checking":
@@ -350,17 +348,17 @@ function SyncButton({
     case "push":
       icon = <ArrowUpFromLine className={iconClass} />;
       title = "Push local changes to server";
-      onClick = () => onSync("push");
+      onClick = () => onSync({ direction: "push", store });
       break;
     case "pull":
       icon = <ArrowDownToLine className={iconClass} />;
       title = "Pull server changes";
-      onClick = () => onSync("pull");
+      onClick = () => onSync({ direction: "pull", store });
       break;
     case "conflict":
       icon = <AlertTriangle className={`${iconClass} text-yellow-500`} />;
       title = "Both sides changed — click to push (keep local)";
-      onClick = () => onSync("push");
+      onClick = () => onSync({ direction: "push", store });
       break;
     case "syncing":
       icon = <RefreshCw className={`${iconClass} animate-spin`} />;
@@ -389,21 +387,12 @@ function SyncButton({
   );
 }
 
-type SyncProps = {
-  state: SyncState;
-  onSync: (
-    direction: "push" | "pull" | undefined,
-    store: CaptionSessionManager,
-  ) => void;
-  error: Error | null;
-};
-
 type CaptionPanelProps = {
   tracks: YouTubeCaptionTrack[];
   player?: YTPlayer;
   fetchJson3: (track: YouTubeCaptionTrack) => Promise<Json3File>;
   videoMeta: YouTubeVideoData;
-  sync?: SyncProps;
+  sync?: SyncHandle;
 };
 
 export function CaptionPanel(props: CaptionPanelProps) {
@@ -628,7 +617,7 @@ function CaptionPanelWithStore({
   player?: YTPlayer;
   onSelectTracks: (v1?: string, v2?: string) => void;
   onSelectStrategy: (s: MergeStrategy) => void;
-  sync?: SyncProps;
+  sync?: SyncHandle;
 }) {
   useSyncExternalStore(store.subscribe, () => store.version);
 
@@ -646,13 +635,7 @@ function CaptionPanelWithStore({
             disabled={store.bookmarks.length > 0}
           />
         </div>
-        {sync && (
-          <SyncButton
-            state={sync.state}
-            onSync={(direction) => sync.onSync(direction, store)}
-            error={sync.error}
-          />
-        )}
+        {sync && <SyncButton sync={sync} store={store} />}
         <SettingsDropdown
           store={store}
           autoScroll={autoScroll}
