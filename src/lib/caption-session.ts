@@ -2,7 +2,7 @@ import type { InferRouterInputs } from "@orpc/server";
 import type { Router } from "../server/rpc.ts";
 import { type MergeStrategy, type MergedCaption } from "./caption-merge.ts";
 import {
-  type CaptionSession,
+  type PersistedCaptionSession,
   deleteSession,
   saveSession,
 } from "./caption-session-db.ts";
@@ -71,7 +71,7 @@ export function langFromVssId(vssId: string): string {
   return vssId.split(".").pop()!;
 }
 
-export class CaptionSessionStore {
+export class CaptionSessionManager {
   readonly videoMeta: YouTubeVideoData;
   readonly vssId1: string;
   readonly vssId2: string;
@@ -207,7 +207,7 @@ export class CaptionSessionStore {
   }
 
   async persistSession(): Promise<void> {
-    const session: CaptionSession = {
+    const session: PersistedCaptionSession = {
       youtubeId: this.videoMeta.youtubeId,
       vssId1: this.vssId1,
       vssId2: this.vssId2,

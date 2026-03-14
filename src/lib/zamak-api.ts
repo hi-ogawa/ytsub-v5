@@ -1,6 +1,9 @@
 import { useEffect } from "react";
 import skillPrompt from "../../docs/skills/zamak/SKILL.md?raw";
-import { type CaptionSessionStore, langFromVssId } from "./caption-session.ts";
+import {
+  type CaptionSessionManager,
+  langFromVssId,
+} from "./caption-session.ts";
 
 interface ZamakBookmark {
   id: string;
@@ -113,7 +116,7 @@ if (!window.__zamak) {
   window.__zamak = createStubApi();
 }
 
-export function useZamakApi(store?: CaptionSessionStore) {
+export function useZamakApi(store?: CaptionSessionManager) {
   useEffect(() => {
     if (!store) {
       window.__zamak = createStubApi();

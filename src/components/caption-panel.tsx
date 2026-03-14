@@ -29,7 +29,7 @@ import {
 } from "../lib/caption-merge.ts";
 import { getSession } from "../lib/caption-session-db.ts";
 import {
-  CaptionSessionStore,
+  CaptionSessionManager,
   getInitialTracks,
   saveSelectedTracks,
 } from "../lib/caption-session.ts";
@@ -241,7 +241,7 @@ export function CaptionPanel(props: CaptionPanelProps) {
     queryFn: async () => {
       const session = await getSession(youtubeId);
       if (!session) return null;
-      return new CaptionSessionStore({
+      return new CaptionSessionManager({
         videoMeta: props.videoMeta,
         vssId1: session.vssId1,
         vssId2: session.vssId2,
@@ -269,8 +269,8 @@ function CaptionPanelWithSession({
   store,
   setStore,
 }: CaptionPanelProps & {
-  store: CaptionSessionStore;
-  setStore: (store: CaptionSessionStore | null) => void;
+  store: CaptionSessionManager;
+  setStore: (store: CaptionSessionManager | null) => void;
 }) {
   useSyncExternalStore(store.subscribe, () => store.version);
 
@@ -362,7 +362,7 @@ function CaptionPanelWithoutSession({
       userStrategy,
     );
 
-    return new CaptionSessionStore({
+    return new CaptionSessionManager({
       videoMeta,
       vssId1: json3_1.track.vssId,
       vssId2: json3_2.track.vssId,
@@ -447,7 +447,7 @@ function SettingsDropdown({
   onSetAutoScroll,
   onSelectStrategy,
 }: {
-  store: CaptionSessionStore;
+  store: CaptionSessionManager;
   autoScroll: boolean;
   onSetAutoScroll: (value: boolean | ((prev: boolean) => boolean)) => void;
   onSelectStrategy: (s: MergeStrategy) => void;
@@ -538,7 +538,7 @@ function CaptionPanelContent({
   player,
   autoScroll,
 }: {
-  store: CaptionSessionStore;
+  store: CaptionSessionManager;
   player: YTPlayer | null;
   autoScroll: boolean;
 }) {
