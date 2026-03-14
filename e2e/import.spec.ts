@@ -40,5 +40,21 @@ test.describe("import file upload", () => {
     // Imported video appears in bookmarks list
     const card = page.getByRole("link", { name: /cloud palace/ });
     await expect(card).toBeVisible();
+
+    // Navigate to viewer — session loaded from IndexedDB
+    await card.click();
+    await expect(page).toHaveURL(/\/videos\/7GU_VQfgMT0/);
+
+    // Captions are visible
+    await expect(page.locator("[data-index='0']")).toBeVisible();
+    await expect(
+      page
+        .locator("[data-index='0']")
+        .getByText("꼬집어 봐 뜬 꿈인 것 같아", { exact: false }),
+    ).toBeVisible();
+
+    // Bookmarks tab shows imported bookmarks
+    await page.getByRole("button", { name: /Bookmarks/ }).click();
+    await expect(page.locator("[data-bookmark-id]").first()).toBeVisible();
   });
 });

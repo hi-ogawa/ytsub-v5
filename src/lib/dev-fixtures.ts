@@ -1,31 +1,31 @@
-import { mergeCaptions } from "../lib/caption-merge.ts";
-import { saveSession } from "../lib/caption-session-db.ts";
-import { updateVideoIndex } from "../lib/video-index.ts";
+import { mergeCaptions } from "./caption-merge.ts";
+import { saveSession } from "./caption-session-db.ts";
+import { updateVideoIndex } from "./video-index.ts";
 import {
   type Json3File,
   type YouTubeExtractionResult,
   pickBestTrack,
-} from "../lib/youtube.ts";
+} from "./youtube.ts";
 
-const metadataModules = import.meta.glob<YouTubeExtractionResult>(
+export const fixtureMetadata = import.meta.glob<YouTubeExtractionResult>(
   "/scripts/youtube-json/*/metadata.json",
   { eager: true, import: "default" },
 );
 
-const trackModules = import.meta.glob<{ default: Json3File }>(
+export const fixtureTracks = import.meta.glob<{ default: Json3File }>(
   "/scripts/youtube-json/*/track-*.json",
 );
 
 export async function bootstrapFixtures() {
-  for (const [path, meta] of Object.entries(metadataModules)) {
+  for (const [path, meta] of Object.entries(fixtureMetadata)) {
     const dir = path.replace("/metadata.json", "");
     const tracks = meta.captionTracks;
     const track1 = pickBestTrack(tracks, "ko");
     const track2 = pickBestTrack(tracks, "en");
     if (!track1 || !track2) continue;
 
-    const loader1 = trackModules[`${dir}/track-${track1.vssId}.json`];
-    const loader2 = trackModules[`${dir}/track-${track2.vssId}.json`];
+    const loader1 = fixtureTracks[`${dir}/track-${track1.vssId}.json`];
+    const loader2 = fixtureTracks[`${dir}/track-${track2.vssId}.json`];
     if (!loader1 || !loader2) continue;
 
     const [mod1, mod2] = await Promise.all([loader1(), loader2()]);

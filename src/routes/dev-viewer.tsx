@@ -7,28 +7,19 @@ import {
   useFabOpen,
 } from "../components/caption-panel.tsx";
 import { useYouTubePlayer } from "../components/youtube-player.tsx";
+import { fixtureMetadata, fixtureTracks } from "../lib/dev-fixtures.ts";
 import { useSyncState } from "../lib/sync.ts";
 import type {
-  Json3File,
   YouTubeCaptionTrack,
   YouTubeExtractionResult,
 } from "../lib/youtube.ts";
-
-const metadataModules = import.meta.glob<YouTubeExtractionResult>(
-  "/scripts/youtube-json/*/metadata.json",
-  { eager: true, import: "default" },
-);
-
-const trackModules = import.meta.glob<{ default: Json3File }>(
-  "/scripts/youtube-json/*/track-*.json",
-);
 
 export function DevViewerPage() {
   const { videoId } = useParams<"videoId">();
   const [panelOpen, togglePanel] = useFabOpen(videoId ?? "");
 
   const meta = videoId
-    ? metadataModules[`/scripts/youtube-json/${videoId}/metadata.json`]
+    ? fixtureMetadata[`/scripts/youtube-json/${videoId}/metadata.json`]
     : undefined;
 
   const { ref: playerElRef, player } = useYouTubePlayer(meta?.video.youtubeId);
@@ -76,7 +67,7 @@ function DevViewerSession({
   const fetchJson3 = useCallback(
     async (track: YouTubeCaptionTrack) => {
       const key = `/scripts/youtube-json/${videoId}/track-${track.vssId}.json`;
-      const loader = trackModules[key];
+      const loader = fixtureTracks[key];
       if (!loader) throw new Error(`No track fixture for ${track.vssId}`);
       const mod = await loader();
       return mod.default;

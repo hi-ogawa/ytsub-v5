@@ -104,14 +104,14 @@ A web app for language learning via YouTube subtitles. Watch videos with dual ca
   - [ ] settings dropdown for video-viewer (auto-scroll toggle, etc. — currently hidden when `sessionOnly`)
   - [ ] sync button for video-viewer (push/pull with server)
   - [x] e2e: rework after video-viewer consolidation — delete `bookmark-viewer.spec.ts`, fix route patterns, remove server-dependent viewer assertions
-  - [ ] e2e: restore delete-bookmark test (`delete.spec.ts`) — needs IndexedDB-based viewer or dev-viewer route
-  - [ ] e2e: restore etymology import test (`import.spec.ts`) — viewer no longer loads from server after import
+  - [x] e2e: restore delete-bookmark test (`delete.spec.ts`) — import fixture then delete bookmark in viewer
+  - [x] e2e: restore import test (`import.spec.ts`) — verify viewer loads captions and bookmarks from IndexedDB after import
 - [x] feat: bookmarks page server sync — merge server videos with per-video push/pull (`useVideoSync`)
 - [x] feat: web app as browser client — retire server-rendered video-list in favor of client storage
   - [x] video list (`/`): replaced with `BookmarksPage` + `useVideoSync`, import moved to header menu (saves to IndexedDB)
   - [x] video viewer: `sessionOnly` flag, loads from IndexedDB
 - [ ] rework "Bookmarked Videos" heading/framing — home page is just "Videos"; empty state text assumes extension but web app uses import/sync
-- [ ] remove dev-bookmarks (redundant with video-list) and dev-index — keep only dev-viewer for extension-specific testing (track picker, FAB, overlay). Move bootstrap fixtures button elsewhere (dev-viewer or header menu).
+- [x] remove dev-bookmarks (redundant with video-list) — keep dev-index and dev-viewer for extension-specific testing (track picker, FAB, overlay). Bootstrap fixtures button is in header menu.
 - [x] video card design improvements
   - sync badge placement: move to bottom-right (status, not title action)
   - delete should support both client (IndexedDB) and server storage — e.g. "Delete locally" / "Delete from server" / "Delete everywhere"
