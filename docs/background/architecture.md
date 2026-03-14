@@ -31,11 +31,10 @@ See [architecture-extension.md](./architecture-extension.md) for how the extensi
 
 ## AI workflow
 
-The AI integration evolved through three approaches:
+The AI integration evolved through two approaches:
 
 1. **Agent skill** (legacy): local AI agent runs yt-dlp + LLM end-to-end. Slow (~3-7 min), fragile.
-2. **`window.__zamak` API**: expose bookmarks to AI browser extensions (Claude for Chrome) via JS API. Works but heavy — Chrome debugger banner, no model choice.
-3. **Prompt clipboard flow** (current): generate self-contained prompt with all context, user pastes into any LLM chat, copies result JSON back. Three task types:
+2. **Prompt clipboard flow** (current): generate self-contained prompt with all context, user pastes into any LLM chat, copies result JSON back. Model-agnostic, no infrastructure. Three task types:
    - **Pick & Fill** — AI selects interesting vocab from captions, provides translations/etymology
    - **Fill Bookmarks** — AI fills metadata for existing bookmarks
    - **Fix ASR** — AI corrects auto-generated subtitle errors
