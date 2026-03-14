@@ -73,8 +73,8 @@ function langFromVssId(vssId: string): string {
 
 export class CaptionSessionManager {
   readonly videoMeta: YouTubeVideoData;
-  readonly vssId1: string;
-  readonly vssId2: string;
+  vssId1: string;
+  vssId2: string;
   rows: MergedCaption[];
   readonly strategy: MergeStrategy; // TODO: smells
   bookmarks: ExtensionBookmark[];
@@ -177,9 +177,13 @@ export class CaptionSessionManager {
   async replace(options: {
     captions: MergedCaption[];
     bookmarks: ExtensionBookmark[];
+    vssId1?: string;
+    vssId2?: string;
   }): Promise<void> {
     this.rows = options.captions;
     this.bookmarks = options.bookmarks;
+    if (options.vssId1 !== undefined) this.vssId1 = options.vssId1;
+    if (options.vssId2 !== undefined) this.vssId2 = options.vssId2;
     this.syncVideoIndex();
     this.notify();
     await this.persistSession();
@@ -195,6 +199,8 @@ export class CaptionSessionManager {
         duration: this.videoMeta.duration,
         language1: langFromVssId(this.vssId1),
         language2: langFromVssId(this.vssId2),
+        vssId1: this.vssId1,
+        vssId2: this.vssId2,
       },
       captions: this.rows.map((r, i) => ({
         idx: i,
