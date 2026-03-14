@@ -67,7 +67,7 @@ export function saveSelectedTracks(
 
 // --- Store ---
 
-export function langFromVssId(vssId: string): string {
+function langFromVssId(vssId: string): string {
   return vssId.split(".").pop()!;
 }
 
