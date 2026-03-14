@@ -28,35 +28,25 @@ const fixtureEntries = [
   },
 ];
 
-test.describe("dev-bookmarks page", () => {
+test.describe("video-list page", () => {
+  test.beforeEach(async ({ page }) => {
+    await setupDb({ seed: true });
+    await login(page);
+  });
+
   test("shows empty state when no bookmarks", async ({ page }) => {
-    await page.goto("/dev/bookmarks");
+    await page.goto("/");
     await expect(page.getByText("No bookmarked videos yet")).toBeVisible();
   });
 
   test("shows video cards from localStorage", async ({ page }) => {
-    // Seed localStorage before navigating so the store initializes with data
-    await page.goto("/dev/bookmarks");
+    await page.goto("/");
     await seedVideoIndex(page, fixtureEntries);
-    await page.goto("/dev/bookmarks");
+    await page.goto("/");
     await expect(page.getByText("Test Video One")).toBeVisible();
     await expect(page.getByText("Test Video Two")).toBeVisible();
     await expect(page.getByText("3 bookmarks")).toBeVisible();
     await expect(page.getByText("1 bookmark")).toBeVisible();
-  });
-
-  test("does not require authentication", async ({ page }) => {
-    // Navigate directly without login
-    await page.goto("/dev/bookmarks");
-    await expect(
-      page.getByRole("heading", { name: "Bookmarked Videos" }),
-    ).toBeVisible();
-  });
-
-  test("header shows Zamak (dev) branding", async ({ page }) => {
-    await page.goto("/dev/bookmarks");
-    await expect(page.getByText("Zamak")).toBeVisible();
-    await expect(page.getByText("(dev)")).toBeVisible();
   });
 });
 
@@ -103,12 +93,18 @@ function syncBadge(page: Page, youtubeId: string) {
     .getByTestId("video-sync-badge");
 }
 
-test.describe("dev-bookmarks bootstrap", () => {
+test.describe("video-list bootstrap", () => {
+  test.beforeEach(async ({ page }) => {
+    await setupDb({ seed: true });
+    await login(page);
+  });
+
   test("bootstrap fixtures seeds video index", async ({ page }) => {
-    await page.goto("/dev/bookmarks");
+    await page.goto("/");
     await expect(page.getByText("No bookmarked videos yet")).toBeVisible();
 
-    // Click bootstrap
+    // Click bootstrap from header menu
+    await page.getByTestId("header-menu").click();
     await page.getByTestId("bootstrap-fixtures").click();
 
     // All 3 fixture videos should appear in the video index
@@ -118,20 +114,10 @@ test.describe("dev-bookmarks bootstrap", () => {
   });
 });
 
-test.describe("dev-bookmarks sync", () => {
+test.describe("video-list sync", () => {
   test.beforeEach(async ({ page }) => {
     await setupDb({ seed: true });
     await login(page);
-  });
-
-  test("no sync badges when unauthenticated", async ({ page }) => {
-    // Clear cookies to be unauthenticated
-    await page.context().clearCookies();
-    await page.goto("/dev/bookmarks");
-    await seedVideoIndex(page, fixtureEntries);
-    await page.goto("/dev/bookmarks");
-    await expect(page.getByText("Test Video One")).toBeVisible();
-    await expect(page.getByTestId("video-sync-badge")).toHaveCount(0);
   });
 
   test("local video shows push badge, synced after push", async ({ page }) => {
@@ -140,8 +126,8 @@ test.describe("dev-bookmarks sync", () => {
     await openPanelWithTracks(page);
     await createBookmarkAt(page, 0, 0, 3);
 
-    // Go to bookmarks page — local-only with auth shows as "push"
-    await page.goto("/dev/bookmarks");
+    // Go to video list — local-only with auth shows as "push"
+    await page.goto("/");
     const badge = syncBadge(page, FIXTURE_VIDEO_ID);
     await expect(badge).toHaveAttribute("data-sync-status", "push");
 
@@ -172,8 +158,8 @@ test.describe("dev-bookmarks sync", () => {
       localStorage.setItem("zamak:video-index", "[]");
     }, FIXTURE_VIDEO_ID);
 
-    // Go to bookmarks page — server-only video should appear
-    await page.goto("/dev/bookmarks");
+    // Go to video list — server-only video should appear
+    await page.goto("/");
     const badge = syncBadge(page, FIXTURE_VIDEO_ID);
     await expect(badge).toHaveAttribute("data-sync-status", "server-only");
 
@@ -191,17 +177,17 @@ test.describe("dev-bookmarks sync", () => {
   });
 
   test("pushed video appears on server video list", async ({ page }) => {
-    // Create bookmark and push via bookmarks page
+    // Create bookmark and push via video list
     await page.goto(`/dev/youtube/${FIXTURE_VIDEO_ID}`);
     await openPanelWithTracks(page);
     await createBookmarkAt(page, 0, 0, 3);
 
-    await page.goto("/dev/bookmarks");
+    await page.goto("/");
     const badge = syncBadge(page, FIXTURE_VIDEO_ID);
     await badge.click();
     await expect(badge).toHaveAttribute("data-sync-status", "synced");
 
-    // Server video list should show the video
+    // Reload — video should still be there
     await page.goto("/");
     await expect(page.getByText("cloud palace")).toBeVisible();
   });

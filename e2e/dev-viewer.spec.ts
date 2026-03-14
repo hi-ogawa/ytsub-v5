@@ -609,14 +609,14 @@ test.describe("dev-viewer caption panel", () => {
     await expect(bookmarkCard).toHaveClass(/flash-highlight/);
   });
 
-  test("creating bookmark populates dev-bookmarks page via video-index", async ({
+  test("creating bookmark populates video-list page via video-index", async ({
     page,
   }) => {
     await openPanelWithTracks(page);
     await createBookmarkAt(page, 0, 0, 2);
 
-    // Navigate to bookmarks page and verify the video card
-    await page.goto("/dev/bookmarks");
+    // Navigate to video list and verify the video card
+    await page.goto("/");
     const card = page.getByTestId("video-card-7GU_VQfgMT0");
     await expect(card).toBeVisible();
     await expect(card.getByTestId("video-card-title")).toHaveText(
@@ -630,7 +630,7 @@ test.describe("dev-viewer caption panel", () => {
     // Panel stays open (FAB state persisted from earlier in this test)
     await expect(page.locator("[data-index='0']")).toBeVisible();
     await createBookmarkAt(page, 1, 0, 2);
-    await page.goto("/dev/bookmarks");
+    await page.goto("/");
     await expect(
       page
         .getByTestId("video-card-7GU_VQfgMT0")
