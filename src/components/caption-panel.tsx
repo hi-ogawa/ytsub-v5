@@ -239,7 +239,7 @@ export function CaptionPanel(props: CaptionPanelProps) {
   // - always fetch on mount
   // - always spinner until ready
   // - never refetch after mount
-  const sessionQuery = useQuery({
+  const initialStoreQuery = useQuery({
     queryKey: ["caption-session", youtubeId],
     queryFn: async () => {
       const session = await getSession(youtubeId);
@@ -258,14 +258,14 @@ export function CaptionPanel(props: CaptionPanelProps) {
   });
 
   // TODO: better indicator?
-  if (sessionQuery.isPending) {
+  if (initialStoreQuery.isPending) {
     return null;
   }
 
   return (
     <CaptionPanelInner
       {...props}
-      restoredStore={sessionQuery.data ?? undefined}
+      initialStore={initialStoreQuery.data ?? undefined}
     />
   );
 }
@@ -275,9 +275,9 @@ function CaptionPanelInner({
   player,
   fetchJson3,
   videoMeta,
-  restoredStore,
+  initialStore,
 }: CaptionPanelProps & {
-  restoredStore: CaptionSessionManager | undefined;
+  initialStore?: CaptionSessionManager;
 }) {
   const { youtubeId } = videoMeta;
 
@@ -286,12 +286,12 @@ function CaptionPanelInner({
     [tracks, youtubeId],
   );
 
-  const [store, setStore] = useState(() => restoredStore);
+  const [store, setStore] = useState(() => initialStore);
   const [vssId1, setVssId1] = useState(
-    () => restoredStore?.vssId1 ?? initialTracks.vssId1,
+    () => initialStore?.vssId1 ?? initialTracks.vssId1,
   );
   const [vssId2, setVssId2] = useState(
-    () => restoredStore?.vssId2 ?? initialTracks.vssId2,
+    () => initialStore?.vssId2 ?? initialTracks.vssId2,
   );
   const [userStrategy, setUserStrategy] = useState<MergeStrategy>();
 
