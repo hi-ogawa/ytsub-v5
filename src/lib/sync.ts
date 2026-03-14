@@ -20,7 +20,7 @@ type SyncState =
   | "syncing"
   | "error";
 
-export function computeSyncState(params: {
+function computeSyncState(params: {
   localUpdatedAt?: string;
   syncedAt?: string;
   serverUpdatedAt?: string;
