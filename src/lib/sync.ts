@@ -3,13 +3,11 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { orpc } from "../rpc.ts";
 import type { Router } from "../server/rpc.ts";
-import type { MergedCaption } from "./caption-merge.ts";
 import {
   saveSession,
   type PersistedCaptionSession,
 } from "./caption-session-db.ts";
 import type { CaptionSessionManager } from "./caption-session.ts";
-import type { ExtensionBookmark } from "./extension-bookmarks.ts";
 import { useStore } from "./external-store.ts";
 import {
   setSyncedAt,
