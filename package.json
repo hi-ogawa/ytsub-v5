@@ -15,6 +15,7 @@
     "test": "vitest",
     "test-e2e": "playwright test",
     "test-youtube": "playwright test --config playwright.youtube.config.ts",
+    "test-ext": "playwright test --config playwright.ext.config.ts",
     "release": "wrangler deploy",
     "types": "wrangler types --no-include-runtime",
     "db:migrate": "CI=true wrangler d1 migrations apply DB --local",
