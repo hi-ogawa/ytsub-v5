@@ -25,8 +25,9 @@ import {
 import {
   type AiTask,
   AI_TASKS,
-  extractJson,
   makeAiPrompt,
+  parseAiResult,
+  pickFillToBookmarks,
 } from "../lib/ai-prompt.ts";
 import {
   ALL_STRATEGIES,
@@ -236,62 +237,35 @@ function importAiResult(store: CaptionSessionManager): void {
   const raw = window.prompt("Paste AI result JSON");
   if (!raw) return;
   try {
-    const json = JSON.parse(extractJson(raw));
-    if (!Array.isArray(json) || json.length === 0) {
-      alert("Expected a non-empty JSON array");
-      return;
+    const result = parseAiResult(raw);
+    switch (result.type) {
+      case "pick-fill": {
+        const { bookmarks, warnings } = pickFillToBookmarks(
+          result.entries,
+          store.rows,
+        );
+        if (bookmarks.length > 0) {
+          store.createBookmarks(bookmarks);
+        }
+        alert(
+          `Created ${bookmarks.length} bookmarks` +
+            (warnings.length > 0
+              ? `\n\n${warnings.length} skipped:\n${warnings.join("\n")}`
+              : ""),
+        );
+        break;
+      }
+      case "fill":
+        store.updateBookmarks(result.entries);
+        alert(`Filled ${result.entries.length} bookmarks`);
+        break;
+      case "fix-asr":
+        store.updateCaptions(result.entries);
+        alert(`Updated ${result.entries.length} captions`);
+        break;
     }
-    const first = json[0];
-
-    if ("captionIndex" in first && "text" in first) {
-      const entries = json as {
-        captionIndex: number;
-        text: string;
-        translation?: string;
-        etymology?: string;
-        notes?: string;
-      }[];
-      const rows = store.rows;
-      store.createBookmarks(
-        entries
-          .filter((e) => rows[e.captionIndex])
-          .map((e) => ({
-            text: e.text,
-            side: 0,
-            offset: rows[e.captionIndex].text1.indexOf(e.text),
-            captionIndex: e.captionIndex,
-            timestamp: rows[e.captionIndex].begin,
-            context: rows[e.captionIndex].text1,
-            translation: e.translation,
-            etymology: e.etymology,
-            notes: e.notes,
-          })),
-      );
-      alert(`Created ${entries.length} bookmarks`);
-    } else if ("id" in first && "translation" in first) {
-      const entries = json as {
-        id: string;
-        translation?: string;
-        etymology?: string;
-        notes?: string;
-      }[];
-      store.updateBookmarks(
-        entries.map((e) => ({
-          id: e.id,
-          translation: e.translation,
-          etymology: e.etymology,
-          notes: e.notes,
-        })),
-      );
-      alert(`Filled ${entries.length} bookmarks`);
-    } else if ("idx" in first && "text1" in first) {
-      store.updateCaptions(json as { idx: number; text1?: string }[]);
-      alert(`Updated ${json.length} captions`);
-    } else {
-      alert("Unrecognized JSON shape");
-    }
-  } catch {
-    alert("Invalid JSON");
+  } catch (e) {
+    alert(e instanceof Error ? e.message : "Invalid JSON");
   }
 }
 

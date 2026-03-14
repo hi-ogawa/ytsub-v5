@@ -101,8 +101,8 @@ test.describe("AI prompt copy & import", () => {
       },
       {
         captionIndex: 1,
-        text: "구름",
-        translation: "cloud",
+        text: "밤새",
+        translation: "all night",
         etymology: "",
         notes: "",
       },
