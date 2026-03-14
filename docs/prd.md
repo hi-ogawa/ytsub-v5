@@ -83,7 +83,7 @@ See ytsub-v4 for relevant technique.
 - [x] fix: store selected track pair storage per video. not only globally.
 - [x] support manual bookmark
 - [x] caption panel bookmark list tab — match server viewer's captions/bookmarks tab UI in shared `CaptionPanel` (extension + dev-viewer)
-- [ ] extension page to list all videos with bookmarks (need own storage?)
+- [x] extension page to list all videos with bookmarks (need own storage?)
 - [ ] consolidate captions panel for extension/dev-viewer/video-viewer
   - [ ] virtualized caption list (extension uses plain render, video-viewer uses `@tanstack/react-virtual`)
   - [x] bookmark highlight popover with go-to cross-links (video-viewer only)
@@ -94,6 +94,8 @@ See ytsub-v4 for relevant technique.
 
 ## TODO: Backlog
 
+- [ ] refactor: remove zamak API
+- [ ] chore: consolidate `docs/skills/*` into `docs/eval/README.md`
 - [ ] feat: AI integration help page — document the AI prompt workflow (copy/download prompt, paste result back) and link from the "AI prompt" dropdown label
 - [ ] fix: adjust prompt to be language independent (currently assumes korean)
 - [ ] chore: rename worker `ytsub-v5` → `zamak` — update `wrangler.jsonc` name, re-set secrets on new worker, delete old worker, update CI artifact name and docs
@@ -103,10 +105,9 @@ See ytsub-v4 for relevant technique.
 - [ ] Keyboard shortcuts — space (play/pause), arrow keys (prev/next caption), etc.
 - [x] Mobile-friendly layout
 - [x] Browser extension as data source (content script fetches subs from YouTube same-origin)
-- [ ] refactor: make extension session (IndexedDB) persistence explicitly async — current bookmark CRUD is synchronous setState with fire-and-forget persist calls; should return promises so callers (especially zamak API) can await and verify writes
+- [ ] refactor: make extension session (IndexedDB) persistence explicitly async — current bookmark CRUD is synchronous setState with fire-and-forget persist calls; should return promises so callers can await and verify writes
 - [ ] Authentication (multi users)
 - [ ] Typing practice (v3/v4 had this)
-- [x] feat: extension bookmark editor + AI extension integration
-  - expose `window.__zamak` API (e.g. `getPendingBookmarks()`, `fillBookmark(id, data)`) so AI browser extensions (Claude etc.) can read bookmark context and fill translation/etymology/notes
+- [x] feat: extension bookmark editor + AI prompt copy
+  - manual AI prompt copy flow (copy context to clipboard → paste into external LLM)
   - extension bookmark editor UI to review/edit AI-filled fields before export
-  - no API keys or server proxy needed — AI extension brings its own capability
