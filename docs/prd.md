@@ -55,19 +55,10 @@ A web app for language learning via YouTube subtitles. Watch videos with dual ca
   - DOM walk via `data-index`, `data-side`, `data-offset` attributes (v3 approach)
 - [x] fix: bookmark popover — dismiss previous popover immediately when a new one opens (currently they can overlap due to timeout)
 - [x] fix: bookmark popover — allow upward or downward positioning to avoid clipping under the panel container
+- [x] Mobile-friendly layout
+- [x] Browser extension as data source (content script fetches subs from YouTube same-origin)
 
-## TODO
-
-- [ ] feat: repeat/loop mode — loop a section between two caption timestamps
-- [ ] chore: unit-testable API layer — swap `cloudflare:workers` env + D1 drizzle adapter for local SQLite (e.g. `better-sqlite3`) so RPC handlers can be tested directly without spinning up wrangler/Playwright
-- [ ] refactor: use `sql` template for `createdAt` schema defaults instead of string literal — avoids Drizzle binding `(datetime('now'))` as a param, reducing bind count per row and allowing larger batch sizes
-- [ ] feat: repeatable eval process for ytsub agent skill — run skill against sample videos, check for common failure modes (wrong offsets, API errors, subtitle quality issues, payload format), track success rate across runs
-- [ ] feat: Bookmark export — export to import bookmarks for Anki study
-- [ ] test: test skills/scripts
-
-## TODO: Extension
-
-See ytsub-v4 for relevant technique.
+### Extension
 
 - [x] captions panel shouldn't cover YouTube's top-right profile popover
 - [x] captions panel should be hidable (FAB at bottom-right, default closed)
@@ -83,17 +74,33 @@ See ytsub-v4 for relevant technique.
 - [x] fix: store selected track pair storage per video. not only globally.
 - [x] support manual bookmark
 - [x] caption panel bookmark list tab — match server viewer's captions/bookmarks tab UI in shared `CaptionPanel` (extension + dev-viewer)
-- [ ] extension page to list all videos with bookmarks (need own storage?)
-- [ ] consolidate captions panel for extension/dev-viewer/video-viewer
-  - [ ] virtualized caption list (extension uses plain render, video-viewer uses `@tanstack/react-virtual`)
-  - [x] bookmark highlight popover with go-to cross-links (video-viewer only)
-  - [x] flash-highlight on cross-tab navigation (video-viewer only)
-  - [ ] data layer abstraction (server DB vs IndexedDB)
+- [x] extension page to list all videos with bookmarks (need own storage?)
 - [x] consolidate extension/content.css theme with styles.app.css — currently extension `:host` duplicates dark theme variables manually, causing new tokens to be missed; consider reusing `.dark` class or shared partial
 - [x] adapt to youtube dark/light theme (currently style hard-coded for dark)
+- [x] bookmark highlight popover with go-to cross-links (video-viewer only)
+- [x] flash-highlight on cross-tab navigation (video-viewer only)
+- [x] feat: extension bookmark editor + AI prompt copy
+  - manual AI prompt copy flow (copy context to clipboard → paste into external LLM)
+  - extension bookmark editor UI to review/edit AI-filled fields before export
+
+## TODO
+
+- [ ] feat: repeat/loop mode — loop a section between two caption timestamps
+- [ ] chore: unit-testable API layer — swap `cloudflare:workers` env + D1 drizzle adapter for local SQLite (e.g. `better-sqlite3`) so RPC handlers can be tested directly without spinning up wrangler/Playwright
+- [ ] refactor: use `sql` template for `createdAt` schema defaults instead of string literal — avoids Drizzle binding `(datetime('now'))` as a param, reducing bind count per row and allowing larger batch sizes
+- [ ] feat: repeatable eval process for ytsub agent skill — run skill against sample videos, check for common failure modes (wrong offsets, API errors, subtitle quality issues, payload format), track success rate across runs
+- [ ] feat: Bookmark export — export to import bookmarks for Anki study
+- [ ] test: test skills/scripts
+
+## TODO: Extension
+
+- [ ] consolidate captions panel for extension/dev-viewer/video-viewer
+  - [ ] virtualized caption list (extension uses plain render, video-viewer uses `@tanstack/react-virtual`)
+  - [ ] data layer abstraction (server DB vs IndexedDB)
 
 ## TODO: Backlog
 
+- [ ] chore: consolidate `docs/skills/*` into `docs/eval/README.md`
 - [ ] feat: AI integration help page — document the AI prompt workflow (copy/download prompt, paste result back) and link from the "AI prompt" dropdown label
 - [ ] fix: adjust prompt to be language independent (currently assumes korean)
 - [ ] chore: rename worker `ytsub-v5` → `zamak` — update `wrangler.jsonc` name, re-set secrets on new worker, delete old worker, update CI artifact name and docs
@@ -101,12 +108,6 @@ See ytsub-v4 for relevant technique.
 - [ ] feat: bookmark list page — browse/search all bookmarks across videos
 - [ ] Full-text search — search across captions and bookmarks (D1 FTS or LIKE)
 - [ ] Keyboard shortcuts — space (play/pause), arrow keys (prev/next caption), etc.
-- [x] Mobile-friendly layout
-- [x] Browser extension as data source (content script fetches subs from YouTube same-origin)
-- [ ] refactor: make extension session (IndexedDB) persistence explicitly async — current bookmark CRUD is synchronous setState with fire-and-forget persist calls; should return promises so callers (especially zamak API) can await and verify writes
+- [ ] refactor: make extension session (IndexedDB) persistence explicitly async — current bookmark CRUD is synchronous setState with fire-and-forget persist calls; should return promises so callers can await and verify writes
 - [ ] Authentication (multi users)
 - [ ] Typing practice (v3/v4 had this)
-- [x] feat: extension bookmark editor + AI extension integration
-  - expose `window.__zamak` API (e.g. `getPendingBookmarks()`, `fillBookmark(id, data)`) so AI browser extensions (Claude etc.) can read bookmark context and fill translation/etymology/notes
-  - extension bookmark editor UI to review/edit AI-filled fields before export
-  - no API keys or server proxy needed — AI extension brings its own capability

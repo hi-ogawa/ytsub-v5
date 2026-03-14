@@ -52,7 +52,6 @@ import type {
   YouTubeCaptionTrack,
   YouTubeVideoData,
 } from "../lib/youtube.ts";
-import { useZamakApi } from "../lib/zamak-api.ts";
 import { CaptionList } from "./caption-list.tsx";
 import { TrackPicker } from "./track-picker.tsx";
 import {
@@ -530,8 +529,6 @@ function CaptionPanelWithStore({
   onSelectStrategy: (s: MergeStrategy) => void;
 }) {
   useSyncExternalStore(store.subscribe, () => store.version);
-
-  useZamakApi(store);
 
   const [autoScroll, setAutoScroll] = useStore(autoScrollStore);
 
