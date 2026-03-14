@@ -146,6 +146,7 @@ export function CaptionList({
   player,
   autoScroll,
   bookmarks,
+  flashIndex,
   onGoToBookmark,
   onPopoverOpenChange,
 }: {
@@ -156,6 +157,7 @@ export function CaptionList({
   player?: YTPlayer;
   autoScroll: boolean;
   bookmarks: ExtensionBookmark[];
+  flashIndex?: number;
   onGoToBookmark: (bookmarkId: string) => void;
   onPopoverOpenChange: (open: boolean) => void;
 }) {
@@ -180,10 +182,12 @@ export function CaptionList({
 
   useImperativeHandle(ref, () => ({
     scrollToIndex: (index: number) => {
+      isManualScrollRef.current = true;
       virtualizer.scrollToIndex(index, {
         align: "center",
         behavior: "smooth",
       });
+      onManualScroll();
     },
   }));
   const prevScrollIndex = useRef<number | undefined>(undefined);
@@ -301,6 +305,7 @@ export function CaptionList({
                   "flex w-full cursor-pointer flex-col gap-1 border p-1 px-2 hover:bg-muted",
                   i === currentIndex && isPlaying && "ring-2 ring-ring",
                   i === currentIndex ? "border-ring" : "border-border",
+                  i === flashIndex && "flash-highlight",
                 ]
                   .filter(Boolean)
                   .join(" ")}
