@@ -43,7 +43,7 @@ const router = createBrowserRouter([
         Component: AuthLayout,
         children: [
           { path: "/", Component: VideoListPage },
-          { path: "/videos/:id", Component: VideoViewerPage },
+          { path: "/videos/:youtubeId", Component: VideoViewerPage },
         ],
       },
     ],

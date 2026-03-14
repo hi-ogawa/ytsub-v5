@@ -638,24 +638,26 @@ function CaptionPanelWithStore({
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex items-center border-b gap-1">
-        <div className="min-w-0 flex-1">
-          <TrackPicker
-            tracks={tracks}
-            selectedVssId1={store.vssId1}
-            selectedVssId2={store.vssId2}
-            onSelect={(v1, v2) => onSelectTracks(v1, v2)}
-            disabled={store.bookmarks.length > 0}
+      {tracks.length > 0 && (
+        <div className="flex items-center border-b gap-1">
+          <div className="min-w-0 flex-1">
+            <TrackPicker
+              tracks={tracks}
+              selectedVssId1={store.vssId1}
+              selectedVssId2={store.vssId2}
+              onSelect={(v1, v2) => onSelectTracks(v1, v2)}
+              disabled={store.bookmarks.length > 0}
+            />
+          </div>
+          {sync && <SyncButton sync={sync} store={store} />}
+          <SettingsDropdown
+            store={store}
+            autoScroll={autoScroll}
+            onSetAutoScroll={setAutoScroll}
+            onSelectStrategy={onSelectStrategy}
           />
         </div>
-        {sync && <SyncButton sync={sync} store={store} />}
-        <SettingsDropdown
-          store={store}
-          autoScroll={autoScroll}
-          onSetAutoScroll={setAutoScroll}
-          onSelectStrategy={onSelectStrategy}
-        />
-      </div>
+      )}
       <CaptionPanelContent
         store={store}
         player={player}
