@@ -19,24 +19,24 @@ Title: {{TITLE}}
 
 {{CAPTIONS}}
 
-## Output
+## Output format — STRICT
 
-Return a single JSON code block. Each entry:
+Your ENTIRE response must be a single JSON code block. No prose, no tables, no explanations outside the JSON. The output is machine-parsed — anything outside the code fence will cause an error.
+
+Each entry:
 
 - `captionIndex`: the [idx] from captions above
 - `text`: exact substring from the Korean column (no speaker labels like [나경])
 - `translation`: contextual English meaning for this caption, not a dictionary dump. Concise.
-- `etymology`: Hanja breakdown if it aids memorization (e.g. "非現實的; 비(non) + 현실(reality) + 적(adj)"). Empty string for native Korean words.
-- `notes`: usage tips — formality, collocations, gotchas. 1-2 sentences max. Empty string if nothing notable.
+- `etymology`: Hanja if applicable (e.g. "體重"). Empty string for native Korean words.
 
 ```json
 [
   {
     "captionIndex": 4,
-    "text": "헷갈리다",
-    "translation": "to be confused",
-    "etymology": "",
-    "notes": "Conjugated as 헷갈리기는 해 (softened)."
+    "text": "체중",
+    "translation": "body weight",
+    "etymology": "體重"
   }
 ]
 ```
@@ -59,22 +59,22 @@ Title: {{TITLE}}
 
 {{CAPTIONS}}
 
-## Output
+## Output format — STRICT
 
-Return a single JSON code block. Each entry:
+Your ENTIRE response must be a single JSON code block. No prose, no tables, no explanations outside the JSON. The output is machine-parsed — anything outside the code fence will cause an error.
+
+Each entry:
 
 - `id`: the bookmark id from above
 - `translation`: contextual English meaning for this caption, not a dictionary dump. Concise.
-- `etymology`: Hanja breakdown if it aids memorization (e.g. "非現實的; 비(non) + 현실(reality) + 적(adj)"). Empty string for native Korean words.
-- `notes`: usage tips — formality, collocations, gotchas. 1-2 sentences max. Empty string if nothing notable.
+- `etymology`: Hanja if applicable (e.g. "體重"). Empty string for native Korean words.
 
 ```json
 [
   {
     "id": "abc-123",
     "translation": "to be confused",
-    "etymology": "",
-    "notes": ""
+    "etymology": ""
   }
 ]
 ```
@@ -97,9 +97,11 @@ Title: {{TITLE}}
 
 {{CAPTIONS}}
 
-## Output
+## Output format — STRICT
 
-Return a single JSON code block with ONLY the rows that need fixing:
+Your ENTIRE response must be a single JSON code block. No prose, no tables, no explanations outside the JSON. The output is machine-parsed — anything outside the code fence will cause an error.
+
+Include ONLY the rows that need fixing:
 
 ```json
 [{ "idx": 3, "text1": "두바이 쿠키 먹어봤어?" }]
