@@ -164,7 +164,7 @@ export type VideoSyncEntry = {
   channelName: string;
   bookmarkCount: number;
   updatedAt: string;
-  syncStatus: "local-only" | "server-only" | "synced" | "pull" | "push";
+  syncStatus?: "local-only" | "server-only" | "synced" | "pull" | "push";
 };
 
 export type VideoSyncHandle = ReturnType<typeof useVideoSync>;
@@ -258,6 +258,16 @@ export function useVideoSync() {
   };
 
   const entries = useMemo((): VideoSyncEntry[] => {
+    if (!authenticated) {
+      return videoIndex.map((e) => ({
+        youtubeId: e.youtubeId,
+        title: e.title,
+        channelName: e.channelName,
+        bookmarkCount: e.bookmarkCount,
+        updatedAt: e.updatedAt,
+      }));
+    }
+
     const serverVideos = serverQuery.data?.items ?? [];
     const merged = new Map<string, VideoSyncEntry>();
 
@@ -297,10 +307,9 @@ export function useVideoSync() {
     }
 
     return Array.from(merged.values());
-  }, [videoIndex, serverQuery.data]);
+  }, [authenticated, videoIndex, serverQuery.data]);
 
   return {
-    authenticated,
     entries,
     syncing,
     onPull: (youtubeId: string) => pullMutation.mutate(youtubeId),

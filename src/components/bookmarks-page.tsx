@@ -17,9 +17,9 @@ export function BookmarksPage({
   onVideoClick: (youtubeId: string) => void;
   sync?: VideoSyncHandle;
 }) {
-  const displayEntries: VideoSyncEntry[] = sync?.authenticated
+  const displayEntries = sync
     ? sync.entries
-    : entries.map((e) => ({ ...e, syncStatus: "local-only" as const }));
+    : entries.map((e): VideoSyncEntry => ({ ...e }));
 
   const sorted = [...displayEntries].sort(
     (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
@@ -43,7 +43,7 @@ export function BookmarksPage({
               title={entry.title}
               channelName={entry.channelName}
               titleRight={
-                sync?.authenticated ? (
+                sync && entry.syncStatus ? (
                   <SyncBadge
                     status={entry.syncStatus}
                     syncing={sync.syncing.has(entry.youtubeId)}
@@ -76,7 +76,7 @@ function SyncBadge({
   onPull,
   onPush,
 }: {
-  status: VideoSyncEntry["syncStatus"];
+  status: NonNullable<VideoSyncEntry["syncStatus"]>;
   syncing: boolean;
   onPull: () => void;
   onPush: () => void;
