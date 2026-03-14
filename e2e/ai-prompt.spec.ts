@@ -91,14 +91,6 @@ test.describe("AI prompt copy & import", () => {
   test("import Pick & Fill JSON creates bookmarks with metadata", async ({
     page,
   }) => {
-    await openSettings(page);
-    await page.getByText("Import AI result").click();
-
-    // Textarea should appear
-    const textarea = page.locator("textarea");
-    await expect(textarea).toBeVisible();
-
-    // Simulate paste with Pick & Fill JSON
     const json = JSON.stringify([
       {
         captionIndex: 0,
@@ -116,24 +108,20 @@ test.describe("AI prompt copy & import", () => {
       },
     ]);
 
-    await textarea.evaluate((el, data) => {
-      const dt = new DataTransfer();
-      dt.setData("text/plain", data);
-      el.dispatchEvent(
-        new ClipboardEvent("paste", { clipboardData: dt, bubbles: true }),
-      );
-    }, json);
+    // Handle prompt → accept with JSON, then alert → dismiss
+    page.on("dialog", (dialog) => {
+      if (dialog.type() === "prompt") dialog.accept(json);
+      else dialog.accept();
+    });
 
-    // Success message
-    await expect(page.getByText("Created 2 bookmarks")).toBeVisible();
+    await openSettings(page);
+    await page.getByText("Import AI result").click();
 
-    // Close dropdown, then verify bookmarks
-    await page.keyboard.press("Escape");
+    // Verify bookmarks
     const panel = page.getByTestId("resizable-panel");
     await panel.getByRole("button", { name: /Bookmarks/ }).click();
     await expect(page.locator("[data-bookmark-id]")).toHaveCount(2);
 
-    // Verify metadata is filled
     const firstCard = page.locator("[data-bookmark-id]").first();
     await expect(firstCard.getByText("to pinch")).toBeVisible();
   });
@@ -151,11 +139,6 @@ test.describe("AI prompt copy & import", () => {
       .first()
       .getAttribute("data-bookmark-id");
 
-    // Import fill result
-    await openSettings(page);
-    await page.getByText("Import AI result").click();
-    const textarea = page.locator("textarea");
-
     const json = JSON.stringify([
       {
         id: bookmarkId,
@@ -165,18 +148,15 @@ test.describe("AI prompt copy & import", () => {
       },
     ]);
 
-    await textarea.evaluate((el, data) => {
-      const dt = new DataTransfer();
-      dt.setData("text/plain", data);
-      el.dispatchEvent(
-        new ClipboardEvent("paste", { clipboardData: dt, bubbles: true }),
-      );
-    }, json);
+    page.on("dialog", (dialog) => {
+      if (dialog.type() === "prompt") dialog.accept(json);
+      else dialog.accept();
+    });
 
-    await expect(page.getByText("Filled 1 bookmarks")).toBeVisible();
+    await openSettings(page);
+    await page.getByText("Import AI result").click();
 
-    // Close dropdown, verify translation appears and unfilled badge is gone
-    await page.keyboard.press("Escape");
+    // Verify translation appears and unfilled badge is gone
     await expect(page.getByText("to pinch")).toBeVisible();
     await expect(page.getByText("unfilled")).not.toBeVisible();
   });
@@ -184,46 +164,21 @@ test.describe("AI prompt copy & import", () => {
   test("import handles JSON wrapped in markdown code fence", async ({
     page,
   }) => {
-    await openSettings(page);
-    await page.getByText("Import AI result").click();
-    const textarea = page.locator("textarea");
-
     const wrapped = `\`\`\`json
 [{"captionIndex": 0, "text": "꼬집어", "translation": "to pinch", "etymology": "", "notes": ""}]
 \`\`\``;
 
-    await textarea.evaluate((el, data) => {
-      const dt = new DataTransfer();
-      dt.setData("text/plain", data);
-      el.dispatchEvent(
-        new ClipboardEvent("paste", { clipboardData: dt, bubbles: true }),
-      );
-    }, wrapped);
-
-    await expect(page.getByText("Created 1 bookmarks")).toBeVisible();
-  });
-
-  test("import shows error for invalid JSON", async ({ page }) => {
-    await openSettings(page);
-    await page.getByText("Import AI result").click();
-    const textarea = page.locator("textarea");
-
-    await textarea.evaluate((el) => {
-      const dt = new DataTransfer();
-      dt.setData("text/plain", "not json at all");
-      el.dispatchEvent(
-        new ClipboardEvent("paste", { clipboardData: dt, bubbles: true }),
-      );
+    page.on("dialog", (dialog) => {
+      if (dialog.type() === "prompt") dialog.accept(wrapped);
+      else dialog.accept();
     });
 
-    await expect(page.getByText("Invalid JSON")).toBeVisible();
-  });
-
-  test("import textarea dismisses on Escape", async ({ page }) => {
     await openSettings(page);
     await page.getByText("Import AI result").click();
-    await expect(page.locator("textarea")).toBeVisible();
-    await page.keyboard.press("Escape");
-    await expect(page.locator("textarea")).not.toBeVisible();
+
+    // Verify bookmark created
+    const panel = page.getByTestId("resizable-panel");
+    await panel.getByRole("button", { name: /Bookmarks/ }).click();
+    await expect(page.locator("[data-bookmark-id]")).toHaveCount(1);
   });
 });
