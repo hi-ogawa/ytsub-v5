@@ -94,6 +94,7 @@ See ytsub-v4 for relevant technique.
 
 ## TODO: Backlog
 
+- [ ] feat: AI integration help page — document the AI prompt workflow (copy/download prompt, paste result back) and link from the "AI prompt" dropdown label
 - [ ] fix: adjust prompt to be language independent (currently assumes korean)
 - [ ] chore: rename worker `ytsub-v5` → `zamak` — update `wrangler.jsonc` name, re-set secrets on new worker, delete old worker, update CI artifact name and docs
 - [ ] feat: bookmark approval flow — inline approve/reject buttons for `pending` bookmarks in viewer

@@ -184,13 +184,27 @@ function AiPromptCopy({
   const [selected, setSelected] = useState<AiTask>(AI_TASKS[0].task);
   const [copied, setCopied] = useState(false);
 
+  function getPrompt(task: AiTask) {
+    if (!rows) return "";
+    return makeAiPrompt(task, rows, bookmarks, title, duration);
+  }
+
   function copyPrompt(task: AiTask) {
-    if (!rows) return;
-    navigator.clipboard.writeText(
-      makeAiPrompt(task, rows, bookmarks, title, duration),
-    );
+    navigator.clipboard.writeText(getPrompt(task));
     setCopied(true);
     setTimeout(() => setCopied(false), 1500);
+  }
+
+  function downloadPrompt(task: AiTask) {
+    const text = getPrompt(task);
+    if (!text) return;
+    const blob = new Blob([text], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `prompt-${task}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
   }
 
   return (
@@ -225,6 +239,15 @@ function AiPromptCopy({
           ) : (
             <Copy className="h-4 w-4" />
           )}
+        </button>
+        <button
+          type="button"
+          className="shrink-0 rounded p-0.5 text-muted-foreground hover:bg-muted"
+          title="Download prompt"
+          onClick={() => downloadPrompt(selected)}
+          disabled={!rows}
+        >
+          <Download className="h-4 w-4" />
         </button>
       </div>
     </div>
