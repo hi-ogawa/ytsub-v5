@@ -62,6 +62,8 @@ How it works:
 When you visit a YouTube video, Zamak fetches the available subtitle tracks and displays them in a side-by-side panel overlaid on the page. The panel syncs with video playback in real time. Select any text to bookmark it, then use the built-in editor to add translations and notes — or copy an AI prompt to get help from your favorite LLM. Click the Zamak icon to see all your bookmarked videos at a glance.
 
 Supported: Any YouTube video with subtitles. Works best with videos that have two or more language tracks, but also supports auto-translated captions for single-language videos.
+
+The project is open source and the source code is available on https://github.com/hi-ogawa/ytsub-v5.
 ```
 
 ## Category
