@@ -128,14 +128,12 @@ export function useSyncState({ youtubeId }: { youtubeId: string }) {
   );
 
   const pullMutation = useMutation({
-    mutationFn: async (_store: CaptionSessionManager) => {
-      return await queryClient.fetchQuery(
+    mutationFn: async (store: CaptionSessionManager) => {
+      const data = await queryClient.fetchQuery(
         orpc.videos.getFullSession.queryOptions({
           input: { youtubeId },
         }),
       );
-    },
-    onSuccess: async (data, store) => {
       if (!data) return;
       const { captions, bookmarks } = serverSessionToLocal(data);
       await saveSession({
