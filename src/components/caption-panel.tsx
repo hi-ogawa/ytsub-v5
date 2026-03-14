@@ -404,6 +404,8 @@ function CaptionPanelLoading({
       });
     },
     enabled: !!track1 && !!track2,
+    gcTime: 0,
+    staleTime: Infinity,
   });
 
   useEffect(() => {
@@ -430,11 +432,11 @@ function CaptionPanelLoading({
         <div className="flex h-full items-center justify-center text-sm text-destructive">
           {String(storeQuery.error)}
         </div>
-      ) : (
+      ) : storeQuery.isLoading ? (
         <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
           Loading subtitles…
         </div>
-      )}
+      ) : null}
     </div>
   );
 }
