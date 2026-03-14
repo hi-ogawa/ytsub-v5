@@ -14,6 +14,7 @@ import {
   EllipsisVertical,
   ExternalLink,
   Loader2,
+  LogIn,
   RefreshCw,
   Trash2,
   X,
@@ -335,6 +336,11 @@ function SyncButton({
   let onClick: () => void = () => onSync({ store });
 
   switch (state) {
+    case "unauthenticated":
+      icon = <LogIn className={`${iconClass} text-muted-foreground`} />;
+      title = "Login required to sync";
+      disabled = true;
+      break;
     case "checking":
       icon = <Loader2 className={`${iconClass} animate-spin`} />;
       title = "Checking sync status...";
@@ -625,7 +631,7 @@ function CaptionPanelWithStore({
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex items-center border-b">
+      <div className="flex items-center border-b gap-1">
         <div className="min-w-0 flex-1">
           <TrackPicker
             tracks={tracks}

@@ -15,6 +15,7 @@ import {
 } from "./video-index.ts";
 
 type SyncState =
+  | "unauthenticated"
   | "checking"
   | "synced"
   | "push"
@@ -92,13 +93,19 @@ export function useSyncState({ youtubeId }: { youtubeId: string }) {
 
   const [videoIndex] = useStore(videoIndexStore);
 
-  const serverQuery = useQuery(
-    orpc.videos.getVideoUpdatedAt.queryOptions({
+  const authQuery = useQuery(orpc.auth.check.queryOptions());
+  const authenticated = authQuery.data?.authenticated === true;
+
+  const serverQuery = useQuery({
+    ...orpc.videos.getVideoUpdatedAt.queryOptions({
       input: { youtubeId },
     }),
-  );
+    enabled: authenticated,
+  });
 
   const computedState = useMemo((): SyncState => {
+    if (authQuery.isFetching) return "checking";
+    if (!authenticated) return "unauthenticated";
     if (serverQuery.isLoading) return "checking";
     if (serverQuery.isError) return "error";
 
@@ -110,6 +117,8 @@ export function useSyncState({ youtubeId }: { youtubeId: string }) {
     });
   }, [
     youtubeId,
+    authQuery.isFetching,
+    authenticated,
     serverQuery.isLoading,
     serverQuery.isError,
     serverQuery.data,
