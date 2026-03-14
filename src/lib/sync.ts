@@ -280,12 +280,16 @@ export function useVideoSync() {
   const entries: VideoSyncEntry[] = serverQuery.data ?? videoIndex;
 
   return {
+    authenticated,
     isPending,
     entries,
     syncing,
     onPull: (youtubeId: string) => pullMutation.mutate(youtubeId),
     onPush,
-    refetch: () => serverQuery.refetch(),
+    refetch: () => {
+      authQuery.refetch();
+      serverQuery.refetch();
+    },
   };
 }
 

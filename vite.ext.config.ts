@@ -49,20 +49,6 @@ export default defineConfig({
         },
       },
     },
-    popup: {
-      consumer: "client",
-      build: {
-        outDir: "./dist/extension",
-        minify: false,
-        emptyOutDir: false,
-        copyPublicDir: false,
-        rolldownOptions: {
-          input: {
-            popup: "./src/extension/popup.html",
-          },
-        },
-      },
-    },
   },
   define: {
     "process.env.NODE_ENV": JSON.stringify("production"),
@@ -74,7 +60,7 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      // Extension pages (popup, bookmarks) use extension-specific oRPC client
+      // Extension bookmarks page uses extension-specific oRPC client
       // with bearer token auth via direct fetch (not cookie-based)
       [resolve("src/rpc.ts")]: resolve("src/extension/rpc.ts"),
     },
@@ -84,16 +70,13 @@ export default defineConfig({
     async buildApp(builder) {
       await builder.build(builder.environments.client);
       await builder.build(builder.environments.bookmarks);
-      await builder.build(builder.environments.popup);
       const outDir = builder.environments.client.config.build.outDir;
 
-      // Move html files from nested src/extension/ to root
-      for (const page of ["bookmarks", "popup"]) {
-        cpSync(
-          resolve(outDir, `src/extension/${page}.html`),
-          resolve(outDir, `${page}.html`),
-        );
-      }
+      // Move html
+      cpSync(
+        resolve(outDir, "src/extension/bookmarks.html"),
+        resolve(outDir, "bookmarks.html"),
+      );
       rmSync(resolve(outDir, "src"), { force: true, recursive: true });
 
       // Copy raw assets

@@ -11,17 +11,17 @@ The web app has username/password auth (cookie-based sessions). The extension ha
 
 ### Direct fetch from extension pages, no sync in content script
 
-Key insight: only the **MAIN world content script** is blocked by YouTube's CSP. Extension pages (popup, bookmarks) have their own `chrome-extension://` origin and can fetch directly.
+Only the **MAIN world content script** is blocked by YouTube's CSP. Extension pages (bookmarks) have their own `chrome-extension://` origin and can fetch directly — no background worker proxy needed.
 
-The content script's job is caption extraction + local bookmark editing (IndexedDB) — no server calls needed. Sync happens on the **bookmarks page**, which is the natural workflow: watch video → create bookmarks → open bookmarks page → sync.
+The content script's job is caption extraction + local bookmark editing (IndexedDB) — no server calls. Sync happens on the **bookmarks page**, which is the natural workflow: watch video → create bookmarks → open bookmarks page → sync.
 
 Architecture:
 
 - **Content script** — YouTube API + IndexedDB only, zero server calls
-- **Popup page** — direct fetch to server for login, token stored in `chrome.storage.local`
-- **Bookmarks page** — direct fetch with bearer token for sync (`useVideoSync`)
-- **Background worker** — minimal: video-index relay only (existing role)
+- **Bookmarks page** — login UI in header menu, direct fetch with bearer token for sync (`useVideoSync`)
+- **Background worker** — minimal: video-index relay + open bookmarks on icon click (existing role)
 - **Extension oRPC client** (`extension/rpc.ts`) — same `RPCLink` pattern as web app, but reads bearer token from `chrome.storage.local` and adds `Authorization` header. Aliased via Vite build so `lib/sync.ts` uses it automatically in extension builds.
+- **No popup** — extension icon opens bookmarks page directly. Login/logout in the bookmarks page header dropdown. Registration nudges to web app (`/register`).
 
 ### Server changes
 
@@ -41,8 +41,7 @@ If we want sync in the caption panel later, the content script would need its ow
 | `src/server/routes/auth.ts`          | Login/register — returns token in body                |
 | `src/server/index.ts`                | CORS for chrome-extension:// origins                  |
 | `src/extension/rpc.ts`               | Extension oRPC client — bearer token via direct fetch |
-| `src/extension/popup.tsx`            | Login popup — direct fetch to server                  |
-| `src/extension/bookmarks.tsx`        | Bookmarks page — uses `useVideoSync`                  |
+| `src/extension/bookmarks.tsx`        | Bookmarks page — login UI + `useVideoSync`            |
 | `src/extension/content.tsx`          | Content script — no server calls                      |
 | `src/extension/public/background.js` | Background worker — video-index relay only            |
 | `vite.ext.config.ts`                 | Extension build — `__SERVER_URL__` define + rpc alias |
@@ -53,7 +52,8 @@ If we want sync in the caption panel later, the content script would need its ow
 - [x] Server: return token in login/register body
 - [x] Server: CORS for chrome-extension:// origins
 - [x] Extension oRPC client with bearer token
-- [x] Login popup UI (direct fetch)
-- [x] Bookmarks page sync wiring
+- [x] Bookmarks page: login/logout in header menu
+- [x] Bookmarks page: sync wiring via `useVideoSync`
 - [x] E2E tests for bearer token auth
 - [x] Content script: no sync (deferred)
+- [x] No popup — icon opens bookmarks page directly

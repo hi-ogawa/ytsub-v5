@@ -6,3 +6,8 @@ chrome.runtime.onMessage.addListener((msg) => {
     chrome.storage.local.set({ "video-index": msg.payload });
   }
 });
+
+// Open bookmarks page in a new tab when extension icon is clicked.
+chrome.action.onClicked.addListener(() => {
+  chrome.tabs.create({ url: "bookmarks.html" });
+});
