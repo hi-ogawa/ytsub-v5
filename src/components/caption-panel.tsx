@@ -318,7 +318,7 @@ function CaptionPanelInner({
         track2={selectedTracks.track2}
         userStrategy={userStrategy}
         onSelectTracks={selectTracks}
-        onStoreReady={setStore}
+        setStore={setStore}
       />
     );
   }
@@ -346,16 +346,13 @@ function CaptionPanelLoading({
   track2,
   userStrategy,
   onSelectTracks,
-  onStoreReady,
-}: {
-  tracks: YouTubeCaptionTrack[];
-  fetchJson3: (track: YouTubeCaptionTrack) => Promise<Json3File>;
-  videoMeta: YouTubeVideoData;
+  setStore,
+}: CaptionPanelProps & {
   track1?: YouTubeCaptionTrack;
   track2?: YouTubeCaptionTrack;
   userStrategy?: MergeStrategy;
   onSelectTracks: (v1?: string, v2?: string) => void;
-  onStoreReady: (store: CaptionSessionManager) => void;
+  setStore: (store: CaptionSessionManager) => void;
 }) {
   const { youtubeId } = videoMeta;
 
@@ -380,7 +377,7 @@ function CaptionPanelLoading({
       userStrategy,
     );
 
-    onStoreReady(
+    setStore(
       new CaptionSessionManager({
         videoMeta,
         vssId1: track1.vssId,
@@ -397,7 +394,7 @@ function CaptionPanelLoading({
     track2,
     userStrategy,
     videoMeta,
-    onStoreReady,
+    setStore,
   ]);
 
   return (
