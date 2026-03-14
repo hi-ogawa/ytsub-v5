@@ -1,9 +1,29 @@
+import type { InferRouterOutputs } from "@orpc/server";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { orpc } from "../rpc.ts";
-import type { CaptionSessionManager } from "./caption-session.ts";
+import type { Router } from "../server/rpc.ts";
+import {
+  type PersistedCaptionSession,
+  getSession,
+  saveSession,
+} from "./caption-session-db.ts";
+import {
+  type CaptionSessionManager,
+  sessionToExportData,
+} from "./caption-session.ts";
 import { useStore } from "./external-store.ts";
-import { setSyncedAt, videoIndexStore } from "./video-index.ts";
+import {
+  type VideoIndexEntry,
+  setSyncedAt,
+  updateVideoIndex,
+  videoIndexStore,
+} from "./video-index.ts";
+
+type ListVideosOutput = InferRouterOutputs<Router>["videos"]["listVideos"];
+type GetFullSessionOutput = NonNullable<
+  InferRouterOutputs<Router>["videos"]["getFullSession"]
+>;
 
 type SyncState =
   | "unauthenticated"
@@ -100,33 +120,12 @@ export function useSyncState({ youtubeId }: { youtubeId: string }) {
         }),
       );
       if (!data) return;
+      const session = serverSessionToLocal(data);
       await store.replace({
-        vssId1: data.video.vssId1,
-        vssId2: data.video.vssId2,
-        captions: data.captions.map((c) => ({
-          idx: c.idx,
-          begin: c.begin,
-          end: c.end,
-          text1: c.text1,
-          text2: c.text2,
-          cue1Indices: [],
-          cue2Indices: [],
-          text1Segments: [c.text1],
-          text2Segments: [c.text2],
-        })),
-        bookmarks: data.bookmarks.map((b) => ({
-          id: String(b.id),
-          text: b.text,
-          side: b.side,
-          offset: b.offset,
-          captionIndex: data.captions.findIndex((c) => c.id === b.captionId),
-          timestamp: b.timestamp,
-          context: b.context,
-          translation: b.translation,
-          etymology: b.etymology,
-          notes: b.notes,
-          createdAt: b.createdAt,
-        })),
+        vssId1: session.vssId1,
+        vssId2: session.vssId2,
+        captions: session.captions,
+        bookmarks: session.bookmarks,
       });
       setSyncedAt(youtubeId);
       setSyncVersion((v) => v + 1);
@@ -153,4 +152,175 @@ export function useSyncState({ youtubeId }: { youtubeId: string }) {
   const error = pushMutation.error ?? pullMutation.error ?? undefined;
 
   return { state, onSync, error };
+}
+
+export type VideoSyncEntry = VideoIndexEntry & {
+  syncStatus?: "local-only" | "server-only" | "synced" | "pull" | "push";
+};
+
+function mergeVideoEntries(
+  localEntries: VideoIndexEntry[],
+  serverVideos: ListVideosOutput["items"],
+): VideoSyncEntry[] {
+  const merged = new Map<string, VideoSyncEntry>();
+
+  for (const local of localEntries) {
+    const server = serverVideos.find((v) => v.youtubeId === local.youtubeId);
+    const status = computeSyncState({
+      localUpdatedAt: local.updatedAt,
+      syncedAt: local.syncedAt,
+      serverUpdatedAt: server?.updatedAt ?? undefined,
+    });
+    merged.set(local.youtubeId, {
+      youtubeId: local.youtubeId,
+      title: local.title,
+      channelName: local.channelName,
+      bookmarkCount: local.bookmarkCount,
+      updatedAt: local.updatedAt,
+      syncStatus:
+        status === "synced" || status === "push" || status === "pull"
+          ? status
+          : status === "conflict"
+            ? "push"
+            : "local-only",
+    });
+  }
+
+  for (const server of serverVideos) {
+    if (!merged.has(server.youtubeId)) {
+      merged.set(server.youtubeId, {
+        youtubeId: server.youtubeId,
+        title: server.title,
+        channelName: server.channelName,
+        bookmarkCount: 0,
+        updatedAt: server.updatedAt,
+        syncStatus: "server-only",
+      });
+    }
+  }
+
+  return Array.from(merged.values());
+}
+
+export type VideoSyncHandle = ReturnType<typeof useVideoSync>;
+
+export function useVideoSync() {
+  const queryClient = useQueryClient();
+  const [videoIndex] = useStore(videoIndexStore);
+
+  const authQuery = useQuery(orpc.auth.check.queryOptions());
+  const authenticated = authQuery.data?.authenticated === true;
+
+  const serverQuery = useQuery({
+    ...orpc.videos.listVideos.queryOptions({ input: { limit: 200 } }),
+    enabled: authenticated,
+    select: (data) => mergeVideoEntries(videoIndex, data.items),
+  });
+
+  const [syncing, setSyncing] = useState<Set<string>>(new Set());
+
+  const withSyncing = async (youtubeId: string, fn: () => Promise<void>) => {
+    setSyncing((s) => new Set(s).add(youtubeId));
+    try {
+      await fn();
+    } finally {
+      setSyncing((s) => {
+        const next = new Set(s);
+        next.delete(youtubeId);
+        return next;
+      });
+    }
+  };
+
+  const pullMutation = useMutation({
+    mutationFn: async (youtubeId: string) => {
+      await withSyncing(youtubeId, async () => {
+        const data = await queryClient.fetchQuery(
+          orpc.videos.getFullSession.queryOptions({ input: { youtubeId } }),
+        );
+        if (!data) throw new Error("Video not found on server");
+        const session = serverSessionToLocal(data);
+        await saveSession(session);
+        updateVideoIndex(
+          session.youtubeId,
+          session.title,
+          session.channelName,
+          session.bookmarks.length,
+        );
+        setSyncedAt(session.youtubeId);
+      });
+    },
+    onSuccess: () => {
+      serverQuery.refetch();
+    },
+  });
+
+  const pushMutation = useMutation(
+    orpc.videos.importVideo.mutationOptions({
+      onSuccess: () => {
+        serverQuery.refetch();
+      },
+    }),
+  );
+
+  const onPush = async (youtubeId: string) => {
+    await withSyncing(youtubeId, async () => {
+      const session = await getSession(youtubeId);
+      if (!session) throw new Error("No local session found");
+      pushMutation.mutate(sessionToExportData(session));
+      setSyncedAt(youtubeId);
+    });
+  };
+
+  const isPending =
+    authQuery.isLoading || (authenticated && serverQuery.isLoading);
+  const entries: VideoSyncEntry[] = serverQuery.data ?? videoIndex;
+
+  return {
+    isPending,
+    entries,
+    syncing,
+    onPull: (youtubeId: string) => pullMutation.mutate(youtubeId),
+    onPush,
+  };
+}
+
+function serverSessionToLocal(
+  data: GetFullSessionOutput,
+): PersistedCaptionSession {
+  return {
+    youtubeId: data.video.youtubeId,
+    title: data.video.title,
+    channelName: data.video.channelName,
+    channelId: data.video.channelId,
+    duration: data.video.duration,
+    vssId1: data.video.vssId1,
+    vssId2: data.video.vssId2,
+    language1: data.video.language1,
+    language2: data.video.language2,
+    captions: data.captions.map((c) => ({
+      idx: c.idx,
+      begin: c.begin,
+      end: c.end,
+      text1: c.text1,
+      text2: c.text2,
+      cue1Indices: [] as number[],
+      cue2Indices: [] as number[],
+      text1Segments: [c.text1],
+      text2Segments: [c.text2],
+    })),
+    bookmarks: data.bookmarks.map((b) => ({
+      id: String(b.id),
+      text: b.text,
+      side: b.side,
+      offset: b.offset,
+      captionIndex: data.captions.findIndex((c) => c.id === b.captionId),
+      timestamp: b.timestamp,
+      context: b.context,
+      translation: b.translation,
+      etymology: b.etymology,
+      notes: b.notes,
+      createdAt: b.createdAt,
+    })),
+  };
 }
