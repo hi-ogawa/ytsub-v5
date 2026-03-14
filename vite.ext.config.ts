@@ -68,11 +68,14 @@ export default defineConfig({
     "process.env.NODE_ENV": JSON.stringify("production"),
     __BUILD_TIME__: JSON.stringify(buildTime.toISOString()),
     __GIT_REV__: JSON.stringify(rev + dirty),
+    __SERVER_URL__: JSON.stringify(
+      process.env.SERVER_URL || "https://ytsub-v5.hiroshi.workers.dev",
+    ),
   },
   resolve: {
     alias: {
-      // Extension builds use extension-specific oRPC client that routes
-      // through the background worker (bearer token auth, avoids YouTube CSP)
+      // Extension pages (popup, bookmarks) use extension-specific oRPC client
+      // with bearer token auth via direct fetch (not cookie-based)
       [resolve("src/rpc.ts")]: resolve("src/extension/rpc.ts"),
     },
   },

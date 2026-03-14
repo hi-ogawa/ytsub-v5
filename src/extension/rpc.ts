@@ -1,9 +1,8 @@
 /**
- * Extension-specific oRPC client that routes requests through the
- * background service worker via chrome.runtime.sendMessage.
+ * Extension-specific oRPC client for popup and bookmarks pages.
+ * Uses direct fetch with bearer token from chrome.storage.local.
  *
- * This avoids YouTube CSP restrictions on fetch from the content script
- * and lets the background worker attach the bearer auth token.
+ * Not used by the content script (which has no server calls).
  */
 import { createORPCClient } from "@orpc/client";
 import { RPCLink } from "@orpc/client/fetch";
@@ -12,48 +11,35 @@ import { createTanstackQueryUtils } from "@orpc/tanstack-query";
 import type { Router } from "../server/rpc.ts";
 
 declare const chrome: {
-  runtime: {
-    sendMessage: (
-      msg: Record<string, unknown>,
-      cb: (response: Record<string, unknown>) => void,
-    ) => void;
+  storage: {
+    local: {
+      get: (
+        keys: string[],
+        cb: (result: Record<string, unknown>) => void,
+      ) => void;
+    };
   };
 };
 
-function sendMessage(
-  msg: Record<string, unknown>,
-): Promise<Record<string, unknown>> {
-  return new Promise((resolve) => chrome.runtime.sendMessage(msg, resolve));
-}
+declare const __SERVER_URL__: string;
 
-/**
- * Custom fetch that routes through the background worker.
- * The background worker attaches the bearer token and makes the actual fetch.
- */
-async function extensionFetch(request: Request): Promise<Response> {
-  const url = new URL(request.url);
-  // Strip the /api/ prefix — background worker adds it back with the server URL
-  const path = url.pathname.replace(/^\/api\//, "");
-  const body = request.method !== "GET" ? await request.json() : undefined;
-
-  const res = await sendMessage({ type: "api-request", path, body });
-
-  if (res.error) {
-    return new Response(JSON.stringify({ message: res.error }), {
-      status: 500,
-      headers: { "content-type": "application/json" },
-    });
-  }
-
-  return new Response(JSON.stringify(res.data), {
-    status: 200,
-    headers: { "content-type": "application/json" },
-  });
+function getStorageValues(keys: string[]): Promise<Record<string, unknown>> {
+  return new Promise((resolve) => chrome.storage.local.get(keys, resolve));
 }
 
 const link = new RPCLink({
-  url: "/api",
-  fetch: extensionFetch,
+  url: __SERVER_URL__ + "/api",
+  fetch: async (request) => {
+    const { "session-token": token } = await getStorageValues([
+      "session-token",
+    ]);
+    if (token) {
+      const headers = new Headers(request.headers);
+      headers.set("authorization", `Bearer ${token}`);
+      request = new Request(request, { headers });
+    }
+    return fetch(request);
+  },
 });
 
 const client: RouterClient<Router> = createORPCClient(link);

@@ -4,20 +4,24 @@ import { createRoot } from "react-dom/client";
 import { useTheme } from "../lib/theme.ts";
 import "./popup.css";
 
+declare const __SERVER_URL__: string;
+
 declare const chrome: {
-  runtime: {
-    sendMessage: (
-      msg: Record<string, unknown>,
-      cb: (response: Record<string, unknown>) => void,
-    ) => void;
+  storage: {
+    local: {
+      get: (
+        keys: string[],
+        cb: (result: Record<string, unknown>) => void,
+      ) => void;
+      set: (items: Record<string, unknown>) => void;
+      remove: (keys: string[]) => void;
+    };
   };
   tabs: { create: (opts: { url: string }) => void };
 };
 
-function sendMessage(
-  msg: Record<string, unknown>,
-): Promise<Record<string, unknown>> {
-  return new Promise((resolve) => chrome.runtime.sendMessage(msg, resolve));
+function getStorage(keys: string[]): Promise<Record<string, unknown>> {
+  return new Promise((resolve) => chrome.storage.local.get(keys, resolve));
 }
 
 function Popup() {
@@ -28,18 +32,17 @@ function Popup() {
   const { Icon, cycle } = useTheme();
 
   useEffect(() => {
-    sendMessage({ type: "get-auth" }).then((res) =>
+    getStorage(["session-token", "username"]).then((result) =>
       setAuth({
-        authenticated: !!res.authenticated,
-        username: res.username as string | undefined,
+        authenticated: !!result["session-token"],
+        username: result["username"] as string | undefined,
       }),
     );
   }, []);
 
   const handleLogout = () => {
-    sendMessage({ type: "logout" }).then(() =>
-      setAuth({ authenticated: false }),
-    );
+    chrome.storage.local.remove(["session-token", "username"]);
+    setAuth({ authenticated: false });
   };
 
   if (!auth) return null;
@@ -109,15 +112,34 @@ function LoginForm({ onSuccess }: { onSuccess: (username: string) => void }) {
     e.preventDefault();
     setError(undefined);
     setPending(true);
+
     const form = new FormData(e.currentTarget);
     const username = form.get("username") as string;
     const password = form.get("password") as string;
-    const res = await sendMessage({ type: "login", username, password });
-    setPending(false);
-    if (res.ok) {
+
+    try {
+      const res = await fetch(`${__SERVER_URL__}/api/auth/login`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ json: { username, password } }),
+      });
+
+      if (!res.ok) {
+        setError("Invalid username or password");
+        setPending(false);
+        return;
+      }
+
+      const data = (await res.json()) as { json: { token: string } };
+      chrome.storage.local.set({
+        "session-token": data.json.token,
+        username,
+      });
+      setPending(false);
       onSuccess(username);
-    } else {
-      setError((res.error as string) || "Login failed");
+    } catch {
+      setError("Network error");
+      setPending(false);
     }
   }
 

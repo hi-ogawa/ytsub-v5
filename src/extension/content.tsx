@@ -10,7 +10,6 @@ import {
 } from "../components/caption-panel.tsx";
 import { PortalContainerProvider } from "../components/ui/portal-container.tsx";
 import type { YTPlayer } from "../components/youtube-player.tsx";
-import { useSyncState } from "../lib/sync.ts";
 import type { YouTubeExtractionResult } from "../lib/youtube.ts";
 import { fetchPlayerApi, fetchTrackJson3 } from "../lib/youtube.ts";
 import contentCss from "./content.css?inline";
@@ -110,15 +109,12 @@ function ExtensionSession({
   data: YouTubeExtractionResult;
   player?: YTPlayer;
 }) {
-  const sync = useSyncState({ youtubeId: data.video.youtubeId });
-
   return (
     <CaptionPanel
       tracks={data.captionTracks}
       player={player}
       fetchJson3={(track) => fetchTrackJson3(track.baseUrl)}
       videoMeta={data.video}
-      sync={sync}
     />
   );
 }
