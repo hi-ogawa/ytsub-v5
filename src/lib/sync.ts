@@ -257,8 +257,11 @@ export function useVideoSync() {
     });
   };
 
+  const isPending =
+    authQuery.isLoading || (authenticated && serverQuery.isLoading);
+
   const entries = useMemo((): VideoSyncEntry[] => {
-    if (!authenticated) {
+    if (!authenticated || isPending) {
       return videoIndex.map((e) => ({
         youtubeId: e.youtubeId,
         title: e.title,
@@ -307,9 +310,10 @@ export function useVideoSync() {
     }
 
     return Array.from(merged.values());
-  }, [authenticated, videoIndex, serverQuery.data]);
+  }, [authenticated, isPending, videoIndex, serverQuery.data]);
 
   return {
+    isPending,
     entries,
     syncing,
     onPull: (youtubeId: string) => pullMutation.mutate(youtubeId),
