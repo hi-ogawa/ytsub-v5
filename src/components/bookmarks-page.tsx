@@ -2,21 +2,31 @@ import {
   ArrowDownToLine,
   ArrowUpFromLine,
   CheckCircle2,
+  EllipsisVertical,
   Loader2,
+  Trash2,
 } from "lucide-react";
 import type { ReactNode } from "react";
 import type { VideoSyncEntry, VideoSyncHandle } from "../lib/sync.ts";
 import type { VideoIndexEntry } from "../lib/video-index.ts";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "./ui/dropdown-menu.tsx";
 import { VideoCard } from "./video-card.tsx";
 
 export function BookmarksPage({
   entries,
   onVideoClick,
+  onDelete,
   sync,
   actions,
 }: {
   entries: VideoIndexEntry[];
   onVideoClick: (youtubeId: string) => void;
+  onDelete?: (entry: VideoSyncEntry) => void;
   sync?: VideoSyncHandle;
   actions?: ReactNode;
 }) {
@@ -52,20 +62,27 @@ export function BookmarksPage({
               title={entry.title}
               channelName={entry.channelName}
               titleRight={
-                sync && entry.syncStatus ? (
-                  <SyncBadge
-                    status={entry.syncStatus}
-                    syncing={sync.syncing.has(entry.youtubeId)}
-                    onPull={() => sync.onPull(entry.youtubeId)}
-                    onPush={() => sync.onPush(entry.youtubeId)}
-                  />
-                ) : undefined
+                onDelete && (
+                  <CardMenu entry={entry} onDelete={() => onDelete(entry)} />
+                )
               }
               badge={
-                <span className="rounded bg-muted px-2 py-0.5 font-mono">
-                  {entry.bookmarkCount} bookmark
-                  {entry.bookmarkCount === 1 ? "" : "s"}
-                </span>
+                <>
+                  <span className="rounded bg-muted px-2 py-0.5 font-mono">
+                    {entry.bookmarkCount} bookmark
+                    {entry.bookmarkCount === 1 ? "" : "s"}
+                  </span>
+                  {sync && entry.syncStatus && (
+                    <span className="ml-auto">
+                      <SyncBadge
+                        status={entry.syncStatus}
+                        syncing={sync.syncing.has(entry.youtubeId)}
+                        onPull={() => sync.onPull(entry.youtubeId)}
+                        onPush={() => sync.onPush(entry.youtubeId)}
+                      />
+                    </span>
+                  )}
+                </>
               }
               onClick={(e) => {
                 e.preventDefault();
@@ -76,6 +93,48 @@ export function BookmarksPage({
         </div>
       )}
     </div>
+  );
+}
+
+function CardMenu({
+  entry,
+  onDelete,
+}: {
+  entry: VideoSyncEntry;
+  onDelete: () => void;
+}) {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        data-testid="video-card-menu"
+        className="-mr-1.5 -mt-1 shrink-0 rounded p-1.5 text-muted-foreground hover:bg-muted"
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+        }}
+      >
+        <EllipsisVertical className="h-4 w-4" />
+      </DropdownMenuTrigger>
+      <DropdownMenuContent
+        align="end"
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+        }}
+      >
+        <DropdownMenuItem
+          className="text-destructive focus:text-destructive"
+          onClick={() => {
+            if (window.confirm(`Delete "${entry.title}"?`)) {
+              onDelete();
+            }
+          }}
+        >
+          <Trash2 className="mr-2 h-4 w-4" />
+          Delete
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
 
@@ -97,7 +156,7 @@ function SyncBadge({
 
   if (syncing) {
     return (
-      <span title="Syncing..." {...testAttrs}>
+      <span className="inline-flex p-1.5" title="Syncing..." {...testAttrs}>
         <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
       </span>
     );
@@ -105,7 +164,7 @@ function SyncBadge({
   switch (status) {
     case "synced":
       return (
-        <span title="Synced" {...testAttrs}>
+        <span className="inline-flex p-1.5" title="Synced" {...testAttrs}>
           <CheckCircle2 className="h-4 w-4 text-green-500" />
         </span>
       );
@@ -119,7 +178,7 @@ function SyncBadge({
               ? "Server only — pull to local"
               : "Pull server changes"
           }
-          className="rounded p-0.5 text-muted-foreground hover:bg-muted"
+          className="rounded p-1.5 text-muted-foreground hover:bg-muted"
           onClick={(e) => {
             e.preventDefault();
             e.stopPropagation();
@@ -140,7 +199,7 @@ function SyncBadge({
               ? "Local only — push to server"
               : "Push local changes to server"
           }
-          className="rounded p-0.5 text-muted-foreground hover:bg-muted"
+          className="rounded p-1.5 text-muted-foreground hover:bg-muted"
           onClick={(e) => {
             e.preventDefault();
             e.stopPropagation();

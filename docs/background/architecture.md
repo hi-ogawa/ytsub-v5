@@ -1,46 +1,48 @@
-# ytsub — Background
+# Zamak — Architecture
 
 ## Problem
 
 - YouTube is a rich source of language input (Korean), but passive watching doesn't convert to active learning
-- LLM-powered vocab extraction (korean-vocab skill) works well but outputs plain text — no connection back to the video
 - Prior ytsub versions died due to YouTube API restrictions (v3) or extension complexity (v4)
-- Existing tools (Language Reactor, etc.) focus on click-to-translate; none do intelligent batch vocab extraction
+- Existing tools (Language Reactor, etc.) focus on click-to-translate; none do intelligent batch vocab extraction with LLMs
 
-## Core concept
+## Core workflow
 
-A web app that stores YouTube videos with their subtitles, provides a viewer with dual caption panel, and supports bookmarking words/phrases with rich metadata.
+1. **Watch** a video with dual caption panel (target language + translation)
+2. **Bookmark** words/phrases — manually select, or let AI pick interesting vocab from captions
+3. **AI-fill** metadata — copy prompt (with captions + bookmarks baked in) into any LLM chat, copy result JSON back. AI provides translations, etymology, usage notes.
+4. **Review & study** — curated vocabulary with full video context
 
-```
-Data sources (push video metadata, caption cues, vocab entries via API)
-  ├── Browser extension (on YouTube page) — primary
-  └── Agent skill (yt-dlp + LLM) — legacy, still works
+The AI prompt clipboard flow is model/provider-agnostic (Claude, ChatGPT, Gemini, etc.), the prompt is inspectable, and it works with any chat UI. This is the core value — not just subtitle viewing, but LLM-assisted vocabulary curation tied to video context.
 
-Web UI (browser)
-  Video viewer: YouTube embed + dual caption panel
-  Bookmarking: select word/phrase → add translation, notes
-  Browse: list videos, filter bookmarks
-```
+## Three layers
 
-- Single-user app
-- App is a viewer/curator — doesn't know how data arrives
-- API is the boundary; any client can push data
+**Extension** — the primary client. Self-sufficient: fetches YouTube subtitles (same-origin), renders caption panel, handles bookmarking and AI workflow, stores everything locally in IndexedDB. Works standalone without a server account.
 
-## Browser extension as data source
+**Server** — persistence for cross-device access. Stores synced videos, captions, and bookmarks. Login required. Not the primary data source for any UI — clients always read from local storage.
 
-See [architecture-extension.md](./architecture-extension.md) for how the extension fetches subtitles from YouTube (same-origin + iOS client spoofing to bypass CORS and POT).
+**Web app** — a view into server-synced data. Always requires login — its purpose is accessing your data from devices where the extension isn't available (mobile, other browsers). Pulls server data into local storage, then renders the same caption panel UI as the extension.
 
-## Agent skill as data pipeline (legacy)
+The extension is the **only** way data enters the system. The web app cannot fetch from YouTube — it only displays data that was synced from the extension via the server.
 
-The original import pipeline: a local AI agent (ytsub skill) runs yt-dlp, parses subtitles, aligns bilingual captions by timestamp, and extracts curated vocabulary. See `docs/skills/ytsub/SKILL.md`.
+## Subtitle fetching
 
-Still works but is slow (~3-7 min per video) and fragile. Being replaced by the browser extension for subtitle fetching and manual bookmarking for vocab extraction.
+See [architecture-extension.md](./architecture-extension.md) for how the extension fetches subtitles from YouTube (same-origin access + iOS client spoofing to bypass CORS and POT).
 
-For local development, the project reuses the skill's intermediate output (the merged JSON with video + captions + bookmarks) as seed data. `scripts/db-seed.ts` reads these JSON files and imports them directly into the local D1 database, bypassing the API.
+## AI workflow
+
+The AI integration evolved through two approaches:
+
+1. **Agent skill** (legacy): local AI agent runs yt-dlp + LLM end-to-end. Slow (~3-7 min), fragile.
+2. **Prompt clipboard flow** (current): generate self-contained prompt with all context, user pastes into any LLM chat, copies result JSON back. Model-agnostic, no infrastructure. Three task types:
+   - **Pick & Fill** — AI selects interesting vocab from captions, provides translations/etymology
+   - **Fill Bookmarks** — AI fills metadata for existing bookmarks
+   - **Fix ASR** — AI corrects auto-generated subtitle errors
 
 ## Data model
 
-See `src/server/schema.ts` for the schema. Key design decisions vs v3:
+**Client** — `IndexedDB` stores caption sessions (video metadata + merged captions + bookmarks), keyed by youtubeId. This is the primary data store for both extension and web app UI.
 
-- **captions**: one row per cue with `text1`/`text2` (same as v3). Alignment/merging happens at import time, not display time.
-- **bookmarks**: enriched with `translation`, `context`, `notes`, `status`. Kept `side`/`offset` for inline highlighting via `partitionRanges`. `caption_id` nullable since bookmark might not map to a single cue cleanly.
+**Server** — D1 (SQLite) stores videos, captions, bookmarks. Schema in `src/server/schema.ts`. Used for sync/backup, not direct UI rendering.
+
+**Export format** — `import.json` is the interchange format. Contains video metadata, merged captions, and bookmarks. Used by extension export, server import API, and sync.

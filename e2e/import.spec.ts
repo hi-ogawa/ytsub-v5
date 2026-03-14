@@ -15,11 +15,12 @@ test.describe("import file upload", () => {
     await login(page);
   });
 
-  test("import flow: dialog, preview, import, and video list", async ({
+  test("import flow: header menu, preview, import to IndexedDB, video appears in list", async ({
     page,
   }) => {
-    // Dialog opens with file picker
-    await page.getByRole("button", { name: "Import" }).click();
+    // Open import dialog from header menu
+    await page.getByTestId("header-menu").click();
+    await page.getByText("Import").click();
     await expect(page.getByText("Import Video")).toBeVisible();
     await expect(page.getByTestId("file-input")).toBeAttached();
 
@@ -29,22 +30,15 @@ test.describe("import file upload", () => {
     await expect(page.getByText(/\d+ captions/)).toBeVisible();
     await expect(page.getByText(/\d+ bookmarks/)).toBeVisible();
 
-    // Confirm import navigates to viewer
+    // Confirm import — dialog closes, video appears in list
     await page
       .locator("[role=dialog], .fixed")
       .getByRole("button", { name: "Import" })
       .click();
-    await expect(page).toHaveURL(/\/videos\/.+/);
+    await expect(page.getByText("Import Video")).not.toBeVisible();
 
-    // Imported video appears in list with valid date
-    await page.getByRole("link", { name: "Zamak" }).click();
-    await expect(page).toHaveURL("/");
+    // Imported video appears in bookmarks list
     const card = page.getByRole("link", { name: /cloud palace/ });
     await expect(card).toBeVisible();
-    await expect(card).not.toContainText("Invalid date");
-    await expect(card.getByText(/\w{3} \d{1,2}, \d{4}/)).toBeVisible();
   });
-
-  // TODO: etymology test needs rework — viewer now loads from IndexedDB, not server.
-  // Move etymology verification to dev-viewer tests or add after bookmarks-page sync is implemented.
 });
