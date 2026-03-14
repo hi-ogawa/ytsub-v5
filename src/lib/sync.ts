@@ -1,12 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useCallback, useMemo, useState, useSyncExternalStore } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { orpc } from "../rpc.ts";
 import type { MergedCaption } from "./caption-merge.ts";
 import { saveSession } from "./caption-session-db.ts";
 import type { CaptionSessionManager } from "./caption-session.ts";
 import type { ExtensionBookmark } from "./extension-bookmarks.ts";
+import { useStore } from "./external-store.ts";
 import {
-  getVideoIndexEntry,
   setSyncedAt,
   updateVideoIndex,
   videoIndexStore,
@@ -25,11 +25,7 @@ export function useSyncState({ youtubeId }: { youtubeId: string }) {
   const queryClient = useQueryClient();
   const [syncVersion, setSyncVersion] = useState(0);
 
-  // Re-run sync state when video index changes (e.g. bookmark created)
-  const videoIndex = useSyncExternalStore(
-    videoIndexStore.subscribe,
-    videoIndexStore.get,
-  );
+  const [videoIndex] = useStore(videoIndexStore);
 
   const serverQuery = useQuery(
     orpc.videos.getVideoUpdatedAt.queryOptions({
@@ -41,7 +37,7 @@ export function useSyncState({ youtubeId }: { youtubeId: string }) {
     if (serverQuery.isLoading) return "checking";
     if (serverQuery.isError) return "error";
 
-    const localEntry = getVideoIndexEntry(youtubeId);
+    const localEntry = videoIndex.find((e) => e.youtubeId === youtubeId);
     const syncedAt = localEntry?.syncedAt;
     const localUpdatedAt = localEntry?.updatedAt;
     const serverUpdatedAt = serverQuery.data?.updatedAt ?? null;

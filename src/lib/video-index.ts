@@ -52,8 +52,3 @@ export function setSyncedAt(youtubeId: string) {
   );
 }
 
-export function getVideoIndexEntry(
-  youtubeId: string,
-): VideoIndexEntry | undefined {
-  return videoIndexStore.get().find((e) => e.youtubeId === youtubeId);
-}
