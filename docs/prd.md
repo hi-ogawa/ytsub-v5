@@ -101,12 +101,11 @@ A web app for language learning via YouTube subtitles. Watch videos with dual ca
   - [ ] virtualized caption list (extension uses plain render, video-viewer uses `@tanstack/react-virtual`)
   - [x] flash-highlight + auto-scroll pause on bookmark→caption navigation (video-viewer only)
   - [ ] data layer abstraction (server DB vs IndexedDB)
-- [ ] feat: bookmarks page server sync — merge server videos into `BookmarksPage`
-  - `BookmarksPage` (`src/components/bookmarks-page.tsx`) fetches `listVideos` from server (when authenticated) and merges with local `videoIndexStore` entries
-  - each video row shows sync status (local-only / server-only / synced) with per-video pull button
-  - reuse `computeSyncState` from `src/lib/sync.ts` for per-video state
-  - pulling creates local IndexedDB session from server data (`serverSessionToLocal`)
-  - wire into `dev-bookmarks.tsx` and extension bookmarks (extension needs auth context forwarding)
+- [x] feat: bookmarks page server sync — merge server videos with per-video push/pull (`useVideoSync`)
+- [ ] feat: web app as browser client — retire server-rendered video-list/video-viewer in favor of client storage
+  - **video list (`/`)**: replace current server-only `listVideos` page with `BookmarksPage` + `useVideoSync` (already built for dev-bookmarks). Shows merged local+server videos, sync badges, push/pull. This becomes the app home page.
+  - **video viewer (`/videos/:id`)**: load `PersistedCaptionSession` from IndexedDB instead of fetching from server DB. Synthesize `videoMeta`/`tracks` from session. Caption panel renders pre-merged captions, bookmarks work via IndexedDB. No track switching (session is pre-merged).
+  - existing server-only routes become dead code once client routes are wired up
 
 ## TODO: Backlog
 
