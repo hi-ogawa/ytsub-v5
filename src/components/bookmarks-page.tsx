@@ -5,7 +5,7 @@ import {
   CloudOff,
   Loader2,
 } from "lucide-react";
-import type { BookmarkSyncEntry, BookmarksSyncHandle } from "../lib/sync.ts";
+import type { VideoSyncEntry, VideoSyncHandle } from "../lib/sync.ts";
 import type { VideoIndexEntry } from "../lib/video-index.ts";
 import { VideoCard } from "./video-card.tsx";
 
@@ -16,9 +16,9 @@ export function BookmarksPage({
 }: {
   entries: VideoIndexEntry[];
   onVideoClick: (youtubeId: string) => void;
-  sync?: BookmarksSyncHandle;
+  sync?: VideoSyncHandle;
 }) {
-  const displayEntries: BookmarkSyncEntry[] = sync?.authenticated
+  const displayEntries: VideoSyncEntry[] = sync?.authenticated
     ? sync.entries
     : entries.map((e) => ({ ...e, syncStatus: "local-only" as const }));
 
@@ -75,7 +75,7 @@ function SyncBadge({
   pulling,
   onPull,
 }: {
-  status: BookmarkSyncEntry["syncStatus"];
+  status: VideoSyncEntry["syncStatus"];
   pulling: boolean;
   onPull: () => void;
 }) {

@@ -158,7 +158,7 @@ export function useSyncState({ youtubeId }: { youtubeId: string }) {
   return { state, onSync, error };
 }
 
-export type BookmarkSyncEntry = {
+export type VideoSyncEntry = {
   youtubeId: string;
   title: string;
   channelName: string;
@@ -167,9 +167,9 @@ export type BookmarkSyncEntry = {
   syncStatus: "local-only" | "server-only" | "synced" | "pull" | "push";
 };
 
-export type BookmarksSyncHandle = ReturnType<typeof useBookmarksSync>;
+export type VideoSyncHandle = ReturnType<typeof useVideoSync>;
 
-export function useBookmarksSync() {
+export function useVideoSync() {
   const queryClient = useQueryClient();
   const [videoIndex] = useStore(videoIndexStore);
 
@@ -205,9 +205,9 @@ export function useBookmarksSync() {
     },
   });
 
-  const entries = useMemo((): BookmarkSyncEntry[] => {
+  const entries = useMemo((): VideoSyncEntry[] => {
     const serverVideos = serverQuery.data?.items ?? [];
-    const merged = new Map<string, BookmarkSyncEntry>();
+    const merged = new Map<string, VideoSyncEntry>();
 
     for (const local of videoIndex) {
       const server = serverVideos.find((v) => v.youtubeId === local.youtubeId);
