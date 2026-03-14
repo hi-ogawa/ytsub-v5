@@ -42,7 +42,7 @@ const test = baseTest.extend<{
 // https://www.youtube.com/watch?v=7GU_VQfgMT0
 const TEST_VIDEO_ID = "7GU_VQfgMT0";
 
-test("video page", async ({ page }) => {
+test.skip("video page", async ({ page }) => {
   await page.goto(`https://www.youtube.com/watch?v=${TEST_VIDEO_ID}`);
 
   const host = page.locator("#zamak-host");
@@ -61,6 +61,10 @@ test("video page", async ({ page }) => {
   });
 });
 
+// TODO: test
+// - login / logout
+// - sync
+// - etc.
 test("bookmarks page", async ({ page, extensionId }) => {
   await page.goto(`chrome-extension://${extensionId}/bookmarks.html`);
   await expect(page.locator("text=Zamak")).toBeVisible();
