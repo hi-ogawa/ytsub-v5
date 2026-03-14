@@ -226,6 +226,10 @@ export class CaptionSessionManager {
   async persistSession(): Promise<void> {
     const session: PersistedCaptionSession = {
       youtubeId: this.videoMeta.youtubeId,
+      title: this.videoMeta.title,
+      channelName: this.videoMeta.channelName,
+      channelId: this.videoMeta.channelId,
+      duration: this.videoMeta.duration,
       vssId1: this.vssId1,
       vssId2: this.vssId2,
       language1: langFromVssId(this.vssId1),

@@ -3,6 +3,10 @@ import type { ExtensionBookmark } from "./extension-bookmarks.ts";
 
 export interface PersistedCaptionSession {
   youtubeId: string;
+  title: string;
+  channelName: string;
+  channelId: string;
+  duration: number;
   vssId1: string;
   vssId2: string;
   language1: string;
