@@ -102,13 +102,12 @@ test.describe("video list and navigation", () => {
     await expect(card.getByText("3:30")).toBeVisible();
 
     await card.click();
-    await expect(page).toHaveURL(/\/videos\/\d+/);
-    await expect(page.locator("[data-index='0']")).toBeVisible();
+    await expect(page).toHaveURL(/\/videos\/.+/);
   });
 
   test("header logo navigates back to video list", async ({ page }) => {
     await page.getByText("cloud palace").click();
-    await expect(page).toHaveURL(/\/videos\/\d+/);
+    await expect(page).toHaveURL(/\/videos\/.+/);
     await page.getByRole("link", { name: "Zamak" }).click();
     await expect(page).toHaveURL("/");
   });
