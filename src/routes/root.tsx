@@ -1,5 +1,6 @@
 import { useMutation } from "@tanstack/react-query";
-import { EllipsisVertical } from "lucide-react";
+import { Database, EllipsisVertical, Upload } from "lucide-react";
+import { useState } from "react";
 import {
   Link,
   Navigate,
@@ -7,6 +8,7 @@ import {
   useLoaderData,
   useRouteLoaderData,
 } from "react-router";
+import { ImportDialog } from "../components/import-dialog.tsx";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -78,6 +80,7 @@ export function DevLayout() {
 
 function HeaderMenu({ authenticated }: { authenticated: boolean }) {
   const { theme, cycle, Icon } = useTheme();
+  const [showImport, setShowImport] = useState(false);
 
   const logoutMutation = useMutation(
     orpc.auth.logout.mutationOptions({
@@ -88,32 +91,55 @@ function HeaderMenu({ authenticated }: { authenticated: boolean }) {
   );
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger
-        data-testid="header-menu"
-        className="flex h-7 w-7 items-center justify-center rounded text-muted-foreground hover:bg-muted"
-      >
-        <EllipsisVertical className="h-4 w-4" />
-      </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-36">
-        <DropdownMenuItem
-          data-testid="theme-toggle"
-          data-theme={theme}
-          onSelect={(e) => {
-            e.preventDefault();
-            cycle();
-          }}
-          className="gap-2"
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger
+          data-testid="header-menu"
+          className="flex h-7 w-7 items-center justify-center rounded text-muted-foreground hover:bg-muted"
         >
-          <Icon className="h-4 w-4" />
-          <span className="capitalize">{theme}</span>
-        </DropdownMenuItem>
-        {authenticated && (
-          <DropdownMenuItem onSelect={() => logoutMutation.mutate({})}>
-            Log out
+          <EllipsisVertical className="h-4 w-4" />
+        </DropdownMenuTrigger>
+        <DropdownMenuContent className="w-36">
+          <DropdownMenuItem
+            onSelect={() => setShowImport(true)}
+            className="gap-2"
+          >
+            <Upload className="h-4 w-4" />
+            Import
           </DropdownMenuItem>
-        )}
-      </DropdownMenuContent>
-    </DropdownMenu>
+          {import.meta.env.DEV && (
+            <DropdownMenuItem
+              data-testid="bootstrap-fixtures"
+              onSelect={async () => {
+                const { bootstrapFixtures } = await import("./dev-fixtures.ts");
+                await bootstrapFixtures();
+              }}
+              className="gap-2"
+            >
+              <Database className="h-4 w-4" />
+              Dev Bootstrap
+            </DropdownMenuItem>
+          )}
+          <DropdownMenuItem
+            data-testid="theme-toggle"
+            data-theme={theme}
+            onSelect={(e) => {
+              e.preventDefault();
+              cycle();
+            }}
+            className="gap-2"
+          >
+            <Icon className="h-4 w-4" />
+            <span className="capitalize">{theme}</span>
+          </DropdownMenuItem>
+          {authenticated && (
+            <DropdownMenuItem onSelect={() => logoutMutation.mutate({})}>
+              Log out
+            </DropdownMenuItem>
+          )}
+        </DropdownMenuContent>
+      </DropdownMenu>
+      <ImportDialog open={showImport} onOpenChange={setShowImport} />
+    </>
   );
 }

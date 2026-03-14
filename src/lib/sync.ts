@@ -156,6 +156,7 @@ export function useSyncState({ youtubeId }: { youtubeId: string }) {
 
 export type VideoSyncEntry = VideoIndexEntry & {
   syncStatus?: "local-only" | "server-only" | "synced" | "pull" | "push";
+  serverId?: number;
 };
 
 function mergeVideoEntries(
@@ -177,6 +178,7 @@ function mergeVideoEntries(
       channelName: local.channelName,
       bookmarkCount: local.bookmarkCount,
       updatedAt: local.updatedAt,
+      serverId: server?.id,
       syncStatus:
         status === "synced" || status === "push" || status === "pull"
           ? status
@@ -194,6 +196,7 @@ function mergeVideoEntries(
         channelName: server.channelName,
         bookmarkCount: 0,
         updatedAt: server.updatedAt,
+        serverId: server.id,
         syncStatus: "server-only",
       });
     }
@@ -282,6 +285,7 @@ export function useVideoSync() {
     syncing,
     onPull: (youtubeId: string) => pullMutation.mutate(youtubeId),
     onPush,
+    refetch: () => serverQuery.refetch(),
   };
 }
 
