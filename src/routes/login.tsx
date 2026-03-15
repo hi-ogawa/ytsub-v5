@@ -5,12 +5,12 @@ import { orpc } from "../rpc.ts";
 
 export function LoginPage() {
   const navigate = useNavigate();
-  const mutation = useMutation({
-    ...orpc.auth.login.mutationOptions({
+  const mutation = useMutation(
+    orpc.auth.login.mutationOptions({
       onSuccess: () => navigate("/", { replace: true }),
+      meta: { toastOnError: false },
     }),
-    meta: { toastOnError: false },
-  });
+  );
 
   function handleSubmit(e: SubmitEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -61,12 +61,12 @@ export function LoginPage() {
 
 export function RegisterPage() {
   const navigate = useNavigate();
-  const mutation = useMutation({
-    ...orpc.auth.register.mutationOptions({
+  const mutation = useMutation(
+    orpc.auth.register.mutationOptions({
       onSuccess: () => navigate("/", { replace: true }),
+      meta: { toastOnError: false },
     }),
-    meta: { toastOnError: false },
-  });
+  );
 
   function handleSubmit(e: SubmitEvent<HTMLFormElement>) {
     e.preventDefault();
