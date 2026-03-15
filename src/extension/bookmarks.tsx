@@ -1,4 +1,4 @@
-import { QueryClientProvider } from "@tanstack/react-query";
+import { QueryClientProvider, useQuery } from "@tanstack/react-query";
 import { EllipsisVertical, LogIn, LogOut } from "lucide-react";
 import { StrictMode, useState } from "react";
 import { createRoot } from "react-dom/client";
@@ -45,16 +45,9 @@ setRpcConfig({
 // Two-way bridge: chrome.storage.local <-> localStorage for video-index.
 // Hydrate localStorage from chrome.storage.local before rendering, then keep
 // them in sync so videoIndexStore (localStorage-backed) works on this origin.
-let initialUsername: string | undefined;
-
 async function bridgeChromeStorage() {
-  const [entries, username] = await Promise.all([
-    chromeStorage.get<VideoIndexEntry[]>(VIDEO_INDEX_KEY),
-    chromeStorage.get<string>("username"),
-  ]);
-  initialUsername = username;
-
   // Hydrate: chrome.storage.local -> localStorage -> videoIndexStore
+  const entries = await chromeStorage.get<VideoIndexEntry[]>(VIDEO_INDEX_KEY);
   if (entries) {
     localStorage.setItem(VIDEO_INDEX_KEY, JSON.stringify(entries));
   }
@@ -75,7 +68,9 @@ const queryClient = createAppQueryClient({
 
 function ExtensionBookmarksPage() {
   const [entries] = useStore(videoIndexStore);
-  const [username, setUsername] = useState(initialUsername);
+  const usernameQuery = useQuery(
+    chromeStorage.queryOptions<string>("username"),
+  );
   const { theme, cycle, Icon } = useTheme();
   const sync = useVideoSync();
   const [showLogin, setShowLogin] = useState(false);
@@ -83,7 +78,7 @@ function ExtensionBookmarksPage() {
   const handleLogout = async () => {
     await orpc.auth.logout.call({});
     await chromeStorage.remove(["session-token", "username"]);
-    setUsername(undefined);
+    usernameQuery.refetch();
     sync.refetch();
   };
 
@@ -92,12 +87,12 @@ function ExtensionBookmarksPage() {
       <header className="flex h-10 flex-none items-center justify-between border-b px-3">
         <span className="text-sm font-semibold">Zamak</span>
         <div className="flex items-center gap-1">
-          {sync.authenticated && username && (
+          {sync.authenticated && usernameQuery.data && (
             <span
               data-testid="auth-username"
               className="text-xs text-muted-foreground"
             >
-              {username}
+              {usernameQuery.data}
             </span>
           )}
           <DropdownMenu>
@@ -151,7 +146,7 @@ function ExtensionBookmarksPage() {
             "session-token": token,
             username: input.username,
           });
-          setUsername(input.username);
+          usernameQuery.refetch();
           sync.refetch();
         }}
         signUpUrl={`${getServerUrl()}/register`}
