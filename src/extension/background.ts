@@ -1,12 +1,18 @@
 // Background service worker — stores video index in chrome.storage.local
 // so the bookmarks page can read it (cross-origin from youtube.com).
 
-import type { ExtensionMessage } from "./messages.ts";
+import type { VideoIndexEntry } from "../lib/video-index.ts";
+import { VIDEO_INDEX_KEY } from "../lib/video-index.ts";
+
+export type VideoIndexMessage = {
+  type: "video-index-updated";
+  payload: VideoIndexEntry[];
+};
 
 chrome.runtime.onMessage.addListener((msg) => {
-  const parsed = msg as ExtensionMessage;
+  const parsed = msg as VideoIndexMessage;
   if (parsed.type === "video-index-updated") {
-    chrome.storage.local.set({ "video-index": parsed.payload });
+    chrome.storage.local.set({ [VIDEO_INDEX_KEY]: parsed.payload });
   }
 });
 
