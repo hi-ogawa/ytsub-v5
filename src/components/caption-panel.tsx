@@ -944,24 +944,24 @@ function CaptionPanelContent({
           {sortedBookmarks.length > 0 && ` (${sortedBookmarks.length})`}
         </button>
         <div className="ml-auto flex items-center gap-0.5">
-          {sortedBookmarks.length > 0 && (
-            <div className="flex gap-0.5">
-              <button
-                className="rounded p-0.5 text-muted-foreground hover:bg-muted"
-                onClick={onPrevBookmark}
-                title="Previous bookmark"
-              >
-                <ChevronLeft className="size-4" />
-              </button>
-              <button
-                className="rounded p-0.5 text-muted-foreground hover:bg-muted"
-                onClick={onNextBookmark}
-                title="Next bookmark"
-              >
-                <ChevronRight className="size-4" />
-              </button>
-            </div>
-          )}
+          <div className="flex gap-0.5">
+            <button
+              className={`rounded p-0.5 text-muted-foreground ${sortedBookmarks.length > 0 ? "hover:bg-muted" : "opacity-30"}`}
+              onClick={onPrevBookmark}
+              disabled={sortedBookmarks.length === 0}
+              title="Previous bookmark"
+            >
+              <ChevronLeft className="size-4" />
+            </button>
+            <button
+              className={`rounded p-0.5 text-muted-foreground ${sortedBookmarks.length > 0 ? "hover:bg-muted" : "opacity-30"}`}
+              onClick={onNextBookmark}
+              disabled={sortedBookmarks.length === 0}
+              title="Next bookmark"
+            >
+              <ChevronRight className="size-4" />
+            </button>
+          </div>
         </div>
       </div>
 
