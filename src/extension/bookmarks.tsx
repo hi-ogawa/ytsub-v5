@@ -152,12 +152,9 @@ async function main() {
   }
   videoIndexStore.set(entries ?? []);
 
-  // localStorage -> chrome.storage.local (when videoIndexStore writes)
+  // Sync back to chrome.storage.local when videoIndexStore writes
   window.addEventListener(`zamak:store:${VIDEO_INDEX_KEY}`, () => {
-    const raw = localStorage.getItem(VIDEO_INDEX_KEY);
-    if (raw) {
-      chromeStorage.set({ [VIDEO_INDEX_KEY]: JSON.parse(raw) });
-    }
+    chromeStorage.set({ [VIDEO_INDEX_KEY]: videoIndexStore.get() });
   });
 
   createRoot(document.getElementById("root")!).render(
