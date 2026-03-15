@@ -51,7 +51,12 @@ function ExtensionBookmarksPage() {
   return (
     <div className="flex h-screen flex-col">
       <header className="flex h-10 flex-none items-center justify-between border-b px-3">
-        <span className="text-sm font-semibold">Zamak</span>
+        <span className="flex items-center gap-1.5 text-sm font-semibold">
+          Zamak
+          <span className="rounded bg-blue-100 px-1.5 py-0.5 text-xs font-medium uppercase leading-none text-blue-700 dark:bg-blue-900 dark:text-blue-300">
+            ext
+          </span>
+        </span>
         <div className="flex items-center gap-1">
           {sync.authenticated && usernameQuery.data && (
             <span
