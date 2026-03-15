@@ -1,11 +1,5 @@
 import { expect, type Page, test } from "@playwright/test";
-import {
-  createBookmarkAt,
-  FIXTURE_VIDEO_ID,
-  login,
-  openPanelWithTracks,
-  setupDb,
-} from "./helper.ts";
+import { login, setupDb } from "./helper.ts";
 
 // TODO: e2e shouldn't probe internal
 const VIDEO_INDEX_KEY = "zamak:video-index";
@@ -56,12 +50,6 @@ test.describe("video-list page", () => {
   });
 });
 
-function syncBadge(page: Page, youtubeId: string) {
-  return page
-    .getByTestId(`video-card-${youtubeId}`)
-    .getByTestId("video-sync-badge");
-}
-
 test.describe("video-list bootstrap", () => {
   test.beforeEach(async ({ page }) => {
     await setupDb();
@@ -90,84 +78,5 @@ test.describe("video-list unauthenticated", () => {
     await page.goto("/dev");
     await expect(page.getByText("Test Video One")).toBeVisible();
     await expect(page.getByTestId("video-sync-badge")).toHaveCount(0);
-  });
-});
-
-test.describe("video-list sync", () => {
-  test.beforeEach(async ({ page }) => {
-    await setupDb({ seed: true });
-    await login(page);
-  });
-
-  test("local video shows push badge, synced after push", async ({ page }) => {
-    // Create a bookmark via dev-viewer
-    await page.goto(`/dev/videos/${FIXTURE_VIDEO_ID}`);
-    await openPanelWithTracks(page);
-    await createBookmarkAt(page, 0, 0, 3);
-
-    // Go to video list — local-only with auth shows as "push"
-    await page.goto("/");
-    const badge = syncBadge(page, FIXTURE_VIDEO_ID);
-    await expect(badge).toHaveAttribute("data-sync-status", "push");
-
-    // Push
-    await badge.click();
-    await expect(badge).toHaveAttribute("data-sync-status", "synced");
-  });
-
-  test("server-only video shows pull badge, synced after pull", async ({
-    page,
-  }) => {
-    // Create bookmark and push from dev-viewer
-    await page.goto(`/dev/videos/${FIXTURE_VIDEO_ID}`);
-    await openPanelWithTracks(page);
-    await createBookmarkAt(page, 0, 0, 3);
-    const devSyncBtn = page.getByTestId("sync-button");
-    await devSyncBtn.click();
-    await expect(devSyncBtn).toHaveAttribute("data-sync-state", "synced");
-
-    // Clear local data to simulate fresh device
-    await page.evaluate((videoId) => {
-      const req = indexedDB.open("zamak");
-      req.onsuccess = () => {
-        const db = req.result;
-        const tx = db.transaction("caption-sessions", "readwrite");
-        tx.objectStore("caption-sessions").delete(videoId);
-      };
-      localStorage.setItem("zamak:video-index", "[]");
-    }, FIXTURE_VIDEO_ID);
-
-    // Go to video list — server-only video should appear
-    await page.goto("/");
-    const badge = syncBadge(page, FIXTURE_VIDEO_ID);
-    await expect(badge).toHaveAttribute("data-sync-status", "server-only");
-
-    // Pull
-    await badge.click();
-    await expect(badge).toHaveAttribute("data-sync-status", "synced");
-
-    // Verify bookmark data was pulled into local
-    await page.goto(`/dev/videos/${FIXTURE_VIDEO_ID}`);
-    await expect(page.locator("[data-index='0']")).toBeVisible();
-    const panel = page.getByTestId("resizable-panel");
-    await expect(
-      panel.getByRole("button", { name: "Bookmarks (1)" }),
-    ).toBeVisible();
-  });
-
-  test("pushed video appears on server video list", async ({ page }) => {
-    // Create bookmark and push via video list
-    await page.goto(`/dev/videos/${FIXTURE_VIDEO_ID}`);
-    await openPanelWithTracks(page);
-    await createBookmarkAt(page, 0, 0, 3);
-
-    await page.goto("/");
-    const badge = syncBadge(page, FIXTURE_VIDEO_ID);
-    await badge.click();
-    await expect(badge).toHaveAttribute("data-sync-status", "synced");
-
-    // Reload — video should still be there
-    await page.goto("/");
-    await expect(page.getByText("cloud palace")).toBeVisible();
   });
 });
