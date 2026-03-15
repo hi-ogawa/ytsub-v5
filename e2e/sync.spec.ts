@@ -205,7 +205,7 @@ test.describe("video-list sync", () => {
     // Seed video exists on server for "dev" user — no local data
     await page.goto("/");
     const badge = syncBadge(page, FIXTURE_VIDEO_ID);
-    await expect(badge).toHaveAttribute("data-sync-status", "server-only");
+    await expect(badge).toHaveAttribute("data-sync-status", "pull");
 
     // Pull
     await badge.click();
