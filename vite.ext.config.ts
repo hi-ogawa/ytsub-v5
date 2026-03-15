@@ -94,7 +94,7 @@ export default defineConfig({
     __SERVER_URL__: JSON.stringify(
       process.env.DEV_EXT
         ? "http://localhost:5173"
-        : "https://zamak.hiroshi.workers.dev",
+        : "https://zamak.hiro18181.workers.dev",
     ),
   },
   plugins: [react(), tailwindcss()],
