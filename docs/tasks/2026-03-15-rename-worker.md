@@ -22,14 +22,31 @@ Preparing for first production deployment. The worker name needs to change from 
 
 ## Manual steps (post-merge)
 
-1. `wrangler d1 create zamak` — create fresh D1 database, copy the ID
-2. Update `wrangler.jsonc` `database_id` with the new ID
-3. `pnpm wrangler d1 migrations apply DB --remote` — apply all migrations from scratch
-4. `wrangler secret bulk .dev.vars.production` — set secrets on new worker
-5. `wrangler deploy` — deploy the worker
-6. Verify the new worker works
-7. `wrangler d1 delete 882ee273-02b6-4548-9c0f-087b320e4d8e` — delete old DB
-8. `wrangler delete --name ytsub-v5` — delete old worker
+```sh
+# 1. Create fresh D1 database, copy the ID
+pnpm wrangler d1 create zamak
+
+# 2. Update wrangler.jsonc database_id with the new ID
+# (manual edit)
+
+# 3. Apply all migrations from scratch
+pnpm wrangler d1 migrations apply DB --remote
+
+# 4. Set secrets on new worker
+pnpm wrangler secret bulk .dev.vars.production
+
+# 5. Deploy the worker
+pnpm wrangler deploy
+
+# 6. Verify the new worker works
+# (manual check)
+
+# 7. Delete old DB
+pnpm wrangler d1 delete 882ee273-02b6-4548-9c0f-087b320e4d8e
+
+# 8. Delete old worker
+pnpm wrangler delete --name ytsub-v5
+```
 
 ## Status
 

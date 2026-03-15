@@ -12,7 +12,7 @@
     {
       "binding": "DB",
       "database_name": "zamak",
-      "database_id": "<REPLACE after wrangler d1 create zamak>",
+      "database_id": "2ba37284-043a-405b-ad1d-b045f96387b1",
       "migrations_dir": "src/server/migrations",
     },
   ],
