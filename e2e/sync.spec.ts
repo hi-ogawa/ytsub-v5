@@ -17,7 +17,7 @@ function syncBadge(page: Page, youtubeId: string) {
 test.describe("dev-viewer sync", () => {
   test.beforeEach(async ({ page }) => {
     await setupDb({ seed: true });
-    await login(page);
+    await login(page, { username: "dev-empty" });
     await page.goto(`/dev/videos/${FIXTURE_VIDEO_ID}`);
   });
 
@@ -30,7 +30,7 @@ test.describe("dev-viewer sync", () => {
     const syncBtn = page.getByTestId("sync-button");
     await expect(syncBtn).toBeVisible();
 
-    // Initially synced (no local data, no server data)
+    // Initially synced (no local data, no server data for dev-empty)
     await expect(syncBtn).toHaveAttribute("data-sync-state", "synced");
 
     // Create a bookmark
@@ -117,6 +117,28 @@ test.describe("dev-viewer sync", () => {
   });
 });
 
+test("dev-viewer sync › conflict when local and server both have data", async ({
+  page,
+}) => {
+  await setupDb({ seed: true });
+  await login(page);
+  await page.goto(`/dev/videos/${FIXTURE_VIDEO_ID}`);
+  await openPanelWithTracks(page);
+
+  // Server has seed data for "dev" — initially pull (no local data, server has data)
+  const syncBtn = page.getByTestId("sync-button");
+  await expect(syncBtn).toHaveAttribute("data-sync-state", "pull");
+
+  // Create a local bookmark — now both sides have data → conflict
+  await createBookmarkAt(page, { index: 0, start: 0, end: 3 });
+  await expect(syncBtn).toHaveAttribute("data-sync-state", "conflict");
+
+  // Resolve via push — conflict prompts for direction
+  page.once("dialog", (dialog) => dialog.accept("push"));
+  await syncBtn.click();
+  await expect(syncBtn).toHaveAttribute("data-sync-state", "synced");
+});
+
 test.describe("dev-viewer video-index", () => {
   test.beforeEach(async ({ page }) => {
     await setupDb({ seed: true });
@@ -155,12 +177,10 @@ test.describe("dev-viewer video-index", () => {
 });
 
 test.describe("video-list sync", () => {
-  test.beforeEach(async ({ page }) => {
-    await setupDb({ seed: true });
-    await login(page);
-  });
-
   test("local video shows push badge, synced after push", async ({ page }) => {
+    await setupDb({ seed: true });
+    await login(page, { username: "dev-empty" });
+
     // Create a bookmark via dev-viewer
     await page.goto(`/dev/videos/${FIXTURE_VIDEO_ID}`);
     await openPanelWithTracks(page);
@@ -179,26 +199,10 @@ test.describe("video-list sync", () => {
   test("server-only video shows pull badge, synced after pull", async ({
     page,
   }) => {
-    // Create bookmark and push from dev-viewer
-    await page.goto(`/dev/videos/${FIXTURE_VIDEO_ID}`);
-    await openPanelWithTracks(page);
-    await createBookmarkAt(page, { index: 0, start: 0, end: 3 });
-    const devSyncBtn = page.getByTestId("sync-button");
-    await devSyncBtn.click();
-    await expect(devSyncBtn).toHaveAttribute("data-sync-state", "synced");
+    await setupDb({ seed: true });
+    await login(page);
 
-    // Clear local data to simulate fresh device
-    await page.evaluate((videoId) => {
-      const req = indexedDB.open("zamak");
-      req.onsuccess = () => {
-        const db = req.result;
-        const tx = db.transaction("caption-sessions", "readwrite");
-        tx.objectStore("caption-sessions").delete(videoId);
-      };
-      localStorage.setItem("zamak:video-index", "[]");
-    }, FIXTURE_VIDEO_ID);
-
-    // Go to video list — server-only video should appear
+    // Seed video exists on server for "dev" user — no local data
     await page.goto("/");
     const badge = syncBadge(page, FIXTURE_VIDEO_ID);
     await expect(badge).toHaveAttribute("data-sync-status", "server-only");
@@ -207,16 +211,17 @@ test.describe("video-list sync", () => {
     await badge.click();
     await expect(badge).toHaveAttribute("data-sync-status", "synced");
 
-    // Verify bookmark data was pulled into local
-    await page.goto(`/dev/videos/${FIXTURE_VIDEO_ID}`);
-    await expect(page.locator("[data-index='0']")).toBeVisible();
-    const panel = page.getByTestId("resizable-panel");
-    await expect(
-      panel.getByRole("button", { name: "Bookmarks (1)" }),
-    ).toBeVisible();
+    // Verify pulled data is in local video-index
+    const card = page.getByTestId(`video-card-${FIXTURE_VIDEO_ID}`);
+    await expect(card.getByTestId("video-card-badge")).toHaveText(
+      "15 bookmarks",
+    );
   });
 
   test("pushed video appears on server video list", async ({ page }) => {
+    await setupDb({ seed: true });
+    await login(page, { username: "dev-empty" });
+
     // Create bookmark and push via video list
     await page.goto(`/dev/videos/${FIXTURE_VIDEO_ID}`);
     await openPanelWithTracks(page);

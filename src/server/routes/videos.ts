@@ -24,7 +24,7 @@ export const videosRouter = authed.router({
         .insert(videos)
         .values({ ...input, userId: context.userId })
         .onConflictDoUpdate({
-          target: videos.youtubeId,
+          target: [videos.userId, videos.youtubeId],
           set: {
             title: input.title,
             channelName: input.channelName,
@@ -192,7 +192,7 @@ export const videosRouter = authed.router({
         .insert(videos)
         .values({ ...input.video, userId: context.userId })
         .onConflictDoUpdate({
-          target: videos.youtubeId,
+          target: [videos.userId, videos.youtubeId],
           set: {
             title: input.video.title,
             channelName: input.video.channelName,
