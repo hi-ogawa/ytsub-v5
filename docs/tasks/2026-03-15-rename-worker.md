@@ -42,7 +42,7 @@ pnpm wrangler deploy
 # (manual check)
 
 # 7. Delete old DB
-pnpm wrangler d1 delete 882ee273-02b6-4548-9c0f-087b320e4d8e
+pnpm wrangler d1 delete ytsub-v5
 
 # 8. Delete old worker
 pnpm wrangler delete --name ytsub-v5
