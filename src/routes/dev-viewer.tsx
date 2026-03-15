@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import { useParams } from "react-router";
+import { useNavigate, useParams } from "react-router";
 import {
   CaptionFab,
   CaptionPanel,
@@ -64,6 +64,7 @@ function DevViewerSession({
   meta: YouTubeExtractionResult;
   player: ReturnType<typeof useYouTubePlayer>["player"];
 }) {
+  const navigate = useNavigate();
   const fetchJson3 = useCallback(
     async (track: YouTubeCaptionTrack) => {
       const key = `/scripts/youtube-json/${videoId}/track-${track.vssId}.json`;
@@ -76,6 +77,7 @@ function DevViewerSession({
   );
 
   const syncState = useSyncState({ youtubeId: videoId });
+  const sync = { state: syncState.state, onNavigate: () => navigate("/dev") };
 
   return (
     <CaptionPanel
@@ -83,7 +85,7 @@ function DevViewerSession({
       player={player}
       fetchJson3={fetchJson3}
       videoMeta={meta.video}
-      sync={syncState}
+      sync={sync}
     />
   );
 }

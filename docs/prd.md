@@ -109,7 +109,8 @@ A web app for language learning via YouTube subtitles. Watch videos with dual ca
 ## TODO
 
 - [ ] feat(web): settings dropdown for video-viewer (auto-scroll toggle, etc. — currently hidden when `sessionOnly`)
-- [ ] feat(ext): sync from caption panel
+- [ ] feat(ext): sync status indicator in caption panel (read-only, links to bookmarks page)
+- [ ] feat: "sync all" button on bookmarks/list page
 - [ ] test(ext): enhance extension page e2e (seed, sync, etc.)
 - [ ] fix: better loading indicator when IndexedDB initial store query is pending (currently returns `null`) (`src/components/caption-panel.tsx:437`)
 

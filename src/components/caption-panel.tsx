@@ -53,7 +53,7 @@ import {
   extractBookmarkSelection,
 } from "../lib/extension-bookmarks.ts";
 import { createLocalStorageStore, useStore } from "../lib/external-store.ts";
-import type { SyncHandle } from "../lib/sync.ts";
+import type { SyncStatus } from "../lib/sync.ts";
 import type {
   Json3File,
   YouTubeCaptionTrack,
@@ -329,83 +329,58 @@ function formatTimestamp(seconds: number): string {
   return `${m}:${String(s).padStart(2, "0")}`;
 }
 
-// --- SyncButton ---
-
-function SyncButton({
-  sync: { state, error, onSync },
-  store,
-}: {
-  sync: SyncHandle;
-  store: CaptionSessionManager;
-}) {
-  const iconClass = "size-4";
+function SyncMenuItem({ sync: { state, onNavigate } }: { sync: SyncStatus }) {
+  const iconClass = "mr-2 size-4";
   let icon: React.ReactNode;
-  let title: string;
-  let disabled = false;
-  let onClick: () => void = () => onSync({ store });
+  let label: string;
 
   switch (state) {
     case "unauthenticated":
       icon = <LogIn className={`${iconClass} text-muted-foreground`} />;
-      title = "Login required to sync";
-      disabled = true;
+      label = "Sign in to sync";
       break;
     case "checking":
       icon = <Loader2 className={`${iconClass} animate-spin`} />;
-      title = "Checking sync status...";
-      disabled = true;
+      label = "Checking…";
       break;
     case "synced":
       icon = <CheckCircle2 className={`${iconClass} text-green-500`} />;
-      title = "Synced";
-      disabled = true;
+      label = "Synced";
       break;
     case "push":
-      icon = <ArrowUpFromLine className={iconClass} />;
-      title = "Push local changes to server";
-      onClick = () => onSync({ direction: "push", store });
+      icon = <ArrowUpFromLine className={`${iconClass} text-yellow-500`} />;
+      label = "Unsynced changes";
       break;
     case "pull":
-      icon = <ArrowDownToLine className={iconClass} />;
-      title = "Pull server changes";
-      onClick = () => onSync({ direction: "pull", store });
+      icon = <ArrowDownToLine className={`${iconClass} text-yellow-500`} />;
+      label = "Server has updates";
       break;
     case "conflict":
       icon = <AlertTriangle className={`${iconClass} text-yellow-500`} />;
-      title = "Both sides changed — click to resolve";
-      onClick = () => {
-        const choice = window.prompt(
-          "Both local and server have changes.\nType 'push' to keep local, 'pull' to keep server:",
-        );
-        if (choice === "push" || choice === "pull") {
-          onSync({ direction: choice, store });
-        }
-      };
+      label = "Sync conflict";
       break;
     case "syncing":
       icon = <RefreshCw className={`${iconClass} animate-spin`} />;
-      title = "Syncing...";
-      disabled = true;
+      label = "Syncing…";
       break;
     case "error":
       icon = <AlertTriangle className={`${iconClass} text-destructive`} />;
-      title = error ? `Sync error: ${error.message}` : "Sync error";
-      disabled = true;
+      label = "Sync error";
       break;
   }
 
   return (
-    <button
-      type="button"
-      className="shrink-0 rounded p-0.5 text-muted-foreground hover:bg-muted disabled:opacity-50"
-      title={title}
-      disabled={disabled}
-      onClick={onClick}
-      data-testid="sync-button"
-      data-sync-state={state}
-    >
-      {icon}
-    </button>
+    <>
+      <DropdownMenuItem
+        onSelect={onNavigate}
+        data-testid="sync-status"
+        data-sync-state={state}
+      >
+        {icon}
+        {label}
+      </DropdownMenuItem>
+      <div className="my-1 h-px bg-border" />
+    </>
   );
 }
 
@@ -414,7 +389,7 @@ type CaptionPanelProps = {
   player?: YTPlayer;
   fetchJson3: (track: YouTubeCaptionTrack) => Promise<Json3File>;
   videoMeta: YouTubeVideoData;
-  sync?: SyncHandle;
+  sync: SyncStatus;
   sessionOnly?: boolean;
 };
 
@@ -654,7 +629,7 @@ function CaptionPanelWithStore({
   player?: YTPlayer;
   onSelectTracks: (v1?: string, v2?: string) => void;
   onSelectStrategy: (s: MergeStrategy) => void;
-  sync?: SyncHandle;
+  sync: SyncStatus;
 }) {
   useSyncExternalStore(store.subscribe, () => store.version);
 
@@ -673,12 +648,12 @@ function CaptionPanelWithStore({
               disabled={store.bookmarks.length > 0}
             />
           </div>
-          {sync && <SyncButton sync={sync} store={store} />}
           <SettingsDropdown
             store={store}
             autoScroll={autoScroll}
             onSetAutoScroll={setAutoScroll}
             onSelectStrategy={onSelectStrategy}
+            sync={sync}
           />
         </div>
       )}
@@ -706,11 +681,13 @@ function SettingsDropdown({
   autoScroll,
   onSetAutoScroll,
   onSelectStrategy,
+  sync,
 }: {
   store: CaptionSessionManager;
   autoScroll: boolean;
   onSetAutoScroll: (value: boolean | ((prev: boolean) => boolean)) => void;
   onSelectStrategy: (s: MergeStrategy) => void;
+  sync: SyncStatus;
 }) {
   const hasBookmarks = store.bookmarks.length > 0;
 
@@ -723,6 +700,7 @@ function SettingsDropdown({
         <EllipsisVertical className="size-4" />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
+        <SyncMenuItem sync={sync} />
         <DropdownMenuItem
           data-checked={autoScroll}
           onSelect={(e) => {
