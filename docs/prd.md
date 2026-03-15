@@ -118,7 +118,7 @@ A web app for language learning via YouTube subtitles. Watch videos with dual ca
 
 - [ ] chore: rename worker `ytsub-v5` → `zamak` — update `wrangler.jsonc` name, re-set secrets on new worker, delete old worker, update CI artifact name and docs
 - [ ] chore: consolidate `docs/skills/*` into `docs/eval/README.md`
-- [ ] feat: AI integration help page — document the AI prompt workflow (copy/download prompt, paste result back) and link from the "AI prompt" dropdown label
+- [ ] feat: AI integration help page — link from the "AI prompt" dropdown label to `docs/ai-integration.md`; record a short screen-recording (GIF or MP4) of the copy→paste→import flow and embed in the doc
 - [ ] fix: adjust prompt to be language independent (currently assumes korean)
 - [ ] feat: bookmark approval flow — inline approve/reject buttons for `pending` bookmarks in viewer
 - [ ] feat: bookmark list page — browse/search all bookmarks across videos
