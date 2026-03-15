@@ -2,6 +2,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { EllipsisVertical, LogIn, LogOut } from "lucide-react";
 import { StrictMode, useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
+import { MemoryRouter } from "react-router";
 import { Toaster } from "sonner";
 import { BookmarksPage } from "../components/bookmarks-page.tsx";
 import { LoginDialog } from "../components/login-dialog.tsx";
@@ -160,11 +161,7 @@ function ExtensionBookmarksPage() {
       <main className="flex-1 overflow-auto">
         <BookmarksPage
           entries={entries}
-          onVideoClick={(youtubeId) => {
-            chrome.tabs.create({
-              url: `https://www.youtube.com/watch?v=${youtubeId}`,
-            });
-          }}
+          videoHref={(id) => `https://www.youtube.com/watch?v=${id}`}
           sync={sync}
         />
       </main>
@@ -174,9 +171,11 @@ function ExtensionBookmarksPage() {
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <QueryClientProvider client={queryClient}>
-      <ExtensionBookmarksPage />
-      <Toaster position="top-right" richColors />
-    </QueryClientProvider>
+    <MemoryRouter>
+      <QueryClientProvider client={queryClient}>
+        <ExtensionBookmarksPage />
+        <Toaster position="top-right" richColors />
+      </QueryClientProvider>
+    </MemoryRouter>
   </StrictMode>,
 );

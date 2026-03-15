@@ -1,4 +1,3 @@
-import { useNavigate } from "react-router";
 import { VideoCard } from "../components/video-card.tsx";
 import { fixtureMetadata } from "../lib/dev-fixtures.ts";
 
@@ -12,7 +11,6 @@ function formatDuration(seconds: number): string {
 }
 
 export function DevFixturesPage() {
-  const navigate = useNavigate();
   return (
     <div className="mx-auto max-w-5xl p-8">
       <div className="mb-6">
@@ -34,10 +32,6 @@ export function DevFixturesPage() {
                 <span>{formatDuration(meta.video.duration)}</span>
               </>
             }
-            onClick={(e) => {
-              e.preventDefault();
-              navigate(`/dev/videos/${meta.video.youtubeId}`);
-            }}
           />
         ))}
       </div>

@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { Link } from "react-router";
 
 export function VideoCard({
   youtubeId,
@@ -7,7 +8,6 @@ export function VideoCard({
   titleRight,
   channelName,
   badge,
-  onClick,
 }: {
   youtubeId: string;
   href: string;
@@ -15,14 +15,12 @@ export function VideoCard({
   titleRight?: ReactNode;
   channelName: string;
   badge: ReactNode;
-  onClick?: (e: React.MouseEvent) => void;
 }) {
   return (
-    <a
-      href={href}
+    <Link
+      to={href}
       data-testid={`video-card-${youtubeId}`}
       className="block overflow-hidden rounded-lg border border-border bg-card shadow-sm transition-all hover:border-ring hover:shadow-md"
-      onClick={onClick}
     >
       <img
         src={`https://img.youtube.com/vi/${youtubeId}/mqdefault.jpg`}
@@ -53,6 +51,6 @@ export function VideoCard({
           {badge}
         </div>
       </div>
-    </a>
+    </Link>
   );
 }

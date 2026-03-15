@@ -18,12 +18,12 @@ import { VideoCard } from "./video-card.tsx";
 
 export function BookmarksPage({
   entries,
-  onVideoClick,
+  videoHref,
   onDelete,
   sync,
 }: {
   entries: VideoIndexEntry[];
-  onVideoClick: (youtubeId: string) => void;
+  videoHref: (youtubeId: string) => string;
   onDelete?: (entry: VideoSyncEntry) => void;
   sync?: VideoSyncHandle;
 }) {
@@ -54,7 +54,7 @@ export function BookmarksPage({
             <VideoCard
               key={entry.youtubeId}
               youtubeId={entry.youtubeId}
-              href={`https://www.youtube.com/watch?v=${entry.youtubeId}`}
+              href={videoHref(entry.youtubeId)}
               title={entry.title}
               channelName={entry.channelName}
               titleRight={
@@ -80,10 +80,6 @@ export function BookmarksPage({
                   )}
                 </>
               }
-              onClick={(e) => {
-                e.preventDefault();
-                onVideoClick(entry.youtubeId);
-              }}
             />
           ))}
         </div>
