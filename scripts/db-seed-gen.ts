@@ -33,7 +33,6 @@ interface ImportData {
     context: string;
     etymology?: string;
     notes?: string;
-    status?: string;
   }[];
 }
 
@@ -67,8 +66,8 @@ function toSql(data: ImportData): string {
   for (const b of bookmarks) {
     const cue = captions[b.captionIdx];
     lines.push(
-      `INSERT INTO bookmarks (video_id, caption_id, text, side, offset, translation, context, timestamp, etymology, notes, status)`,
-      `SELECT v.id, c.id, '${esc(b.text)}', ${b.side}, ${b.offset}, '${esc(b.translation)}', '${esc(b.context)}', ${cue.begin}, '${esc(b.etymology ?? "")}', '${esc(b.notes ?? "")}', '${esc(b.status ?? "pending")}'`,
+      `INSERT INTO bookmarks (video_id, caption_id, text, side, offset, translation, context, timestamp, etymology, notes)`,
+      `SELECT v.id, c.id, '${esc(b.text)}', ${b.side}, ${b.offset}, '${esc(b.translation)}', '${esc(b.context)}', ${cue.begin}, '${esc(b.etymology ?? "")}', '${esc(b.notes ?? "")}'`,
       `  FROM videos v JOIN captions c ON c.video_id = v.id AND c.idx = ${b.captionIdx}`,
       `  WHERE v.youtube_id = '${esc(id)}';`,
       "",
