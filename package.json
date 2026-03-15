@@ -9,6 +9,8 @@
     "preview": "vite preview",
     "dev-ext": "DEV_EXT=1 node --watch --watch-path=./src scripts/dev-ext.ts",
     "build-ext": "vite build --config vite.ext.config.ts && cd dist/extension && zip -r ../extension.zip .",
+    "dev-full": "pnpm run '/^(dev|dev-ext)$/'",
+    "build-full": "pnpm build && pnpm build-ext",
     "tsc": "tsc -b",
     "lint": "oxfmt",
     "lint-check": "oxfmt --check && knip",
