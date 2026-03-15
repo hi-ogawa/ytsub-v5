@@ -83,13 +83,9 @@ export const bookmarks = sqliteTable(
     timestamp: real().notNull().default(0),
     etymology: text().notNull().default(""),
     notes: text().notNull().default(""),
-    status: text().notNull().default("pending"),
     createdAt: text("created_at")
       .notNull()
       .default(sql`(datetime('now'))`),
   },
-  (t) => [
-    index("idx_bookmarks_video").on(t.videoId),
-    index("idx_bookmarks_status").on(t.status),
-  ],
+  (t) => [index("idx_bookmarks_video").on(t.videoId)],
 );

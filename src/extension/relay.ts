@@ -1,22 +1,27 @@
-// ISOLATED world content script — relays video index from localStorage to
-// the extension's background service worker via chrome.runtime messaging.
-// The MAIN world content script writes to localStorage and dispatches a
-// plain Event as a signal; this script reads the data and forwards it.
+// ISOLATED world content script — generic RPC relay between MAIN world
+// and background worker, plus video-index localStorage → background sync.
 
 import { storeEventName } from "../lib/external-store.ts";
 import { VIDEO_INDEX_KEY } from "../lib/video-index.ts";
-import type { VideoIndexMessage } from "./background.ts";
+import type { bgRpcHandlers } from "./background.ts";
+import { createRpc, setupRpcRelay } from "./lib/extension-rpc.ts";
 
-window.addEventListener(storeEventName(VIDEO_INDEX_KEY), () => {
-  try {
-    const raw = localStorage.getItem(VIDEO_INDEX_KEY);
-    const entries = raw ? JSON.parse(raw) : [];
-    const msg: VideoIndexMessage = {
-      type: "video-index-updated",
-      payload: entries,
-    };
-    chrome.runtime.sendMessage(msg);
-  } catch (e) {
-    console.warn("[zamak relay]", e);
-  }
-});
+const bgRpc = createRpc<typeof bgRpcHandlers>({ direct: true });
+
+function main() {
+  // Generic RPC relay — forwards all zamak:rpc events to background
+  setupRpcRelay();
+
+  // Video index: localStorage change → notify background to sync to chrome.storage
+  window.addEventListener(storeEventName(VIDEO_INDEX_KEY), () => {
+    try {
+      const raw = localStorage.getItem(VIDEO_INDEX_KEY);
+      const entries = raw ? JSON.parse(raw) : [];
+      bgRpc.videoIndexUpdated({ entries });
+    } catch (e) {
+      console.warn("[zamak relay]", e);
+    }
+  });
+}
+
+main();

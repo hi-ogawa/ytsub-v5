@@ -25,7 +25,7 @@ type GetFullSessionOutput = NonNullable<
   InferRouterOutputs<Router>["videos"]["getFullSession"]
 >;
 
-type SyncState =
+export type SyncState =
   | "unauthenticated"
   | "checking"
   | "synced"
@@ -35,7 +35,7 @@ type SyncState =
   | "syncing"
   | "error";
 
-function computeSyncState(params: {
+export function computeSyncState(params: {
   localUpdatedAt?: string;
   syncedAt?: string;
   serverUpdatedAt?: string;
@@ -61,7 +61,10 @@ function computeSyncState(params: {
 
 type SyncDirection = "push" | "pull";
 
-export type SyncHandle = ReturnType<typeof useSyncState>;
+export type SyncStatus = {
+  state: SyncState;
+  onNavigate: () => void;
+};
 
 export function useSyncState({ youtubeId }: { youtubeId: string }) {
   const queryClient = useQueryClient();
@@ -155,7 +158,7 @@ export function useSyncState({ youtubeId }: { youtubeId: string }) {
 }
 
 export type VideoSyncEntry = VideoIndexEntry & {
-  syncStatus?: "local-only" | "server-only" | "synced" | "pull" | "push";
+  syncStatus?: "synced" | "push" | "pull" | "conflict";
   serverId?: number;
 };
 
@@ -180,11 +183,12 @@ function mergeVideoEntries(
       updatedAt: local.updatedAt,
       serverId: server?.id,
       syncStatus:
-        status === "synced" || status === "push" || status === "pull"
+        status === "synced" ||
+        status === "push" ||
+        status === "pull" ||
+        status === "conflict"
           ? status
-          : status === "conflict"
-            ? "push"
-            : "local-only",
+          : "push",
     });
   }
 
@@ -197,7 +201,7 @@ function mergeVideoEntries(
         bookmarkCount: 0,
         updatedAt: server.updatedAt,
         serverId: server.id,
-        syncStatus: "server-only",
+        syncStatus: "pull",
       });
     }
   }

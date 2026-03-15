@@ -1,4 +1,5 @@
 import {
+  AlertTriangle,
   ArrowDownToLine,
   ArrowUpFromLine,
   CheckCircle2,
@@ -160,16 +161,11 @@ function SyncBadge({
           <CheckCircle2 className="size-4 text-green-500" />
         </span>
       );
-    case "server-only":
     case "pull":
       return (
         <button
           type="button"
-          title={
-            status === "server-only"
-              ? "Server only — pull to local"
-              : "Pull server changes"
-          }
+          title="Pull server changes"
           className="rounded p-1.5 text-muted-foreground hover:bg-muted"
           onClick={(e) => {
             e.preventDefault();
@@ -182,15 +178,10 @@ function SyncBadge({
         </button>
       );
     case "push":
-    case "local-only":
       return (
         <button
           type="button"
-          title={
-            status === "local-only"
-              ? "Local only — push to server"
-              : "Push local changes to server"
-          }
+          title="Push local changes to server"
           className="rounded p-1.5 text-muted-foreground hover:bg-muted"
           onClick={(e) => {
             e.preventDefault();
@@ -200,6 +191,26 @@ function SyncBadge({
           {...testAttrs}
         >
           <ArrowUpFromLine className="size-4" />
+        </button>
+      );
+    case "conflict":
+      return (
+        <button
+          type="button"
+          title="Both sides changed — click to resolve"
+          className="rounded p-1.5 text-muted-foreground hover:bg-muted"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const choice = window.prompt(
+              "Both local and server have changes.\nType 'push' to keep local, 'pull' to keep server:",
+            );
+            if (choice === "push") onPush();
+            else if (choice === "pull") onPull();
+          }}
+          {...testAttrs}
+        >
+          <AlertTriangle className="size-4 text-yellow-500" />
         </button>
       );
   }

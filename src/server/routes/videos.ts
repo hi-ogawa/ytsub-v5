@@ -179,7 +179,6 @@ export const videosRouter = authed.router({
               context: z.string().optional().default(""),
               etymology: z.string().optional().default(""),
               notes: z.string().optional().default(""),
-              status: z.string().optional().default("pending"),
             }),
           )
           .optional()
@@ -244,7 +243,6 @@ export const videosRouter = authed.router({
             timestamp: sql.raw(`${input.captions[b.captionIdx]?.begin ?? 0}`),
             etymology: b.etymology,
             notes: b.notes,
-            status: b.status,
           }));
           // Delete existing bookmarks for this video first
           await db.delete(bookmarks).where(eq(bookmarks.videoId, video.id));

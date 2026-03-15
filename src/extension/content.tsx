@@ -1,6 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useQuery } from "@tanstack/react-query";
-import { StrictMode, useState } from "react";
+import { StrictMode, useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import {
   CaptionFab,
@@ -10,9 +10,16 @@ import {
 } from "../components/caption-panel.tsx";
 import { PortalContainerProvider } from "../components/ui/portal-container.tsx";
 import type { YTPlayer } from "../components/youtube-player.tsx";
+import { useStore } from "../lib/external-store.ts";
+import { type SyncState, computeSyncState } from "../lib/sync.ts";
+import { videoIndexStore } from "../lib/video-index.ts";
 import type { YouTubeExtractionResult } from "../lib/youtube.ts";
 import { fetchPlayerApi, fetchTrackJson3 } from "../lib/youtube.ts";
+import type { bgRpcHandlers } from "./background.ts";
 import contentCss from "./content.css?inline";
+import { createRpc } from "./lib/extension-rpc.ts";
+
+const bgRpc = createRpc<typeof bgRpcHandlers>();
 
 declare const __BUILD_TIME__: string;
 declare const __GIT_REV__: string;
@@ -102,6 +109,26 @@ function ExtensionViewer({ videoId }: { videoId: string }) {
   );
 }
 
+function useExtensionSyncState(youtubeId: string): SyncState {
+  const [videoIndex] = useStore(videoIndexStore);
+  const [serverResponse, setServerResponse] =
+    useState<Awaited<ReturnType<typeof bgRpc.getSyncState>>>();
+
+  useEffect(() => {
+    bgRpc.getSyncState({ youtubeId }).then(setServerResponse);
+  }, [youtubeId]);
+
+  if (!serverResponse) return "checking";
+  if (!serverResponse.authenticated) return "unauthenticated";
+
+  const localEntry = videoIndex.find((e) => e.youtubeId === youtubeId);
+  return computeSyncState({
+    localUpdatedAt: localEntry?.updatedAt,
+    syncedAt: localEntry?.syncedAt,
+    serverUpdatedAt: serverResponse.serverUpdatedAt,
+  });
+}
+
 function ExtensionSession({
   data,
   player,
@@ -109,12 +136,16 @@ function ExtensionSession({
   data: YouTubeExtractionResult;
   player?: YTPlayer;
 }) {
+  const state = useExtensionSyncState(data.video.youtubeId);
+  const sync = { state, onNavigate: () => bgRpc.openBookmarks() };
+
   return (
     <CaptionPanel
       tracks={data.captionTracks}
       player={player}
       fetchJson3={(track) => fetchTrackJson3(track.baseUrl)}
       videoMeta={data.video}
+      sync={sync}
     />
   );
 }
