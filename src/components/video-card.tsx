@@ -7,6 +7,7 @@ export function VideoCard({
   titleRight,
   channelName,
   badge,
+  overlay,
   onClick,
 }: {
   youtubeId: string;
@@ -15,6 +16,7 @@ export function VideoCard({
   titleRight?: ReactNode;
   channelName: string;
   badge: ReactNode;
+  overlay?: ReactNode;
   onClick?: (e: React.MouseEvent) => void;
 }) {
   return (
@@ -24,12 +26,15 @@ export function VideoCard({
       className="block overflow-hidden rounded-lg border border-border bg-card shadow-sm transition-all hover:border-ring hover:shadow-md"
       onClick={onClick}
     >
-      <img
-        src={`https://img.youtube.com/vi/${youtubeId}/mqdefault.jpg`}
-        alt=""
-        loading="lazy"
-        className="aspect-video w-full object-cover"
-      />
+      <div className="relative">
+        <img
+          src={`https://img.youtube.com/vi/${youtubeId}/mqdefault.jpg`}
+          alt=""
+          loading="lazy"
+          className="aspect-video w-full object-cover"
+        />
+        {overlay}
+      </div>
       <div className="p-4">
         <div className="mb-1 flex items-start gap-1">
           <h2
