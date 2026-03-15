@@ -1,6 +1,6 @@
 import { QueryClientProvider } from "@tanstack/react-query";
 import { EllipsisVertical, LogIn, LogOut } from "lucide-react";
-import { StrictMode, useState } from "react";
+import { StrictMode, useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { Toaster } from "sonner";
 import { BookmarksPage } from "../components/bookmarks-page.tsx";
@@ -67,13 +67,10 @@ function getStorage(keys: string | string[]): Promise<Record<string, unknown>> {
 // them in sync so videoIndexStore (localStorage-backed) works on this origin.
 const VIDEO_INDEX_KEY = "zamak:video-index";
 
-let initialUsername: string | undefined;
-
 async function bridgeChromeStorage() {
   // Hydrate: chrome.storage.local -> localStorage
-  const result = await getStorage([VIDEO_INDEX_KEY, "username"]);
+  const result = await getStorage([VIDEO_INDEX_KEY]);
   const entries = result[VIDEO_INDEX_KEY];
-  initialUsername = result["username"] as string | undefined;
   if (entries) {
     localStorage.setItem(VIDEO_INDEX_KEY, JSON.stringify(entries));
   }
@@ -97,10 +94,16 @@ const queryClient = createAppQueryClient({
 
 function ExtensionBookmarksPage() {
   const [entries] = useStore(videoIndexStore);
-  const [username, setUsername] = useState(initialUsername);
+  const [username, setUsername] = useState<string>();
   const { theme, cycle, Icon } = useTheme();
   const sync = useVideoSync();
   const [showLogin, setShowLogin] = useState(false);
+
+  useEffect(() => {
+    getStorage(["username"]).then((result) => {
+      setUsername(result["username"] as string | undefined);
+    });
+  }, []);
 
   const handleLogout = async () => {
     await orpc.auth.logout.call({});
