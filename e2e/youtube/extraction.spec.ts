@@ -5,7 +5,7 @@ import {
   fetchTrackJson3,
   parseJson3,
   pickBestTrack,
-} from "../src/lib/youtube";
+} from "../../src/lib/youtube";
 
 // Billlie - cloud palace (known to have ko + en manual subs)
 const TEST_VIDEO_ID = "7GU_VQfgMT0";

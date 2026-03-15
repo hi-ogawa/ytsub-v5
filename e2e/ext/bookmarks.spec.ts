@@ -1,6 +1,4 @@
-import { exec } from "node:child_process";
 import path from "node:path";
-import { promisify } from "node:util";
 import {
   test as baseTest,
   chromium,
@@ -8,11 +6,10 @@ import {
   type BrowserContext,
   type Page,
 } from "@playwright/test";
+import { setupDb } from "../helper";
 
-const execAsync = promisify(exec);
-
-const SERVER_URL = "http://localhost:5191";
-const PERSIST_TO = ".wrangler/state/e2e-ext";
+// TOOD: split to e2e/ext/helper.ts
+const SERVER_URL = "http://localhost:5190";
 
 // https://playwright.dev/docs/chrome-extensions
 const test = baseTest.extend<{
@@ -45,13 +42,6 @@ const test = baseTest.extend<{
   },
 });
 
-async function setupDb(options: { seed?: boolean } = {}) {
-  await execAsync(`pnpm db:clear --persist-to ${PERSIST_TO}`);
-  if (options.seed) {
-    await execAsync(`pnpm db:seed --persist-to ${PERSIST_TO}`);
-  }
-}
-
 /** Navigate to bookmarks page with server URL override */
 async function gotoBookmarks(page: Page, extensionId: string) {
   page.on("console", (msg) =>
@@ -71,6 +61,7 @@ async function gotoBookmarks(page: Page, extensionId: string) {
 // https://www.youtube.com/watch?v=7GU_VQfgMT0
 const TEST_VIDEO_ID = "7GU_VQfgMT0";
 
+// TODO: test content script
 test.skip("video page", async ({ page }) => {
   await page.goto(`https://www.youtube.com/watch?v=${TEST_VIDEO_ID}`);
 
