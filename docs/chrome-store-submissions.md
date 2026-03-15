@@ -145,6 +145,10 @@ This data handling is closely related to the extension's single stated purpose, 
 - Bookmarks page: login/logout UI, optional bookmark sync with project server, loads Google Fonts CSS externally (stylesheet, not code)
 - IndexedDB used on youtube.com origin for caption session + bookmark persistence
 
+## Test Instructions
+
+The submission form asks for test credentials "if login, authentication, or specific setup is required" to access core functionality. Zamak's core features (dual subtitles, bookmarks) work fully without login — sign-in is optional for sync only. Leave this field blank unless login becomes required for core functionality.
+
 ## Submission Checklist
 
 - [x] Bump version in manifest to 0.2.0
