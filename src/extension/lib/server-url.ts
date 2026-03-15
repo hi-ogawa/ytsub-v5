@@ -2,11 +2,9 @@ import { chromeStorage } from "./chrome-storage.ts";
 
 declare const __SERVER_URL__: string | undefined;
 
-const STORAGE_KEY = "serverUrl";
-
 /** Read override from chrome.storage.local and cache in globalThis. Call before getServerUrl(). */
 export async function initServerUrl(): Promise<void> {
-  const url = await chromeStorage.get<string>(STORAGE_KEY);
+  const url = await chromeStorage.get<string>("serverUrl");
   if (url) {
     (globalThis as any).__zamakServerUrl = url;
   }
