@@ -1,6 +1,10 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import {
+  QueryClient,
+  QueryClientProvider,
+  useQuery,
+} from "@tanstack/react-query";
 import { EllipsisVertical, LogIn, LogOut } from "lucide-react";
-import { StrictMode, useEffect, useState } from "react";
+import { StrictMode, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { BookmarksPage } from "../components/bookmarks-page.tsx";
 import { LoginDialog } from "../components/login-dialog.tsx";
@@ -14,19 +18,15 @@ import { useVideoSync } from "../lib/sync.ts";
 import { useTheme } from "../lib/theme.ts";
 import type { VideoIndexEntry } from "../lib/video-index.ts";
 import { orpc, setRpcConfig } from "../rpc.ts";
-import { getServerUrl } from "./server-url.ts";
+import { chromeStorage } from "./lib/chrome-storage.ts";
+import { getServerUrl } from "./lib/server-url.ts";
 import "../styles.css";
-
-async function getStorageValue(key: string): Promise<string | undefined> {
-  const r = await chrome.storage.local.get(key);
-  return r[key] as string | undefined;
-}
 
 // Configure RPC to use extension server URL + bearer token auth
 setRpcConfig({
   url: getServerUrl() + "/api",
   fetch: async (request) => {
-    const token = await getStorageValue("session-token");
+    const token = await chromeStorage.get<string>("session-token");
     if (token) {
       const headers = new Headers(
         request instanceof Request ? request.headers : undefined,
@@ -38,32 +38,28 @@ setRpcConfig({
   },
 });
 
-function getStorage(keys: string[]) {
-  return chrome.storage.local.get(keys);
-}
-
 const queryClient = new QueryClient({
   defaultOptions: { queries: { refetchOnWindowFocus: false } },
 });
 
 function ExtensionBookmarksPage() {
-  const [entries, setEntries] = useState<VideoIndexEntry[]>([]);
-  const [username, setUsername] = useState<string>();
+  // chrome.storage reads resolve near-instantly (local I/O), so they settle
+  // before BookmarksPage's own auth-check query finishes — no layout flash.
+  const { data: entries = [] } = useQuery({
+    ...chromeStorage.queryOptions<VideoIndexEntry[]>("video-index"),
+    placeholderData: [],
+  });
+  const usernameQuery = useQuery(
+    chromeStorage.queryOptions<string>("username"),
+  );
   const { theme, cycle, Icon } = useTheme();
   const sync = useVideoSync();
   const [showLogin, setShowLogin] = useState(false);
 
-  useEffect(() => {
-    getStorage(["video-index", "username"]).then((result) => {
-      setEntries((result["video-index"] as VideoIndexEntry[]) || []);
-      setUsername(result["username"] as string | undefined);
-    });
-  }, []);
-
   const handleLogout = async () => {
     await orpc.auth.logout.call({});
-    await chrome.storage.local.remove(["session-token", "username"]);
-    setUsername(undefined);
+    await chromeStorage.remove(["session-token", "username"]);
+    usernameQuery.refetch();
     sync.refetch();
   };
 
@@ -72,12 +68,12 @@ function ExtensionBookmarksPage() {
       <header className="flex h-10 flex-none items-center justify-between border-b px-3">
         <span className="text-sm font-semibold">Zamak</span>
         <div className="flex items-center gap-1">
-          {sync.authenticated && username && (
+          {sync.authenticated && usernameQuery.data && (
             <span
               data-testid="auth-username"
               className="text-xs text-muted-foreground"
             >
-              {username}
+              {usernameQuery.data}
             </span>
           )}
           <DropdownMenu>
@@ -127,11 +123,11 @@ function ExtensionBookmarksPage() {
         onOpenChange={setShowLogin}
         onLogin={async (input) => {
           const { token } = await orpc.auth.login.call(input);
-          chrome.storage.local.set({
+          await chromeStorage.set({
             "session-token": token,
             username: input.username,
           });
-          setUsername(input.username);
+          usernameQuery.refetch();
           sync.refetch();
         }}
         signUpUrl={`${getServerUrl()}/register`}
