@@ -1,11 +1,32 @@
 // Background service worker — handles RPC from content script (via relay)
 // and stores video index in chrome.storage.local.
 
+import type { VideoIndexEntry } from "../lib/video-index.ts";
 import { VIDEO_INDEX_KEY } from "../lib/video-index.ts";
 import { orpc, setRpcConfig } from "../rpc.ts";
 import { chromeStorage } from "./lib/chrome-storage.ts";
 import { registerRpcHandlers } from "./lib/extension-rpc.ts";
 import { getServerUrl } from "./lib/server-url.ts";
+
+export const bgRpcHandlers = {
+  async getSyncState({ youtubeId }: { youtubeId: string }) {
+    const { authenticated } = await orpc.auth.check.call({});
+    if (!authenticated) return { authenticated: false as const };
+    const data = await orpc.videos.getVideoUpdatedAt.call({ youtubeId });
+    return {
+      authenticated: true as const,
+      serverUpdatedAt: data?.updatedAt,
+    };
+  },
+
+  async openBookmarks() {
+    chrome.tabs.create({ url: "bookmarks.html" });
+  },
+
+  async videoIndexUpdated({ entries }: { entries: VideoIndexEntry[] }) {
+    chrome.storage.local.set({ [VIDEO_INDEX_KEY]: entries });
+  },
+};
 
 function main() {
   setRpcConfig({
@@ -23,25 +44,7 @@ function main() {
     },
   });
 
-  registerRpcHandlers({
-    async getSyncState({ youtubeId }) {
-      const { authenticated } = await orpc.auth.check.call({});
-      if (!authenticated) return { authenticated: false };
-      const data = await orpc.videos.getVideoUpdatedAt.call({ youtubeId });
-      return {
-        authenticated: true,
-        serverUpdatedAt: data?.updatedAt,
-      };
-    },
-
-    async openBookmarks() {
-      chrome.tabs.create({ url: "bookmarks.html" });
-    },
-
-    async videoIndexUpdated({ entries }) {
-      chrome.storage.local.set({ [VIDEO_INDEX_KEY]: entries });
-    },
-  });
+  registerRpcHandlers(bgRpcHandlers);
 
   // Open bookmarks page in a new tab when extension icon is clicked.
   chrome.action.onClicked.addListener(() => {

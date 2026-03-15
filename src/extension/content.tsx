@@ -15,8 +15,11 @@ import { type SyncState, computeSyncState } from "../lib/sync.ts";
 import { videoIndexStore } from "../lib/video-index.ts";
 import type { YouTubeExtractionResult } from "../lib/youtube.ts";
 import { fetchPlayerApi, fetchTrackJson3 } from "../lib/youtube.ts";
+import type { bgRpcHandlers } from "./background.ts";
 import contentCss from "./content.css?inline";
-import { rpc } from "./lib/extension-rpc.ts";
+import { createRpc } from "./lib/extension-rpc.ts";
+
+const bgRpc = createRpc<typeof bgRpcHandlers>();
 
 declare const __BUILD_TIME__: string;
 declare const __GIT_REV__: string;
@@ -109,10 +112,10 @@ function ExtensionViewer({ videoId }: { videoId: string }) {
 function useExtensionSyncState(youtubeId: string): SyncState {
   const [videoIndex] = useStore(videoIndexStore);
   const [serverResponse, setServerResponse] =
-    useState<Awaited<ReturnType<typeof rpc.getSyncState>>>();
+    useState<Awaited<ReturnType<typeof bgRpc.getSyncState>>>();
 
   useEffect(() => {
-    rpc.getSyncState({ youtubeId }).then(setServerResponse);
+    bgRpc.getSyncState({ youtubeId }).then(setServerResponse);
   }, [youtubeId]);
 
   if (!serverResponse) return "checking";
@@ -134,7 +137,7 @@ function ExtensionSession({
   player?: YTPlayer;
 }) {
   const state = useExtensionSyncState(data.video.youtubeId);
-  const sync = { state, onNavigate: () => rpc.openBookmarks() };
+  const sync = { state, onNavigate: () => bgRpc.openBookmarks() };
 
   return (
     <CaptionPanel
