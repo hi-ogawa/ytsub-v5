@@ -43,3 +43,20 @@ jobs:
           name: playwright-report
           path: test-results/
           retention-days: 7
+
+  e2e-ext:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+      - run: corepack enable
+      - run: pnpm i
+      - run: pnpm exec playwright install chromium --with-deps
+      - run: pnpm build-ext
+      - run: pnpm test-ext
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report-ext
+          path: test-results/
+          retention-days: 7
