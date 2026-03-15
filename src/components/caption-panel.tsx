@@ -658,7 +658,7 @@ function CaptionPanelWithStore({
             />
           </div>
         ) : (
-          <span className="px-2 py-1.5 text-sm text-muted-foreground">
+          <span className="px-2 py-1 text-sm text-muted-foreground lg:py-1.5">
             {store.vssId1.split(".").pop()} · {store.vssId2.split(".").pop()}
           </span>
         )}
@@ -919,7 +919,7 @@ function CaptionPanelContent({
   return (
     <div ref={contentRef} className="flex min-h-0 flex-[1_0_0] flex-col">
       {/* Tab bar */}
-      <div className="flex flex-none items-center gap-1 border-b px-2 py-1">
+      <div className="flex flex-none items-center gap-1 border-b px-2 py-0.5 lg:py-1">
         <button
           className={[
             "rounded px-2 py-0.5 text-sm",
