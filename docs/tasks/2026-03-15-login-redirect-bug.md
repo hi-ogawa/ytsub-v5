@@ -26,38 +26,32 @@ React Router matches `/` → root layout (`authLoader`) → `AuthLayout` → `Vi
 `authLoader` does `fetch("/api/auth/check")` to determine `authenticated` boolean.
 If `authenticated: false`, `AuthLayout` redirects to `/login`.
 
-### What we know
+### Root cause (confirmed)
 
-- **E2E test passes on main with the old `navigate()` code** — the bug is not reliably reproducible locally
-- Cookie config is clean: `secure: true`, `sameSite: "lax"`, `httpOnly: true`, `path: "/"` (default)
-- No environment-specific cookie differences between dev and prod
-- Server is Cloudflare Workers with D1
+**React Router's `defaultShouldRevalidate` is `false` by default.** It only becomes `true` when specific conditions are met (same URL, search params changed, or new route instance). None apply here:
 
-### What we don't know
+From `node_modules/react-router/dist/development/chunk-XOLAXE2Z.js` (line ~4064):
 
-The exact production-only cause. Candidates:
+```js
+let defaultShouldRevalidate = false;  // starts FALSE
+if (typeof callSiteDefaultShouldRevalidate === "boolean") { ... }
+else if (shouldSkipRevalidation) { ... }
+else if (isRevalidationRequired) { defaultShouldRevalidate = true; }
+else if (currentUrl.pathname + currentUrl.search === nextUrl.pathname + nextUrl.search) { defaultShouldRevalidate = true; }
+else if (currentUrl.search !== nextUrl.search) { defaultShouldRevalidate = true; }
+else if (isNewRouteInstance(state.matches[index], match)) { defaultShouldRevalidate = true; }
+```
 
-1. **Loader not revalidating** — React Router might not re-run `authLoader` on `navigate("/")` under certain conditions (both `/login` and `/` share the root layout). Works locally but might differ with production build/routing.
-2. **Cookie not sent** — the `Set-Cookie` from login response might not be available for the immediately-following `authLoader` fetch in production (network latency, Cloudflare edge behavior).
-3. **Cached auth/check response** — Cloudflare or browser caching the `POST /api/auth/check` response.
+For `/login` → `/`:
 
-### How to confirm (DevTools on prod)
+- `isRevalidationRequired` — false (only set after action redirects with `X-Remix-Revalidate`)
+- Same URL — no (`/login` !== `/`)
+- Search params changed — no
+- `isNewRouteInstance` — **false for the root route** (same route ID "root", same params) — only child routes change (GuestLayout → AuthLayout)
 
-Revert the fix and deploy, or test on current prod if it still has old code.
+So `authLoader` on the root route is **not re-run** on `navigate("/")`. The stale `authenticated: false` persists.
 
-1. Open DevTools → Network tab, enable **Preserve log**
-2. Submit login form
-3. Check these requests in order:
-
-| #   | Request                | What to check                                                                                                              |
-| --- | ---------------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| 1   | `POST /api/auth/login` | Response headers: does `Set-Cookie: session=...` appear?                                                                   |
-| 2   | `POST /api/auth/check` | Does this request exist at all? If yes: does `Cookie: session=...` appear in request headers? What does response body say? |
-| 3   | Any navigation         | Is there a redirect back to `/login`?                                                                                      |
-
-- If request 2 is missing → React Router didn't revalidate the loader
-- If request 2 exists but cookie is missing → browser didn't propagate the cookie in time
-- If request 2 has cookie but returns `authenticated: false` → server-side token verification issue
+**Why e2e passes on main:** Vite dev server HMR likely triggers extra re-renders/revalidation that masks the issue. Confirmed via DevTools: no `auth/check` request after login on prod, but present on dev.
 
 ## Fix
 
@@ -70,5 +64,5 @@ Files changed:
 
 ## Status
 
-- **Done:** Fix applied, e2e assertion added
-- **Remaining:** Root cause unconfirmed — debug on prod using DevTools steps above if curious
+- **Done:** Fix applied, e2e assertion added, root cause confirmed
+- Root cause: React Router `defaultShouldRevalidate` is `false` — root loader skipped because root route instance unchanged (`/login` → `/` only swaps child routes)
