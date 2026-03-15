@@ -42,15 +42,22 @@ export const test = baseTest.extend<{
 
 /** Navigate to bookmarks page with server URL override */
 export async function gotoBookmarks(page: Page, extensionId: string) {
-  page.on("console", (msg) =>
-    console.log(`[page] ${msg.type()}: ${msg.text()}`),
-  );
-  page.on("pageerror", (err) => console.log(`[page error] ${err}`));
-  page.on("requestfailed", (req) =>
-    console.log(`[request failed] ${req.url()} ${req.failure()?.errorText}`),
-  );
+  // surface client errors on playwright cli console
+  page.on("console", (msg) => {
+    if (msg.type() === "error") {
+      console.log(`[browser:console.error] ${msg.text()}`);
+    }
+  });
+  page.on("pageerror", (err) => {
+    console.log(`[browser:pageerror] ${err}`);
+  });
+  page.on("requestfailed", (req) => {
+    console.log(
+      `[browser:requestfailed] ${req.url()} ${req.failure()?.errorText}`,
+    );
+  });
   await page.addInitScript((url) => {
-    (globalThis as Record<string, unknown>).__zamakServerUrl = url;
+    (globalThis as any).__zamakServerUrl = url;
   }, SERVER_URL);
   await page.goto(`chrome-extension://${extensionId}/bookmarks.html`);
 }
