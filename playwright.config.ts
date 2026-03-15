@@ -1,8 +1,6 @@
 import { defineConfig, devices } from "@playwright/test";
 
 export default defineConfig({
-  testDir: "./e2e",
-  testIgnore: ["youtube-*.spec.ts"],
   workers: 1,
   globalSetup: "./e2e/global-setup.ts",
   webServer: {
@@ -23,4 +21,15 @@ export default defineConfig({
   },
   forbidOnly: !!process.env.CI,
   reporter: process.env.CI ? [["list"], ["github"]] : "list",
+  projects: [
+    {
+      name: "app",
+      testDir: "./e2e",
+      testIgnore: ["e2e/ext/**", "e2e/youtube/**"],
+    },
+    {
+      name: "ext",
+      testDir: "./e2e/ext",
+    },
+  ],
 });

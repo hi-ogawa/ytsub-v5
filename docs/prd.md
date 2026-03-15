@@ -97,21 +97,20 @@ A web app for language learning via YouTube subtitles. Watch videos with dual ca
 - [x] feat: web app as browser client — retire server-rendered video-list in favor of client storage
   - [x] video list (`/`): replaced with `BookmarksPage` + `useVideoSync`, import moved to header menu (saves to IndexedDB)
   - [x] video viewer: `sessionOnly` flag, loads from IndexedDB
+- [x] feat: AI integration help page — link from the "AI prompt" dropdown label to `docs/ai-integration.md`;
+- [x] refactor(ext): integrate background.js and rely.js in build (rewrite typescript)
+- [x] refactor(ext): chrome global typing
+- [x] refactor(ext): chrome storage abstraction (like local stroage store)
+- [x] feat(ext): login
 
 ## TODO
 
 - [ ] feat(web): settings dropdown for video-viewer (auto-scroll toggle, etc. — currently hidden when `sessionOnly`)
 - [ ] feat(web): sync button for video-viewer (push/pull with server)
-- [x] feat(ext): login
-- [ ] feat(ext): sync (expose only on bookmark pages?)
-- [ ] refactor: `CaptionSessionManager.strategy` field feels misplaced — consider moving merge strategy out of the session object (`src/lib/caption-session.ts:176`)
+- [ ] feat(ext): sync
+- [ ] test(ext): enhance extension page e2e (seed, sync, etc.) (actually broken so need to fix)
 - [ ] chore: e2e test probes internal storage key `zamak:video-index` — abstract behind helper or use UI-level assertions (`e2e/video-list.spec.ts:4`)
 - [ ] fix: better loading indicator when IndexedDB initial store query is pending (currently returns `null`) (`src/components/caption-panel.tsx:437`)
-- [ ] chore: consolidate `playwright.youtube.config.ts` with `playwright.config.ts` — merge configs and split via projects (`playwright.youtube.config.ts:3`)
-- [ ] refactor(ext): integrate background.js and rely.js in build (rewrite typescript)
-- [ ] refactor(ext): chrome global typing
-- [ ] refactor(ext): chrome storage abstraction (like local stroage store)
-- [ ] test(ext): enhance extension page e2e (seed, sync, etc.)
 - [ ] chore: security review after extension side login feature
 
 ## TODO: Backlog
@@ -120,20 +119,18 @@ A web app for language learning via YouTube subtitles. Watch videos with dual ca
 - [ ] fix: delete race condition — `video-list.tsx` fires `deleteMutation.mutate()` then immediately removes local data; if server delete fails, local data is already gone. Should `await mutateAsync` first.
 - [ ] fix: server routes throw plain `Error` instead of `ORPCError` — `videos.ts` and `bookmarks.ts` use `throw new Error("Video not found")` which becomes generic 500; should be `ORPCError("NOT_FOUND")` for proper status codes and client-readable messages.
 - [ ] feat: root ErrorBoundary — no React ErrorBoundary exists; unhandled render error white-screens the app.
+- [ ] feat: Bookmark export — export to import bookmarks for Anki study
 - [ ] chore: rename worker `ytsub-v5` → `zamak` — update `wrangler.jsonc` name, re-set secrets on new worker, delete old worker, update CI artifact name and docs
-- [ ] chore: consolidate `docs/skills/*` into `docs/eval/README.md`
-- [ ] feat: AI integration help page — link from the "AI prompt" dropdown label to `docs/ai-integration.md`; record a short screen-recording (GIF or MP4) of the copy→paste→import flow and embed in the doc
+- [ ] chore: AI integration help page: record a short screen-recording (GIF or MP4) of the copy→paste→import flow and embed in the doc
 - [ ] fix: adjust prompt to be language independent (currently assumes korean)
+- [ ] chore: document and log AI prompt eval results (`docs/skills/eval/SKILL.md`) (consolidate `docs/skills/*` into `docs/eval/README.md`)
 - [ ] feat: bookmark approval flow — inline approve/reject buttons for `pending` bookmarks in viewer
 - [ ] feat: bookmark list page — browse/search all bookmarks across videos
 - [ ] Full-text search — search across captions and bookmarks (D1 FTS or LIKE)
 - [ ] Keyboard shortcuts — space (play/pause), arrow keys (prev/next caption), etc.
 - [ ] Typing practice (v3/v4 had this)
+- [ ] feat: actually integrate AI directly within app
 - [ ] feat: repeat/loop mode — loop a section between two caption timestamps
-- [ ] chore: unit-testable API layer — swap `cloudflare:workers` env + D1 drizzle adapter for local SQLite (e.g. `better-sqlite3`) so RPC handlers can be tested directly without spinning up wrangler/Playwright
 - [ ] refactor: use `sql` template for `createdAt` schema defaults instead of string literal — avoids Drizzle binding `(datetime('now'))` as a param, reducing bind count per row and allowing larger batch sizes
-- [ ] feat: repeatable eval process for ytsub agent skill — run skill against sample videos, check for common failure modes (wrong offsets, API errors, subtitle quality issues, payload format), track success rate across runs
-- [ ] feat: Bookmark export — export to import bookmarks for Anki study
-- [ ] test: test skills/scripts
-- [ ] rework "Bookmarked Videos" heading/framing — home page is just "Videos"; empty state text assumes extension but web app uses import/sync
-- [ ] chore: document and log AI prompt eval results (`docs/skills/eval/SKILL.md`)
+- [ ] chore: rework "Bookmarked Videos" heading/framing — home page is just "Videos"; empty state text assumes extension but web app uses import/sync
+- [ ] refactor: `CaptionSessionManager.strategy` field feels misplaced — consider moving merge strategy out of the session object (`src/lib/caption-session.ts:176`)
