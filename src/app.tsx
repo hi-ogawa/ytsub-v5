@@ -5,7 +5,7 @@ import {
 } from "@tanstack/react-query";
 import { createBrowserRouter, RouterProvider } from "react-router";
 import { Toaster, toast } from "sonner";
-import { assertType } from "./lib/type-assert.ts";
+import { assertTypeEqual } from "./lib/type-assert.ts";
 import { DevFixturesPage } from "./routes/dev-fixtures.tsx";
 import { DevViewerPage } from "./routes/dev-viewer.tsx";
 import { LoginPage, RegisterPage } from "./routes/login.tsx";
@@ -23,9 +23,10 @@ const queryClient = new QueryClient({
   mutationCache: new MutationCache({
     onError: (error, _variables, _context, mutation) => {
       // verify query.d.ts Register augmentation is applied
-      assertType<typeof mutation.meta, { toastOnError?: boolean } | undefined>(
-        true,
-      );
+      assertTypeEqual<
+        typeof mutation.meta,
+        { toastOnError?: boolean } | undefined
+      >(true);
 
       if (mutation.meta?.toastOnError === false) return;
       toast.error(error.message || "Something went wrong");

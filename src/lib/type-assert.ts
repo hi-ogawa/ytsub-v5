@@ -8,6 +8,8 @@ type Equal<T, U> =
     : false;
 
 /** Compile-time assertion that T and U are the exact same type. */
-export function assertType<T, U>(_: Equal<T, U> extends true ? true : never) {
+export function assertTypeEqual<T, U>(
+  _: Equal<T, U> extends true ? true : never,
+) {
   // no-op at runtime
 }
