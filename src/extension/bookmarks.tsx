@@ -19,19 +19,39 @@ import {
 } from "../components/ui/dropdown-menu.tsx";
 import { useStore } from "../lib/external-store.ts";
 import { createAppQueryClient } from "../lib/query-client.ts";
-import { useVideoSync } from "../lib/sync.ts";
+import { type VideoSyncActions, useVideoSync } from "../lib/sync.ts";
 import { useTheme } from "../lib/theme.ts";
 import {
   VIDEO_INDEX_KEY,
   type VideoIndexEntry,
+  updateVideoIndex,
   videoIndexStore,
 } from "../lib/video-index.ts";
 import { orpc, setRpcConfig } from "../rpc.ts";
+import type { bgRpcHandlers } from "./background.ts";
 import { chromeStorage } from "./lib/chrome-storage.ts";
-import { getServerUrl, initServerUrl } from "./lib/server-url.ts";
+import { createRpc } from "./lib/extension-rpc.ts";
+import { getServerUrl } from "./lib/server-url.ts";
 import "../styles.css";
 
 declare const __DEV_EXT__: boolean;
+
+const bgRpc = createRpc<typeof bgRpcHandlers>({ direct: true });
+
+const extensionSyncActions: VideoSyncActions = {
+  async pushSession(youtubeId) {
+    await bgRpc.pushSession({ youtubeId });
+  },
+  async pullSession(youtubeId) {
+    const result = await bgRpc.pullSession({ youtubeId });
+    updateVideoIndex(
+      youtubeId,
+      result.title,
+      result.channelName,
+      result.bookmarkCount,
+    );
+  },
+};
 
 const SERVER_PRESETS = [
   { label: "Production", url: "https://zamak.hiroshi.workers.dev" },
@@ -45,7 +65,7 @@ function AdvancedDialog({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
-  const [url, setUrl] = useState(getServerUrl());
+  const [url, setUrl] = useState(serverUrl);
 
   const save = async (value: string) => {
     if (!value) {
@@ -108,7 +128,7 @@ function ExtensionBookmarksPage() {
     chromeStorage.queryOptions<string>("username"),
   );
   const { theme, cycle, Icon } = useTheme();
-  const sync = useVideoSync();
+  const sync = useVideoSync(extensionSyncActions);
   const [showLogin, setShowLogin] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
 
@@ -203,7 +223,7 @@ function ExtensionBookmarksPage() {
           usernameQuery.refetch();
           sync.refetch();
         }}
-        signUpUrl={`${getServerUrl()}/register`}
+        signUpUrl={new URL("/register", serverUrl).href}
       />
       <main className="flex-1 overflow-auto">
         <BookmarksPage
@@ -216,13 +236,14 @@ function ExtensionBookmarksPage() {
   );
 }
 
+let serverUrl = "";
+
 async function main() {
-  // Hydrate server URL override from storage before configuring RPC
-  await initServerUrl();
+  serverUrl = await getServerUrl();
 
   // Configure RPC to use extension server URL + bearer token auth
   setRpcConfig({
-    url: getServerUrl() + "/api",
+    url: async () => new URL("/api", serverUrl),
     fetch: async (request) => {
       const token = await chromeStorage.get<string>("session-token");
       if (token) {
