@@ -15,8 +15,8 @@ import { type SyncState, computeSyncState } from "../lib/sync.ts";
 import { videoIndexStore } from "../lib/video-index.ts";
 import type { YouTubeExtractionResult } from "../lib/youtube.ts";
 import { fetchPlayerApi, fetchTrackJson3 } from "../lib/youtube.ts";
-import type { GetSyncStateResponse } from "./background.ts";
 import contentCss from "./content.css?inline";
+import { rpc } from "./lib/extension-rpc.ts";
 
 declare const __BUILD_TIME__: string;
 declare const __GIT_REV__: string;
@@ -106,36 +106,13 @@ function ExtensionViewer({ videoId }: { videoId: string }) {
   );
 }
 
-const SYNC_STATE_KEY = "zamak:sync-state-response";
-
-function requestSyncState(youtubeId: string): Promise<GetSyncStateResponse> {
-  return new Promise((resolve) => {
-    const onResult = () => {
-      window.removeEventListener("zamak:sync-state-result", onResult);
-      try {
-        const raw = localStorage.getItem(SYNC_STATE_KEY);
-        resolve(raw ? JSON.parse(raw) : { authenticated: false });
-      } catch {
-        resolve({ authenticated: false });
-      }
-    };
-    window.addEventListener("zamak:sync-state-result", onResult);
-    window.dispatchEvent(
-      new CustomEvent("zamak:get-sync-state", { detail: youtubeId }),
-    );
-  });
-}
-
-function openBookmarksPage() {
-  window.dispatchEvent(new Event("zamak:open-bookmarks"));
-}
-
 function useExtensionSyncState(youtubeId: string): SyncState {
   const [videoIndex] = useStore(videoIndexStore);
-  const [serverResponse, setServerResponse] = useState<GetSyncStateResponse>();
+  const [serverResponse, setServerResponse] =
+    useState<Awaited<ReturnType<typeof rpc.getSyncState>>>();
 
   useEffect(() => {
-    requestSyncState(youtubeId).then(setServerResponse);
+    rpc.getSyncState({ youtubeId }).then(setServerResponse);
   }, [youtubeId]);
 
   if (!serverResponse) return "checking";
@@ -157,7 +134,7 @@ function ExtensionSession({
   player?: YTPlayer;
 }) {
   const state = useExtensionSyncState(data.video.youtubeId);
-  const sync = { state, onNavigate: openBookmarksPage };
+  const sync = { state, onNavigate: () => rpc.openBookmarks() };
 
   return (
     <CaptionPanel
