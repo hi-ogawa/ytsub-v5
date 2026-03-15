@@ -120,6 +120,10 @@ A web app for language learning via YouTube subtitles. Watch videos with dual ca
 
 ## TODO: Backlog
 
+- [ ] fix: sync state doesn't surface push/pull mutation errors — `computedState` only checks `serverQuery.isError`, so after a push/pull failure the SyncButton reverts to "push"/"pull" icon instead of showing error. Need to check `pushMutation.isError || pullMutation.isError`.
+- [ ] fix: delete race condition — `video-list.tsx` fires `deleteMutation.mutate()` then immediately removes local data; if server delete fails, local data is already gone. Should `await mutateAsync` first.
+- [ ] fix: server routes throw plain `Error` instead of `ORPCError` — `videos.ts` and `bookmarks.ts` use `throw new Error("Video not found")` which becomes generic 500; should be `ORPCError("NOT_FOUND")` for proper status codes and client-readable messages.
+- [ ] feat: root ErrorBoundary — no React ErrorBoundary exists; unhandled render error white-screens the app.
 - [ ] chore: rename worker `ytsub-v5` → `zamak` — update `wrangler.jsonc` name, re-set secrets on new worker, delete old worker, update CI artifact name and docs
 - [ ] chore: consolidate `docs/skills/*` into `docs/eval/README.md`
 - [ ] feat: AI integration help page — document the AI prompt workflow (copy/download prompt, paste result back) and link from the "AI prompt" dropdown label
