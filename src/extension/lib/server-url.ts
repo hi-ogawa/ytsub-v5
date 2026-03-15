@@ -18,7 +18,10 @@ export function getServerUrl(): string {
 /** Prompt user to override the server URL (dev builds only). Returns true if changed. */
 export async function promptServerUrlOverride(): Promise<boolean> {
   const current = (globalThis as any).__zamakServerUrl ?? "";
-  const input = window.prompt("Server URL (empty = default):", current);
+  const input = window.prompt(
+    "Server URL (empty = default).\nReload extension from chrome://extensions after changing.",
+    current,
+  );
   if (input === null) return false; // cancelled
   if (input === "") {
     await chrome.storage.local.remove(STORAGE_KEY);
