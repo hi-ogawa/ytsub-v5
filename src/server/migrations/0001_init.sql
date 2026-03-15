@@ -49,9 +49,7 @@ CREATE TABLE IF NOT EXISTS bookmarks (
   timestamp REAL NOT NULL DEFAULT 0,
   etymology TEXT NOT NULL DEFAULT '',
   notes TEXT NOT NULL DEFAULT '',
-  status TEXT NOT NULL DEFAULT 'pending',
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
 CREATE INDEX IF NOT EXISTS idx_bookmarks_video ON bookmarks(video_id);
-CREATE INDEX IF NOT EXISTS idx_bookmarks_status ON bookmarks(status);

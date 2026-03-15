@@ -268,7 +268,6 @@ test.describe("dev-viewer caption panel", () => {
       captionIdx: 0,
       side: 0,
       offset: 0,
-      status: "manual",
     });
   });
 

@@ -48,7 +48,6 @@ export const bookmarksRouter = authed.router({
             timestamp: z.number().optional().default(0),
             etymology: z.string().optional().default(""),
             notes: z.string().optional().default(""),
-            status: z.string().optional().default("pending"),
           }),
         ),
       }),
@@ -72,7 +71,6 @@ export const bookmarksRouter = authed.router({
         timestamp: sql.raw(`${b.timestamp}`),
         etymology: b.etymology,
         notes: b.notes,
-        status: b.status,
       }));
       let inserted = 0;
       for (let i = 0; i < rows.length; i += BOOKMARK_BATCH_SIZE) {
@@ -90,7 +88,6 @@ export const bookmarksRouter = authed.router({
     .input(
       z.object({
         videoId: z.number().int().optional(),
-        status: z.string().optional(),
         limit: z.number().int().optional().default(20),
         offset: z.number().int().optional().default(0),
       }),
@@ -101,9 +98,6 @@ export const bookmarksRouter = authed.router({
       conditions.push(eq(videos.userId, context.userId));
       if (input.videoId !== undefined) {
         conditions.push(eq(bookmarks.videoId, input.videoId));
-      }
-      if (input.status !== undefined) {
-        conditions.push(eq(bookmarks.status, input.status));
       }
       const where = and(...conditions);
       const [total] = await db
@@ -124,7 +118,6 @@ export const bookmarksRouter = authed.router({
           timestamp: bookmarks.timestamp,
           etymology: bookmarks.etymology,
           notes: bookmarks.notes,
-          status: bookmarks.status,
           createdAt: bookmarks.createdAt,
         })
         .from(bookmarks)
@@ -140,7 +133,6 @@ export const bookmarksRouter = authed.router({
     .input(
       z.object({
         id: z.number().int(),
-        status: z.string().optional(),
         translation: z.string().optional(),
         etymology: z.string().optional(),
         notes: z.string().optional(),
@@ -150,7 +142,6 @@ export const bookmarksRouter = authed.router({
       await assertBookmarkOwner(input.id, context.userId);
       const { id, ...updates } = input;
       const setValues: Record<string, string> = {};
-      if (updates.status !== undefined) setValues.status = updates.status;
       if (updates.translation !== undefined)
         setValues.translation = updates.translation;
       if (updates.etymology !== undefined)

@@ -350,25 +350,14 @@ test.describe("bookmarks API", () => {
     expect(listRes.ok()).toBe(true);
     const list = await json(listRes);
     expect(list.total).toBe(2);
-    expect(list.items[0].status).toBe("pending");
-
     const bookmarkId = list.items[0].id;
     const updateRes = await rpc(request, "bookmarks/updateBookmark", {
       id: bookmarkId,
-      status: "approved",
       notes: "Common greeting",
     });
     expect(updateRes.ok()).toBe(true);
     const updated = await json(updateRes);
-    expect(updated.status).toBe("approved");
     expect(updated.notes).toBe("Common greeting");
-
-    const filteredRes = await rpc(request, "bookmarks/listBookmarks", {
-      videoId: video.id,
-      status: "approved",
-    });
-    const filtered = await json(filteredRes);
-    expect(filtered.total).toBe(1);
   });
 
   test("delete bookmark", async ({ request }) => {

@@ -108,7 +108,6 @@ export function sessionToExportData(session: {
       side: b.side,
       offset: b.offset,
       context: b.context,
-      status: "manual",
     })),
   };
 }
