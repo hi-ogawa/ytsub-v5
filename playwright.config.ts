@@ -18,7 +18,11 @@ function getFreePort(preferred: number): Promise<number> {
   });
 }
 
-const port = await getFreePort(5190);
+// Main process resolves port and passes it to workers via env var
+const port = process.env.E2E_PORT
+  ? Number(process.env.E2E_PORT)
+  : await getFreePort(5190);
+process.env.E2E_PORT = String(port);
 
 export default defineConfig({
   workers: 1,
