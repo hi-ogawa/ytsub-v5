@@ -1,6 +1,6 @@
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
-  "name": "ytsub-v5",
+  "name": "zamak",
   "workers_dev": true,
   "compatibility_date": "2026-03-03",
   "main": "./src/server/index.ts",
@@ -11,8 +11,8 @@
   "d1_databases": [
     {
       "binding": "DB",
-      "database_name": "ytsub-v5",
-      "database_id": "882ee273-02b6-4548-9c0f-087b320e4d8e",
+      "database_name": "zamak",
+      "database_id": "2ba37284-043a-405b-ad1d-b045f96387b1",
       "migrations_dir": "src/server/migrations",
     },
   ],

@@ -91,7 +91,7 @@ export default defineConfig({
     __SERVER_URL__: JSON.stringify(
       process.env.DEV_EXT
         ? "http://localhost:5173"
-        : "https://ytsub-v5.hiroshi.workers.dev",
+        : "https://zamak.hiroshi.workers.dev",
     ),
   },
   plugins: [react(), tailwindcss()],

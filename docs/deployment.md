@@ -3,7 +3,7 @@
 ## Stack
 
 - **Runtime**: Cloudflare Workers (entry: `src/server/index.ts`)
-- **Database**: Cloudflare D1 (`ytsub-v5`, ID: `882ee273-02b6-4548-9c0f-087b320e4d8e`)
+- **Database**: Cloudflare D1 (`zamak`)
 - **Assets**: SPA mode, worker-first for `/api/*`
 - **Auth**: secrets as Cloudflare secrets (not in `wrangler.jsonc`)
 
