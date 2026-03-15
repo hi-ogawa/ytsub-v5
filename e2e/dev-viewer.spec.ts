@@ -1,17 +1,32 @@
 import { expect, test } from "@playwright/test";
-import { createBookmarkAt, openPanelWithTracks } from "./helper.ts";
+import {
+  createBookmarkAt,
+  openPanelWithTracks,
+  selectTextInCaption,
+} from "./helper.ts";
 
 test.describe("dev-viewer caption panel", () => {
   test.beforeEach(async ({ page }) => {
     await page.goto("/dev/videos/7GU_VQfgMT0");
   });
 
-  test("FAB toggles caption panel open and closed", async ({ page }) => {
+  test("FAB toggles panel, rows render with timestamps", async ({ page }) => {
     // Panel starts closed — no caption rows visible
     await expect(page.locator("[data-index='0']")).not.toBeVisible();
 
     // Open panel and select tracks
     await openPanelWithTracks(page);
+
+    // Multiple rows rendered (fixture has many cues)
+    await expect(page.locator("[data-index='5']")).toBeVisible();
+
+    // Rows show timestamp and dual-column text
+    const row = page.locator("[data-index='0']");
+    await expect(row.locator("text=/\\d+:\\d{2} – \\d+:\\d{2}/")).toBeVisible();
+    const cols = row.locator(".flex-1");
+    await expect(cols).toHaveCount(2);
+    await expect(cols.nth(0)).not.toHaveText("");
+    await expect(cols.nth(1)).not.toHaveText("");
 
     // Close panel via FAB
     await page.getByTitle("Hide captions").click();
@@ -48,37 +63,25 @@ test.describe("dev-viewer caption panel", () => {
     await expect(page.getByTitle("Hide captions")).toBeVisible();
   });
 
-  test("panel shows merged caption rows from fixture data", async ({
+  test("track selection: default empty, select tracks, switch language", async ({
     page,
   }) => {
-    await openPanelWithTracks(page);
-
-    // Multiple rows rendered (fixture has many cues)
-    await expect(page.locator("[data-index='5']")).toBeVisible();
-  });
-
-  test("no tracks selected by default without preference", async ({ page }) => {
     await page.getByTitle("Show captions").click();
 
     // Track pickers default to "None"
     const selects = page.locator("select");
     await expect(selects.nth(0)).toHaveValue("");
     await expect(selects.nth(1)).toHaveValue("");
-
-    // No caption rows rendered
     await expect(page.locator("[data-index='0']")).not.toBeVisible();
-  });
 
-  test("switching language reloads captions", async ({ page }) => {
-    await openPanelWithTracks(page);
+    // Select tracks — captions appear
+    await selects.nth(0).selectOption(".ko");
+    await selects.nth(1).selectOption(".en");
+    await expect(page.locator("[data-index='0']")).toBeVisible();
 
-    // Grab initial text from first row
+    // Switch lang2 from en to ja — text changes
     const firstRowText = await page.locator("[data-index='0']").textContent();
-
-    // Switch lang2 from en to ja
-    await page.locator("select").nth(1).selectOption(".ja");
-
-    // Wait for captions to reload — text should change
+    await selects.nth(1).selectOption(".ja");
     await expect(page.locator("[data-index='0']")).not.toHaveText(
       firstRowText!,
     );
@@ -219,41 +222,21 @@ test.describe("dev-viewer caption panel", () => {
     expect(reopenedBox.width).toBe(500);
   });
 
-  test("caption rows show timestamp and dual-column text", async ({ page }) => {
+  test("manual bookmark: cancel selection, create, highlight, and export", async ({
+    page,
+  }) => {
     await openPanelWithTracks(page);
 
-    const row = page.locator("[data-index='0']");
+    // Select text — cancel hides FAB
+    await selectTextInCaption(page, 0, 0, 3);
+    await expect(page.getByRole("button", { name: "Cancel" })).toBeVisible();
+    await page.getByRole("button", { name: "Cancel" }).click();
+    await expect(
+      page.getByRole("button", { name: "Create bookmark" }),
+    ).not.toBeVisible();
 
-    // Timestamp format: m:ss – m:ss
-    await expect(row.locator("text=/\\d+:\\d{2} – \\d+:\\d{2}/")).toBeVisible();
-
-    // Two text columns (border-r separates them)
-    const cols = row.locator(".flex-1");
-    await expect(cols).toHaveCount(2);
-    // Both columns should have text content
-    await expect(cols.nth(0)).not.toHaveText("");
-    await expect(cols.nth(1)).not.toHaveText("");
-  });
-
-  test("manual bookmark: create, highlight, and export", async ({ page }) => {
-    await openPanelWithTracks(page);
-
-    // Select "꼬집어" in first row (chars 0-3 in "꼬집어 봐 뜬 꿈인 것 같아")
-    await page.evaluate(() => {
-      const sideEl = document
-        .querySelector("[data-index='0']")!
-        .querySelector("[data-side='0']")!;
-      const textSpan = sideEl.querySelector("[data-offset]")!;
-      const textNode = textSpan.firstChild!;
-      const range = document.createRange();
-      range.setStart(textNode, 0);
-      range.setEnd(textNode, 3);
-      const selection = document.getSelection()!;
-      selection.removeAllRanges();
-      selection.addRange(range);
-    });
-
-    // FAB appears → create bookmark
+    // Select again and create bookmark
+    await selectTextInCaption(page, 0, 0, 3);
     await expect(
       page.getByRole("button", { name: "Create bookmark" }),
     ).toBeVisible();
@@ -293,20 +276,7 @@ test.describe("dev-viewer caption panel", () => {
     await openPanelWithTracks(page);
 
     // Create a bookmark first
-    await page.evaluate(() => {
-      const sideEl = document
-        .querySelector("[data-index='0']")!
-        .querySelector("[data-side='0']")!;
-      const textSpan = sideEl.querySelector("[data-offset]")!;
-      const textNode = textSpan.firstChild!;
-      const range = document.createRange();
-      range.setStart(textNode, 0);
-      range.setEnd(textNode, 3);
-      const selection = document.getSelection()!;
-      selection.removeAllRanges();
-      selection.addRange(range);
-    });
-    await page.getByRole("button", { name: "Create bookmark" }).click();
+    await createBookmarkAt(page, 0, 0, 3);
 
     // Track selects should be disabled
     const selects = page.locator("select");
@@ -332,20 +302,7 @@ test.describe("dev-viewer caption panel", () => {
     await openPanelWithTracks(page);
 
     // Create a bookmark
-    await page.evaluate(() => {
-      const sideEl = document
-        .querySelector("[data-index='0']")!
-        .querySelector("[data-side='0']")!;
-      const textSpan = sideEl.querySelector("[data-offset]")!;
-      const textNode = textSpan.firstChild!;
-      const range = document.createRange();
-      range.setStart(textNode, 0);
-      range.setEnd(textNode, 3);
-      const selection = document.getSelection()!;
-      selection.removeAllRanges();
-      selection.addRange(range);
-    });
-    await page.getByRole("button", { name: "Create bookmark" }).click();
+    await createBookmarkAt(page, 0, 0, 3);
     await expect(
       page.locator("[data-index='0'] .bg-highlight-bg"),
     ).toBeVisible();
@@ -364,75 +321,36 @@ test.describe("dev-viewer caption panel", () => {
     ).toHaveText("꼬집어");
   });
 
-  test("cancel text selection hides FAB", async ({ page }) => {
-    await openPanelWithTracks(page);
-
-    // Select text
-    await page.evaluate(() => {
-      const sideEl = document
-        .querySelector("[data-index='0']")!
-        .querySelector("[data-side='0']")!;
-      const textSpan = sideEl.querySelector("[data-offset]")!;
-      const textNode = textSpan.firstChild!;
-      const range = document.createRange();
-      range.setStart(textNode, 0);
-      range.setEnd(textNode, 3);
-      const selection = document.getSelection()!;
-      selection.removeAllRanges();
-      selection.addRange(range);
-    });
-
-    await expect(page.getByRole("button", { name: "Cancel" })).toBeVisible();
-
-    // Cancel
-    await page.getByRole("button", { name: "Cancel" }).click();
-    await expect(
-      page.getByRole("button", { name: "Create bookmark" }),
-    ).not.toBeVisible();
-  });
-
-  test("tab bar shows captions and bookmarks tabs", async ({ page }) => {
-    await openPanelWithTracks(page);
-    const panel = page.getByTestId("resizable-panel");
-    await expect(panel.getByRole("button", { name: "Captions" })).toBeVisible();
-    await expect(
-      panel.getByRole("button", { name: /Bookmarks/ }),
-    ).toBeVisible();
-  });
-
-  test("bookmarks tab shows empty state", async ({ page }) => {
-    await openPanelWithTracks(page);
-    const panel = page.getByTestId("resizable-panel");
-    await panel.getByRole("button", { name: /Bookmarks/ }).click();
-    await expect(page.getByText("No bookmarks yet")).toBeVisible();
-  });
-
-  test("bookmarks tab shows created bookmark with caption context", async ({
+  test("bookmarks tab: empty state, create bookmark, count and context", async ({
     page,
   }) => {
     await openPanelWithTracks(page);
     const panel = page.getByTestId("resizable-panel");
-    // Create bookmark "꼬집어" at idx=0
-    await createBookmarkAt(page, 0, 0, 3);
 
-    // Switch to bookmarks tab
-    await panel.getByRole("button", { name: /Bookmarks/ }).click();
-    // Bookmark card should be visible
-    const bookmarkCard = page.locator("[data-bookmark-id]").first();
-    await expect(bookmarkCard).toBeVisible();
-    await expect(bookmarkCard.getByText("꼬집어").first()).toBeVisible();
-    // Caption context shown
+    // Tab bar visible
+    await expect(panel.getByRole("button", { name: "Captions" })).toBeVisible();
     await expect(
-      bookmarkCard.getByText("꼬집어 봐 뜬 꿈인 것 같아"),
+      panel.getByRole("button", { name: /Bookmarks/ }),
     ).toBeVisible();
-  });
 
-  test("bookmark count shown in tab label", async ({ page }) => {
-    await openPanelWithTracks(page);
-    const panel = page.getByTestId("resizable-panel");
+    // Empty state
+    await panel.getByRole("button", { name: /Bookmarks/ }).click();
+    await expect(page.getByText("No bookmarks yet")).toBeVisible();
+
+    // Create bookmark and verify count
+    await panel.getByRole("button", { name: "Captions" }).click();
     await createBookmarkAt(page, 0, 0, 3);
     await expect(
       panel.getByRole("button", { name: "Bookmarks (1)" }),
+    ).toBeVisible();
+
+    // Bookmark card with caption context
+    await panel.getByRole("button", { name: /Bookmarks/ }).click();
+    const bookmarkCard = page.locator("[data-bookmark-id]").first();
+    await expect(bookmarkCard).toBeVisible();
+    await expect(bookmarkCard.getByText("꼬집어").first()).toBeVisible();
+    await expect(
+      bookmarkCard.getByText("꼬집어 봐 뜬 꿈인 것 같아"),
     ).toBeVisible();
   });
 
@@ -503,20 +421,6 @@ test.describe("dev-viewer caption panel", () => {
     await expect(
       page.locator("[data-index='0'] .bg-highlight-bg"),
     ).not.toBeVisible();
-  });
-
-  test("captions tab preserves scroll after switching tabs", async ({
-    page,
-  }) => {
-    await openPanelWithTracks(page);
-    const panel = page.getByTestId("resizable-panel");
-    await expect(page.locator("[data-index='0']")).toBeVisible();
-
-    // Switch to bookmarks and back
-    await panel.getByRole("button", { name: /Bookmarks/ }).click();
-    await expect(page.getByText("No bookmarks yet")).toBeVisible();
-    await panel.getByRole("button", { name: "Captions" }).click();
-    await expect(page.locator("[data-index='0']")).toBeVisible();
   });
 
   test("bookmark highlight shows popover on click", async ({ page }) => {

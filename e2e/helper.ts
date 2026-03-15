@@ -36,8 +36,8 @@ export async function openPanelWithTracks(page: Page) {
   await expect(page.locator("[data-index='0']")).toBeVisible();
 }
 
-/** Select text in a caption row and create a bookmark */
-export async function createBookmarkAt(
+/** Select text in a caption row (shows FAB but doesn't click) */
+export async function selectTextInCaption(
   page: Page,
   index: number,
   start: number,
@@ -59,5 +59,15 @@ export async function createBookmarkAt(
     },
     { index, start, end },
   );
+}
+
+/** Select text in a caption row and create a bookmark */
+export async function createBookmarkAt(
+  page: Page,
+  index: number,
+  start: number,
+  end: number,
+) {
+  await selectTextInCaption(page, index, start, end);
   await page.getByRole("button", { name: "Create bookmark" }).click();
 }
