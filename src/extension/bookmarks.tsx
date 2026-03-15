@@ -1,6 +1,8 @@
+import { QueryClientProvider } from "@tanstack/react-query";
 import { EllipsisVertical } from "lucide-react";
 import { StrictMode, useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
+import { Toaster } from "sonner";
 import { BookmarksPage } from "../components/bookmarks-page.tsx";
 import {
   DropdownMenu,
@@ -8,9 +10,12 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "../components/ui/dropdown-menu.tsx";
+import { createAppQueryClient } from "../lib/query-client.ts";
 import { useTheme } from "../lib/theme.ts";
 import type { VideoIndexEntry } from "../lib/video-index.ts";
 import "../styles.css";
+
+const queryClient = createAppQueryClient();
 
 declare const chrome: {
   storage: {
@@ -69,6 +74,9 @@ function ExtensionBookmarksPage() {
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <ExtensionBookmarksPage />
+    <QueryClientProvider client={queryClient}>
+      <ExtensionBookmarksPage />
+      <Toaster position="top-right" richColors />
+    </QueryClientProvider>
   </StrictMode>,
 );

@@ -1,11 +1,7 @@
-import {
-  MutationCache,
-  QueryClient,
-  QueryClientProvider,
-} from "@tanstack/react-query";
+import { QueryClientProvider } from "@tanstack/react-query";
 import { createBrowserRouter, RouterProvider } from "react-router";
-import { Toaster, toast } from "sonner";
-import { assertTypeEqual } from "./lib/type-assert.ts";
+import { Toaster } from "sonner";
+import { createAppQueryClient } from "./lib/query-client.ts";
 import { DevFixturesPage } from "./routes/dev-fixtures.tsx";
 import { DevViewerPage } from "./routes/dev-viewer.tsx";
 import { LoginPage, RegisterPage } from "./routes/login.tsx";
@@ -19,20 +15,7 @@ import {
 import { VideoListPage } from "./routes/video-list.tsx";
 import { VideoViewerPage } from "./routes/video-viewer.tsx";
 
-const queryClient = new QueryClient({
-  mutationCache: new MutationCache({
-    onError: (error, _variables, _context, mutation) => {
-      // verify query.d.ts Register augmentation is applied
-      assertTypeEqual<
-        typeof mutation.meta,
-        { toastOnError?: boolean } | undefined
-      >(true);
-
-      if (mutation.meta?.toastOnError === false) return;
-      toast.error(error.message || "Something went wrong");
-    },
-  }),
-});
+const queryClient = createAppQueryClient();
 
 const router = createBrowserRouter([
   {
