@@ -79,29 +79,6 @@ export function useSyncState({ youtubeId }: { youtubeId: string }) {
     enabled: authenticated,
   });
 
-  const computedState = useMemo((): SyncState => {
-    if (authQuery.isFetching) return "checking";
-    if (!authenticated) return "unauthenticated";
-    if (serverQuery.isLoading) return "checking";
-    if (serverQuery.isError) return "error";
-
-    const localEntry = videoIndex.find((e) => e.youtubeId === youtubeId);
-    return computeSyncState({
-      localUpdatedAt: localEntry?.updatedAt,
-      syncedAt: localEntry?.syncedAt,
-      serverUpdatedAt: serverQuery.data?.updatedAt ?? undefined,
-    });
-  }, [
-    youtubeId,
-    authQuery.isFetching,
-    authenticated,
-    serverQuery.isLoading,
-    serverQuery.isError,
-    serverQuery.data,
-    videoIndex,
-    syncVersion,
-  ]);
-
   const pushMutation = useMutation(
     orpc.videos.importVideo.mutationOptions({
       onSuccess: () => {
@@ -132,6 +109,32 @@ export function useSyncState({ youtubeId }: { youtubeId: string }) {
       serverQuery.refetch();
     },
   });
+
+  const computedState = useMemo((): SyncState => {
+    if (authQuery.isFetching) return "checking";
+    if (!authenticated) return "unauthenticated";
+    if (serverQuery.isLoading) return "checking";
+    if (serverQuery.isError) return "error";
+    if (pushMutation.isError || pullMutation.isError) return "error";
+
+    const localEntry = videoIndex.find((e) => e.youtubeId === youtubeId);
+    return computeSyncState({
+      localUpdatedAt: localEntry?.updatedAt,
+      syncedAt: localEntry?.syncedAt,
+      serverUpdatedAt: serverQuery.data?.updatedAt ?? undefined,
+    });
+  }, [
+    youtubeId,
+    authQuery.isFetching,
+    authenticated,
+    serverQuery.isLoading,
+    serverQuery.isError,
+    serverQuery.data,
+    videoIndex,
+    syncVersion,
+    pushMutation.isError,
+    pullMutation.isError,
+  ]);
 
   const isSyncing = pushMutation.isPending || pullMutation.isPending;
 
