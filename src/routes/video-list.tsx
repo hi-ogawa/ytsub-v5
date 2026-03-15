@@ -1,5 +1,4 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useNavigate } from "react-router";
 import { BookmarksPage } from "../components/bookmarks-page.tsx";
 import { deleteSession } from "../lib/caption-session-db.ts";
 import { useStore } from "../lib/external-store.ts";
@@ -9,7 +8,6 @@ import { orpc } from "../rpc.ts";
 
 export function VideoListPage() {
   const [entries] = useStore(videoIndexStore);
-  const navigate = useNavigate();
   const sync = useVideoSync();
   const queryClient = useQueryClient();
   const deleteMutation = useMutation(
@@ -34,7 +32,7 @@ export function VideoListPage() {
   return (
     <BookmarksPage
       entries={entries}
-      onVideoClick={(id) => navigate(`/videos/${id}`)}
+      videoHref={(id) => `/videos/${id}`}
       onDelete={onDelete}
       sync={sync}
     />

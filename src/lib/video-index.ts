@@ -9,8 +9,10 @@ export type VideoIndexEntry = {
   syncedAt?: string;
 };
 
+export const VIDEO_INDEX_KEY = "zamak:video-index";
+
 export const videoIndexStore = createLocalStorageStore<VideoIndexEntry[]>(
-  "zamak:video-index",
+  VIDEO_INDEX_KEY,
   [],
 );
 

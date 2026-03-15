@@ -1,7 +1,8 @@
 import { QueryClientProvider } from "@tanstack/react-query";
 import { EllipsisVertical, LogIn, LogOut } from "lucide-react";
-import { StrictMode, useEffect, useState } from "react";
+import { StrictMode, useState } from "react";
 import { createRoot } from "react-dom/client";
+import { MemoryRouter } from "react-router";
 import { Toaster } from "sonner";
 import { BookmarksPage } from "../components/bookmarks-page.tsx";
 import { LoginDialog } from "../components/login-dialog.tsx";
@@ -15,38 +16,21 @@ import { useStore } from "../lib/external-store.ts";
 import { createAppQueryClient } from "../lib/query-client.ts";
 import { useVideoSync } from "../lib/sync.ts";
 import { useTheme } from "../lib/theme.ts";
-import { videoIndexStore } from "../lib/video-index.ts";
+import {
+  VIDEO_INDEX_KEY,
+  type VideoIndexEntry,
+  videoIndexStore,
+} from "../lib/video-index.ts";
 import { orpc, setRpcConfig } from "../rpc.ts";
-import { getServerUrl } from "./server-url.ts";
+import { chromeStorage } from "./lib/chrome-storage.ts";
+import { getServerUrl } from "./lib/server-url.ts";
 import "../styles.css";
-
-declare const chrome: {
-  storage: {
-    local: {
-      get: (
-        keys: string | string[],
-        cb: (result: Record<string, unknown>) => void,
-      ) => void;
-      set: (items: Record<string, unknown>) => void;
-      remove: (keys: string[], cb?: () => void) => void;
-    };
-  };
-  tabs: { create: (opts: { url: string }) => void };
-};
-
-function getStorageValue(key: string): Promise<string | undefined> {
-  return new Promise((resolve) =>
-    chrome.storage.local.get([key], (r) =>
-      resolve(r[key] as string | undefined),
-    ),
-  );
-}
 
 // Configure RPC to use extension server URL + bearer token auth
 setRpcConfig({
   url: getServerUrl() + "/api",
   fetch: async (request) => {
-    const token = await getStorageValue("session-token");
+    const token = await chromeStorage.get<string>("session-token");
     if (token) {
       const headers = new Headers(
         request instanceof Request ? request.headers : undefined,
@@ -58,32 +42,29 @@ setRpcConfig({
   },
 });
 
-function getStorage(keys: string | string[]): Promise<Record<string, unknown>> {
-  return new Promise((resolve) => chrome.storage.local.get(keys, resolve));
-}
-
 // Two-way bridge: chrome.storage.local <-> localStorage for video-index.
 // Hydrate localStorage from chrome.storage.local before rendering, then keep
 // them in sync so videoIndexStore (localStorage-backed) works on this origin.
-const VIDEO_INDEX_KEY = "zamak:video-index";
+let initialUsername: string | undefined;
 
 async function bridgeChromeStorage() {
-  // Hydrate: chrome.storage.local -> localStorage
-  const result = await getStorage([VIDEO_INDEX_KEY]);
-  const entries = result[VIDEO_INDEX_KEY];
+  const [entries, username] = await Promise.all([
+    chromeStorage.get<VideoIndexEntry[]>(VIDEO_INDEX_KEY),
+    chromeStorage.get<string>("username"),
+  ]);
+  initialUsername = username;
+
+  // Hydrate: chrome.storage.local -> localStorage -> videoIndexStore
   if (entries) {
     localStorage.setItem(VIDEO_INDEX_KEY, JSON.stringify(entries));
   }
-  // Re-initialize videoIndexStore from the now-populated localStorage
-  videoIndexStore.set(
-    entries ? (entries as Parameters<typeof videoIndexStore.set>[0]) : [],
-  );
+  videoIndexStore.set(entries ?? []);
 
   // localStorage -> chrome.storage.local (when videoIndexStore writes)
   window.addEventListener(`zamak:store:${VIDEO_INDEX_KEY}`, () => {
     const raw = localStorage.getItem(VIDEO_INDEX_KEY);
     if (raw) {
-      chrome.storage.local.set({ [VIDEO_INDEX_KEY]: JSON.parse(raw) });
+      chromeStorage.set({ [VIDEO_INDEX_KEY]: JSON.parse(raw) });
     }
   });
 }
@@ -94,22 +75,14 @@ const queryClient = createAppQueryClient({
 
 function ExtensionBookmarksPage() {
   const [entries] = useStore(videoIndexStore);
-  const [username, setUsername] = useState<string>();
+  const [username, setUsername] = useState(initialUsername);
   const { theme, cycle, Icon } = useTheme();
   const sync = useVideoSync();
   const [showLogin, setShowLogin] = useState(false);
 
-  useEffect(() => {
-    getStorage(["username"]).then((result) => {
-      setUsername(result["username"] as string | undefined);
-    });
-  }, []);
-
   const handleLogout = async () => {
     await orpc.auth.logout.call({});
-    await new Promise<void>((resolve) =>
-      chrome.storage.local.remove(["session-token", "username"], resolve),
-    );
+    await chromeStorage.remove(["session-token", "username"]);
     setUsername(undefined);
     sync.refetch();
   };
@@ -132,7 +105,7 @@ function ExtensionBookmarksPage() {
               data-testid="header-menu"
               className="flex h-7 w-7 items-center justify-center rounded text-muted-foreground hover:bg-muted"
             >
-              <EllipsisVertical className="h-4 w-4" />
+              <EllipsisVertical className="size-4" />
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-44">
               <DropdownMenuItem
@@ -142,7 +115,7 @@ function ExtensionBookmarksPage() {
                 }}
                 className="gap-2"
               >
-                <Icon className="h-4 w-4" />
+                <Icon className="size-4" />
                 <span className="capitalize">{theme}</span>
               </DropdownMenuItem>
               <div className="my-1 h-px bg-border" />
@@ -152,7 +125,7 @@ function ExtensionBookmarksPage() {
                   onSelect={handleLogout}
                   className="gap-2"
                 >
-                  <LogOut className="h-4 w-4" />
+                  <LogOut className="size-4" />
                   Sign out
                 </DropdownMenuItem>
               ) : (
@@ -161,7 +134,7 @@ function ExtensionBookmarksPage() {
                   onSelect={() => setShowLogin(true)}
                   className="gap-2"
                 >
-                  <LogIn className="h-4 w-4" />
+                  <LogIn className="size-4" />
                   Sign in
                 </DropdownMenuItem>
               )}
@@ -174,7 +147,7 @@ function ExtensionBookmarksPage() {
         onOpenChange={setShowLogin}
         onLogin={async (input) => {
           const { token } = await orpc.auth.login.call(input);
-          chrome.storage.local.set({
+          await chromeStorage.set({
             "session-token": token,
             username: input.username,
           });
@@ -186,11 +159,7 @@ function ExtensionBookmarksPage() {
       <main className="flex-1 overflow-auto">
         <BookmarksPage
           entries={entries}
-          onVideoClick={(youtubeId) => {
-            chrome.tabs.create({
-              url: `https://www.youtube.com/watch?v=${youtubeId}`,
-            });
-          }}
+          videoHref={(id) => `https://www.youtube.com/watch?v=${id}`}
           sync={sync}
         />
       </main>
@@ -203,10 +172,12 @@ function ExtensionBookmarksPage() {
 bridgeChromeStorage().then(() => {
   createRoot(document.getElementById("root")!).render(
     <StrictMode>
-      <QueryClientProvider client={queryClient}>
-        <ExtensionBookmarksPage />
-        <Toaster position="top-right" richColors />
-      </QueryClientProvider>
+      <MemoryRouter>
+        <QueryClientProvider client={queryClient}>
+          <ExtensionBookmarksPage />
+          <Toaster position="top-right" richColors />
+        </QueryClientProvider>
+      </MemoryRouter>
     </StrictMode>,
   );
 });

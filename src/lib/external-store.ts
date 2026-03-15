@@ -33,6 +33,10 @@ function createExternalStore<T>(initialValue: T): ExternalStore<T> {
   };
 }
 
+export function storeEventName(key: string) {
+  return `zamak:store:${key}`;
+}
+
 export function createLocalStorageStore<T>(
   key: string,
   defaultValue: T,
@@ -52,7 +56,7 @@ export function createLocalStorageStore<T>(
     set(value) {
       inner.set(value);
       localStorage.setItem(key, JSON.stringify(inner.get()));
-      window.dispatchEvent(new Event(`zamak:store:${key}`));
+      window.dispatchEvent(new Event(storeEventName(key)));
     },
     subscribe: inner.subscribe,
   };
