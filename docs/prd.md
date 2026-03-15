@@ -97,6 +97,7 @@ A web app for language learning via YouTube subtitles. Watch videos with dual ca
 - [x] feat: web app as browser client — retire server-rendered video-list in favor of client storage
   - [x] video list (`/`): replaced with `BookmarksPage` + `useVideoSync`, import moved to header menu (saves to IndexedDB)
   - [x] video viewer: `sessionOnly` flag, loads from IndexedDB
+- [x] feat: AI integration help page — link from the "AI prompt" dropdown label to `docs/ai-integration.md`;
 
 ## TODO
 
@@ -116,20 +117,17 @@ A web app for language learning via YouTube subtitles. Watch videos with dual ca
 
 ## TODO: Backlog
 
+- [ ] feat: Bookmark export — export to import bookmarks for Anki study
 - [ ] chore: rename worker `ytsub-v5` → `zamak` — update `wrangler.jsonc` name, re-set secrets on new worker, delete old worker, update CI artifact name and docs
-- [ ] chore: consolidate `docs/skills/*` into `docs/eval/README.md`
-- [ ] feat: AI integration help page — link from the "AI prompt" dropdown label to `docs/ai-integration.md`; record a short screen-recording (GIF or MP4) of the copy→paste→import flow and embed in the doc
+- [ ] chore: AI integration help page: record a short screen-recording (GIF or MP4) of the copy→paste→import flow and embed in the doc
 - [ ] fix: adjust prompt to be language independent (currently assumes korean)
+- [ ] chore: document and log AI prompt eval results (`docs/skills/eval/SKILL.md`) (consolidate `docs/skills/*` into `docs/eval/README.md`)
 - [ ] feat: bookmark approval flow — inline approve/reject buttons for `pending` bookmarks in viewer
 - [ ] feat: bookmark list page — browse/search all bookmarks across videos
 - [ ] Full-text search — search across captions and bookmarks (D1 FTS or LIKE)
 - [ ] Keyboard shortcuts — space (play/pause), arrow keys (prev/next caption), etc.
 - [ ] Typing practice (v3/v4 had this)
+- [ ] feat: actually integrate AI directly within app
 - [ ] feat: repeat/loop mode — loop a section between two caption timestamps
-- [ ] chore: unit-testable API layer — swap `cloudflare:workers` env + D1 drizzle adapter for local SQLite (e.g. `better-sqlite3`) so RPC handlers can be tested directly without spinning up wrangler/Playwright
 - [ ] refactor: use `sql` template for `createdAt` schema defaults instead of string literal — avoids Drizzle binding `(datetime('now'))` as a param, reducing bind count per row and allowing larger batch sizes
-- [ ] feat: repeatable eval process for ytsub agent skill — run skill against sample videos, check for common failure modes (wrong offsets, API errors, subtitle quality issues, payload format), track success rate across runs
-- [ ] feat: Bookmark export — export to import bookmarks for Anki study
-- [ ] test: test skills/scripts
-- [ ] rework "Bookmarked Videos" heading/framing — home page is just "Videos"; empty state text assumes extension but web app uses import/sync
-- [ ] chore: document and log AI prompt eval results (`docs/skills/eval/SKILL.md`)
+- [ ] chore: rework "Bookmarked Videos" heading/framing — home page is just "Videos"; empty state text assumes extension but web app uses import/sync
