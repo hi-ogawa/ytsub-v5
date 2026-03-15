@@ -1,9 +1,6 @@
-const DEFAULT_SERVER_URL = "https://ytsub-v5.hiroshi.workers.dev";
+declare const __SERVER_URL__: string | undefined;
 
 /** Runtime-overridable server URL. Set `globalThis.__zamakServerUrl` before import to override. */
 export function getServerUrl(): string {
-  return (
-    ((globalThis as Record<string, unknown>).__zamakServerUrl as string) ??
-    DEFAULT_SERVER_URL
-  );
+  return (globalThis as any).__zamakServerUrl ?? __SERVER_URL__;
 }

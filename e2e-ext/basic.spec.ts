@@ -90,64 +90,37 @@ test.skip("video page", async ({ page }) => {
   });
 });
 
-test("bookmarks page loads", async ({ page, extensionId }) => {
+test("bookmarks page: load, login, logout", async ({ page, extensionId }) => {
+  await setupDb({ seed: true });
   await gotoBookmarks(page, extensionId);
+
+  // Page loads with empty state
   await expect(page.locator("text=Zamak")).toBeVisible();
   await expect(page.getByText("No bookmarked videos yet")).toBeVisible();
-});
 
-test.describe("bookmarks auth", () => {
-  test.beforeEach(async () => {
-    await setupDb({ seed: true });
-  });
+  // Open login dialog via menu
+  await page.getByTestId("header-menu").click();
+  await page.getByTestId("sign-in").click();
+  await expect(page.getByTestId("login-dialog")).toBeVisible();
 
-  test("sign in via menu opens login dialog", async ({ page, extensionId }) => {
-    await gotoBookmarks(page, extensionId);
+  // Invalid login shows error
+  await page.getByPlaceholder("Username").fill("nobody");
+  await page.getByPlaceholder("Password").fill("wrongpassword");
+  await page.getByTestId("login-submit").click();
+  await expect(page.getByTestId("login-error")).toBeVisible();
 
+  // Valid login closes dialog and shows username
+  await page.getByPlaceholder("Username").fill("dev");
+  await page.getByPlaceholder("Password").fill("devpassword");
+  await page.getByTestId("login-submit").click();
+  await expect(page.getByTestId("login-dialog")).not.toBeVisible();
+  await expect(page.getByTestId("auth-username")).toHaveText("dev");
+
+  // Logout via menu
+  await page.getByTestId("header-menu").click();
+  await page.getByTestId("sign-out").click();
+  await expect(async () => {
     await page.getByTestId("header-menu").click();
-    await page.getByTestId("sign-in").click();
-
-    await expect(page.getByTestId("login-dialog")).toBeVisible();
-    await expect(page.getByPlaceholder("Username")).toBeVisible();
-  });
-
-  test("login and logout flow", async ({ page, extensionId }) => {
-    await gotoBookmarks(page, extensionId);
-
-    // Open login dialog
-    await page.getByTestId("header-menu").click();
-    await page.getByTestId("sign-in").click();
-
-    // Fill login form with seed user
-    await page.getByPlaceholder("Username").fill("dev");
-    await page.getByPlaceholder("Password").fill("devpassword");
-    await page.getByTestId("login-submit").click();
-
-    // Dialog should close, username should appear in header
-    await expect(page.getByTestId("login-dialog")).not.toBeVisible();
-    await expect(page.getByTestId("auth-username")).toHaveText("dev");
-
-    // Logout via menu
-    await page.getByTestId("header-menu").click();
-    await page.getByTestId("sign-out").click();
-
-    // Wait for auth state to fully update by polling the menu
-    await expect(async () => {
-      await page.getByTestId("header-menu").click();
-      await expect(page.getByTestId("sign-in")).toBeVisible();
-    }).toPass({ timeout: 10000 });
-  });
-
-  test("invalid login shows error", async ({ page, extensionId }) => {
-    await gotoBookmarks(page, extensionId);
-
-    await page.getByTestId("header-menu").click();
-    await page.getByTestId("sign-in").click();
-
-    await page.getByPlaceholder("Username").fill("nobody");
-    await page.getByPlaceholder("Password").fill("wrongpassword");
-    await page.getByTestId("login-submit").click();
-
-    await expect(page.getByTestId("login-error")).toBeVisible();
-  });
+    await expect(page.getByTestId("sign-in")).toBeVisible();
+  }).toPass({ timeout: 10000 });
 });
