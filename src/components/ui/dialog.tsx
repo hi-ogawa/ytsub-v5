@@ -1,4 +1,4 @@
-import { Dialog as DialogPrimitive } from "radix-ui";
+import { Dialog as DialogPrimitive, VisuallyHidden } from "radix-ui";
 import type { ComponentProps } from "react";
 import { usePortalContainer } from "./portal-container.tsx";
 
@@ -33,6 +33,9 @@ function DialogContent({
         }
         {...props}
       >
+        <VisuallyHidden.Root asChild>
+          <DialogPrimitive.Description />
+        </VisuallyHidden.Root>
         {children}
       </DialogPrimitive.Content>
     </DialogPrimitive.Portal>
