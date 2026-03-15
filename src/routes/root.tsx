@@ -81,7 +81,7 @@ export function DevLayout() {
               onClick={() => setShowLogin(true)}
               className="flex items-center gap-1 rounded px-2 py-1 text-xs text-muted-foreground hover:bg-muted"
             >
-              <LogIn className="h-3 w-3" />
+              <LogIn className="size-3" />
               Sign in
             </button>
           )}
@@ -122,7 +122,7 @@ function HeaderMenu({ authenticated }: { authenticated: boolean }) {
           data-testid="header-menu"
           className="flex h-7 w-7 items-center justify-center rounded text-muted-foreground hover:bg-muted"
         >
-          <EllipsisVertical className="h-4 w-4" />
+          <EllipsisVertical className="size-4" />
         </DropdownMenuTrigger>
         <DropdownMenuContent className="w-36">
           {authenticated && (
@@ -130,7 +130,7 @@ function HeaderMenu({ authenticated }: { authenticated: boolean }) {
               onSelect={() => setShowImport(true)}
               className="gap-2"
             >
-              <Upload className="h-4 w-4" />
+              <Upload className="size-4" />
               Import
             </DropdownMenuItem>
           )}
@@ -144,7 +144,7 @@ function HeaderMenu({ authenticated }: { authenticated: boolean }) {
               }}
               className="gap-2"
             >
-              <Database className="h-4 w-4" />
+              <Database className="size-4" />
               Dev Bootstrap
             </DropdownMenuItem>
           )}
@@ -157,7 +157,7 @@ function HeaderMenu({ authenticated }: { authenticated: boolean }) {
             }}
             className="gap-2"
           >
-            <Icon className="h-4 w-4" />
+            <Icon className="size-4" />
             <span className="capitalize">{theme}</span>
           </DropdownMenuItem>
           {authenticated && (

@@ -1,11 +1,9 @@
-import {
-  QueryClient,
-  QueryClientProvider,
-  useQuery,
-} from "@tanstack/react-query";
+import { QueryClientProvider, useQuery } from "@tanstack/react-query";
 import { EllipsisVertical, LogIn, LogOut } from "lucide-react";
 import { StrictMode, useState } from "react";
 import { createRoot } from "react-dom/client";
+import { MemoryRouter } from "react-router";
+import { Toaster } from "sonner";
 import { BookmarksPage } from "../components/bookmarks-page.tsx";
 import { LoginDialog } from "../components/login-dialog.tsx";
 import {
@@ -14,6 +12,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "../components/ui/dropdown-menu.tsx";
+import { createAppQueryClient } from "../lib/query-client.ts";
 import { useVideoSync } from "../lib/sync.ts";
 import { useTheme } from "../lib/theme.ts";
 import type { VideoIndexEntry } from "../lib/video-index.ts";
@@ -38,7 +37,7 @@ setRpcConfig({
   },
 });
 
-const queryClient = new QueryClient({
+const queryClient = createAppQueryClient({
   defaultOptions: { queries: { refetchOnWindowFocus: false } },
 });
 
@@ -81,7 +80,7 @@ function ExtensionBookmarksPage() {
               data-testid="header-menu"
               className="flex h-7 w-7 items-center justify-center rounded text-muted-foreground hover:bg-muted"
             >
-              <EllipsisVertical className="h-4 w-4" />
+              <EllipsisVertical className="size-4" />
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-44">
               <DropdownMenuItem
@@ -91,7 +90,7 @@ function ExtensionBookmarksPage() {
                 }}
                 className="gap-2"
               >
-                <Icon className="h-4 w-4" />
+                <Icon className="size-4" />
                 <span className="capitalize">{theme}</span>
               </DropdownMenuItem>
               <div className="my-1 h-px bg-border" />
@@ -101,7 +100,7 @@ function ExtensionBookmarksPage() {
                   onSelect={handleLogout}
                   className="gap-2"
                 >
-                  <LogOut className="h-4 w-4" />
+                  <LogOut className="size-4" />
                   Sign out
                 </DropdownMenuItem>
               ) : (
@@ -110,7 +109,7 @@ function ExtensionBookmarksPage() {
                   onSelect={() => setShowLogin(true)}
                   className="gap-2"
                 >
-                  <LogIn className="h-4 w-4" />
+                  <LogIn className="size-4" />
                   Sign in
                 </DropdownMenuItem>
               )}
@@ -135,11 +134,7 @@ function ExtensionBookmarksPage() {
       <main className="flex-1 overflow-auto">
         <BookmarksPage
           entries={entries}
-          onVideoClick={(youtubeId) => {
-            chrome.tabs.create({
-              url: `https://www.youtube.com/watch?v=${youtubeId}`,
-            });
-          }}
+          videoHref={(id) => `https://www.youtube.com/watch?v=${id}`}
           sync={sync}
         />
       </main>
@@ -149,8 +144,11 @@ function ExtensionBookmarksPage() {
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <QueryClientProvider client={queryClient}>
-      <ExtensionBookmarksPage />
-    </QueryClientProvider>
+    <MemoryRouter>
+      <QueryClientProvider client={queryClient}>
+        <ExtensionBookmarksPage />
+        <Toaster position="top-right" richColors />
+      </QueryClientProvider>
+    </MemoryRouter>
   </StrictMode>,
 );

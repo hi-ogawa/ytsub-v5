@@ -18,12 +18,12 @@ import { VideoCard } from "./video-card.tsx";
 
 export function BookmarksPage({
   entries,
-  onVideoClick,
+  videoHref,
   onDelete,
   sync,
 }: {
   entries: VideoIndexEntry[];
-  onVideoClick: (youtubeId: string) => void;
+  videoHref: (youtubeId: string) => string;
   onDelete?: (entry: VideoSyncEntry) => void;
   sync?: VideoSyncHandle;
 }) {
@@ -39,7 +39,7 @@ export function BookmarksPage({
       <div className="mb-6 flex items-center gap-2">
         <h1 className="text-2xl font-bold">Bookmarked Videos</h1>
         {sync?.isPending && (
-          <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+          <Loader2 className="size-4 animate-spin text-muted-foreground" />
         )}
         <div className="flex-1" />
       </div>
@@ -54,7 +54,7 @@ export function BookmarksPage({
             <VideoCard
               key={entry.youtubeId}
               youtubeId={entry.youtubeId}
-              href={`https://www.youtube.com/watch?v=${entry.youtubeId}`}
+              href={videoHref(entry.youtubeId)}
               title={entry.title}
               channelName={entry.channelName}
               titleRight={
@@ -80,10 +80,6 @@ export function BookmarksPage({
                   )}
                 </>
               }
-              onClick={(e) => {
-                e.preventDefault();
-                onVideoClick(entry.youtubeId);
-              }}
             />
           ))}
         </div>
@@ -109,7 +105,7 @@ function CardMenu({
           e.stopPropagation();
         }}
       >
-        <EllipsisVertical className="h-4 w-4" />
+        <EllipsisVertical className="size-4" />
       </DropdownMenuTrigger>
       <DropdownMenuContent
         align="end"
@@ -126,7 +122,7 @@ function CardMenu({
             }
           }}
         >
-          <Trash2 className="mr-2 h-4 w-4" />
+          <Trash2 className="mr-2 size-4" />
           Delete
         </DropdownMenuItem>
       </DropdownMenuContent>
@@ -153,7 +149,7 @@ function SyncBadge({
   if (syncing) {
     return (
       <span className="inline-flex p-1.5" title="Syncing..." {...testAttrs}>
-        <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+        <Loader2 className="size-4 animate-spin text-muted-foreground" />
       </span>
     );
   }
@@ -161,7 +157,7 @@ function SyncBadge({
     case "synced":
       return (
         <span className="inline-flex p-1.5" title="Synced" {...testAttrs}>
-          <CheckCircle2 className="h-4 w-4 text-green-500" />
+          <CheckCircle2 className="size-4 text-green-500" />
         </span>
       );
     case "server-only":
@@ -182,7 +178,7 @@ function SyncBadge({
           }}
           {...testAttrs}
         >
-          <ArrowDownToLine className="h-4 w-4" />
+          <ArrowDownToLine className="size-4" />
         </button>
       );
     case "push":
@@ -203,7 +199,7 @@ function SyncBadge({
           }}
           {...testAttrs}
         >
-          <ArrowUpFromLine className="h-4 w-4" />
+          <ArrowUpFromLine className="size-4" />
         </button>
       );
   }

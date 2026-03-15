@@ -1,5 +1,7 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClientProvider } from "@tanstack/react-query";
 import { createBrowserRouter, RouterProvider } from "react-router";
+import { Toaster } from "sonner";
+import { createAppQueryClient } from "./lib/query-client.ts";
 import { DevFixturesPage } from "./routes/dev-fixtures.tsx";
 import { DevViewerPage } from "./routes/dev-viewer.tsx";
 import { LoginPage, RegisterPage } from "./routes/login.tsx";
@@ -13,7 +15,7 @@ import {
 import { VideoListPage } from "./routes/video-list.tsx";
 import { VideoViewerPage } from "./routes/video-viewer.tsx";
 
-const queryClient = new QueryClient();
+const queryClient = createAppQueryClient();
 
 const router = createBrowserRouter([
   {
@@ -53,6 +55,7 @@ export function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <RouterProvider router={router} />
+      <Toaster position="top-right" richColors />
     </QueryClientProvider>
   );
 }
