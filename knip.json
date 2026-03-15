@@ -3,7 +3,6 @@
     "src/server/index.ts",
     "src/extension/content.tsx",
     "src/extension/bookmarks.tsx",
-    "src/extension/rpc.ts",
     "scripts/*.ts"
   ],
   "project": ["src/**/*.{ts,tsx}", "e2e/**/*.ts"],

@@ -1,7 +1,8 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClientProvider } from "@tanstack/react-query";
 import { EllipsisVertical, LogIn, LogOut } from "lucide-react";
 import { StrictMode, useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
+import { Toaster } from "sonner";
 import { BookmarksPage } from "../components/bookmarks-page.tsx";
 import { LoginDialog } from "../components/login-dialog.tsx";
 import {
@@ -10,6 +11,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "../components/ui/dropdown-menu.tsx";
+import { createAppQueryClient } from "../lib/query-client.ts";
 import { useVideoSync } from "../lib/sync.ts";
 import { useTheme } from "../lib/theme.ts";
 import type { VideoIndexEntry } from "../lib/video-index.ts";
@@ -59,7 +61,7 @@ function getStorage(keys: string | string[]): Promise<Record<string, unknown>> {
   return new Promise((resolve) => chrome.storage.local.get(keys, resolve));
 }
 
-const queryClient = new QueryClient({
+const queryClient = createAppQueryClient({
   defaultOptions: { queries: { refetchOnWindowFocus: false } },
 });
 
@@ -174,6 +176,7 @@ createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
       <ExtensionBookmarksPage />
+      <Toaster position="top-right" richColors />
     </QueryClientProvider>
   </StrictMode>,
 );
