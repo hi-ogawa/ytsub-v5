@@ -61,6 +61,10 @@ test("login with wrong then correct password", async ({ page }) => {
   await page.getByPlaceholder("Password").fill("wrong");
   await page.getByRole("button", { name: "Login" }).click();
   await expect(page.getByText("Invalid username or password")).toBeVisible();
+  // Login errors use inline message, not global toast
+  await expect(
+    page.locator("[data-sonner-toast][data-type='error']"),
+  ).not.toBeVisible();
 
   await page.getByPlaceholder("Password").fill("devpassword");
   await page.getByRole("button", { name: "Login" }).click();
@@ -119,4 +123,60 @@ test.describe("video list and navigation", () => {
     await page.goto("/");
     await expect(page).toHaveURL("/login");
   });
+
+  test("shows toast on delete mutation error", async ({ page }) => {
+    // Intercept deleteVideo API and return 500
+    await page.route("**/api/videos/deleteVideo", (route) =>
+      route.fulfill({
+        status: 500,
+        contentType: "application/json",
+        body: JSON.stringify({ json: { message: "Server error" } }),
+      }),
+    );
+
+    const card = page.getByRole("link", { name: /cloud palace/ });
+    await expect(card).toBeVisible();
+
+    // Trigger delete (accept confirmation dialog)
+    page.once("dialog", (dialog) => dialog.accept());
+    await card.getByTestId("video-card-menu").click();
+    await page.getByRole("menuitem", { name: /Delete/ }).click();
+
+    // Error toast should appear
+    const toast = page.locator("[data-sonner-toast][data-type='error']");
+    await expect(toast).toBeVisible();
+  });
+});
+
+test("theme toggle: cycle, persist, and system default", async ({ page }) => {
+  await page.goto("/");
+  const menu = page.getByTestId("header-menu");
+  const theme = page.getByTestId("theme-toggle");
+
+  // Open menu — initial: system (no localStorage)
+  await menu.click();
+  await expect(theme).toHaveAttribute("data-theme", "system");
+  await expect(theme).toHaveText(/system/i);
+  expect(
+    await page.evaluate(() => localStorage.getItem("zamak:theme")),
+  ).toBeNull();
+
+  // system → light → dark (dropdown stays open)
+  await theme.click();
+  await expect(theme).toHaveAttribute("data-theme", "light");
+  await theme.click();
+  await expect(theme).toHaveAttribute("data-theme", "dark");
+  await expect(page.locator("html")).toHaveClass(/dark/);
+
+  // Persists across reload
+  await page.reload();
+  await expect(page.locator("html")).toHaveClass(/dark/);
+
+  // dark → system clears localStorage
+  await menu.click();
+  await theme.click();
+  await expect(theme).toHaveAttribute("data-theme", "system");
+  expect(
+    await page.evaluate(() => localStorage.getItem("zamak:theme")),
+  ).toBeNull();
 });
