@@ -125,13 +125,15 @@ function HeaderMenu({ authenticated }: { authenticated: boolean }) {
           <EllipsisVertical className="h-4 w-4" />
         </DropdownMenuTrigger>
         <DropdownMenuContent className="w-36">
-          <DropdownMenuItem
-            onSelect={() => setShowImport(true)}
-            className="gap-2"
-          >
-            <Upload className="h-4 w-4" />
-            Import
-          </DropdownMenuItem>
+          {authenticated && (
+            <DropdownMenuItem
+              onSelect={() => setShowImport(true)}
+              className="gap-2"
+            >
+              <Upload className="h-4 w-4" />
+              Import
+            </DropdownMenuItem>
+          )}
           {import.meta.env.DEV && (
             <DropdownMenuItem
               data-testid="bootstrap-fixtures"
@@ -165,7 +167,9 @@ function HeaderMenu({ authenticated }: { authenticated: boolean }) {
           )}
         </DropdownMenuContent>
       </DropdownMenu>
-      <ImportDialog open={showImport} onOpenChange={setShowImport} />
+      {authenticated && (
+        <ImportDialog open={showImport} onOpenChange={setShowImport} />
+      )}
     </>
   );
 }
