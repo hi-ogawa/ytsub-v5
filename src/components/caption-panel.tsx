@@ -389,7 +389,7 @@ type CaptionPanelProps = {
   player?: YTPlayer;
   fetchJson3: (track: YouTubeCaptionTrack) => Promise<Json3File>;
   videoMeta: YouTubeVideoData;
-  sync?: SyncStatus;
+  sync: SyncStatus;
   sessionOnly?: boolean;
 };
 
@@ -629,7 +629,7 @@ function CaptionPanelWithStore({
   player?: YTPlayer;
   onSelectTracks: (v1?: string, v2?: string) => void;
   onSelectStrategy: (s: MergeStrategy) => void;
-  sync?: SyncStatus;
+  sync: SyncStatus;
 }) {
   useSyncExternalStore(store.subscribe, () => store.version);
 
@@ -687,7 +687,7 @@ function SettingsDropdown({
   autoScroll: boolean;
   onSetAutoScroll: (value: boolean | ((prev: boolean) => boolean)) => void;
   onSelectStrategy: (s: MergeStrategy) => void;
-  sync?: SyncStatus;
+  sync: SyncStatus;
 }) {
   const hasBookmarks = store.bookmarks.length > 0;
 
@@ -700,7 +700,7 @@ function SettingsDropdown({
         <EllipsisVertical className="size-4" />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        {sync && <SyncMenuItem sync={sync} />}
+        <SyncMenuItem sync={sync} />
         <DropdownMenuItem
           data-checked={autoScroll}
           onSelect={(e) => {
