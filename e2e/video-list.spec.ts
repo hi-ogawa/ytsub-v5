@@ -3,7 +3,7 @@ import { expect, test } from "@playwright/test";
 import { login, setupDb } from "./helper.ts";
 
 test("bootstrap fixtures seeds video index", async ({ page }) => {
-  await setupDb();
+  await setupDb({ seed: true });
   await login(page);
   await page.goto("/");
   await expect(page.getByText("No bookmarked videos yet")).toBeVisible();
@@ -66,7 +66,7 @@ test("import JSON file adds video to list with captions and bookmarks", async ({
     "scripts/db-seed-json/7GU_VQfgMT0/import.json",
   );
 
-  await setupDb();
+  await setupDb({ seed: true });
   await login(page);
 
   // Open import dialog from header menu

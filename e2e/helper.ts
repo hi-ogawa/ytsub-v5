@@ -11,42 +11,12 @@ export async function setupDb(options: { seed?: boolean } = {}) {
   }
 }
 
-/**
- * Log in via the UI.
- * When seed data is loaded, logs in as the seed user (dev / devpassword).
- * Otherwise registers a fresh test user.
- */
-export async function login(
-  page: Page,
-  opts?: { username?: string; password?: string },
-) {
-  const username = opts?.username ?? "dev";
-  const password = opts?.password ?? "devpassword";
-
+/** Log in as the seed user (requires setupDb({ seed: true }) beforehand). */
+export async function login(page: Page) {
   await page.goto("/login");
-  await page.getByPlaceholder("Username").fill(username);
-  await page.getByPlaceholder("Password").fill(password);
+  await page.getByPlaceholder("Username").fill("dev");
+  await page.getByPlaceholder("Password").fill("devpassword");
   await page.getByRole("button", { name: "Login" }).click();
-
-  // If login fails (no seed user), register instead
-  const nav = page.waitForURL("/", { timeout: 3000 }).catch(() => null);
-  const err = page
-    .getByText("Invalid username or password")
-    .waitFor({ timeout: 3000 })
-    .catch(() => null);
-
-  const result = await Promise.race([
-    nav.then(() => "ok" as const),
-    err.then(() => "error" as const),
-  ]);
-
-  if (result === "error") {
-    await page.goto("/register");
-    await page.getByPlaceholder("Username").fill(username);
-    await page.getByPlaceholder("Password").fill(password);
-    await page.getByRole("button", { name: "Sign up" }).click();
-  }
-
   await expect(page).toHaveURL("/");
 }
 
