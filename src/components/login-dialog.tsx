@@ -21,7 +21,7 @@ export function LoginDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent data-testid="login-dialog" aria-describedby={undefined}>
+      <DialogContent data-testid="login-dialog">
         <DialogTitle>Sign in</DialogTitle>
         <LoginForm
           mutation={mutation}

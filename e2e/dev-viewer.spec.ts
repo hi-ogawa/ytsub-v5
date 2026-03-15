@@ -1,53 +1,32 @@
-import { expect, type Page, test } from "@playwright/test";
-import { login, setupDb } from "./helper.ts";
-
-/** Open panel and select ko/en tracks so caption rows appear */
-async function openPanelWithTracks(page: Page) {
-  await page.getByTitle("Show captions").click();
-  const selects = page.locator("select");
-  await selects.nth(0).selectOption(".ko");
-  await selects.nth(1).selectOption(".en");
-  await expect(page.locator("[data-index='0']")).toBeVisible();
-}
-
-/** Select text in a caption row and create a bookmark */
-async function createBookmarkAt(
-  page: Page,
-  index: number,
-  start: number,
-  end: number,
-) {
-  await page.evaluate(
-    ({ index, start, end }) => {
-      const sideEl = document
-        .querySelector(`[data-index='${index}']`)!
-        .querySelector("[data-side='0']")!;
-      const textSpan = sideEl.querySelector("[data-offset]")!;
-      const textNode = textSpan.firstChild!;
-      const range = document.createRange();
-      range.setStart(textNode, start);
-      range.setEnd(textNode, end);
-      const selection = document.getSelection()!;
-      selection.removeAllRanges();
-      selection.addRange(range);
-    },
-    { index, start, end },
-  );
-  await page.getByRole("button", { name: "Create bookmark" }).click();
-}
+import { expect, test } from "@playwright/test";
+import {
+  createBookmarkAt,
+  openPanelWithTracks,
+  selectTextInCaption,
+} from "./helper.ts";
 
 test.describe("dev-viewer caption panel", () => {
   test.beforeEach(async ({ page }) => {
-    await login(page);
     await page.goto("/dev/videos/7GU_VQfgMT0");
   });
 
-  test("FAB toggles caption panel open and closed", async ({ page }) => {
+  test("FAB toggles panel, rows render with timestamps", async ({ page }) => {
     // Panel starts closed — no caption rows visible
     await expect(page.locator("[data-index='0']")).not.toBeVisible();
 
     // Open panel and select tracks
     await openPanelWithTracks(page);
+
+    // Multiple rows rendered (fixture has many cues)
+    await expect(page.locator("[data-index='5']")).toBeVisible();
+
+    // Rows show timestamp and dual-column text
+    const row = page.locator("[data-index='0']");
+    await expect(row.locator("text=/\\d+:\\d{2} – \\d+:\\d{2}/")).toBeVisible();
+    const cols = row.locator(".flex-1");
+    await expect(cols).toHaveCount(2);
+    await expect(cols.nth(0)).not.toHaveText("");
+    await expect(cols.nth(1)).not.toHaveText("");
 
     // Close panel via FAB
     await page.getByTitle("Hide captions").click();
@@ -84,37 +63,25 @@ test.describe("dev-viewer caption panel", () => {
     await expect(page.getByTitle("Hide captions")).toBeVisible();
   });
 
-  test("panel shows merged caption rows from fixture data", async ({
+  test("track selection: default empty, select tracks, switch language", async ({
     page,
   }) => {
-    await openPanelWithTracks(page);
-
-    // Multiple rows rendered (fixture has many cues)
-    await expect(page.locator("[data-index='5']")).toBeVisible();
-  });
-
-  test("no tracks selected by default without preference", async ({ page }) => {
     await page.getByTitle("Show captions").click();
 
     // Track pickers default to "None"
     const selects = page.locator("select");
     await expect(selects.nth(0)).toHaveValue("");
     await expect(selects.nth(1)).toHaveValue("");
-
-    // No caption rows rendered
     await expect(page.locator("[data-index='0']")).not.toBeVisible();
-  });
 
-  test("switching language reloads captions", async ({ page }) => {
-    await openPanelWithTracks(page);
+    // Select tracks — captions appear
+    await selects.nth(0).selectOption(".ko");
+    await selects.nth(1).selectOption(".en");
+    await expect(page.locator("[data-index='0']")).toBeVisible();
 
-    // Grab initial text from first row
+    // Switch lang2 from en to ja — text changes
     const firstRowText = await page.locator("[data-index='0']").textContent();
-
-    // Switch lang2 from en to ja
-    await page.locator("select").nth(1).selectOption(".ja");
-
-    // Wait for captions to reload — text should change
+    await selects.nth(1).selectOption(".ja");
     await expect(page.locator("[data-index='0']")).not.toHaveText(
       firstRowText!,
     );
@@ -255,41 +222,21 @@ test.describe("dev-viewer caption panel", () => {
     expect(reopenedBox.width).toBe(500);
   });
 
-  test("caption rows show timestamp and dual-column text", async ({ page }) => {
+  test("manual bookmark: cancel selection, create, highlight, and export", async ({
+    page,
+  }) => {
     await openPanelWithTracks(page);
 
-    const row = page.locator("[data-index='0']");
+    // Select text — cancel hides FAB
+    await selectTextInCaption(page, { index: 0, start: 0, end: 3 });
+    await expect(page.getByRole("button", { name: "Cancel" })).toBeVisible();
+    await page.getByRole("button", { name: "Cancel" }).click();
+    await expect(
+      page.getByRole("button", { name: "Create bookmark" }),
+    ).not.toBeVisible();
 
-    // Timestamp format: m:ss – m:ss
-    await expect(row.locator("text=/\\d+:\\d{2} – \\d+:\\d{2}/")).toBeVisible();
-
-    // Two text columns (border-r separates them)
-    const cols = row.locator(".flex-1");
-    await expect(cols).toHaveCount(2);
-    // Both columns should have text content
-    await expect(cols.nth(0)).not.toHaveText("");
-    await expect(cols.nth(1)).not.toHaveText("");
-  });
-
-  test("manual bookmark: create, highlight, and export", async ({ page }) => {
-    await openPanelWithTracks(page);
-
-    // Select "꼬집어" in first row (chars 0-3 in "꼬집어 봐 뜬 꿈인 것 같아")
-    await page.evaluate(() => {
-      const sideEl = document
-        .querySelector("[data-index='0']")!
-        .querySelector("[data-side='0']")!;
-      const textSpan = sideEl.querySelector("[data-offset]")!;
-      const textNode = textSpan.firstChild!;
-      const range = document.createRange();
-      range.setStart(textNode, 0);
-      range.setEnd(textNode, 3);
-      const selection = document.getSelection()!;
-      selection.removeAllRanges();
-      selection.addRange(range);
-    });
-
-    // FAB appears → create bookmark
+    // Select again and create bookmark
+    await selectTextInCaption(page, { index: 0, start: 0, end: 3 });
     await expect(
       page.getByRole("button", { name: "Create bookmark" }),
     ).toBeVisible();
@@ -329,20 +276,7 @@ test.describe("dev-viewer caption panel", () => {
     await openPanelWithTracks(page);
 
     // Create a bookmark first
-    await page.evaluate(() => {
-      const sideEl = document
-        .querySelector("[data-index='0']")!
-        .querySelector("[data-side='0']")!;
-      const textSpan = sideEl.querySelector("[data-offset]")!;
-      const textNode = textSpan.firstChild!;
-      const range = document.createRange();
-      range.setStart(textNode, 0);
-      range.setEnd(textNode, 3);
-      const selection = document.getSelection()!;
-      selection.removeAllRanges();
-      selection.addRange(range);
-    });
-    await page.getByRole("button", { name: "Create bookmark" }).click();
+    await createBookmarkAt(page, { index: 0, start: 0, end: 3 });
 
     // Track selects should be disabled
     const selects = page.locator("select");
@@ -368,20 +302,7 @@ test.describe("dev-viewer caption panel", () => {
     await openPanelWithTracks(page);
 
     // Create a bookmark
-    await page.evaluate(() => {
-      const sideEl = document
-        .querySelector("[data-index='0']")!
-        .querySelector("[data-side='0']")!;
-      const textSpan = sideEl.querySelector("[data-offset]")!;
-      const textNode = textSpan.firstChild!;
-      const range = document.createRange();
-      range.setStart(textNode, 0);
-      range.setEnd(textNode, 3);
-      const selection = document.getSelection()!;
-      selection.removeAllRanges();
-      selection.addRange(range);
-    });
-    await page.getByRole("button", { name: "Create bookmark" }).click();
+    await createBookmarkAt(page, { index: 0, start: 0, end: 3 });
     await expect(
       page.locator("[data-index='0'] .bg-highlight-bg"),
     ).toBeVisible();
@@ -400,75 +321,36 @@ test.describe("dev-viewer caption panel", () => {
     ).toHaveText("꼬집어");
   });
 
-  test("cancel text selection hides FAB", async ({ page }) => {
-    await openPanelWithTracks(page);
-
-    // Select text
-    await page.evaluate(() => {
-      const sideEl = document
-        .querySelector("[data-index='0']")!
-        .querySelector("[data-side='0']")!;
-      const textSpan = sideEl.querySelector("[data-offset]")!;
-      const textNode = textSpan.firstChild!;
-      const range = document.createRange();
-      range.setStart(textNode, 0);
-      range.setEnd(textNode, 3);
-      const selection = document.getSelection()!;
-      selection.removeAllRanges();
-      selection.addRange(range);
-    });
-
-    await expect(page.getByRole("button", { name: "Cancel" })).toBeVisible();
-
-    // Cancel
-    await page.getByRole("button", { name: "Cancel" }).click();
-    await expect(
-      page.getByRole("button", { name: "Create bookmark" }),
-    ).not.toBeVisible();
-  });
-
-  test("tab bar shows captions and bookmarks tabs", async ({ page }) => {
-    await openPanelWithTracks(page);
-    const panel = page.getByTestId("resizable-panel");
-    await expect(panel.getByRole("button", { name: "Captions" })).toBeVisible();
-    await expect(
-      panel.getByRole("button", { name: /Bookmarks/ }),
-    ).toBeVisible();
-  });
-
-  test("bookmarks tab shows empty state", async ({ page }) => {
-    await openPanelWithTracks(page);
-    const panel = page.getByTestId("resizable-panel");
-    await panel.getByRole("button", { name: /Bookmarks/ }).click();
-    await expect(page.getByText("No bookmarks yet")).toBeVisible();
-  });
-
-  test("bookmarks tab shows created bookmark with caption context", async ({
+  test("bookmarks tab: empty state, create bookmark, count and context", async ({
     page,
   }) => {
     await openPanelWithTracks(page);
     const panel = page.getByTestId("resizable-panel");
-    // Create bookmark "꼬집어" at idx=0
-    await createBookmarkAt(page, 0, 0, 3);
 
-    // Switch to bookmarks tab
+    // Tab bar visible
+    await expect(panel.getByRole("button", { name: "Captions" })).toBeVisible();
+    await expect(
+      panel.getByRole("button", { name: /Bookmarks/ }),
+    ).toBeVisible();
+
+    // Empty state
     await panel.getByRole("button", { name: /Bookmarks/ }).click();
-    // Bookmark card should be visible
+    await expect(page.getByText("No bookmarks yet")).toBeVisible();
+
+    // Create bookmark and verify count
+    await panel.getByRole("button", { name: "Captions" }).click();
+    await createBookmarkAt(page, { index: 0, start: 0, end: 3 });
+    await expect(
+      panel.getByRole("button", { name: "Bookmarks (1)" }),
+    ).toBeVisible();
+
+    // Bookmark card with caption context
+    await panel.getByRole("button", { name: /Bookmarks/ }).click();
     const bookmarkCard = page.locator("[data-bookmark-id]").first();
     await expect(bookmarkCard).toBeVisible();
     await expect(bookmarkCard.getByText("꼬집어").first()).toBeVisible();
-    // Caption context shown
     await expect(
       bookmarkCard.getByText("꼬집어 봐 뜬 꿈인 것 같아"),
-    ).toBeVisible();
-  });
-
-  test("bookmark count shown in tab label", async ({ page }) => {
-    await openPanelWithTracks(page);
-    const panel = page.getByTestId("resizable-panel");
-    await createBookmarkAt(page, 0, 0, 3);
-    await expect(
-      panel.getByRole("button", { name: "Bookmarks (1)" }),
     ).toBeVisible();
   });
 
@@ -482,7 +364,7 @@ test.describe("dev-viewer caption panel", () => {
       page.getByRole("button", { name: "Previous bookmark" }),
     ).not.toBeVisible();
 
-    await createBookmarkAt(page, 0, 0, 3);
+    await createBookmarkAt(page, { index: 0, start: 0, end: 3 });
 
     await expect(
       page.getByRole("button", { name: "Previous bookmark" }),
@@ -497,7 +379,7 @@ test.describe("dev-viewer caption panel", () => {
   }) => {
     await openPanelWithTracks(page);
     const panel = page.getByTestId("resizable-panel");
-    await createBookmarkAt(page, 0, 0, 3);
+    await createBookmarkAt(page, { index: 0, start: 0, end: 3 });
 
     // Switch to bookmarks tab
     await panel.getByRole("button", { name: /Bookmarks/ }).click();
@@ -516,7 +398,7 @@ test.describe("dev-viewer caption panel", () => {
   test("delete bookmark from bookmarks tab", async ({ page }) => {
     await openPanelWithTracks(page);
     const panel = page.getByTestId("resizable-panel");
-    await createBookmarkAt(page, 0, 0, 3);
+    await createBookmarkAt(page, { index: 0, start: 0, end: 3 });
 
     await panel.getByRole("button", { name: /Bookmarks/ }).click();
     await expect(page.locator("[data-bookmark-id]").first()).toBeVisible();
@@ -541,23 +423,9 @@ test.describe("dev-viewer caption panel", () => {
     ).not.toBeVisible();
   });
 
-  test("captions tab preserves scroll after switching tabs", async ({
-    page,
-  }) => {
-    await openPanelWithTracks(page);
-    const panel = page.getByTestId("resizable-panel");
-    await expect(page.locator("[data-index='0']")).toBeVisible();
-
-    // Switch to bookmarks and back
-    await panel.getByRole("button", { name: /Bookmarks/ }).click();
-    await expect(page.getByText("No bookmarks yet")).toBeVisible();
-    await panel.getByRole("button", { name: "Captions" }).click();
-    await expect(page.locator("[data-index='0']")).toBeVisible();
-  });
-
   test("bookmark highlight shows popover on click", async ({ page }) => {
     await openPanelWithTracks(page);
-    await createBookmarkAt(page, 0, 0, 3);
+    await createBookmarkAt(page, { index: 0, start: 0, end: 3 });
 
     // Click the bookmark highlight to open popover
     const highlight = page
@@ -583,7 +451,7 @@ test.describe("dev-viewer caption panel", () => {
   }) => {
     await openPanelWithTracks(page);
     const panel = page.getByTestId("resizable-panel");
-    await createBookmarkAt(page, 0, 0, 3);
+    await createBookmarkAt(page, { index: 0, start: 0, end: 3 });
 
     // Click highlight to open popover
     const highlight = page
@@ -609,135 +477,88 @@ test.describe("dev-viewer caption panel", () => {
     await expect(bookmarkCard).toHaveClass(/flash-highlight/);
   });
 
-  test("creating bookmark populates video-list page via video-index", async ({
+  test("AI pick prompt: copy and import with markdown fence", async ({
     page,
+    context,
   }) => {
+    await context.grantPermissions(["clipboard-read", "clipboard-write"]);
     await openPanelWithTracks(page);
-    await createBookmarkAt(page, 0, 0, 2);
+    await page.getByTitle("Settings").click();
 
-    // Navigate to video list and verify the video card
-    await page.goto("/");
-    const card = page.getByTestId("video-card-7GU_VQfgMT0");
-    await expect(card).toBeVisible();
-    await expect(card.getByTestId("video-card-title")).toHaveText(
-      /cloud palace/,
-    );
-    await expect(card.getByTestId("video-card-channel")).toHaveText("Billlie");
-    await expect(card.getByTestId("video-card-badge")).toHaveText("1 bookmark");
+    // Copy pick prompt
+    await expect(page.getByText("AI prompt")).toBeVisible();
+    await page.getByTitle("Copy prompt").click();
+    const clipboard = await page.evaluate(() => navigator.clipboard.readText());
+    expect(clipboard).toContain("Pick Korean vocabulary");
+    expect(clipboard).toContain("cloud palace");
+    expect(clipboard).toContain("꼬집어 봐 뜬 꿈인 것 같아");
+    expect(clipboard).toContain("captionIndex");
+    expect(clipboard).toContain("```json");
 
-    // Create another bookmark, verify count updates on revisit
-    await page.goto("/dev/videos/7GU_VQfgMT0");
-    // Panel stays open (FAB state persisted from earlier in this test)
-    await expect(page.locator("[data-index='0']")).toBeVisible();
-    await createBookmarkAt(page, 1, 0, 2);
-    await page.goto("/");
-    await expect(
-      page
-        .getByTestId("video-card-7GU_VQfgMT0")
-        .getByTestId("video-card-badge"),
-    ).toHaveText("2 bookmarks");
-  });
-});
+    // Import result wrapped in markdown code fence
+    const wrapped = `\`\`\`json
+[{"captionIndex": 0, "text": "꼬집어", "translation": "to pinch", "etymology": "" },
+ {"captionIndex": 1, "text": "밤새", "translation": "all night", "etymology": "" }]
+\`\`\``;
+    page.on("dialog", (dialog) => {
+      if (dialog.type() === "prompt") dialog.accept(wrapped);
+      else dialog.accept();
+    });
+    await page.getByText("Import AI result").click();
 
-test.describe("dev-viewer sync", () => {
-  test.beforeEach(async ({ page }) => {
-    await setupDb({ seed: true });
-    await login(page);
-    await page.goto("/dev/videos/7GU_VQfgMT0");
-  });
-
-  test("sync button shows push state after creating bookmark, synced after push", async ({
-    page,
-  }) => {
-    await openPanelWithTracks(page);
-
-    // Sync button should be visible
-    const syncBtn = page.getByTestId("sync-button");
-    await expect(syncBtn).toBeVisible();
-
-    // Initially synced (no local data, no server data)
-    await expect(syncBtn).toHaveAttribute("data-sync-state", "synced");
-
-    // Create a bookmark
-    await createBookmarkAt(page, 0, 0, 3);
-
-    // Should switch to push state
-    await expect(syncBtn).toHaveAttribute("data-sync-state", "push");
-
-    // Click sync (push)
-    await syncBtn.click();
-
-    // Should transition to synced
-    await expect(syncBtn).toHaveAttribute("data-sync-state", "synced");
-  });
-
-  test("pushed data appears in server video list", async ({ page }) => {
-    await openPanelWithTracks(page);
-
-    // Create bookmark and push
-    await createBookmarkAt(page, 0, 0, 3);
-    const syncBtn = page.getByTestId("sync-button");
-    await expect(syncBtn).toHaveAttribute("data-sync-state", "push");
-    await syncBtn.click();
-    await expect(syncBtn).toHaveAttribute("data-sync-state", "synced");
-
-    // Navigate to video list — the synced video should appear
-    await page.goto("/");
-    await expect(page.getByText("cloud palace")).toBeVisible();
-  });
-
-  test("pull overwrites local session with server data", async ({ page }) => {
-    await openPanelWithTracks(page);
-
-    // Create 2 bookmarks locally and push
-    await createBookmarkAt(page, 0, 0, 3);
-    await createBookmarkAt(page, 1, 0, 2);
-    const syncBtn = page.getByTestId("sync-button");
-    await syncBtn.click();
-    await expect(syncBtn).toHaveAttribute("data-sync-state", "synced");
-
-    // Verify 2 bookmarks
+    // Verify bookmarks created
     const panel = page.getByTestId("resizable-panel");
+    await panel.getByRole("button", { name: /Bookmarks/ }).click();
+    await expect(page.locator("[data-bookmark-id]")).toHaveCount(2);
     await expect(
-      panel.getByRole("button", { name: "Bookmarks (2)" }),
+      page.locator("[data-bookmark-id]").first().getByText("to pinch"),
     ).toBeVisible();
+  });
 
-    // Now clear local bookmarks and clear IndexedDB to simulate fresh device
-    await page.evaluate((videoId) => {
-      // Clear IndexedDB session
-      const req = indexedDB.open("zamak");
-      req.onsuccess = () => {
-        const db = req.result;
-        const tx = db.transaction("caption-sessions", "readwrite");
-        tx.objectStore("caption-sessions").delete(videoId);
-      };
-      // Clear video-index syncedAt to force pull state
-      const idx = JSON.parse(localStorage.getItem("zamak:video-index") ?? "[]");
-      const filtered = idx.filter(
-        (e: { youtubeId: string }) => e.youtubeId !== videoId,
-      );
-      localStorage.setItem("zamak:video-index", JSON.stringify(filtered));
-    }, "7GU_VQfgMT0");
+  test("AI fill prompt: copy and import updates existing bookmark", async ({
+    page,
+    context,
+  }) => {
+    await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+    await openPanelWithTracks(page);
 
-    // Reload to pick up cleared state (panel stays open via persisted FAB state)
-    await page.goto("/dev/videos/7GU_VQfgMT0");
-    await expect(page.locator("[data-index='0']")).toBeVisible();
+    // Create a bookmark first
+    await createBookmarkAt(page, { index: 0, start: 0, end: 3 });
 
-    // Should show pull state (server has data, local doesn't)
-    const syncBtn2 = page.getByTestId("sync-button");
-    await expect(syncBtn2).toHaveAttribute("data-sync-state", "pull");
+    // Verify unfilled state
+    const panel = page.getByTestId("resizable-panel");
+    await panel.getByRole("button", { name: /Bookmarks/ }).click();
+    await expect(page.getByText("unfilled")).toBeVisible();
+    const bookmarkId = await page
+      .locator("[data-bookmark-id]")
+      .first()
+      .getAttribute("data-bookmark-id");
 
-    // Pull
-    await syncBtn2.click();
-    await expect(syncBtn2).toHaveAttribute("data-sync-state", "synced");
+    // Copy fill prompt
+    await page.getByTitle("Settings").click();
+    const aiSelect = page.locator("select").last();
+    await aiSelect.selectOption("fill");
+    const clipboard = await page.evaluate(() => navigator.clipboard.readText());
+    expect(clipboard).toContain("Fill bookmark metadata");
+    expect(clipboard).toContain("꼬집어");
 
-    // After pull + page reload, bookmarks should be restored from IndexedDB
-    await page.goto("/dev/videos/7GU_VQfgMT0");
-    // Panel stays open via persisted FAB state, session hydrates from IndexedDB
-    await expect(page.locator("[data-index='0']")).toBeVisible();
-    const panel2 = page.getByTestId("resizable-panel");
-    await expect(
-      panel2.getByRole("button", { name: "Bookmarks (2)" }),
-    ).toBeVisible();
+    // Import fill result
+    const json = JSON.stringify([
+      {
+        id: bookmarkId,
+        translation: "to pinch",
+        etymology: "",
+        notes: "Figurative use.",
+      },
+    ]);
+    page.on("dialog", (dialog) => {
+      if (dialog.type() === "prompt") dialog.accept(json);
+      else dialog.accept();
+    });
+    await page.getByText("Import AI result").click();
+
+    // Verify translation appears and unfilled badge is gone
+    await expect(page.getByText("to pinch")).toBeVisible();
+    await expect(page.getByText("unfilled")).not.toBeVisible();
   });
 });

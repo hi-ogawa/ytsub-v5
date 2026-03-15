@@ -20,7 +20,11 @@ export default defineConfig({
     ...devices["Desktop Chrome"],
   },
   forbidOnly: !!process.env.CI,
-  reporter: process.env.CI ? [["list"], ["github"]] : "list",
+  reporter: [
+    ["list"],
+    ["json", { outputFile: "test-results/report.json" }],
+    ...(process.env.CI ? [["github"] as const] : []),
+  ],
   projects: [
     {
       name: "app",

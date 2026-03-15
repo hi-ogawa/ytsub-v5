@@ -61,6 +61,10 @@ test("login with wrong then correct password", async ({ page }) => {
   await page.getByPlaceholder("Password").fill("wrong");
   await page.getByRole("button", { name: "Login" }).click();
   await expect(page.getByText("Invalid username or password")).toBeVisible();
+  // Login errors use inline message, not global toast
+  await expect(
+    page.locator("[data-sonner-toast][data-type='error']"),
+  ).not.toBeVisible();
 
   await page.getByPlaceholder("Password").fill("devpassword");
   await page.getByRole("button", { name: "Login" }).click();
@@ -79,44 +83,76 @@ test("navigate between login and register", async ({ page }) => {
   await expect(page.locator("h1")).toHaveText("Zamak — login");
 });
 
-test.describe("video list and navigation", () => {
-  test.beforeEach(async ({ page }) => {
-    await login(page);
-  });
+test("header logo navigates back, logout redirects to login", async ({
+  page,
+}) => {
+  await login(page);
 
-  test("video list shows cards and clicking navigates to viewer", async ({
-    page,
-  }) => {
-    const card = page.getByRole("link", {
-      name: /cloud palace/,
-    });
-    await expect(card).toBeVisible();
-    const thumbnail = card.locator("img");
-    await expect(thumbnail).toBeVisible();
-    await expect(thumbnail).toHaveAttribute(
-      "src",
-      /img\.youtube\.com\/vi\/.+\/mqdefault\.jpg/,
-    );
-    await expect(card.locator("p", { hasText: "Billlie" })).toBeVisible();
+  // Logo navigates back to video list
+  await page.getByText("cloud palace").click();
+  await expect(page).toHaveURL(/\/videos\/.+/);
+  await page.getByRole("link", { name: "Zamak" }).click();
+  await expect(page).toHaveURL("/");
 
-    await card.click();
-    await expect(page).toHaveURL(/\/videos\/.+/);
-  });
+  // Logout redirects to login
+  await page.getByTestId("header-menu").click();
+  await page.getByText("Log out").click();
+  await expect(page).toHaveURL("/login");
+  // Session is cleared — navigating to / redirects back
+  await page.goto("/");
+  await expect(page).toHaveURL("/login");
+});
 
-  test("header logo navigates back to video list", async ({ page }) => {
-    await page.getByText("cloud palace").click();
-    await expect(page).toHaveURL(/\/videos\/.+/);
-    await page.getByRole("link", { name: "Zamak" }).click();
-    await expect(page).toHaveURL("/");
-  });
+test("shows toast on mutation error", async ({ page }) => {
+  await login(page);
 
-  test("logout redirects to login", async ({ page }) => {
-    // Open header menu and click logout
-    await page.getByTestId("header-menu").click();
-    await page.getByText("Log out").click();
-    await expect(page).toHaveURL("/login");
-    // Verify session is cleared by navigating to /
-    await page.goto("/");
-    await expect(page).toHaveURL("/login");
-  });
+  // Intercept logout API and return 500
+  await page.route("**/api/auth/logout", (route) =>
+    route.fulfill({
+      status: 500,
+      contentType: "application/json",
+      body: JSON.stringify({ json: { message: "Server error" } }),
+    }),
+  );
+
+  // Trigger logout
+  await page.getByTestId("header-menu").click();
+  await page.getByText("Log out").click();
+
+  // Error toast should appear
+  const toast = page.locator("[data-sonner-toast][data-type='error']");
+  await expect(toast).toBeVisible();
+});
+
+test("theme toggle: cycle, persist, and system default", async ({ page }) => {
+  await page.goto("/");
+  const menu = page.getByTestId("header-menu");
+  const theme = page.getByTestId("theme-toggle");
+
+  // Open menu — initial: system (no localStorage)
+  await menu.click();
+  await expect(theme).toHaveAttribute("data-theme", "system");
+  await expect(theme).toHaveText(/system/i);
+  expect(
+    await page.evaluate(() => localStorage.getItem("zamak:theme")),
+  ).toBeNull();
+
+  // system → light → dark (dropdown stays open)
+  await theme.click();
+  await expect(theme).toHaveAttribute("data-theme", "light");
+  await theme.click();
+  await expect(theme).toHaveAttribute("data-theme", "dark");
+  await expect(page.locator("html")).toHaveClass(/dark/);
+
+  // Persists across reload
+  await page.reload();
+  await expect(page.locator("html")).toHaveClass(/dark/);
+
+  // dark → system clears localStorage
+  await menu.click();
+  await theme.click();
+  await expect(theme).toHaveAttribute("data-theme", "system");
+  expect(
+    await page.evaluate(() => localStorage.getItem("zamak:theme")),
+  ).toBeNull();
 });

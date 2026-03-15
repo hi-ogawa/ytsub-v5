@@ -78,11 +78,34 @@ Task docs should enable **handoff to a fresh agent** - include enough context to
 
 ## E2E Tests
 
-- **dev-viewer tests** use fixture data — no DB setup needed, just `login(page)` + `goto("/dev/videos/...")`
-- **video-viewer tests** need `setupDb({ seed: true })` for server data
-- **Text selection** (for bookmark creation) requires DOM Range API via `page.evaluate` — mouse drag doesn't work reliably
+### Auth boundary: `/dev` routes vs auth-gated routes
+
+Tests split along the auth boundary — this is the key architectural principle:
+
+- **`/dev` route tests** (dev-viewer.spec.ts): use fixture data, **no `login()`, no `setupDb()`**. Just `page.goto("/dev/videos/...")`. These are fast and parallelizable.
+- **Auth-gated tests** (sync, video-list, basic): need `setupDb({ seed: true })` + `login(page)` because they hit `/`, `/videos/:id`, or server APIs.
+
+When adding new tests, prefer `/dev` routes unless the feature requires server interaction. Never add `login()` to a test that only uses `/dev` routes.
+
+### Test organization
+
+| File               | What it tests                       | Needs auth/DB? |
+| ------------------ | ----------------------------------- | -------------- |
+| dev-viewer.spec.ts | Caption panel, bookmarks, AI prompt | No             |
+| sync.spec.ts       | Push/pull sync flows                | Yes            |
+| video-list.spec.ts | Video list, import, delete          | Yes            |
+| basic.spec.ts      | Auth UI, navigation, toast, theme   | Mixed          |
+| api.spec.ts        | Server API CRUD                     | Yes (API only) |
+| auth.spec.ts       | Auth API endpoints                  | Yes (API only) |
+
+### Writing tests
+
+- **Flat structure**: no `test.describe` nesting — inline `setupDb()` and `login()` per test
+- **Prefer rich flow tests** over thin 1-assertion tests. Each test pays ~500ms navigation overhead, so combining related assertions into one test saves real time.
+- **`setupDb()`** writes to sqlite directly (~0.15s). Always use `setupDb({ seed: true })` before `login()` — login requires the seed user to exist.
 - **Selector preference**: scope to `data-testid` or panel containers to avoid ambiguity (e.g. FAB text can collide with tab button names). Prefer `getByTestId` > `getByRole` scoped to a container > page-wide `getByText`.
 - **Iterate with bail**: use `pnpm test-e2e -x` to stop on first failure when fixing tests. Avoids waiting for the full suite on each iteration.
+- **JSON report** at `test-results/report.json` — use it to measure timing impact of changes.
 
 ## Git Workflow
 
