@@ -50,7 +50,7 @@ export async function login(
   await expect(page).toHaveURL("/");
 }
 
-export const FIXTURE_VIDEO_ID = "7GU_VQfgMT0";
+const FIXTURE_VIDEO_ID = "7GU_VQfgMT0";
 
 /** Open panel and select ko/en tracks so caption rows appear */
 export async function openPanelWithTracks(page: Page) {
