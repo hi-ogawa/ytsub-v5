@@ -50,6 +50,7 @@ export default defineConfig({
       },
     },
     background: {
+      consumer: "client",
       build: {
         outDir: "./dist/extension",
         minify: false,
@@ -67,6 +68,7 @@ export default defineConfig({
       },
     },
     relay: {
+      consumer: "client",
       build: {
         outDir: "./dist/extension",
         minify: false,
