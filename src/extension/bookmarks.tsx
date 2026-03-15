@@ -147,9 +147,6 @@ async function main() {
   // Hydrate localStorage from chrome.storage.local before rendering, then keep
   // them in sync so videoIndexStore (localStorage-backed) works on this origin.
   const entries = await chromeStorage.get<VideoIndexEntry[]>(VIDEO_INDEX_KEY);
-  if (entries) {
-    localStorage.setItem(VIDEO_INDEX_KEY, JSON.stringify(entries));
-  }
   videoIndexStore.set(entries ?? []);
 
   // Sync back to chrome.storage.local when videoIndexStore writes
