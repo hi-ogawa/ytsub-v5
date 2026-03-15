@@ -290,9 +290,11 @@ export function useVideoSync() {
     syncing,
     onPull: (youtubeId: string) => pullMutation.mutate(youtubeId),
     onPush,
-    refetch: () => {
-      authQuery.refetch();
-      serverQuery.refetch();
+    refetch: async () => {
+      const result = await authQuery.refetch();
+      if (result.data?.authenticated) {
+        serverQuery.refetch();
+      }
     },
   };
 }
