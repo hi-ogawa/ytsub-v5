@@ -71,6 +71,32 @@ test.describe("video-list bootstrap", () => {
   });
 });
 
+test.describe("video-list with seed data", () => {
+  test.beforeEach(async ({ page }) => {
+    await setupDb({ seed: true });
+    await login(page);
+  });
+
+  test("video card shows thumbnail and channel, clicking navigates to viewer", async ({
+    page,
+  }) => {
+    const card = page.getByRole("link", {
+      name: /cloud palace/,
+    });
+    await expect(card).toBeVisible();
+    const thumbnail = card.locator("img");
+    await expect(thumbnail).toBeVisible();
+    await expect(thumbnail).toHaveAttribute(
+      "src",
+      /img\.youtube\.com\/vi\/.+\/mqdefault\.jpg/,
+    );
+    await expect(card.locator("p", { hasText: "Billlie" })).toBeVisible();
+
+    await card.click();
+    await expect(page).toHaveURL(/\/videos\/.+/);
+  });
+});
+
 test.describe("video-list unauthenticated", () => {
   test("no sync badges when unauthenticated", async ({ page }) => {
     await page.goto("/dev");
