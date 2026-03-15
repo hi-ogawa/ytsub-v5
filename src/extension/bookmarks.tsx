@@ -12,42 +12,26 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "../components/ui/dropdown-menu.tsx";
+import { useStore } from "../lib/external-store.ts";
 import { createAppQueryClient } from "../lib/query-client.ts";
 import { useVideoSync } from "../lib/sync.ts";
 import { useTheme } from "../lib/theme.ts";
-import type { VideoIndexEntry } from "../lib/video-index.ts";
+import {
+  VIDEO_INDEX_KEY,
+  type VideoIndexEntry,
+  videoIndexStore,
+} from "../lib/video-index.ts";
 import { orpc, setRpcConfig } from "../rpc.ts";
 import { chromeStorage } from "./lib/chrome-storage.ts";
 import { getServerUrl } from "./lib/server-url.ts";
 import "../styles.css";
-
-// Configure RPC to use extension server URL + bearer token auth
-setRpcConfig({
-  url: getServerUrl() + "/api",
-  fetch: async (request) => {
-    const token = await chromeStorage.get<string>("session-token");
-    if (token) {
-      const headers = new Headers(
-        request instanceof Request ? request.headers : undefined,
-      );
-      headers.set("authorization", `Bearer ${token}`);
-      request = new Request(request, { headers });
-    }
-    return fetch(request);
-  },
-});
 
 const queryClient = createAppQueryClient({
   defaultOptions: { queries: { refetchOnWindowFocus: false } },
 });
 
 function ExtensionBookmarksPage() {
-  // chrome.storage reads resolve near-instantly (local I/O), so they settle
-  // before BookmarksPage's own auth-check query finishes — no layout flash.
-  const { data: entries = [] } = useQuery({
-    ...chromeStorage.queryOptions<VideoIndexEntry[]>("video-index"),
-    placeholderData: [],
-  });
+  const [entries] = useStore(videoIndexStore);
   const usernameQuery = useQuery(
     chromeStorage.queryOptions<string>("username"),
   );
@@ -142,13 +126,44 @@ function ExtensionBookmarksPage() {
   );
 }
 
-createRoot(document.getElementById("root")!).render(
-  <StrictMode>
-    <MemoryRouter>
-      <QueryClientProvider client={queryClient}>
-        <ExtensionBookmarksPage />
-        <Toaster position="top-right" richColors />
-      </QueryClientProvider>
-    </MemoryRouter>
-  </StrictMode>,
-);
+async function main() {
+  // Configure RPC to use extension server URL + bearer token auth
+  setRpcConfig({
+    url: getServerUrl() + "/api",
+    fetch: async (request) => {
+      const token = await chromeStorage.get<string>("session-token");
+      if (token) {
+        const headers = new Headers(
+          request instanceof Request ? request.headers : undefined,
+        );
+        headers.set("authorization", `Bearer ${token}`);
+        request = new Request(request, { headers });
+      }
+      return fetch(request);
+    },
+  });
+
+  // Two-way bridge: chrome.storage.local <-> localStorage for video-index.
+  // Hydrate localStorage from chrome.storage.local before rendering, then keep
+  // them in sync so videoIndexStore (localStorage-backed) works on this origin.
+  const entries = await chromeStorage.get<VideoIndexEntry[]>(VIDEO_INDEX_KEY);
+  videoIndexStore.set(entries ?? []);
+
+  // Sync back to chrome.storage.local when videoIndexStore writes
+  window.addEventListener(`zamak:store:${VIDEO_INDEX_KEY}`, () => {
+    chromeStorage.set({ [VIDEO_INDEX_KEY]: videoIndexStore.get() });
+  });
+
+  createRoot(document.getElementById("root")!).render(
+    <StrictMode>
+      <MemoryRouter>
+        <QueryClientProvider client={queryClient}>
+          <ExtensionBookmarksPage />
+          <Toaster position="top-right" richColors />
+        </QueryClientProvider>
+      </MemoryRouter>
+    </StrictMode>,
+  );
+}
+
+main();
