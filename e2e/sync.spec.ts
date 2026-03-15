@@ -26,14 +26,20 @@ test.describe("dev-viewer sync indicator", () => {
   }) => {
     await openPanelWithTracks(page);
 
+    // Open settings menu — sync status is inside dropdown
+    await page.getByTitle("Settings").click();
     const indicator = page.getByTestId("sync-status");
     await expect(indicator).toBeVisible();
 
     // Initially synced (no local data, no server data)
     await expect(indicator).toHaveAttribute("data-sync-state", "synced");
 
-    // Create a bookmark — should switch to push state
+    // Close dropdown, create a bookmark
+    await page.keyboard.press("Escape");
     await createBookmarkAt(page, { index: 0, start: 0, end: 3 });
+
+    // Reopen dropdown — should show push state
+    await page.getByTitle("Settings").click();
     await expect(indicator).toHaveAttribute("data-sync-state", "push");
 
     // Click navigates to /dev (video list)

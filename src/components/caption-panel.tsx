@@ -329,57 +329,58 @@ function formatTimestamp(seconds: number): string {
   return `${m}:${String(s).padStart(2, "0")}`;
 }
 
-function SyncIndicator({ sync: { state, onNavigate } }: { sync: SyncStatus }) {
-  const iconClass = "size-4";
+function SyncMenuItem({ sync: { state, onNavigate } }: { sync: SyncStatus }) {
+  const iconClass = "mr-2 size-4";
   let icon: React.ReactNode;
-  let title: string;
+  let label: string;
 
   switch (state) {
     case "unauthenticated":
       icon = <LogIn className={`${iconClass} text-muted-foreground`} />;
-      title = "Login required to sync";
+      label = "Sign in to sync";
       break;
     case "checking":
       icon = <Loader2 className={`${iconClass} animate-spin`} />;
-      title = "Checking sync status...";
+      label = "Checking…";
       break;
     case "synced":
       icon = <CheckCircle2 className={`${iconClass} text-green-500`} />;
-      title = "Synced — open bookmarks page";
+      label = "Synced";
       break;
     case "push":
       icon = <ArrowUpFromLine className={`${iconClass} text-yellow-500`} />;
-      title = "Local changes not synced — open bookmarks page";
+      label = "Unsynced changes";
       break;
     case "pull":
       icon = <ArrowDownToLine className={`${iconClass} text-yellow-500`} />;
-      title = "Server has updates — open bookmarks page";
+      label = "Server has updates";
       break;
     case "conflict":
       icon = <AlertTriangle className={`${iconClass} text-yellow-500`} />;
-      title = "Both sides changed — open bookmarks page";
+      label = "Sync conflict";
       break;
     case "syncing":
       icon = <RefreshCw className={`${iconClass} animate-spin`} />;
-      title = "Syncing...";
+      label = "Syncing…";
       break;
     case "error":
       icon = <AlertTriangle className={`${iconClass} text-destructive`} />;
-      title = "Sync error — open bookmarks page";
+      label = "Sync error";
       break;
   }
 
   return (
-    <button
-      type="button"
-      className="shrink-0 rounded p-0.5 text-muted-foreground hover:bg-muted"
-      title={title}
-      onClick={onNavigate}
-      data-testid="sync-status"
-      data-sync-state={state}
-    >
-      {icon}
-    </button>
+    <>
+      <DropdownMenuItem
+        onSelect={onNavigate}
+        data-testid="sync-status"
+        data-sync-state={state}
+      >
+        {icon}
+        {label}
+      </DropdownMenuItem>
+      <div className="my-1 h-px bg-border" />
+    </>
   );
 }
 
@@ -647,12 +648,12 @@ function CaptionPanelWithStore({
               disabled={store.bookmarks.length > 0}
             />
           </div>
-          {sync && <SyncIndicator sync={sync} />}
           <SettingsDropdown
             store={store}
             autoScroll={autoScroll}
             onSetAutoScroll={setAutoScroll}
             onSelectStrategy={onSelectStrategy}
+            sync={sync}
           />
         </div>
       )}
@@ -680,11 +681,13 @@ function SettingsDropdown({
   autoScroll,
   onSetAutoScroll,
   onSelectStrategy,
+  sync,
 }: {
   store: CaptionSessionManager;
   autoScroll: boolean;
   onSetAutoScroll: (value: boolean | ((prev: boolean) => boolean)) => void;
   onSelectStrategy: (s: MergeStrategy) => void;
+  sync?: SyncStatus;
 }) {
   const hasBookmarks = store.bookmarks.length > 0;
 
@@ -697,6 +700,7 @@ function SettingsDropdown({
         <EllipsisVertical className="size-4" />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
+        {sync && <SyncMenuItem sync={sync} />}
         <DropdownMenuItem
           data-checked={autoScroll}
           onSelect={(e) => {
