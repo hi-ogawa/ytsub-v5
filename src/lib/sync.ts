@@ -163,7 +163,7 @@ export type VideoSyncEntry = VideoIndexEntry & {
   serverId?: number;
 };
 
-export function mergeVideoEntries(
+function mergeVideoEntries(
   localEntries: VideoIndexEntry[],
   serverVideos: ListVideosOutput["items"],
 ): VideoSyncEntry[] {
