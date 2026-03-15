@@ -6,7 +6,7 @@ import { VIDEO_INDEX_KEY } from "../lib/video-index.ts";
 import { orpc, setRpcConfig } from "../rpc.ts";
 import { chromeStorage } from "./lib/chrome-storage.ts";
 import { registerRpcHandlers } from "./lib/extension-rpc.ts";
-import { getServerUrl } from "./lib/server-url.ts";
+import { getServerUrl, initServerUrl } from "./lib/server-url.ts";
 
 export const bgRpcHandlers = {
   async getSyncState({ youtubeId }: { youtubeId: string }) {
@@ -28,7 +28,8 @@ export const bgRpcHandlers = {
   },
 };
 
-function main() {
+async function main() {
+  await initServerUrl();
   setRpcConfig({
     url: getServerUrl() + "/api",
     fetch: async (request) => {
