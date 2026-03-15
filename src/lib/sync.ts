@@ -1,6 +1,7 @@
 import type { InferRouterOutputs } from "@orpc/server";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
+import { toast } from "sonner";
 import { orpc } from "../rpc.ts";
 import type { Router } from "../server/rpc.ts";
 import {
@@ -254,6 +255,9 @@ export function useVideoSync(actions: VideoSyncActions = defaultSyncActions) {
     setSyncing((s) => new Set(s).add(youtubeId));
     try {
       await fn();
+      serverQuery.refetch();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Sync failed");
     } finally {
       setSyncing((s) => {
         const next = new Set(s);
@@ -267,7 +271,6 @@ export function useVideoSync(actions: VideoSyncActions = defaultSyncActions) {
     await withSyncing(youtubeId, async () => {
       await actions.pushSession(youtubeId);
       setSyncedAt(youtubeId);
-      serverQuery.refetch();
     });
   };
 
@@ -275,7 +278,6 @@ export function useVideoSync(actions: VideoSyncActions = defaultSyncActions) {
     await withSyncing(youtubeId, async () => {
       await actions.pullSession(youtubeId);
       setSyncedAt(youtubeId);
-      serverQuery.refetch();
     });
   };
 
