@@ -91,15 +91,17 @@ type RpcClient<Handlers> = {
       ) => Promise<HandlerResult<Handlers[M]>>;
 };
 
-/** Send RPC directly via chrome.runtime.sendMessage (for ISOLATED world / relay). */
-function directCall(method: string, params?: unknown): Promise<unknown> {
+/** Send RPC directly via chrome.runtime.sendMessage (for ISOLATED world / relay / extension pages). */
+async function directCall(method: string, params?: unknown): Promise<unknown> {
   const request: RpcRequest = {
     type: "zamak-rpc",
     id: "",
     method,
     params,
   };
-  return chrome.runtime.sendMessage(request);
+  const response = await chrome.runtime.sendMessage(request);
+  if (response?.__error) throw new Error(response.__error);
+  return response;
 }
 
 /**
@@ -126,7 +128,9 @@ export function setupRpcRelay() {
     try {
       const request: RpcRequest = { type: "zamak-rpc", id, method, params };
       const result = await chrome.runtime.sendMessage(request);
-      const response: RpcResponse = { id, result };
+      const response: RpcResponse = result?.__error
+        ? { id, error: result.__error }
+        : { id, result };
       localStorage.setItem(RPC_RESPONSE_KEY, JSON.stringify(response));
       window.dispatchEvent(new Event(RPC_RESPONSE_EVENT));
     } catch (err) {
@@ -151,7 +155,11 @@ export function registerRpcHandlers(handlers: Record<string, Function>) {
       sendResponse(undefined);
       return;
     }
-    handler(params).then(sendResponse);
+    handler(params).then(sendResponse, (err: unknown) =>
+      sendResponse({
+        __error: err instanceof Error ? err.message : "Unknown error",
+      }),
+    );
     return true; // keep channel open for async response
   });
 }

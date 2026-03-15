@@ -47,10 +47,10 @@ export const bgRpcHandlers = {
   },
 
   async pullSession({ youtubeId }: { youtubeId: string }) {
+    const tabId = await findYouTubeTab();
     const data = await orpc.videos.getFullSession.call({ youtubeId });
     if (!data) throw new Error("Video not found on server");
     const session = serverSessionToLocal(data);
-    const tabId = await findYouTubeTab();
     await sendTabRpc(tabId, "saveSession", { session });
     return {
       title: session.title,

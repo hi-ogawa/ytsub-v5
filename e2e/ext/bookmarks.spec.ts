@@ -19,13 +19,12 @@ const fixtureEntries = [
   },
 ];
 
-// Billlie - cloud palace
-// https://www.youtube.com/watch?v=7GU_VQfgMT0
-const TEST_VIDEO_ID = "7GU_VQfgMT0";
+// Billlie - cloud palace (seeded on server for "dev" user)
+const SEED_VIDEO_ID = "7GU_VQfgMT0";
 
 // TODO: test content script
 test.skip("video page", async ({ page }) => {
-  await page.goto(`https://www.youtube.com/watch?v=${TEST_VIDEO_ID}`);
+  await page.goto(`https://www.youtube.com/watch?v=${SEED_VIDEO_ID}`);
 
   const host = page.locator("#zamak-host");
   await expect(host).toBeAttached({ timeout: 15_000 });
@@ -39,7 +38,7 @@ test.skip("video page", async ({ page }) => {
   await host.locator("[data-index='19']").click();
   const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
   await page.screenshot({
-    path: `./docs/assets/demo-${TEST_VIDEO_ID}-${timestamp}.png`,
+    path: `./docs/assets/demo-${SEED_VIDEO_ID}-${timestamp}.png`,
   });
 });
 
@@ -111,4 +110,116 @@ test("bookmarks page: load, login, logout", async ({ page, extensionId }) => {
     await page.getByTestId("header-menu").click();
     await expect(page.getByTestId("sign-in")).toBeVisible();
   }).toPass({ timeout: 10000 });
+});
+
+test("bookmarks page: sync badges show correct states per entry", async ({
+  context,
+  page,
+  extensionId,
+}) => {
+  await setupDb({ seed: true });
+
+  // Seed local entries: one matching server seed video (conflict/push),
+  // one local-only (push)
+  const localEntries = [
+    {
+      youtubeId: SEED_VIDEO_ID,
+      title: "cloud palace",
+      channelName: "Billlie",
+      bookmarkCount: 2,
+      updatedAt: "2026-03-15T00:00:00.000Z",
+    },
+    {
+      youtubeId: "local-only-123",
+      title: "Local Only Video",
+      channelName: "Some Channel",
+      bookmarkCount: 1,
+      updatedAt: "2026-03-14T00:00:00.000Z",
+    },
+  ];
+  await seedChromeStorage(context, { "zamak:video-index": localEntries });
+  await gotoBookmarks(page, extensionId);
+  await login(page);
+
+  // Seed video exists on both server and local → conflict
+  const seedBadge = page
+    .getByTestId(`video-card-${SEED_VIDEO_ID}`)
+    .getByTestId("video-sync-badge");
+  await expect(seedBadge).toHaveAttribute("data-sync-status", "conflict");
+
+  // Local-only video → push
+  const localBadge = page
+    .getByTestId("video-card-local-only-123")
+    .getByTestId("video-sync-badge");
+  await expect(localBadge).toHaveAttribute("data-sync-status", "push");
+});
+
+test("bookmarks page: server-only entries show pull badge", async ({
+  page,
+  extensionId,
+}) => {
+  await setupDb({ seed: true });
+  await gotoBookmarks(page, extensionId);
+  await login(page);
+
+  // No local entries — server seed video should appear with pull badge
+  const badge = page
+    .getByTestId(`video-card-${SEED_VIDEO_ID}`)
+    .getByTestId("video-sync-badge");
+  await expect(badge).toHaveAttribute("data-sync-status", "pull");
+});
+
+test("bookmarks page: push shows error toast when no YouTube tab open", async ({
+  context,
+  page,
+  extensionId,
+}) => {
+  await setupDb({ seed: true });
+
+  // Seed a local-only entry so push badge appears
+  const localEntries = [
+    {
+      youtubeId: "push-test-123",
+      title: "Push Test Video",
+      channelName: "Test",
+      bookmarkCount: 1,
+      updatedAt: "2026-03-15T00:00:00.000Z",
+    },
+  ];
+  await seedChromeStorage(context, { "zamak:video-index": localEntries });
+  await gotoBookmarks(page, extensionId);
+  await login(page);
+
+  // Click push badge — should fail with "No YouTube tab open" toast
+  const badge = page
+    .getByTestId("video-card-push-test-123")
+    .getByTestId("video-sync-badge");
+  await expect(badge).toHaveAttribute("data-sync-status", "push");
+  await badge.click();
+
+  const errorToast = page.locator("[data-sonner-toast][data-type='error']");
+  await expect(errorToast).toBeVisible();
+  await expect(errorToast).toContainText("No YouTube tab open");
+});
+
+test("bookmarks page: pull shows error toast when no YouTube tab open", async ({
+  page,
+  extensionId,
+}) => {
+  await setupDb({ seed: true });
+  await gotoBookmarks(page, extensionId);
+  await login(page);
+
+  // Server-only seed video shows pull badge
+  const badge = page
+    .getByTestId(`video-card-${SEED_VIDEO_ID}`)
+    .getByTestId("video-sync-badge");
+  await expect(badge).toHaveAttribute("data-sync-status", "pull");
+
+  // Click pull — should fail with "No YouTube tab open" toast
+  await badge.click();
+
+  const errorToast = page.locator("[data-sonner-toast][data-type='error']");
+  await expect(errorToast).toBeVisible();
+  await expect(errorToast).toContainText("No YouTube tab open");
 });
