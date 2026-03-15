@@ -1,5 +1,11 @@
 import { ExternalLink } from "lucide-react";
-import { useEffect, useImperativeHandle, useMemo, useRef } from "react";
+import {
+  useCallback,
+  useEffect,
+  useImperativeHandle,
+  useMemo,
+  useRef,
+} from "react";
 import type { MergedCaption } from "../lib/caption-merge.ts";
 import type { ExtensionBookmark } from "../lib/extension-bookmarks.ts";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover.tsx";
@@ -25,10 +31,27 @@ function BookmarkWord({
   onPopoverOpenChange: (open: boolean) => void;
 }) {
   const filled = !!bookmark.translation;
+  const triggerRef = useRef<HTMLSpanElement>(null);
+  // When modal=false (extension shadow DOM), clicking the trigger while the
+  // popover is open causes DismissableLayer to close on pointerdown, then the
+  // trigger's click reopens it.  Prevent the dismiss when the pointer-down
+  // target is this trigger so the toggle handles it instead.
+  const onPointerDownOutside = useCallback(
+    (e: {
+      detail: { originalEvent: PointerEvent };
+      preventDefault(): void;
+    }) => {
+      if (triggerRef.current?.contains(e.detail.originalEvent.target as Node)) {
+        e.preventDefault();
+      }
+    },
+    [],
+  );
   return (
     <Popover onOpenChange={onPopoverOpenChange}>
       <PopoverTrigger asChild>
         <span
+          ref={triggerRef}
           className="inline-block cursor-pointer"
           data-testid="bookmark-highlight"
           data-offset={offset}
@@ -50,6 +73,7 @@ function BookmarkWord({
         side="top"
         avoidCollisions
         onOpenAutoFocus={(e) => e.preventDefault()}
+        onPointerDownOutside={onPointerDownOutside}
       >
         <span className="block text-xs font-medium text-popover-foreground">
           {bookmark.text}
