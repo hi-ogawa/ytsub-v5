@@ -1,5 +1,5 @@
 import { QueryClientProvider, useQuery } from "@tanstack/react-query";
-import { EllipsisVertical, LogIn, LogOut } from "lucide-react";
+import { EllipsisVertical, LogIn, LogOut, Server } from "lucide-react";
 import { StrictMode, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { MemoryRouter } from "react-router";
@@ -26,8 +26,10 @@ import { orpc, setRpcConfig } from "../rpc.ts";
 import type { bgRpcHandlers } from "./background.ts";
 import { chromeStorage } from "./lib/chrome-storage.ts";
 import { createRpc } from "./lib/extension-rpc.ts";
-import { getServerUrl } from "./lib/server-url.ts";
+import { getServerUrl, initServerUrl } from "./lib/server-url.ts";
 import "../styles.css";
+
+declare const __DEV_EXT__: boolean;
 
 const bgRpc = createRpc<typeof bgRpcHandlers>({ direct: true });
 
@@ -69,7 +71,12 @@ function ExtensionBookmarksPage() {
   return (
     <div className="flex h-screen flex-col">
       <header className="flex h-10 flex-none items-center justify-between border-b px-3">
-        <span className="text-sm font-semibold">Zamak</span>
+        <span className="flex items-center gap-1.5 text-sm font-semibold">
+          Zamak
+          <span className="rounded bg-blue-100 px-1.5 py-0.5 text-xs font-medium uppercase leading-none text-blue-700 dark:bg-blue-900 dark:text-blue-300">
+            ext
+          </span>
+        </span>
         <div className="flex items-center gap-1">
           {sync.authenticated && usernameQuery.data && (
             <span
@@ -97,6 +104,28 @@ function ExtensionBookmarksPage() {
                 <Icon className="size-4" />
                 <span className="capitalize">{theme}</span>
               </DropdownMenuItem>
+              {__DEV_EXT__ && (
+                <DropdownMenuItem
+                  onSelect={async () => {
+                    const current = getServerUrl();
+                    const input = window.prompt(
+                      "Server URL (empty = default).\nReload extension from chrome://extensions after changing.",
+                      current,
+                    );
+                    if (input === null) return;
+                    if (input === "") {
+                      await chromeStorage.remove(["serverUrl"]);
+                    } else {
+                      await chromeStorage.set({ serverUrl: input });
+                    }
+                    window.location.reload();
+                  }}
+                  className="gap-2"
+                >
+                  <Server className="size-4" />
+                  Server URL
+                </DropdownMenuItem>
+              )}
               <div className="my-1 h-px bg-border" />
               {sync.authenticated ? (
                 <DropdownMenuItem
@@ -147,6 +176,9 @@ function ExtensionBookmarksPage() {
 }
 
 async function main() {
+  // Hydrate server URL override from storage before configuring RPC
+  await initServerUrl();
+
   // Configure RPC to use extension server URL + bearer token auth
   setRpcConfig({
     url: getServerUrl() + "/api",
