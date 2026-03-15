@@ -102,16 +102,16 @@ A web app for language learning via YouTube subtitles. Watch videos with dual ca
 - [x] refactor(ext): chrome global typing
 - [x] refactor(ext): chrome storage abstraction (like local stroage store)
 - [x] feat(ext): login
+- [x] chore: e2e test probes internal storage key `zamak:video-index` — abstract behind helper or use UI-level assertions (`e2e/video-list.spec.ts:4`)
+- [x] chore: security review after extension side login feature
+- [x] feat(web): sync button for video-viewer (push/pull with server)
 
 ## TODO
 
 - [ ] feat(web): settings dropdown for video-viewer (auto-scroll toggle, etc. — currently hidden when `sessionOnly`)
-- [ ] feat(web): sync button for video-viewer (push/pull with server)
-- [ ] feat(ext): sync
-- [ ] test(ext): enhance extension page e2e (seed, sync, etc.) (actually broken so need to fix)
-- [ ] chore: e2e test probes internal storage key `zamak:video-index` — abstract behind helper or use UI-level assertions (`e2e/video-list.spec.ts:4`)
+- [ ] feat(ext): sync from caption panel
+- [ ] test(ext): enhance extension page e2e (seed, sync, etc.)
 - [ ] fix: better loading indicator when IndexedDB initial store query is pending (currently returns `null`) (`src/components/caption-panel.tsx:437`)
-- [ ] chore: security review after extension side login feature
 
 ## TODO: Backlog
 
