@@ -8,7 +8,7 @@ import { VIDEO_INDEX_KEY } from "../lib/video-index.ts";
 import { orpc, setRpcConfig } from "../rpc.ts";
 import { chromeStorage } from "./lib/chrome-storage.ts";
 import { registerRpcHandlers, sendTabRpc } from "./lib/extension-rpc.ts";
-import { getServerUrl, initServerUrl } from "./lib/server-url.ts";
+import { getServerUrl } from "./lib/server-url.ts";
 
 async function findYouTubeTab(): Promise<number> {
   const tabs = await chrome.tabs.query({ url: "https://www.youtube.com/*" });
@@ -61,9 +61,8 @@ export const bgRpcHandlers = {
 };
 
 async function main() {
-  await initServerUrl();
   setRpcConfig({
-    url: getServerUrl() + "/api",
+    url: async () => new URL("/api", await getServerUrl()),
     fetch: async (request) => {
       const token = await chromeStorage.get<string>("session-token");
       if (token) {

@@ -56,9 +56,8 @@ export async function gotoBookmarks(page: Page, extensionId: string) {
       `[browser:requestfailed] ${req.url()} ${req.failure()?.errorText}`,
     );
   });
-  await page.addInitScript((url) => {
-    (globalThis as any).__zamakServerUrl = url;
-  }, SERVER_URL);
+  // Override server URL for via chrome.storage.local
+  await seedChromeStorage(page.context(), { serverUrl: SERVER_URL });
   await page.goto(`chrome-extension://${extensionId}/bookmarks.html`);
 }
 

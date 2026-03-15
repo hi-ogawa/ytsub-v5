@@ -26,7 +26,7 @@ import { orpc, setRpcConfig } from "../rpc.ts";
 import type { bgRpcHandlers } from "./background.ts";
 import { chromeStorage } from "./lib/chrome-storage.ts";
 import { createRpc } from "./lib/extension-rpc.ts";
-import { getServerUrl, initServerUrl } from "./lib/server-url.ts";
+import { getServerUrl } from "./lib/server-url.ts";
 import "../styles.css";
 
 declare const __DEV_EXT__: boolean;
@@ -107,7 +107,7 @@ function ExtensionBookmarksPage() {
               {__DEV_EXT__ && (
                 <DropdownMenuItem
                   onSelect={async () => {
-                    const current = getServerUrl();
+                    const current = serverUrl;
                     const input = window.prompt(
                       "Server URL (empty = default).\nReload extension from chrome://extensions after changing.",
                       current,
@@ -162,7 +162,7 @@ function ExtensionBookmarksPage() {
           usernameQuery.refetch();
           sync.refetch();
         }}
-        signUpUrl={`${getServerUrl()}/register`}
+        signUpUrl={new URL("/register", serverUrl).href}
       />
       <main className="flex-1 overflow-auto">
         <BookmarksPage
@@ -175,13 +175,14 @@ function ExtensionBookmarksPage() {
   );
 }
 
+let serverUrl = "";
+
 async function main() {
-  // Hydrate server URL override from storage before configuring RPC
-  await initServerUrl();
+  serverUrl = await getServerUrl();
 
   // Configure RPC to use extension server URL + bearer token auth
   setRpcConfig({
-    url: getServerUrl() + "/api",
+    url: async () => new URL("/api", serverUrl),
     fetch: async (request) => {
       const token = await chromeStorage.get<string>("session-token");
       if (token) {
