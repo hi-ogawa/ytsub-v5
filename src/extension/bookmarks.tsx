@@ -23,11 +23,7 @@ import {
 } from "../lib/video-index.ts";
 import { orpc, setRpcConfig } from "../rpc.ts";
 import { chromeStorage } from "./lib/chrome-storage.ts";
-import {
-  getServerUrl,
-  initServerUrl,
-  promptServerUrlOverride,
-} from "./lib/server-url.ts";
+import { getServerUrl, initServerUrl } from "./lib/server-url.ts";
 import "../styles.css";
 
 declare const __DEV_EXT__: boolean;
@@ -86,9 +82,18 @@ function ExtensionBookmarksPage() {
               {__DEV_EXT__ && (
                 <DropdownMenuItem
                   onSelect={async () => {
-                    if (await promptServerUrlOverride()) {
-                      window.location.reload();
+                    const current = getServerUrl();
+                    const input = window.prompt(
+                      "Server URL (empty = default).\nReload extension from chrome://extensions after changing.",
+                      current,
+                    );
+                    if (input === null) return;
+                    if (input === "") {
+                      await chromeStorage.remove(["serverUrl"]);
+                    } else {
+                      await chromeStorage.set({ serverUrl: input });
                     }
+                    window.location.reload();
                   }}
                   className="gap-2"
                 >
