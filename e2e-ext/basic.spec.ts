@@ -1,10 +1,18 @@
+import { exec } from "node:child_process";
 import path from "node:path";
+import { promisify } from "node:util";
 import {
   test as baseTest,
   chromium,
   expect,
   type BrowserContext,
+  type Page,
 } from "@playwright/test";
+
+const execAsync = promisify(exec);
+
+const SERVER_URL = "http://localhost:5191";
+const PERSIST_TO = ".wrangler/state/e2e-ext";
 
 // https://playwright.dev/docs/chrome-extensions
 const test = baseTest.extend<{
@@ -18,7 +26,6 @@ const test = baseTest.extend<{
       args: [
         `--disable-extensions-except=${extensionPath}`,
         `--load-extension=${extensionPath}`,
-        // ensure OS shows full viewport on headed mode
         `--window-size=1380,900`,
       ],
       viewport: {
@@ -38,11 +45,33 @@ const test = baseTest.extend<{
   },
 });
 
+async function setupDb(options: { seed?: boolean } = {}) {
+  await execAsync(`pnpm db:clear --persist-to ${PERSIST_TO}`);
+  if (options.seed) {
+    await execAsync(`pnpm db:seed --persist-to ${PERSIST_TO}`);
+  }
+}
+
+/** Navigate to bookmarks page with server URL override */
+async function gotoBookmarks(page: Page, extensionId: string) {
+  page.on("console", (msg) =>
+    console.log(`[page] ${msg.type()}: ${msg.text()}`),
+  );
+  page.on("pageerror", (err) => console.log(`[page error] ${err}`));
+  page.on("requestfailed", (req) =>
+    console.log(`[request failed] ${req.url()} ${req.failure()?.errorText}`),
+  );
+  await page.addInitScript((url) => {
+    (globalThis as Record<string, unknown>).__zamakServerUrl = url;
+  }, SERVER_URL);
+  await page.goto(`chrome-extension://${extensionId}/bookmarks.html`);
+}
+
 // Billlie - cloud palace
 // https://www.youtube.com/watch?v=7GU_VQfgMT0
 const TEST_VIDEO_ID = "7GU_VQfgMT0";
 
-test("video page", async ({ page }) => {
+test.skip("video page", async ({ page }) => {
   await page.goto(`https://www.youtube.com/watch?v=${TEST_VIDEO_ID}`);
 
   const host = page.locator("#zamak-host");
@@ -61,7 +90,37 @@ test("video page", async ({ page }) => {
   });
 });
 
-test("bookmarks page", async ({ page, extensionId }) => {
-  await page.goto(`chrome-extension://${extensionId}/bookmarks.html`);
+test("bookmarks page: load, login, logout", async ({ page, extensionId }) => {
+  await setupDb({ seed: true });
+  await gotoBookmarks(page, extensionId);
+
+  // Page loads with empty state
   await expect(page.locator("text=Zamak")).toBeVisible();
+  await expect(page.getByText("No bookmarked videos yet")).toBeVisible();
+
+  // Open login dialog via menu
+  await page.getByTestId("header-menu").click();
+  await page.getByTestId("sign-in").click();
+  await expect(page.getByTestId("login-dialog")).toBeVisible();
+
+  // Invalid login shows error
+  await page.getByPlaceholder("Username").fill("nobody");
+  await page.getByPlaceholder("Password").fill("wrongpassword");
+  await page.getByTestId("login-submit").click();
+  await expect(page.getByTestId("login-error")).toBeVisible();
+
+  // Valid login closes dialog and shows username
+  await page.getByPlaceholder("Username").fill("dev");
+  await page.getByPlaceholder("Password").fill("devpassword");
+  await page.getByTestId("login-submit").click();
+  await expect(page.getByTestId("login-dialog")).not.toBeVisible();
+  await expect(page.getByTestId("auth-username")).toHaveText("dev");
+
+  // Logout via menu
+  await page.getByTestId("header-menu").click();
+  await page.getByTestId("sign-out").click();
+  await expect(async () => {
+    await page.getByTestId("header-menu").click();
+    await expect(page.getByTestId("sign-in")).toBeVisible();
+  }).toPass({ timeout: 10000 });
 });

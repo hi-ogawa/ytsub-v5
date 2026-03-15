@@ -56,7 +56,7 @@ Features:
 • Adapts to YouTube's dark and light theme automatically
 • Works with both manual and auto-generated YouTube subtitles
 • Auto-translated captions — works even when only one language track is available
-• No account required, no data collection — everything runs locally
+• Optional sign-in — sync bookmarks to the cloud across devices (no account required for local-only use)
 
 How it works:
 When you visit a YouTube video, Zamak fetches the available subtitle tracks and displays them in a side-by-side panel overlaid on the page. The panel syncs with video playback in real time. Select any text to bookmark it, then use the built-in editor to add translations and notes — or copy an AI prompt to get help from your favorite LLM. Click the Zamak icon to see all your bookmarked videos at a glance.
@@ -103,20 +103,20 @@ English
 - **Permissions justification** (`storage`):
 
   ```
-  The extension uses chrome.storage.local to store a lightweight index of videos where the user has bookmarked caption lines. This allows the bookmarks page (opened via the extension icon) to display the user's bookmarked videos. No data is sent externally.
+  The extension uses chrome.storage.local to store a lightweight index of videos where the user has bookmarked caption lines (for the bookmarks page), and optionally an authentication token and username when the user signs in to sync bookmarks.
   ```
 
 - **Host permission justification** (for `https://www.youtube.com/*` content script match):
 
   ```
-  The content script injects a dual-language subtitle panel into YouTube watch pages. It reads the video's existing subtitle tracks via YouTube's in-page player API and displays them side by side for language learners. A second content script (ISOLATED world) relays bookmark metadata from the page to extension storage so the bookmarks page can list bookmarked videos. The scripts only run on youtube.com and do not access any other hosts.
+  The content script injects a dual-language subtitle panel into YouTube watch pages. It reads the video's existing subtitle tracks via YouTube's in-page player API and displays them side by side for language learners. A second content script (ISOLATED world) relays bookmark metadata from the page to extension storage so the bookmarks page can list bookmarked videos. The scripts only run on youtube.com and do not access any other hosts. The bookmarks page (extension page, not content script) optionally communicates with the project's server (ytsub-v5.hiroshi.workers.dev) for user authentication and bookmark sync via standard CORS fetch — no host permissions are required for this.
   ```
 
 - **Remote code**: No — all JS is bundled in the extension package, no external script tags, no eval(), no remote Wasm. The bookmarks page loads Google Fonts CSS from `fonts.googleapis.com` (stylesheet only, not script).
 
-- **Data use disclosures**: The extension transmits video ID and selected language to YouTube's timedtext API when fetching subtitles. Local storage on youtube.com includes: track selection preferences (`zamak:selected-tracks`, `zamak:preferred-langs`), theme preference (`zamak:theme`), video bookmark index (`zamak:video-index`), and full caption sessions with bookmarks in IndexedDB (`zamak` database — stores caption text, bookmark text, translations, notes). The video index metadata is also synced to `chrome.storage.local` so the bookmarks page can read it cross-origin. No data is sent to any third-party or external server. No PII, analytics, or tracking.
+- **Data use disclosures**: The extension transmits video ID and selected language to YouTube's timedtext API when fetching subtitles. Local storage on youtube.com includes: track selection preferences (`zamak:selected-tracks`, `zamak:preferred-langs`), theme preference (`zamak:theme`), video bookmark index (`zamak:video-index`), and full caption sessions with bookmarks in IndexedDB (`zamak` database — stores caption text, bookmark text, translations, notes). The video index metadata is also synced to `chrome.storage.local` so the bookmarks page can read it cross-origin. When the user opts in by signing in, the bookmarks page sends authentication credentials (username/password) and bookmark data to the project's own server (`ytsub-v5.hiroshi.workers.dev`) for sync. An auth token is stored in `chrome.storage.local`. No data is sent to any third-party server. No analytics or tracking.
 
-- **Privacy policy**: A minimal privacy policy stating the extension does not collect personal data is recommended. Per Chrome's [User Data FAQ](https://developer.chrome.com/docs/webstore/program-policies/user-data-faq), even extensions that don't handle sensitive data should explicitly state so.
+- **Privacy policy**: A privacy policy is required since the extension now handles authentication credentials (opt-in). It should state that credentials are only used for authentication, bookmark data is synced to the project's own server, and no data is shared with third parties. Per Chrome's [User Data FAQ](https://developer.chrome.com/docs/webstore/program-policies/user-data-faq), extensions that handle user data must disclose this.
 
 ### Data use rationale
 
@@ -128,20 +128,26 @@ Zamak's data handling:
 2. **Loads Google Fonts CSS** from `fonts.googleapis.com` / `fonts.gstatic.com` — stylesheet request on bookmarks page only (not script)
 3. **Stores in localStorage** (youtube.com origin) — track selection preferences, theme preference, video bookmark index
 4. **Stores in IndexedDB** (youtube.com origin, `zamak` database) — full caption sessions including merged caption text and bookmarks (selected text, translations, etymology, notes)
-5. **Stores in chrome.storage.local** — video index (title, channel, bookmark count, timestamp) synced from localStorage via relay for cross-origin access
-6. **Does not transmit** any data to third-party or external servers — only to YouTube's own domain and Google Fonts
-7. **Does not collect** PII, browsing history, authentication info, or any sensitive categories listed in Chrome's [Privacy Policies](https://developer.chrome.com/docs/webstore/program-policies/privacy)
+5. **Stores in chrome.storage.local** — video index (title, channel, bookmark count, timestamp) synced from localStorage via relay for cross-origin access; optionally auth token and username when signed in
+6. **Syncs bookmarks** (opt-in) — when signed in, the bookmarks page sends credentials and bookmark data to the project's own server (`ytsub-v5.hiroshi.workers.dev`) via CORS fetch. No host permissions needed.
+7. **Does not transmit** data to any third-party servers — only to YouTube's own domain, Google Fonts, and the project's own server (opt-in sync)
+8. **Does not collect** browsing history or any sensitive categories listed in Chrome's [Privacy Policies](https://developer.chrome.com/docs/webstore/program-policies/privacy). Authentication credentials are only transmitted when the user explicitly signs in.
 
 This data handling is closely related to the extension's single stated purpose, so prominent in-product disclosure is not required per the [Disclosure Requirements](https://developer.chrome.com/docs/webstore/program-policies/disclosure-requirements). A privacy policy explicitly stating what data is handled and that nothing goes to third parties is recommended per the [User Data FAQ](https://developer.chrome.com/docs/webstore/program-policies/user-data-faq).
 
 ## Additional Notes
 
-- Host permission pattern: `https://www.youtube.com/*` (content script match)
+- No host permissions — server communication uses standard CORS fetch from extension pages
+- Content script match pattern: `https://www.youtube.com/*` (content scripts only, no server calls)
 - Content scripts: MAIN world (subtitle panel) + ISOLATED world (relay for bookmark sync)
 - Background service worker: stores video index received from relay + opens bookmarks tab on icon click (`chrome.action.onClicked`)
 - Bookmarks page opens as a full tab (not a popup) — manifest has `"action": {}` with no `default_popup`
-- Bookmarks page loads Google Fonts CSS externally (stylesheet, not code)
+- Bookmarks page: login/logout UI, optional bookmark sync with project server, loads Google Fonts CSS externally (stylesheet, not code)
 - IndexedDB used on youtube.com origin for caption session + bookmark persistence
+
+## Test Instructions
+
+The submission form asks for test credentials "if login, authentication, or specific setup is required" to access core functionality. Zamak's core features (dual subtitles, bookmarks) work fully without login — sign-in is optional for sync only. Leave this field blank unless login becomes required for core functionality.
 
 ## Submission Checklist
 
@@ -149,6 +155,8 @@ This data handling is closely related to the extension's single stated purpose, 
 - [x] Update manifest description
 - [x] Update store description and summary
 - [x] Add `storage` permission justification
+- [x] Update privacy disclosures for auth/sync
+- [ ] Add privacy policy (required for auth handling)
 - [ ] Take new screenshots (including bookmarks page, bookmark editor, settings dropdown)
 - [ ] Build and zip: `pnpm build-ext`
 - [ ] Upload and submit for review
