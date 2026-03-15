@@ -26,42 +26,6 @@ import { chromeStorage } from "./lib/chrome-storage.ts";
 import { getServerUrl } from "./lib/server-url.ts";
 import "../styles.css";
 
-// Configure RPC to use extension server URL + bearer token auth
-setRpcConfig({
-  url: getServerUrl() + "/api",
-  fetch: async (request) => {
-    const token = await chromeStorage.get<string>("session-token");
-    if (token) {
-      const headers = new Headers(
-        request instanceof Request ? request.headers : undefined,
-      );
-      headers.set("authorization", `Bearer ${token}`);
-      request = new Request(request, { headers });
-    }
-    return fetch(request);
-  },
-});
-
-// Two-way bridge: chrome.storage.local <-> localStorage for video-index.
-// Hydrate localStorage from chrome.storage.local before rendering, then keep
-// them in sync so videoIndexStore (localStorage-backed) works on this origin.
-async function bridgeChromeStorage() {
-  // Hydrate: chrome.storage.local -> localStorage -> videoIndexStore
-  const entries = await chromeStorage.get<VideoIndexEntry[]>(VIDEO_INDEX_KEY);
-  if (entries) {
-    localStorage.setItem(VIDEO_INDEX_KEY, JSON.stringify(entries));
-  }
-  videoIndexStore.set(entries ?? []);
-
-  // localStorage -> chrome.storage.local (when videoIndexStore writes)
-  window.addEventListener(`zamak:store:${VIDEO_INDEX_KEY}`, () => {
-    const raw = localStorage.getItem(VIDEO_INDEX_KEY);
-    if (raw) {
-      chromeStorage.set({ [VIDEO_INDEX_KEY]: JSON.parse(raw) });
-    }
-  });
-}
-
 const queryClient = createAppQueryClient({
   defaultOptions: { queries: { refetchOnWindowFocus: false } },
 });
@@ -162,9 +126,40 @@ function ExtensionBookmarksPage() {
   );
 }
 
-// Hydrate localStorage from chrome.storage.local before rendering so that
-// videoIndexStore (localStorage-backed) has the correct data on this origin.
-bridgeChromeStorage().then(() => {
+async function main() {
+  // Configure RPC to use extension server URL + bearer token auth
+  setRpcConfig({
+    url: getServerUrl() + "/api",
+    fetch: async (request) => {
+      const token = await chromeStorage.get<string>("session-token");
+      if (token) {
+        const headers = new Headers(
+          request instanceof Request ? request.headers : undefined,
+        );
+        headers.set("authorization", `Bearer ${token}`);
+        request = new Request(request, { headers });
+      }
+      return fetch(request);
+    },
+  });
+
+  // Two-way bridge: chrome.storage.local <-> localStorage for video-index.
+  // Hydrate localStorage from chrome.storage.local before rendering, then keep
+  // them in sync so videoIndexStore (localStorage-backed) works on this origin.
+  const entries = await chromeStorage.get<VideoIndexEntry[]>(VIDEO_INDEX_KEY);
+  if (entries) {
+    localStorage.setItem(VIDEO_INDEX_KEY, JSON.stringify(entries));
+  }
+  videoIndexStore.set(entries ?? []);
+
+  // localStorage -> chrome.storage.local (when videoIndexStore writes)
+  window.addEventListener(`zamak:store:${VIDEO_INDEX_KEY}`, () => {
+    const raw = localStorage.getItem(VIDEO_INDEX_KEY);
+    if (raw) {
+      chromeStorage.set({ [VIDEO_INDEX_KEY]: JSON.parse(raw) });
+    }
+  });
+
   createRoot(document.getElementById("root")!).render(
     <StrictMode>
       <MemoryRouter>
@@ -175,4 +170,6 @@ bridgeChromeStorage().then(() => {
       </MemoryRouter>
     </StrictMode>,
   );
-});
+}
+
+main();
