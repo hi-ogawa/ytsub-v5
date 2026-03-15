@@ -113,4 +113,4 @@ When adding new tests, prefer `/dev` routes unless the feature requires server i
 2. Commit logical changes separately
 3. **Run `pnpm lint` before every commit** (formats .ts, .tsx, .md, .json, etc.)
 4. Confirm with user before committing
-5. **Avoid force push** - accumulate commits instead (non-destructive)
+5. **Never rebase, never amend, never force push** — merge `origin/main` into the branch when needed; accumulate commits (non-destructive)

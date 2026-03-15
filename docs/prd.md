@@ -106,13 +106,13 @@ A web app for language learning via YouTube subtitles. Watch videos with dual ca
 - [x] chore: security review after extension side login feature
 - [x] feat(web): sync button for video-viewer (push/pull with server)
 - [x] feat(ext): sync status indicator in caption panel (read-only, links to bookmarks page)
+- [x] chore: rename worker `ytsub-v5` → `zamak` — update `wrangler.jsonc` name, re-set secrets on new worker, delete old worker, update CI artifact name and docs
+- [x] feat(web): settings dropdown for video-viewer (auto-scroll toggle, etc. — currently hidden when `sessionOnly`)
 
 ## TODO
 
-- [ ] feat(web): settings dropdown for video-viewer (auto-scroll toggle, etc. — currently hidden when `sessionOnly`)
 - [ ] feat: "sync all" button on bookmarks/list page
-- [ ] fix: better loading indicator when IndexedDB initial store query is pending (currently returns `null`) (`src/components/caption-panel.tsx:437`)
-- [x] test(ext): enhance extension page e2e (seed, sync, etc.)
+- [ ] test(ext): enhance extension page e2e (seed, sync, etc.)
 
 ## TODO: Backlog
 
@@ -121,7 +121,6 @@ A web app for language learning via YouTube subtitles. Watch videos with dual ca
 - [ ] fix: server routes throw plain `Error` instead of `ORPCError` — `videos.ts` and `bookmarks.ts` use `throw new Error("Video not found")` which becomes generic 500; should be `ORPCError("NOT_FOUND")` for proper status codes and client-readable messages.
 - [ ] feat: root ErrorBoundary — no React ErrorBoundary exists; unhandled render error white-screens the app.
 - [ ] feat: Bookmark export — export to import bookmarks for Anki study
-- [ ] chore: rename worker `ytsub-v5` → `zamak` — update `wrangler.jsonc` name, re-set secrets on new worker, delete old worker, update CI artifact name and docs
 - [ ] chore: AI integration help page: record a short screen-recording (GIF or MP4) of the copy→paste→import flow and embed in the doc
 - [ ] fix: adjust prompt to be language independent (currently assumes korean)
 - [ ] chore: document and log AI prompt eval results (`docs/skills/eval/SKILL.md`) (consolidate `docs/skills/*` into `docs/eval/README.md`)
@@ -135,3 +134,4 @@ A web app for language learning via YouTube subtitles. Watch videos with dual ca
 - [ ] refactor: use `sql` template for `createdAt` schema defaults instead of string literal — avoids Drizzle binding `(datetime('now'))` as a param, reducing bind count per row and allowing larger batch sizes
 - [ ] chore: rework "Bookmarked Videos" heading/framing — home page is just "Videos"; empty state text assumes extension but web app uses import/sync
 - [ ] refactor: `CaptionSessionManager.strategy` field feels misplaced — consider moving merge strategy out of the session object (`src/lib/caption-session.ts:176`)
+- [ ] fix: better loading indicator when IndexedDB initial store query is pending (currently returns `null`) (`src/components/caption-panel.tsx:437`)
