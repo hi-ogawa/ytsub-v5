@@ -58,9 +58,6 @@ A web app for language learning via YouTube subtitles. Watch videos with dual ca
 - [x] Mobile-friendly layout
 - [x] Browser extension as data source (content script fetches subs from YouTube same-origin)
 - [x] Authentication (multi users)
-
-### Extension
-
 - [x] captions panel shouldn't cover YouTube's top-right profile popover
 - [x] captions panel should be hidable (FAB at bottom-right, default closed)
 - [x] captions panel width should be changeable.
@@ -83,40 +80,36 @@ A web app for language learning via YouTube subtitles. Watch videos with dual ca
 - [x] feat: extension bookmark editor + AI prompt copy
   - manual AI prompt copy flow (copy context to clipboard → paste into external LLM)
   - extension bookmark editor UI to review/edit AI-filled fields before export
-
-## TODO
-
-- [ ] feat: repeat/loop mode — loop a section between two caption timestamps
-- [ ] chore: unit-testable API layer — swap `cloudflare:workers` env + D1 drizzle adapter for local SQLite (e.g. `better-sqlite3`) so RPC handlers can be tested directly without spinning up wrangler/Playwright
-- [ ] refactor: use `sql` template for `createdAt` schema defaults instead of string literal — avoids Drizzle binding `(datetime('now'))` as a param, reducing bind count per row and allowing larger batch sizes
-- [ ] feat: repeatable eval process for ytsub agent skill — run skill against sample videos, check for common failure modes (wrong offsets, API errors, subtitle quality issues, payload format), track success rate across runs
-- [ ] feat: Bookmark export — export to import bookmarks for Anki study
-- [ ] test: test skills/scripts
-- [ ] feat: add `vssId1/vssId2` to db
-
-## TODO: Extension
-
+- [x] feat: add `vssId1/vssId2` to db
 - [x] persiste fab open/close state per video
-- [ ] consolidate captions panel for extension/dev-viewer/video-viewer
+- [x] consolidate captions panel for extension/dev-viewer/video-viewer
   - [x] video-viewer rewritten to use shared `CaptionPanel` with `sessionOnly` flag
   - [x] drop `@tanstack/react-virtual` (no virtualization)
   - [x] flash-highlight + auto-scroll pause on bookmark→caption navigation (video-viewer only)
-  - [ ] settings dropdown for video-viewer (auto-scroll toggle, etc. — currently hidden when `sessionOnly`)
-  - [ ] sync button for video-viewer (push/pull with server)
   - [x] e2e: rework after video-viewer consolidation — delete `bookmark-viewer.spec.ts`, fix route patterns, remove server-dependent viewer assertions
   - [x] e2e: restore delete-bookmark test (`delete.spec.ts`) — import fixture then delete bookmark in viewer
   - [x] e2e: restore import test (`import.spec.ts`) — verify viewer loads captions and bookmarks from IndexedDB after import
-- [x] feat: bookmarks page server sync — merge server videos with per-video push/pull (`useVideoSync`)
-- [x] feat: web app as browser client — retire server-rendered video-list in favor of client storage
-  - [x] video list (`/`): replaced with `BookmarksPage` + `useVideoSync`, import moved to header menu (saves to IndexedDB)
-  - [x] video viewer: `sessionOnly` flag, loads from IndexedDB
-- [ ] rework "Bookmarked Videos" heading/framing — home page is just "Videos"; empty state text assumes extension but web app uses import/sync
 - [x] remove dev-bookmarks (redundant with video-list) — keep dev-index and dev-viewer for extension-specific testing (track picker, FAB, overlay). Bootstrap fixtures button is in header menu.
 - [x] video card design improvements
   - sync badge placement: move to bottom-right (status, not title action)
   - delete should support both client (IndexedDB) and server storage — e.g. "Delete locally" / "Delete from server" / "Delete everywhere"
-- [ ] extension login
-- [ ] extension sync (expose only on bookmark pages?)
+- [x] feat: bookmarks page server sync — merge server videos with per-video push/pull (`useVideoSync`)
+- [x] feat: web app as browser client — retire server-rendered video-list in favor of client storage
+  - [x] video list (`/`): replaced with `BookmarksPage` + `useVideoSync`, import moved to header menu (saves to IndexedDB)
+  - [x] video viewer: `sessionOnly` flag, loads from IndexedDB
+
+## TODO
+
+- [ ] feat(web): settings dropdown for video-viewer (auto-scroll toggle, etc. — currently hidden when `sessionOnly`)
+- [ ] feat(web): sync button for video-viewer (push/pull with server)
+- [x] feat(ext): login
+- [ ] feat(ext): sync (expose only on bookmark pages?)
+- [ ] refactor: `CaptionSessionManager.strategy` field feels misplaced — consider moving merge strategy out of the session object (`src/lib/caption-session.ts:176`)
+- [ ] chore: e2e test probes internal storage key `zamak:video-index` — abstract behind helper or use UI-level assertions (`e2e/video-list.spec.ts:4`)
+- [ ] fix: better loading indicator when IndexedDB initial store query is pending (currently returns `null`) (`src/components/caption-panel.tsx:437`)
+- [ ] chore: consolidate `playwright.youtube.config.ts` with `playwright.config.ts` — merge configs and split via projects (`playwright.youtube.config.ts:3`)
+- [ ] refactor(ext): integrate background.js and rely.js in build (rewrite typescript)
+- [ ] refactor(ext): chrome global typing
 
 ## TODO: Backlog
 
@@ -129,3 +122,11 @@ A web app for language learning via YouTube subtitles. Watch videos with dual ca
 - [ ] Full-text search — search across captions and bookmarks (D1 FTS or LIKE)
 - [ ] Keyboard shortcuts — space (play/pause), arrow keys (prev/next caption), etc.
 - [ ] Typing practice (v3/v4 had this)
+- [ ] feat: repeat/loop mode — loop a section between two caption timestamps
+- [ ] chore: unit-testable API layer — swap `cloudflare:workers` env + D1 drizzle adapter for local SQLite (e.g. `better-sqlite3`) so RPC handlers can be tested directly without spinning up wrangler/Playwright
+- [ ] refactor: use `sql` template for `createdAt` schema defaults instead of string literal — avoids Drizzle binding `(datetime('now'))` as a param, reducing bind count per row and allowing larger batch sizes
+- [ ] feat: repeatable eval process for ytsub agent skill — run skill against sample videos, check for common failure modes (wrong offsets, API errors, subtitle quality issues, payload format), track success rate across runs
+- [ ] feat: Bookmark export — export to import bookmarks for Anki study
+- [ ] test: test skills/scripts
+- [ ] rework "Bookmarked Videos" heading/framing — home page is just "Videos"; empty state text assumes extension but web app uses import/sync
+- [ ] chore: document and log AI prompt eval results (`docs/skills/eval/SKILL.md`)
