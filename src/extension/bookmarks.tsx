@@ -14,12 +14,11 @@ import {
 } from "../components/ui/dropdown-menu.tsx";
 import { useStore } from "../lib/external-store.ts";
 import { createAppQueryClient } from "../lib/query-client.ts";
-import { type VideoSyncEntry, mergeVideoEntries } from "../lib/sync.ts";
+import { type VideoSyncActions, useVideoSync } from "../lib/sync.ts";
 import { useTheme } from "../lib/theme.ts";
 import {
   VIDEO_INDEX_KEY,
   type VideoIndexEntry,
-  setSyncedAt,
   updateVideoIndex,
   videoIndexStore,
 } from "../lib/video-index.ts";
@@ -32,76 +31,24 @@ import "../styles.css";
 
 const bgRpc = createRpc<typeof bgRpcHandlers>({ direct: true });
 
+const extensionSyncActions: VideoSyncActions = {
+  async pushSession(youtubeId) {
+    await bgRpc.pushSession({ youtubeId });
+  },
+  async pullSession(youtubeId) {
+    const result = await bgRpc.pullSession({ youtubeId });
+    updateVideoIndex(
+      youtubeId,
+      result.title,
+      result.channelName,
+      result.bookmarkCount,
+    );
+  },
+};
+
 const queryClient = createAppQueryClient({
   defaultOptions: { queries: { refetchOnWindowFocus: false } },
 });
-
-function useExtensionVideoSync() {
-  const [videoIndex] = useStore(videoIndexStore);
-
-  const authQuery = useQuery(orpc.auth.check.queryOptions());
-  const authenticated = authQuery.data?.authenticated === true;
-
-  const serverQuery = useQuery({
-    ...orpc.videos.listVideos.queryOptions({ input: { limit: 200 } }),
-    enabled: authenticated,
-    select: (data) => mergeVideoEntries(videoIndex, data.items),
-  });
-
-  const [syncing, setSyncing] = useState<Set<string>>(new Set());
-
-  const withSyncing = async (youtubeId: string, fn: () => Promise<void>) => {
-    setSyncing((s) => new Set(s).add(youtubeId));
-    try {
-      await fn();
-    } finally {
-      setSyncing((s) => {
-        const next = new Set(s);
-        next.delete(youtubeId);
-        return next;
-      });
-    }
-  };
-
-  const onPush = async (youtubeId: string) => {
-    await withSyncing(youtubeId, async () => {
-      await bgRpc.pushSession({ youtubeId });
-      setSyncedAt(youtubeId);
-      serverQuery.refetch();
-    });
-  };
-
-  const onPull = async (youtubeId: string) => {
-    await withSyncing(youtubeId, async () => {
-      const result = await bgRpc.pullSession({ youtubeId });
-      updateVideoIndex(
-        youtubeId,
-        result.title,
-        result.channelName,
-        result.bookmarkCount,
-      );
-      setSyncedAt(youtubeId);
-      serverQuery.refetch();
-    });
-  };
-
-  const isPending =
-    authQuery.isLoading || (authenticated && serverQuery.isLoading);
-  const entries: VideoSyncEntry[] = serverQuery.data ?? videoIndex;
-
-  return {
-    authenticated,
-    isPending,
-    entries,
-    syncing,
-    onPull,
-    onPush,
-    refetch: () => {
-      authQuery.refetch();
-      serverQuery.refetch();
-    },
-  };
-}
 
 function ExtensionBookmarksPage() {
   const [entries] = useStore(videoIndexStore);
@@ -109,7 +56,7 @@ function ExtensionBookmarksPage() {
     chromeStorage.queryOptions<string>("username"),
   );
   const { theme, cycle, Icon } = useTheme();
-  const sync = useExtensionVideoSync();
+  const sync = useVideoSync(extensionSyncActions);
   const [showLogin, setShowLogin] = useState(false);
 
   const handleLogout = async () => {

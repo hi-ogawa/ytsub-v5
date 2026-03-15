@@ -211,8 +211,32 @@ export function mergeVideoEntries(
 
 export type VideoSyncHandle = ReturnType<typeof useVideoSync>;
 
-export function useVideoSync() {
-  const queryClient = useQueryClient();
+export interface VideoSyncActions {
+  pushSession(youtubeId: string): Promise<void>;
+  pullSession(youtubeId: string): Promise<void>;
+}
+
+const defaultSyncActions: VideoSyncActions = {
+  async pushSession(youtubeId) {
+    const session = await getSession(youtubeId);
+    if (!session) throw new Error("No local session found");
+    await orpc.videos.importVideo.call(sessionToExportData(session));
+  },
+  async pullSession(youtubeId) {
+    const data = await orpc.videos.getFullSession.call({ youtubeId });
+    if (!data) throw new Error("Video not found on server");
+    const session = serverSessionToLocal(data);
+    await saveSession(session);
+    updateVideoIndex(
+      session.youtubeId,
+      session.title,
+      session.channelName,
+      session.bookmarks.length,
+    );
+  },
+};
+
+export function useVideoSync(actions: VideoSyncActions = defaultSyncActions) {
   const [videoIndex] = useStore(videoIndexStore);
 
   const authQuery = useQuery(orpc.auth.check.queryOptions());
@@ -239,43 +263,19 @@ export function useVideoSync() {
     }
   };
 
-  const pullMutation = useMutation({
-    mutationFn: async (youtubeId: string) => {
-      await withSyncing(youtubeId, async () => {
-        const data = await queryClient.fetchQuery(
-          orpc.videos.getFullSession.queryOptions({ input: { youtubeId } }),
-        );
-        if (!data) throw new Error("Video not found on server");
-        const session = serverSessionToLocal(data);
-        await saveSession(session);
-        updateVideoIndex(
-          session.youtubeId,
-          session.title,
-          session.channelName,
-          session.bookmarks.length,
-        );
-        setSyncedAt(session.youtubeId);
-      });
-    },
-    onSuccess: () => {
-      serverQuery.refetch();
-    },
-  });
-
-  const pushMutation = useMutation(
-    orpc.videos.importVideo.mutationOptions({
-      onSuccess: () => {
-        serverQuery.refetch();
-      },
-    }),
-  );
-
   const onPush = async (youtubeId: string) => {
     await withSyncing(youtubeId, async () => {
-      const session = await getSession(youtubeId);
-      if (!session) throw new Error("No local session found");
-      pushMutation.mutate(sessionToExportData(session));
+      await actions.pushSession(youtubeId);
       setSyncedAt(youtubeId);
+      serverQuery.refetch();
+    });
+  };
+
+  const onPull = async (youtubeId: string) => {
+    await withSyncing(youtubeId, async () => {
+      await actions.pullSession(youtubeId);
+      setSyncedAt(youtubeId);
+      serverQuery.refetch();
     });
   };
 
@@ -288,7 +288,7 @@ export function useVideoSync() {
     isPending,
     entries,
     syncing,
-    onPull: (youtubeId: string) => pullMutation.mutate(youtubeId),
+    onPull,
     onPush,
     refetch: () => {
       authQuery.refetch();
