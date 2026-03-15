@@ -140,7 +140,7 @@ test("video-viewer settings dropdown and track label", async ({ page }) => {
   await expect(page).toHaveURL("/videos/7GU_VQfgMT0");
 
   // Track label shows language codes
-  await expect(page.getByText("ko · en")).toBeVisible();
+  await expect(page.getByText("Korean · English")).toBeVisible();
 
   // Settings dropdown opens and has auto-scroll toggle
   await page.getByTitle("Settings").click();

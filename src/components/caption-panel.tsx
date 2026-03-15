@@ -323,6 +323,13 @@ function importAiResult(store: CaptionSessionManager): void {
 
 // --- CaptionPanel: display component ---
 
+const displayNames = new Intl.DisplayNames(["en"], { type: "language" });
+
+function langName(vssId: string): string {
+  const code = vssId.split(".").pop()!;
+  return displayNames.of(code) ?? code;
+}
+
 function formatTimestamp(seconds: number): string {
   const m = Math.floor(seconds / 60);
   const s = Math.floor(seconds % 60);
@@ -650,7 +657,7 @@ function CaptionPanelWithStore({
           </div>
         ) : (
           <span className="flex-1 px-2 py-1 text-sm text-muted-foreground lg:py-1.5">
-            {store.vssId1.split(".").pop()} · {store.vssId2.split(".").pop()}
+            {langName(store.vssId1)} · {langName(store.vssId2)}
           </span>
         )}
         <SettingsDropdown
