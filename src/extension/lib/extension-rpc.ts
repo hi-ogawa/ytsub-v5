@@ -15,7 +15,7 @@
 
 // --- Wire format ---
 
-export type RpcRequest = {
+type RpcRequest = {
   type: "zamak-rpc";
   id: string;
   method: string;
