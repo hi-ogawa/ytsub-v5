@@ -113,6 +113,7 @@ A web app for language learning via YouTube subtitles. Watch videos with dual ca
 
 - [ ] feat: "sync all" button on bookmarks/list page
 - [ ] test(ext): enhance extension page e2e (seed, sync, etc.)
+- [ ] feat: improve CTA between extensions and web apps
 
 ## TODO: Backlog
 
