@@ -2,50 +2,51 @@
 // and stores video index in chrome.storage.local.
 
 import { VIDEO_INDEX_KEY } from "../lib/video-index.ts";
+import { orpc, setRpcConfig } from "../rpc.ts";
 import { chromeStorage } from "./lib/chrome-storage.ts";
-import { type RpcHandlers, registerRpcHandlers } from "./lib/extension-rpc.ts";
+import { registerRpcHandlers } from "./lib/extension-rpc.ts";
 import { getServerUrl } from "./lib/server-url.ts";
 
-const handlers: RpcHandlers = {
-  async getSyncState({ youtubeId }) {
-    const token = await chromeStorage.get<string>("session-token");
-    if (!token) return { authenticated: false };
+function main() {
+  setRpcConfig({
+    url: getServerUrl() + "/api",
+    fetch: async (request) => {
+      const token = await chromeStorage.get<string>("session-token");
+      if (token) {
+        const headers = new Headers(
+          request instanceof Request ? request.headers : undefined,
+        );
+        headers.set("authorization", `Bearer ${token}`);
+        request = new Request(request, { headers });
+      }
+      return fetch(request);
+    },
+  });
 
-    try {
-      const res = await fetch(
-        `${getServerUrl()}/api/videos.getVideoUpdatedAt`,
-        {
-          method: "POST",
-          headers: {
-            "content-type": "application/json",
-            authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ json: { youtubeId } }),
-        },
-      );
-      if (!res.ok) return { authenticated: true };
-      const data: { json?: { updatedAt?: string } } = await res.json();
+  registerRpcHandlers({
+    async getSyncState({ youtubeId }) {
+      const { authenticated } = await orpc.auth.check.call({});
+      if (!authenticated) return { authenticated: false };
+      const data = await orpc.videos.getVideoUpdatedAt.call({ youtubeId });
       return {
         authenticated: true,
-        serverUpdatedAt: data?.json?.updatedAt,
+        serverUpdatedAt: data?.updatedAt,
       };
-    } catch {
-      return { authenticated: true };
-    }
-  },
+    },
 
-  async openBookmarks() {
+    async openBookmarks() {
+      chrome.tabs.create({ url: "bookmarks.html" });
+    },
+
+    async videoIndexUpdated({ entries }) {
+      chrome.storage.local.set({ [VIDEO_INDEX_KEY]: entries });
+    },
+  });
+
+  // Open bookmarks page in a new tab when extension icon is clicked.
+  chrome.action.onClicked.addListener(() => {
     chrome.tabs.create({ url: "bookmarks.html" });
-  },
+  });
+}
 
-  async videoIndexUpdated({ entries }) {
-    chrome.storage.local.set({ [VIDEO_INDEX_KEY]: entries });
-  },
-};
-
-registerRpcHandlers(handlers);
-
-// Open bookmarks page in a new tab when extension icon is clicked.
-chrome.action.onClicked.addListener(() => {
-  chrome.tabs.create({ url: "bookmarks.html" });
-});
+main();
