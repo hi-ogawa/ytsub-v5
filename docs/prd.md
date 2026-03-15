@@ -111,6 +111,7 @@ A web app for language learning via YouTube subtitles. Watch videos with dual ca
 - [ ] refactor(ext): integrate background.js and rely.js in build (rewrite typescript)
 - [ ] refactor(ext): chrome global typing
 - [ ] refactor(ext): chrome storage abstraction (like local stroage store)
+- [ ] test(ext): enhance extension page e2e (seed, sync, etc.)
 
 ## TODO: Backlog
 
