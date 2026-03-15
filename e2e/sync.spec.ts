@@ -218,6 +218,26 @@ test.describe("video-list sync", () => {
     );
   });
 
+  test("conflict badge resolves via prompt", async ({ page }) => {
+    await setupDb({ seed: true });
+    await login(page);
+
+    // Create local bookmark on fixture video that already exists on server
+    await page.goto(`/dev/videos/${FIXTURE_VIDEO_ID}`);
+    await openPanelWithTracks(page);
+    await createBookmarkAt(page, { index: 0, start: 0, end: 3 });
+
+    // Video list should show conflict badge
+    await page.goto("/");
+    const badge = syncBadge(page, FIXTURE_VIDEO_ID);
+    await expect(badge).toHaveAttribute("data-sync-status", "conflict");
+
+    // Resolve via push
+    page.once("dialog", (dialog) => dialog.accept("push"));
+    await badge.click();
+    await expect(badge).toHaveAttribute("data-sync-status", "synced");
+  });
+
   test("pushed video appears on server video list", async ({ page }) => {
     await setupDb({ seed: true });
     await login(page, { username: "dev-empty" });
