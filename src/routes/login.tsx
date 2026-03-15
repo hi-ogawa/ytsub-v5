@@ -9,7 +9,7 @@ export function LoginPage() {
     ...orpc.auth.login.mutationOptions({
       onSuccess: () => navigate("/", { replace: true }),
     }),
-    meta: { suppressToast: true },
+    meta: { toastOnError: false },
   });
 
   function handleSubmit(e: SubmitEvent<HTMLFormElement>) {
@@ -65,7 +65,7 @@ export function RegisterPage() {
     ...orpc.auth.register.mutationOptions({
       onSuccess: () => navigate("/", { replace: true }),
     }),
-    meta: { suppressToast: true },
+    meta: { toastOnError: false },
   });
 
   function handleSubmit(e: SubmitEvent<HTMLFormElement>) {
