@@ -98,21 +98,19 @@ A web app for language learning via YouTube subtitles. Watch videos with dual ca
   - [x] video list (`/`): replaced with `BookmarksPage` + `useVideoSync`, import moved to header menu (saves to IndexedDB)
   - [x] video viewer: `sessionOnly` flag, loads from IndexedDB
 - [x] feat: AI integration help page — link from the "AI prompt" dropdown label to `docs/ai-integration.md`;
+- [x] refactor(ext): integrate background.js and rely.js in build (rewrite typescript)
+- [x] refactor(ext): chrome global typing
+- [x] refactor(ext): chrome storage abstraction (like local stroage store)
+- [x] feat(ext): login
 
 ## TODO
 
 - [ ] feat(web): settings dropdown for video-viewer (auto-scroll toggle, etc. — currently hidden when `sessionOnly`)
 - [ ] feat(web): sync button for video-viewer (push/pull with server)
-- [x] feat(ext): login
-- [ ] feat(ext): sync (expose only on bookmark pages?)
-- [ ] refactor: `CaptionSessionManager.strategy` field feels misplaced — consider moving merge strategy out of the session object (`src/lib/caption-session.ts:176`)
+- [ ] feat(ext): sync
+- [ ] test(ext): enhance extension page e2e (seed, sync, etc.) (actually broken so need to fix)
 - [ ] chore: e2e test probes internal storage key `zamak:video-index` — abstract behind helper or use UI-level assertions (`e2e/video-list.spec.ts:4`)
 - [ ] fix: better loading indicator when IndexedDB initial store query is pending (currently returns `null`) (`src/components/caption-panel.tsx:437`)
-- [ ] chore: consolidate `playwright.youtube.config.ts` with `playwright.config.ts` — merge configs and split via projects (`playwright.youtube.config.ts:3`)
-- [ ] refactor(ext): integrate background.js and rely.js in build (rewrite typescript)
-- [ ] refactor(ext): chrome global typing
-- [ ] refactor(ext): chrome storage abstraction (like local stroage store)
-- [ ] test(ext): enhance extension page e2e (seed, sync, etc.)
 - [ ] chore: security review after extension side login feature
 
 ## TODO: Backlog
@@ -131,3 +129,4 @@ A web app for language learning via YouTube subtitles. Watch videos with dual ca
 - [ ] feat: repeat/loop mode — loop a section between two caption timestamps
 - [ ] refactor: use `sql` template for `createdAt` schema defaults instead of string literal — avoids Drizzle binding `(datetime('now'))` as a param, reducing bind count per row and allowing larger batch sizes
 - [ ] chore: rework "Bookmarked Videos" heading/framing — home page is just "Videos"; empty state text assumes extension but web app uses import/sync
+- [ ] refactor: `CaptionSessionManager.strategy` field feels misplaced — consider moving merge strategy out of the session object (`src/lib/caption-session.ts:176`)
