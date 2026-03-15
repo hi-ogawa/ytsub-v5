@@ -34,7 +34,7 @@ test.describe("dev-viewer sync", () => {
     await expect(syncBtn).toHaveAttribute("data-sync-state", "synced");
 
     // Create a bookmark
-    await createBookmarkAt(page, 0, 0, 3);
+    await createBookmarkAt(page, { index: 0, start: 0, end: 3 });
 
     // Should switch to push state
     await expect(syncBtn).toHaveAttribute("data-sync-state", "push");
@@ -50,7 +50,7 @@ test.describe("dev-viewer sync", () => {
     await openPanelWithTracks(page);
 
     // Create bookmark and push
-    await createBookmarkAt(page, 0, 0, 3);
+    await createBookmarkAt(page, { index: 0, start: 0, end: 3 });
     const syncBtn = page.getByTestId("sync-button");
     await expect(syncBtn).toHaveAttribute("data-sync-state", "push");
     await syncBtn.click();
@@ -65,8 +65,8 @@ test.describe("dev-viewer sync", () => {
     await openPanelWithTracks(page);
 
     // Create 2 bookmarks locally and push
-    await createBookmarkAt(page, 0, 0, 3);
-    await createBookmarkAt(page, 1, 0, 2);
+    await createBookmarkAt(page, { index: 0, start: 0, end: 3 });
+    await createBookmarkAt(page, { index: 1, start: 0, end: 2 });
     const syncBtn = page.getByTestId("sync-button");
     await syncBtn.click();
     await expect(syncBtn).toHaveAttribute("data-sync-state", "synced");
@@ -128,7 +128,7 @@ test.describe("dev-viewer video-index", () => {
   }) => {
     await page.goto(`/dev/videos/${FIXTURE_VIDEO_ID}`);
     await openPanelWithTracks(page);
-    await createBookmarkAt(page, 0, 0, 2);
+    await createBookmarkAt(page, { index: 0, start: 0, end: 2 });
 
     // Navigate to video list and verify the video card
     await page.goto("/");
@@ -144,7 +144,7 @@ test.describe("dev-viewer video-index", () => {
     await page.goto(`/dev/videos/${FIXTURE_VIDEO_ID}`);
     // Panel stays open (FAB state persisted from earlier in this test)
     await expect(page.locator("[data-index='0']")).toBeVisible();
-    await createBookmarkAt(page, 1, 0, 2);
+    await createBookmarkAt(page, { index: 1, start: 0, end: 2 });
     await page.goto("/");
     await expect(
       page
@@ -164,7 +164,7 @@ test.describe("video-list sync", () => {
     // Create a bookmark via dev-viewer
     await page.goto(`/dev/videos/${FIXTURE_VIDEO_ID}`);
     await openPanelWithTracks(page);
-    await createBookmarkAt(page, 0, 0, 3);
+    await createBookmarkAt(page, { index: 0, start: 0, end: 3 });
 
     // Go to video list — local-only with auth shows as "push"
     await page.goto("/");
@@ -182,7 +182,7 @@ test.describe("video-list sync", () => {
     // Create bookmark and push from dev-viewer
     await page.goto(`/dev/videos/${FIXTURE_VIDEO_ID}`);
     await openPanelWithTracks(page);
-    await createBookmarkAt(page, 0, 0, 3);
+    await createBookmarkAt(page, { index: 0, start: 0, end: 3 });
     const devSyncBtn = page.getByTestId("sync-button");
     await devSyncBtn.click();
     await expect(devSyncBtn).toHaveAttribute("data-sync-state", "synced");
@@ -220,7 +220,7 @@ test.describe("video-list sync", () => {
     // Create bookmark and push via video list
     await page.goto(`/dev/videos/${FIXTURE_VIDEO_ID}`);
     await openPanelWithTracks(page);
-    await createBookmarkAt(page, 0, 0, 3);
+    await createBookmarkAt(page, { index: 0, start: 0, end: 3 });
 
     await page.goto("/");
     const badge = syncBadge(page, FIXTURE_VIDEO_ID);

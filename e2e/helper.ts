@@ -36,38 +36,34 @@ export async function openPanelWithTracks(page: Page) {
   await expect(page.locator("[data-index='0']")).toBeVisible();
 }
 
+interface CaptionSelection {
+  index: number;
+  start: number;
+  end: number;
+}
+
 /** Select text in a caption row (shows FAB but doesn't click) */
 export async function selectTextInCaption(
   page: Page,
-  index: number,
-  start: number,
-  end: number,
+  options: CaptionSelection,
 ) {
-  await page.evaluate(
-    ({ index, start, end }) => {
-      const sideEl = document
-        .querySelector(`[data-index='${index}']`)!
-        .querySelector("[data-side='0']")!;
-      const textSpan = sideEl.querySelector("[data-offset]")!;
-      const textNode = textSpan.firstChild!;
-      const range = document.createRange();
-      range.setStart(textNode, start);
-      range.setEnd(textNode, end);
-      const selection = document.getSelection()!;
-      selection.removeAllRanges();
-      selection.addRange(range);
-    },
-    { index, start, end },
-  );
+  await page.evaluate(({ index, start, end }) => {
+    const sideEl = document
+      .querySelector(`[data-index='${index}']`)!
+      .querySelector("[data-side='0']")!;
+    const textSpan = sideEl.querySelector("[data-offset]")!;
+    const textNode = textSpan.firstChild!;
+    const range = document.createRange();
+    range.setStart(textNode, start);
+    range.setEnd(textNode, end);
+    const selection = document.getSelection()!;
+    selection.removeAllRanges();
+    selection.addRange(range);
+  }, options);
 }
 
 /** Select text in a caption row and create a bookmark */
-export async function createBookmarkAt(
-  page: Page,
-  index: number,
-  start: number,
-  end: number,
-) {
-  await selectTextInCaption(page, index, start, end);
+export async function createBookmarkAt(page: Page, options: CaptionSelection) {
+  await selectTextInCaption(page, options);
   await page.getByRole("button", { name: "Create bookmark" }).click();
 }

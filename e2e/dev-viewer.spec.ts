@@ -228,7 +228,7 @@ test.describe("dev-viewer caption panel", () => {
     await openPanelWithTracks(page);
 
     // Select text — cancel hides FAB
-    await selectTextInCaption(page, 0, 0, 3);
+    await selectTextInCaption(page, { index: 0, start: 0, end: 3 });
     await expect(page.getByRole("button", { name: "Cancel" })).toBeVisible();
     await page.getByRole("button", { name: "Cancel" }).click();
     await expect(
@@ -236,7 +236,7 @@ test.describe("dev-viewer caption panel", () => {
     ).not.toBeVisible();
 
     // Select again and create bookmark
-    await selectTextInCaption(page, 0, 0, 3);
+    await selectTextInCaption(page, { index: 0, start: 0, end: 3 });
     await expect(
       page.getByRole("button", { name: "Create bookmark" }),
     ).toBeVisible();
@@ -276,7 +276,7 @@ test.describe("dev-viewer caption panel", () => {
     await openPanelWithTracks(page);
 
     // Create a bookmark first
-    await createBookmarkAt(page, 0, 0, 3);
+    await createBookmarkAt(page, { index: 0, start: 0, end: 3 });
 
     // Track selects should be disabled
     const selects = page.locator("select");
@@ -302,7 +302,7 @@ test.describe("dev-viewer caption panel", () => {
     await openPanelWithTracks(page);
 
     // Create a bookmark
-    await createBookmarkAt(page, 0, 0, 3);
+    await createBookmarkAt(page, { index: 0, start: 0, end: 3 });
     await expect(
       page.locator("[data-index='0'] .bg-highlight-bg"),
     ).toBeVisible();
@@ -339,7 +339,7 @@ test.describe("dev-viewer caption panel", () => {
 
     // Create bookmark and verify count
     await panel.getByRole("button", { name: "Captions" }).click();
-    await createBookmarkAt(page, 0, 0, 3);
+    await createBookmarkAt(page, { index: 0, start: 0, end: 3 });
     await expect(
       panel.getByRole("button", { name: "Bookmarks (1)" }),
     ).toBeVisible();
@@ -364,7 +364,7 @@ test.describe("dev-viewer caption panel", () => {
       page.getByRole("button", { name: "Previous bookmark" }),
     ).not.toBeVisible();
 
-    await createBookmarkAt(page, 0, 0, 3);
+    await createBookmarkAt(page, { index: 0, start: 0, end: 3 });
 
     await expect(
       page.getByRole("button", { name: "Previous bookmark" }),
@@ -379,7 +379,7 @@ test.describe("dev-viewer caption panel", () => {
   }) => {
     await openPanelWithTracks(page);
     const panel = page.getByTestId("resizable-panel");
-    await createBookmarkAt(page, 0, 0, 3);
+    await createBookmarkAt(page, { index: 0, start: 0, end: 3 });
 
     // Switch to bookmarks tab
     await panel.getByRole("button", { name: /Bookmarks/ }).click();
@@ -398,7 +398,7 @@ test.describe("dev-viewer caption panel", () => {
   test("delete bookmark from bookmarks tab", async ({ page }) => {
     await openPanelWithTracks(page);
     const panel = page.getByTestId("resizable-panel");
-    await createBookmarkAt(page, 0, 0, 3);
+    await createBookmarkAt(page, { index: 0, start: 0, end: 3 });
 
     await panel.getByRole("button", { name: /Bookmarks/ }).click();
     await expect(page.locator("[data-bookmark-id]").first()).toBeVisible();
@@ -425,7 +425,7 @@ test.describe("dev-viewer caption panel", () => {
 
   test("bookmark highlight shows popover on click", async ({ page }) => {
     await openPanelWithTracks(page);
-    await createBookmarkAt(page, 0, 0, 3);
+    await createBookmarkAt(page, { index: 0, start: 0, end: 3 });
 
     // Click the bookmark highlight to open popover
     const highlight = page
@@ -451,7 +451,7 @@ test.describe("dev-viewer caption panel", () => {
   }) => {
     await openPanelWithTracks(page);
     const panel = page.getByTestId("resizable-panel");
-    await createBookmarkAt(page, 0, 0, 3);
+    await createBookmarkAt(page, { index: 0, start: 0, end: 3 });
 
     // Click highlight to open popover
     const highlight = page
@@ -523,7 +523,7 @@ test.describe("dev-viewer caption panel", () => {
     await openPanelWithTracks(page);
 
     // Create a bookmark first
-    await createBookmarkAt(page, 0, 0, 3);
+    await createBookmarkAt(page, { index: 0, start: 0, end: 3 });
 
     // Verify unfilled state
     const panel = page.getByTestId("resizable-panel");
