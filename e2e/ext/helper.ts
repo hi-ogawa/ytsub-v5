@@ -7,7 +7,7 @@ import {
   type Page,
 } from "@playwright/test";
 
-export const SERVER_URL = "http://localhost:5190";
+const SERVER_URL = "http://localhost:5190";
 
 // https://playwright.dev/docs/chrome-extensions
 export const test = baseTest.extend<{
