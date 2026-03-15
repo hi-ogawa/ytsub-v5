@@ -1,20 +1,27 @@
 import { exec } from "node:child_process";
+import { globSync, statSync } from "node:fs";
 import { promisify } from "node:util";
 import { expect, type Page } from "@playwright/test";
 
 export const execAsync = promisify(exec);
 
+// Write to miniflare's D1 sqlite file directly instead of going through
+// wrangler CLI (0.15s vs 2s per call). WAL mode makes this safe while
+// the dev server is running.
 export async function setupDb(options: { seed?: boolean } = {}) {
-  await execAsync(`pnpm db:clear --persist-to .wrangler/state/e2e`);
-  if (options.seed) {
-    await execAsync(`pnpm db:seed --persist-to .wrangler/state/e2e`);
-  }
+  const dbPath = globSync(
+    ".wrangler/state/e2e/v3/d1/miniflare-D1DatabaseObject/*.sqlite",
+  ).sort((a, b) => statSync(b).mtimeMs - statSync(a).mtimeMs)[0];
+  const sql = options.seed
+    ? "scripts/db-clear.sql scripts/db-seed.sql"
+    : "scripts/db-clear.sql";
+  await execAsync(`cat ${sql} | sqlite3 ${dbPath}`);
 }
 
-/** Log in as the seed user (requires setupDb({ seed: true }) beforehand). */
-export async function login(page: Page) {
+/** Log in as a seed user (requires setupDb({ seed: true }) beforehand). */
+export async function login(page: Page, options?: { username?: string }) {
   await page.goto("/login");
-  await page.getByPlaceholder("Username").fill("dev");
+  await page.getByPlaceholder("Username").fill(options?.username ?? "dev");
   await page.getByPlaceholder("Password").fill("devpassword");
   await page.getByRole("button", { name: "Login" }).click();
   await expect(page).toHaveURL("/");

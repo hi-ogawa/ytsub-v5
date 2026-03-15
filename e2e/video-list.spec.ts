@@ -2,22 +2,6 @@ import path from "node:path";
 import { expect, test } from "@playwright/test";
 import { login, setupDb } from "./helper.ts";
 
-test("bootstrap fixtures seeds video index", async ({ page }) => {
-  await setupDb({ seed: true });
-  await login(page);
-  await page.goto("/");
-  await expect(page.getByText("No bookmarked videos yet")).toBeVisible();
-
-  // Click bootstrap from header menu
-  await page.getByTestId("header-menu").click();
-  await page.getByTestId("bootstrap-fixtures").click();
-
-  // All 3 fixture videos should appear in the video index
-  await expect(page.getByTestId("video-card-7GU_VQfgMT0")).toBeVisible();
-  await expect(page.getByTestId("video-card-aK8Yh3RTBUY")).toBeVisible();
-  await expect(page.getByTestId("video-card-DtK-CkwNHSY")).toBeVisible();
-});
-
 test("video card shows thumbnail and channel, clicking navigates to viewer", async ({
   page,
 }) => {
@@ -67,7 +51,7 @@ test("import JSON file adds video to list with captions and bookmarks", async ({
   );
 
   await setupDb({ seed: true });
-  await login(page);
+  await login(page, { username: "dev-empty" });
 
   // Open import dialog from header menu
   await page.getByTestId("header-menu").click();
@@ -104,6 +88,7 @@ test("import JSON file adds video to list with captions and bookmarks", async ({
 
 test("no sync badges when unauthenticated", async ({ page }) => {
   await page.goto("/dev");
+  await expect(page.getByText("No bookmarked videos yet")).toBeVisible();
 
   // Bootstrap fixtures to populate video index
   await page.getByTestId("header-menu").click();

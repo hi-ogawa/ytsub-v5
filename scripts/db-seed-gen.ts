@@ -90,9 +90,17 @@ const devPasswordHash = await hashPassword(
   "devpassword",
   new Uint8Array(16).fill(0) as Uint8Array<ArrayBuffer>,
 );
-// Seed user first, then video data
-const seedUser = `INSERT OR IGNORE INTO users (username, password_hash) VALUES ('dev', '${devPasswordHash}');\n`;
+const devEmptyPasswordHash = await hashPassword(
+  "devpassword",
+  new Uint8Array(16).fill(1) as Uint8Array<ArrayBuffer>,
+);
+// Seed users: "dev" owns videos, "dev-empty" has no data
+const seedUsers = [
+  `INSERT OR IGNORE INTO users (username, password_hash) VALUES ('dev', '${devPasswordHash}');`,
+  `INSERT OR IGNORE INTO users (username, password_hash) VALUES ('dev-empty', '${devEmptyPasswordHash}');`,
+].join("\n");
 const sql =
-  seedUser +
+  seedUsers +
+  "\n" +
   files.map((f) => toSql(JSON.parse(readFileSync(f, "utf-8")))).join("\n");
 console.log(sql);

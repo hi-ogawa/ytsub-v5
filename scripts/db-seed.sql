@@ -1,4 +1,5 @@
 INSERT OR IGNORE INTO users (username, password_hash) VALUES ('dev', '00000000000000000000000000000000:053759aefc68ef45593ea65227e7e4f6a43086aae217e4bd2ad60c528dfe6dc5');
+INSERT OR IGNORE INTO users (username, password_hash) VALUES ('dev-empty', '01010101010101010101010101010101:febb4e237d57b75a7604e3c1da84adf2ae76b0193a2a49204ae44ce988806e7b');
 INSERT INTO videos (user_id, youtube_id, title, channel_name, channel_id, duration, language1, language2, vss_id1, vss_id2)
 VALUES ((SELECT id FROM users WHERE username = 'dev'), '7GU_VQfgMT0', 'Billlie | ''cloud palace'' 𝐁efore sunrise live', 'Billlie', 'UCyc9sUCxELTDK9vELO5Fzeg', 210, 'ko', 'en', '.ko', '.en');
 
