@@ -1,6 +1,6 @@
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
-  "name": "ytsub-v5",
+  "name": "zamak",
   "workers_dev": true,
   "compatibility_date": "2026-03-03",
   "main": "./src/server/index.ts",

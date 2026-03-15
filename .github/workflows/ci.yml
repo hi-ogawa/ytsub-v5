@@ -27,7 +27,7 @@ jobs:
       - run: pnpm build-ext
       - uses: actions/upload-artifact@v7
         with:
-          name: ytsub-extension
+          name: zamak-extension
           path: dist/extension/*
 
   e2e:
