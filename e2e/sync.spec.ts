@@ -17,7 +17,7 @@ function syncBadge(page: Page, youtubeId: string) {
 test.describe("dev-viewer sync indicator", () => {
   test.beforeEach(async ({ page }) => {
     await setupDb({ seed: true });
-    await login(page);
+    await login(page, { username: "dev-empty" });
     await page.goto(`/dev/videos/${FIXTURE_VIDEO_ID}`);
   });
 
@@ -31,7 +31,7 @@ test.describe("dev-viewer sync indicator", () => {
     const indicator = page.getByTestId("sync-status");
     await expect(indicator).toBeVisible();
 
-    // Initially synced (no local data, no server data)
+    // Initially synced (no local data, no server data for dev-empty)
     await expect(indicator).toHaveAttribute("data-sync-state", "synced");
 
     // Close dropdown, create a bookmark
@@ -46,6 +46,29 @@ test.describe("dev-viewer sync indicator", () => {
     await indicator.click();
     await expect(page).toHaveURL("/dev");
   });
+});
+
+test("dev-viewer sync › shows pull then conflict states for seeded user", async ({
+  page,
+}) => {
+  await setupDb({ seed: true });
+  await login(page);
+  await page.goto(`/dev/videos/${FIXTURE_VIDEO_ID}`);
+  await openPanelWithTracks(page);
+
+  // Server has seed data for "dev" — indicator shows pull (no local data, server has data)
+  await page.getByTitle("Settings").click();
+  const indicator = page.getByTestId("sync-status");
+  // May briefly show "checking" while server query completes
+  await expect(indicator).toHaveAttribute("data-sync-state", "pull", {
+    timeout: 5000,
+  });
+
+  // Create a local bookmark — now both sides have data → conflict
+  await page.keyboard.press("Escape");
+  await createBookmarkAt(page, { index: 0, start: 0, end: 3 });
+  await page.getByTitle("Settings").click();
+  await expect(indicator).toHaveAttribute("data-sync-state", "conflict");
 });
 
 test.describe("dev-viewer video-index", () => {
@@ -86,12 +109,12 @@ test.describe("dev-viewer video-index", () => {
 });
 
 test.describe("video-list sync", () => {
-  test.beforeEach(async ({ page }) => {
+  test("push badge syncs local data to server, persists after reload", async ({
+    page,
+  }) => {
     await setupDb({ seed: true });
-    await login(page);
-  });
+    await login(page, { username: "dev-empty" });
 
-  test("local video shows push badge, synced after push", async ({ page }) => {
     // Create a bookmark via dev-viewer
     await page.goto(`/dev/videos/${FIXTURE_VIDEO_ID}`);
     await openPanelWithTracks(page);
@@ -105,62 +128,60 @@ test.describe("video-list sync", () => {
     // Push
     await badge.click();
     await expect(badge).toHaveAttribute("data-sync-status", "synced");
+
+    // Reload — pushed video should still be there
+    await page.goto("/");
+    await expect(page.getByText("cloud palace")).toBeVisible();
   });
 
-  test("server-only video shows pull badge, synced after pull", async ({
+  test("pull badge syncs server data to local, bookmarks survive reload", async ({
     page,
   }) => {
-    // Create bookmark, push via video list
-    await page.goto(`/dev/videos/${FIXTURE_VIDEO_ID}`);
-    await openPanelWithTracks(page);
-    await createBookmarkAt(page, { index: 0, start: 0, end: 3 });
-    await page.goto("/");
-    const pushBadge = syncBadge(page, FIXTURE_VIDEO_ID);
-    await pushBadge.click();
-    await expect(pushBadge).toHaveAttribute("data-sync-status", "synced");
+    await setupDb({ seed: true });
+    await login(page);
 
-    // Clear local data to simulate fresh device
-    await page.evaluate((videoId) => {
-      const req = indexedDB.open("zamak");
-      req.onsuccess = () => {
-        const db = req.result;
-        const tx = db.transaction("caption-sessions", "readwrite");
-        tx.objectStore("caption-sessions").delete(videoId);
-      };
-      localStorage.setItem("zamak:video-index", "[]");
-    }, FIXTURE_VIDEO_ID);
-
-    // Go to video list — server-only video should appear
+    // Seed video exists on server for "dev" user — no local data
     await page.goto("/");
     const badge = syncBadge(page, FIXTURE_VIDEO_ID);
-    await expect(badge).toHaveAttribute("data-sync-status", "server-only");
+    await expect(badge).toHaveAttribute("data-sync-status", "pull");
 
     // Pull
     await badge.click();
     await expect(badge).toHaveAttribute("data-sync-status", "synced");
 
-    // Verify bookmark data was pulled into local
+    // Verify pulled data is in local video-index
+    const card = page.getByTestId(`video-card-${FIXTURE_VIDEO_ID}`);
+    await expect(card.getByTestId("video-card-badge")).toHaveText(
+      "15 bookmarks",
+    );
+
+    // Verify pulled bookmarks survive page reload (IndexedDB persistence)
     await page.goto(`/dev/videos/${FIXTURE_VIDEO_ID}`);
+    await page.getByTitle("Show captions").click();
     await expect(page.locator("[data-index='0']")).toBeVisible();
     const panel = page.getByTestId("resizable-panel");
     await expect(
-      panel.getByRole("button", { name: "Bookmarks (1)" }),
+      panel.getByRole("button", { name: "Bookmarks (15)" }),
     ).toBeVisible();
   });
 
-  test("pushed video appears on server video list", async ({ page }) => {
-    // Create bookmark and push via video list
+  test("conflict badge resolves via prompt", async ({ page }) => {
+    await setupDb({ seed: true });
+    await login(page);
+
+    // Create local bookmark on fixture video that already exists on server
     await page.goto(`/dev/videos/${FIXTURE_VIDEO_ID}`);
     await openPanelWithTracks(page);
     await createBookmarkAt(page, { index: 0, start: 0, end: 3 });
 
+    // Video list should show conflict badge
     await page.goto("/");
     const badge = syncBadge(page, FIXTURE_VIDEO_ID);
+    await expect(badge).toHaveAttribute("data-sync-status", "conflict");
+
+    // Resolve via push
+    page.once("dialog", (dialog) => dialog.accept("push"));
     await badge.click();
     await expect(badge).toHaveAttribute("data-sync-status", "synced");
-
-    // Reload — video should still be there
-    await page.goto("/");
-    await expect(page.getByText("cloud palace")).toBeVisible();
   });
 });

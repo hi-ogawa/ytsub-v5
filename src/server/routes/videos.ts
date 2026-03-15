@@ -24,7 +24,7 @@ export const videosRouter = authed.router({
         .insert(videos)
         .values({ ...input, userId: context.userId })
         .onConflictDoUpdate({
-          target: videos.youtubeId,
+          target: [videos.userId, videos.youtubeId],
           set: {
             title: input.title,
             channelName: input.channelName,
@@ -179,7 +179,6 @@ export const videosRouter = authed.router({
               context: z.string().optional().default(""),
               etymology: z.string().optional().default(""),
               notes: z.string().optional().default(""),
-              status: z.string().optional().default("pending"),
             }),
           )
           .optional()
@@ -192,7 +191,7 @@ export const videosRouter = authed.router({
         .insert(videos)
         .values({ ...input.video, userId: context.userId })
         .onConflictDoUpdate({
-          target: videos.youtubeId,
+          target: [videos.userId, videos.youtubeId],
           set: {
             title: input.video.title,
             channelName: input.video.channelName,
@@ -244,7 +243,6 @@ export const videosRouter = authed.router({
             timestamp: sql.raw(`${input.captions[b.captionIdx]?.begin ?? 0}`),
             etymology: b.etymology,
             notes: b.notes,
-            status: b.status,
           }));
           // Delete existing bookmarks for this video first
           await db.delete(bookmarks).where(eq(bookmarks.videoId, video.id));

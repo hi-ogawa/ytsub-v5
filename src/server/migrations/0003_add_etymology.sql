@@ -1,1 +1,0 @@
-ALTER TABLE bookmarks ADD COLUMN etymology TEXT NOT NULL DEFAULT '';
