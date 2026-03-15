@@ -268,6 +268,23 @@ async function main() {
     chromeStorage.set({ [VIDEO_INDEX_KEY]: videoIndexStore.get() });
   });
 
+  // React to changes made externally (e.g. content script relay updating
+  // chrome.storage.local via the background worker).  This keeps the bookmarks
+  // page up-to-date even if it was already open when the content script synced.
+  chrome.storage.onChanged.addListener((changes, area) => {
+    if (area === "local" && VIDEO_INDEX_KEY in changes) {
+      const incoming =
+        (changes[VIDEO_INDEX_KEY].newValue as VideoIndexEntry[] | undefined) ??
+        [];
+      // Only update when the value actually differs to avoid a write-back loop:
+      // onChanged → videoIndexStore.set → storeEventName → chromeStorage.set
+      // → onChanged (same value, Chrome won't fire again, but guard defensively).
+      if (JSON.stringify(videoIndexStore.get()) !== JSON.stringify(incoming)) {
+        videoIndexStore.set(incoming);
+      }
+    }
+  });
+
   createRoot(document.getElementById("root")!).render(
     <StrictMode>
       <MemoryRouter>

@@ -128,7 +128,14 @@ function useExtensionSyncState(youtubeId: string): SyncState {
     useState<Awaited<ReturnType<typeof bgRpc.getSyncState>>>();
 
   useEffect(() => {
-    bgRpc.getSyncState({ youtubeId }).then(setServerResponse);
+    const fallback = {
+      authenticated: true as const,
+      serverUpdatedAt: undefined,
+    };
+    bgRpc
+      .getSyncState({ youtubeId })
+      .then((response) => setServerResponse(response ?? fallback))
+      .catch(() => setServerResponse(fallback));
   }, [youtubeId]);
 
   if (!serverResponse) return "checking";

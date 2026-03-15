@@ -30,6 +30,9 @@ export function updateVideoIndex(
       channelName,
       bookmarkCount,
       updatedAt: new Date().toISOString(),
+      // Preserve syncedAt from the existing entry so a bookmark edit after a sync
+      // doesn't incorrectly reset the state to "conflict".
+      syncedAt: idx >= 0 ? entries[idx].syncedAt : undefined,
     };
     const next = [...entries];
     if (idx >= 0) next[idx] = entry;

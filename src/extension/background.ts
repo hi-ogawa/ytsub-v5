@@ -33,7 +33,7 @@ export const bgRpcHandlers = {
   },
 
   async videoIndexUpdated({ entries }: { entries: VideoIndexEntry[] }) {
-    chrome.storage.local.set({ [VIDEO_INDEX_KEY]: entries });
+    await chrome.storage.local.set({ [VIDEO_INDEX_KEY]: entries });
   },
 
   async pushSession({ youtubeId }: { youtubeId: string }) {
