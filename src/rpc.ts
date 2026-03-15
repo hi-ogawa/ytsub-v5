@@ -6,13 +6,15 @@ import type { Router } from "./server/rpc.ts";
 
 type UrlResolver = string | URL | (() => string | URL | Promise<string | URL>);
 
-// NOTE: `rpcFetch` must be a standalone `let` variable, NOT a property on an object.
-// Accessing `fetch` via `obj.fetch(request)` breaks cookie handling in the browser
-// (register/login fails — session cookie not set). Using a `let` variable with
-// `rpcFetch(request)` works correctly. Confirmed minimal repro (url is irrelevant):
+// NOTE: `rpcFetch` must be a `let` variable, NOT a property on an object.
+// `obj.fetch(req)` sets `this` to `obj`, but native `fetch` is a Web IDL host
+// method that requires `this` to be `window`/`globalThis`. Wrong `this` silently
+// breaks cookie handling (session cookies not set after login). A bare `f(req)`
+// call sets `this` to `undefined` which falls back to the global — correct.
 //
 //   BROKEN:  const obj = { fetch }; RPCLink({ fetch: (r) => obj.fetch(r) })
 //   WORKS:   let f = fetch;         RPCLink({ fetch: (r) => f(r) })
+//   WORKS:   RPCLink({ fetch: (r) => fetch.call(globalThis, r) })
 let rpcUrl: UrlResolver = new URL("/api", self.location.href);
 let rpcFetch: typeof globalThis.fetch = fetch;
 
