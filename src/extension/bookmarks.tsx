@@ -17,26 +17,9 @@ import { orpc, setRpcConfig } from "../rpc.ts";
 import { getServerUrl } from "./server-url.ts";
 import "../styles.css";
 
-declare const chrome: {
-  storage: {
-    local: {
-      get: (
-        keys: string | string[],
-        cb: (result: Record<string, unknown>) => void,
-      ) => void;
-      set: (items: Record<string, unknown>) => void;
-      remove: (keys: string[], cb?: () => void) => void;
-    };
-  };
-  tabs: { create: (opts: { url: string }) => void };
-};
-
-function getStorageValue(key: string): Promise<string | undefined> {
-  return new Promise((resolve) =>
-    chrome.storage.local.get([key], (r) =>
-      resolve(r[key] as string | undefined),
-    ),
-  );
+async function getStorageValue(key: string): Promise<string | undefined> {
+  const r = await chrome.storage.local.get(key);
+  return r[key] as string | undefined;
 }
 
 // Configure RPC to use extension server URL + bearer token auth
@@ -55,8 +38,8 @@ setRpcConfig({
   },
 });
 
-function getStorage(keys: string | string[]): Promise<Record<string, unknown>> {
-  return new Promise((resolve) => chrome.storage.local.get(keys, resolve));
+function getStorage(keys: string[]) {
+  return chrome.storage.local.get(keys);
 }
 
 const queryClient = new QueryClient({
@@ -79,9 +62,7 @@ function ExtensionBookmarksPage() {
 
   const handleLogout = async () => {
     await orpc.auth.logout.call({});
-    await new Promise<void>((resolve) =>
-      chrome.storage.local.remove(["session-token", "username"], resolve),
-    );
+    await chrome.storage.local.remove(["session-token", "username"]);
     setUsername(undefined);
     sync.refetch();
   };

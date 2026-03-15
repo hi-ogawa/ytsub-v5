@@ -3,24 +3,10 @@
 
 import type { ExtensionMessage } from "./messages.ts";
 
-declare const chrome: {
-  runtime: {
-    onMessage: {
-      addListener: (cb: (msg: ExtensionMessage) => void) => void;
-    };
-  };
-  action: {
-    onClicked: {
-      addListener: (cb: () => void) => void;
-    };
-  };
-  storage: { local: { set: (items: Record<string, unknown>) => void } };
-  tabs: { create: (opts: { url: string }) => void };
-};
-
 chrome.runtime.onMessage.addListener((msg) => {
-  if (msg.type === "video-index-updated") {
-    chrome.storage.local.set({ "video-index": msg.payload });
+  const parsed = msg as ExtensionMessage;
+  if (parsed.type === "video-index-updated") {
+    chrome.storage.local.set({ "video-index": parsed.payload });
   }
 });
 
