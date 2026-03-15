@@ -646,8 +646,8 @@ function CaptionPanelWithStore({
 
   return (
     <div className="flex h-full flex-col">
-      {!sessionOnly && (
-        <div className="flex items-center border-b gap-1">
+      <div className="flex items-center border-b gap-1">
+        {!sessionOnly ? (
           <div className="min-w-0 flex-1">
             <TrackPicker
               tracks={tracks}
@@ -657,31 +657,17 @@ function CaptionPanelWithStore({
               disabled={store.bookmarks.length > 0}
             />
           </div>
-          <SettingsDropdown {...settingsDropdownProps} />
-        </div>
-      )}
-      {sessionOnly && (
-        <div className="hidden items-center gap-1 border-b px-2 py-1.5 lg:flex">
-          <span className="text-sm text-muted-foreground">
+        ) : (
+          <span className="px-2 py-1.5 text-sm text-muted-foreground">
             {store.vssId1.split(".").pop()} · {store.vssId2.split(".").pop()}
           </span>
-          <div className="ml-auto">
-            <SettingsDropdown {...settingsDropdownProps} />
-          </div>
-        </div>
-      )}
+        )}
+        <SettingsDropdown {...settingsDropdownProps} />
+      </div>
       <CaptionPanelContent
         store={store}
         player={player}
         autoScroll={autoScroll}
-        settingsSlot={
-          sessionOnly ? (
-            <SettingsDropdown
-              {...settingsDropdownProps}
-              className="shrink-0 rounded p-0.5 text-muted-foreground hover:bg-muted lg:hidden"
-            />
-          ) : undefined
-        }
       />
     </div>
   );
@@ -704,7 +690,6 @@ function SettingsDropdown({
   onSelectStrategy,
   sync,
   sessionOnly,
-  className,
 }: {
   store: CaptionSessionManager;
   autoScroll: boolean;
@@ -712,17 +697,13 @@ function SettingsDropdown({
   onSelectStrategy: (s: MergeStrategy) => void;
   sync: SyncStatus;
   sessionOnly?: boolean;
-  className?: string;
 }) {
   const hasBookmarks = store.bookmarks.length > 0;
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
-        className={
-          className ??
-          "mr-1 shrink-0 rounded p-0.5 text-muted-foreground hover:bg-muted"
-        }
+        className="mr-1 shrink-0 rounded p-0.5 text-muted-foreground hover:bg-muted"
         title="Settings"
       >
         <EllipsisVertical className="size-4" />
@@ -817,12 +798,10 @@ function CaptionPanelContent({
   store,
   player,
   autoScroll,
-  settingsSlot,
 }: {
   store: CaptionSessionManager;
   player?: YTPlayer;
   autoScroll: boolean;
-  settingsSlot?: React.ReactNode;
 }) {
   // --- Tab state ---
   const [activeTab, setActiveTab] = useState<"captions" | "bookmarks">(
@@ -983,7 +962,6 @@ function CaptionPanelContent({
               </button>
             </div>
           )}
-          {settingsSlot}
         </div>
       </div>
 
