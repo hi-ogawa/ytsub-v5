@@ -252,5 +252,4 @@ test.describe("video-list sync", () => {
     await badge.click();
     await expect(badge).toHaveAttribute("data-sync-status", "synced");
   });
-
 });
