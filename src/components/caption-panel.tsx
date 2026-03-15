@@ -635,6 +635,15 @@ function CaptionPanelWithStore({
 
   const [autoScroll, setAutoScroll] = useStore(autoScrollStore);
 
+  const settingsDropdownProps = {
+    store,
+    autoScroll,
+    onSetAutoScroll: setAutoScroll,
+    onSelectStrategy,
+    sync,
+    sessionOnly,
+  };
+
   return (
     <div className="flex h-full flex-col">
       {!sessionOnly && (
@@ -648,19 +657,31 @@ function CaptionPanelWithStore({
               disabled={store.bookmarks.length > 0}
             />
           </div>
-          <SettingsDropdown
-            store={store}
-            autoScroll={autoScroll}
-            onSetAutoScroll={setAutoScroll}
-            onSelectStrategy={onSelectStrategy}
-            sync={sync}
-          />
+          <SettingsDropdown {...settingsDropdownProps} />
+        </div>
+      )}
+      {sessionOnly && (
+        <div className="hidden items-center gap-1 border-b px-2 py-1.5 lg:flex">
+          <span className="text-sm text-muted-foreground">
+            {store.vssId1.split(".").pop()} · {store.vssId2.split(".").pop()}
+          </span>
+          <div className="ml-auto">
+            <SettingsDropdown {...settingsDropdownProps} />
+          </div>
         </div>
       )}
       <CaptionPanelContent
         store={store}
         player={player}
         autoScroll={autoScroll}
+        settingsSlot={
+          sessionOnly ? (
+            <SettingsDropdown
+              {...settingsDropdownProps}
+              className="shrink-0 rounded p-0.5 text-muted-foreground hover:bg-muted lg:hidden"
+            />
+          ) : undefined
+        }
       />
     </div>
   );
@@ -682,19 +703,26 @@ function SettingsDropdown({
   onSetAutoScroll,
   onSelectStrategy,
   sync,
+  sessionOnly,
+  className,
 }: {
   store: CaptionSessionManager;
   autoScroll: boolean;
   onSetAutoScroll: (value: boolean | ((prev: boolean) => boolean)) => void;
   onSelectStrategy: (s: MergeStrategy) => void;
   sync: SyncStatus;
+  sessionOnly?: boolean;
+  className?: string;
 }) {
   const hasBookmarks = store.bookmarks.length > 0;
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
-        className="mr-1 shrink-0 rounded p-0.5 text-muted-foreground hover:bg-muted"
+        className={
+          className ??
+          "mr-1 shrink-0 rounded p-0.5 text-muted-foreground hover:bg-muted"
+        }
         title="Settings"
       >
         <EllipsisVertical className="size-4" />
@@ -713,28 +741,32 @@ function SettingsDropdown({
           />
           Auto-scroll
         </DropdownMenuItem>
-        <div className="px-2 py-1.5">
-          <label className="mb-1 block text-xs text-muted-foreground">
-            Track alignment
-          </label>
-          <select
-            className={`w-full rounded border bg-background px-1 py-0.5 text-sm ${hasBookmarks ? "cursor-not-allowed opacity-50" : ""}`}
-            value={store.strategy}
-            onChange={(e) => onSelectStrategy(e.target.value as MergeStrategy)}
-            title={
-              hasBookmarks
-                ? "Cannot change while bookmarks exist"
-                : "Alignment strategy"
-            }
-            disabled={hasBookmarks}
-          >
-            {ALL_STRATEGIES.map((st) => (
-              <option key={st} value={st}>
-                {st}
-              </option>
-            ))}
-          </select>
-        </div>
+        {!sessionOnly && (
+          <div className="px-2 py-1.5">
+            <label className="mb-1 block text-xs text-muted-foreground">
+              Track alignment
+            </label>
+            <select
+              className={`w-full rounded border bg-background px-1 py-0.5 text-sm ${hasBookmarks ? "cursor-not-allowed opacity-50" : ""}`}
+              value={store.strategy}
+              onChange={(e) =>
+                onSelectStrategy(e.target.value as MergeStrategy)
+              }
+              title={
+                hasBookmarks
+                  ? "Cannot change while bookmarks exist"
+                  : "Alignment strategy"
+              }
+              disabled={hasBookmarks}
+            >
+              {ALL_STRATEGIES.map((st) => (
+                <option key={st} value={st}>
+                  {st}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
         <AiPromptCopy
           rows={store.rows}
           bookmarks={store.bookmarks}
@@ -785,10 +817,12 @@ function CaptionPanelContent({
   store,
   player,
   autoScroll,
+  settingsSlot,
 }: {
   store: CaptionSessionManager;
   player?: YTPlayer;
   autoScroll: boolean;
+  settingsSlot?: React.ReactNode;
 }) {
   // --- Tab state ---
   const [activeTab, setActiveTab] = useState<"captions" | "bookmarks">(
@@ -949,6 +983,7 @@ function CaptionPanelContent({
               </button>
             </div>
           )}
+          {settingsSlot}
         </div>
       </div>
 
