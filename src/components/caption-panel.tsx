@@ -658,7 +658,7 @@ function CaptionPanelWithStore({
             />
           </div>
         ) : (
-          <span className="px-2 py-1 text-sm text-muted-foreground lg:py-1.5">
+          <span className="flex-1 px-2 py-1 text-sm text-muted-foreground lg:py-1.5">
             {store.vssId1.split(".").pop()} · {store.vssId2.split(".").pop()}
           </span>
         )}
