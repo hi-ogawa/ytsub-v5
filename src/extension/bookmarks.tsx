@@ -1,6 +1,6 @@
 import { QueryClientProvider } from "@tanstack/react-query";
 import { EllipsisVertical, LogIn, LogOut } from "lucide-react";
-import { StrictMode, useEffect, useState } from "react";
+import { StrictMode, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { Toaster } from "sonner";
 import { BookmarksPage } from "../components/bookmarks-page.tsx";
@@ -11,10 +11,11 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "../components/ui/dropdown-menu.tsx";
+import { useStore } from "../lib/external-store.ts";
 import { createAppQueryClient } from "../lib/query-client.ts";
 import { useVideoSync } from "../lib/sync.ts";
 import { useTheme } from "../lib/theme.ts";
-import type { VideoIndexEntry } from "../lib/video-index.ts";
+import { videoIndexStore } from "../lib/video-index.ts";
 import { orpc, setRpcConfig } from "../rpc.ts";
 import { getServerUrl } from "./server-url.ts";
 import "../styles.css";
@@ -61,23 +62,45 @@ function getStorage(keys: string | string[]): Promise<Record<string, unknown>> {
   return new Promise((resolve) => chrome.storage.local.get(keys, resolve));
 }
 
+// Two-way bridge: chrome.storage.local <-> localStorage for video-index.
+// Hydrate localStorage from chrome.storage.local before rendering, then keep
+// them in sync so videoIndexStore (localStorage-backed) works on this origin.
+const VIDEO_INDEX_KEY = "zamak:video-index";
+
+let initialUsername: string | undefined;
+
+async function bridgeChromeStorage() {
+  // Hydrate: chrome.storage.local -> localStorage
+  const result = await getStorage([VIDEO_INDEX_KEY, "username"]);
+  const entries = result[VIDEO_INDEX_KEY];
+  initialUsername = result["username"] as string | undefined;
+  if (entries) {
+    localStorage.setItem(VIDEO_INDEX_KEY, JSON.stringify(entries));
+  }
+  // Re-initialize videoIndexStore from the now-populated localStorage
+  videoIndexStore.set(
+    entries ? (entries as Parameters<typeof videoIndexStore.set>[0]) : [],
+  );
+
+  // localStorage -> chrome.storage.local (when videoIndexStore writes)
+  window.addEventListener(`zamak:store:${VIDEO_INDEX_KEY}`, () => {
+    const raw = localStorage.getItem(VIDEO_INDEX_KEY);
+    if (raw) {
+      chrome.storage.local.set({ [VIDEO_INDEX_KEY]: JSON.parse(raw) });
+    }
+  });
+}
+
 const queryClient = createAppQueryClient({
   defaultOptions: { queries: { refetchOnWindowFocus: false } },
 });
 
 function ExtensionBookmarksPage() {
-  const [entries, setEntries] = useState<VideoIndexEntry[]>([]);
-  const [username, setUsername] = useState<string>();
+  const [entries] = useStore(videoIndexStore);
+  const [username, setUsername] = useState(initialUsername);
   const { theme, cycle, Icon } = useTheme();
   const sync = useVideoSync();
   const [showLogin, setShowLogin] = useState(false);
-
-  useEffect(() => {
-    getStorage(["video-index", "username"]).then((result) => {
-      setEntries((result["video-index"] as VideoIndexEntry[]) || []);
-      setUsername(result["username"] as string | undefined);
-    });
-  }, []);
 
   const handleLogout = async () => {
     await orpc.auth.logout.call({});
@@ -172,11 +195,15 @@ function ExtensionBookmarksPage() {
   );
 }
 
-createRoot(document.getElementById("root")!).render(
-  <StrictMode>
-    <QueryClientProvider client={queryClient}>
-      <ExtensionBookmarksPage />
-      <Toaster position="top-right" richColors />
-    </QueryClientProvider>
-  </StrictMode>,
-);
+// Hydrate localStorage from chrome.storage.local before rendering so that
+// videoIndexStore (localStorage-backed) has the correct data on this origin.
+bridgeChromeStorage().then(() => {
+  createRoot(document.getElementById("root")!).render(
+    <StrictMode>
+      <QueryClientProvider client={queryClient}>
+        <ExtensionBookmarksPage />
+        <Toaster position="top-right" richColors />
+      </QueryClientProvider>
+    </StrictMode>,
+  );
+});
