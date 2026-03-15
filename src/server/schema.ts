@@ -21,7 +21,9 @@ export const videos = sqliteTable(
   "videos",
   {
     id: int().primaryKey({ autoIncrement: true }),
-    userId: int("user_id").references(() => users.id, { onDelete: "cascade" }),
+    userId: int("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
     youtubeId: text("youtube_id").notNull(),
     title: text().notNull(),
     channelName: text("channel_name").notNull().default(""),
