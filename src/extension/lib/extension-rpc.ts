@@ -155,11 +155,12 @@ export function registerRpcHandlers(handlers: Record<string, Function>) {
       sendResponse(undefined);
       return;
     }
-    handler(params).then(sendResponse, (err: unknown) =>
+    handler(params).then(sendResponse, (err: unknown) => {
+      console.error(`[zamak rpc] ${method}:`, err);
       sendResponse({
         __error: err instanceof Error ? err.message : "Unknown error",
-      }),
-    );
+      });
+    });
     return true; // keep channel open for async response
   });
 }
@@ -194,7 +195,10 @@ export async function sendTabRpc(
   const response = (await chrome.tabs.sendMessage(tabId, request)) as
     | { result?: unknown; error?: string }
     | undefined;
-  if (response?.error) throw new Error(response.error);
+  if (response?.error) {
+    console.error(`[zamak tab-rpc] ${method}:`, response.error);
+    throw new Error(response.error);
+  }
   return response?.result;
 }
 
@@ -239,6 +243,7 @@ export function registerTabRpcHandlers(handlers: Record<string, Function>) {
       localStorage.setItem(TAB_RPC_RESPONSE_KEY, JSON.stringify(response));
       window.dispatchEvent(new Event(TAB_RPC_RESPONSE_EVENT));
     } catch (err) {
+      console.error(`[zamak tab-rpc handler] ${method}:`, err);
       const response: RpcResponse = {
         id,
         error: err instanceof Error ? err.message : "Unknown error",

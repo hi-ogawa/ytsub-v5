@@ -257,6 +257,7 @@ export function useVideoSync(actions: VideoSyncActions = defaultSyncActions) {
       await fn();
       serverQuery.refetch();
     } catch (err) {
+      console.error("[zamak sync]", err);
       toast.error(err instanceof Error ? err.message : "Sync failed");
     } finally {
       setSyncing((s) => {
