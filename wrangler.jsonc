@@ -11,8 +11,8 @@
   "d1_databases": [
     {
       "binding": "DB",
-      "database_name": "ytsub-v5",
-      "database_id": "882ee273-02b6-4548-9c0f-087b320e4d8e",
+      "database_name": "zamak",
+      "database_id": "<REPLACE after wrangler d1 create zamak>",
       "migrations_dir": "src/server/migrations",
     },
   ],
