@@ -162,7 +162,7 @@ export type VideoSyncEntry = VideoIndexEntry & {
   serverId?: number;
 };
 
-function mergeVideoEntries(
+export function mergeVideoEntries(
   localEntries: VideoIndexEntry[],
   serverVideos: ListVideosOutput["items"],
 ): VideoSyncEntry[] {
@@ -297,7 +297,7 @@ export function useVideoSync() {
   };
 }
 
-function serverSessionToLocal(
+export function serverSessionToLocal(
   data: GetFullSessionOutput,
 ): PersistedCaptionSession {
   return {

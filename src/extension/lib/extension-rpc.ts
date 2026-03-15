@@ -1,6 +1,6 @@
 // Typed RPC mechanism for content script ↔ background worker communication.
 //
-// Data flow (content-initiated, always request → response):
+// Forward RPC (content-initiated, request → response):
 //
 //   MAIN world (content.tsx)
 //     → dispatches CustomEvent "zamak:rpc" with {id, method, params}
@@ -12,6 +12,17 @@
 //     → writes response to localStorage, dispatches "zamak:rpc-response"
 //   MAIN world (content.tsx)
 //     → reads response from localStorage, resolves promise
+//
+// Reverse (tab) RPC (background-initiated, request → response):
+//
+//   Background worker (background.ts)
+//     → chrome.tabs.sendMessage(tabId, {type: "zamak-tab-rpc", ...})
+//   ISOLATED world (relay.ts)
+//     → chrome.runtime.onMessage listener, dispatches CustomEvent "zamak:tab-rpc"
+//   MAIN world (content.tsx)
+//     → handler executes, writes result to localStorage, dispatches response event
+//   ISOLATED world (relay.ts)
+//     → reads localStorage, calls sendResponse back to background
 
 // --- Wire format ---
 
@@ -142,5 +153,90 @@ export function registerRpcHandlers(handlers: Record<string, Function>) {
     }
     handler(params).then(sendResponse);
     return true; // keep channel open for async response
+  });
+}
+
+// --- Reverse (tab) RPC: background → relay → MAIN world ---
+
+type TabRpcRequest = {
+  type: "zamak-tab-rpc";
+  id: string;
+  method: string;
+  params?: unknown;
+};
+
+const TAB_RPC_REQUEST_EVENT = "zamak:tab-rpc";
+const TAB_RPC_RESPONSE_EVENT = "zamak:tab-rpc-response";
+const TAB_RPC_RESPONSE_KEY = "zamak:tab-rpc-response";
+
+let tabRpcIdCounter = 0;
+
+/** Background → tab: send RPC to a content script tab via relay. */
+export async function sendTabRpc(
+  tabId: number,
+  method: string,
+  params?: unknown,
+): Promise<unknown> {
+  const request: TabRpcRequest = {
+    type: "zamak-tab-rpc",
+    id: `tab-rpc-${++tabRpcIdCounter}-${Date.now()}`,
+    method,
+    params,
+  };
+  const response = (await chrome.tabs.sendMessage(tabId, request)) as
+    | { result?: unknown; error?: string }
+    | undefined;
+  if (response?.error) throw new Error(response.error);
+  return response?.result;
+}
+
+/** ISOLATED world: relay tab RPC from background to MAIN world and back. */
+export function setupTabRpcRelay() {
+  chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
+    if (msg?.type !== "zamak-tab-rpc") return;
+    const { id, method, params } = msg as TabRpcRequest;
+
+    const onResponse = () => {
+      try {
+        const raw = localStorage.getItem(TAB_RPC_RESPONSE_KEY);
+        if (!raw) return;
+        const response: RpcResponse = JSON.parse(raw);
+        if (response.id !== id) return;
+        window.removeEventListener(TAB_RPC_RESPONSE_EVENT, onResponse);
+        if (response.error) sendResponse({ error: response.error });
+        else sendResponse({ result: response.result });
+      } catch {
+        window.removeEventListener(TAB_RPC_RESPONSE_EVENT, onResponse);
+        sendResponse({ error: "Failed to parse tab RPC response" });
+      }
+    };
+    window.addEventListener(TAB_RPC_RESPONSE_EVENT, onResponse);
+    window.dispatchEvent(
+      new CustomEvent(TAB_RPC_REQUEST_EVENT, {
+        detail: { id, method, params },
+      }),
+    );
+    return true; // keep channel open for async response
+  });
+}
+
+/** MAIN world: register handlers for tab RPC calls from background. */
+export function registerTabRpcHandlers(handlers: Record<string, Function>) {
+  window.addEventListener(TAB_RPC_REQUEST_EVENT, async (e) => {
+    const { id, method, params } = (e as CustomEvent).detail;
+    try {
+      const handler = handlers[method];
+      const result = handler ? await handler(params) : undefined;
+      const response: RpcResponse = { id, result };
+      localStorage.setItem(TAB_RPC_RESPONSE_KEY, JSON.stringify(response));
+      window.dispatchEvent(new Event(TAB_RPC_RESPONSE_EVENT));
+    } catch (err) {
+      const response: RpcResponse = {
+        id,
+        error: err instanceof Error ? err.message : "Unknown error",
+      };
+      localStorage.setItem(TAB_RPC_RESPONSE_KEY, JSON.stringify(response));
+      window.dispatchEvent(new Event(TAB_RPC_RESPONSE_EVENT));
+    }
   });
 }

@@ -1,12 +1,21 @@
 // Background service worker — handles RPC from content script (via relay)
 // and stores video index in chrome.storage.local.
 
+import { sessionToExportData } from "../lib/caption-session.ts";
+import { serverSessionToLocal } from "../lib/sync.ts";
 import type { VideoIndexEntry } from "../lib/video-index.ts";
 import { VIDEO_INDEX_KEY } from "../lib/video-index.ts";
 import { orpc, setRpcConfig } from "../rpc.ts";
 import { chromeStorage } from "./lib/chrome-storage.ts";
-import { registerRpcHandlers } from "./lib/extension-rpc.ts";
+import { registerRpcHandlers, sendTabRpc } from "./lib/extension-rpc.ts";
 import { getServerUrl } from "./lib/server-url.ts";
+
+async function findYouTubeTab(): Promise<number> {
+  const tabs = await chrome.tabs.query({ url: "https://www.youtube.com/*" });
+  const tabId = tabs[0]?.id;
+  if (tabId === undefined) throw new Error("No YouTube tab open");
+  return tabId;
+}
 
 export const bgRpcHandlers = {
   async getSyncState({ youtubeId }: { youtubeId: string }) {
@@ -25,6 +34,29 @@ export const bgRpcHandlers = {
 
   async videoIndexUpdated({ entries }: { entries: VideoIndexEntry[] }) {
     chrome.storage.local.set({ [VIDEO_INDEX_KEY]: entries });
+  },
+
+  async pushSession({ youtubeId }: { youtubeId: string }) {
+    const tabId = await findYouTubeTab();
+    const session = await sendTabRpc(tabId, "getSession", { youtubeId });
+    if (!session) throw new Error("No local session found");
+    const exportData = sessionToExportData(
+      session as Parameters<typeof sessionToExportData>[0],
+    );
+    await orpc.videos.importVideo.call(exportData);
+  },
+
+  async pullSession({ youtubeId }: { youtubeId: string }) {
+    const data = await orpc.videos.getFullSession.call({ youtubeId });
+    if (!data) throw new Error("Video not found on server");
+    const session = serverSessionToLocal(data);
+    const tabId = await findYouTubeTab();
+    await sendTabRpc(tabId, "saveSession", { session });
+    return {
+      title: session.title,
+      channelName: session.channelName,
+      bookmarkCount: session.bookmarks.length,
+    };
   },
 };
 
