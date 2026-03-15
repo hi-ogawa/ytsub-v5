@@ -572,4 +572,89 @@ test.describe("dev-viewer caption panel", () => {
     await expect(bookmarkCard).toBeVisible();
     await expect(bookmarkCard).toHaveClass(/flash-highlight/);
   });
+
+  test("AI pick prompt: copy and import with markdown fence", async ({
+    page,
+    context,
+  }) => {
+    await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+    await openPanelWithTracks(page);
+    await page.getByTitle("Settings").click();
+
+    // Copy pick prompt
+    await expect(page.getByText("AI prompt")).toBeVisible();
+    await page.getByTitle("Copy prompt").click();
+    const clipboard = await page.evaluate(() => navigator.clipboard.readText());
+    expect(clipboard).toContain("Pick Korean vocabulary");
+    expect(clipboard).toContain("cloud palace");
+    expect(clipboard).toContain("꼬집어 봐 뜬 꿈인 것 같아");
+    expect(clipboard).toContain("captionIndex");
+    expect(clipboard).toContain("```json");
+
+    // Import result wrapped in markdown code fence
+    const wrapped = `\`\`\`json
+[{"captionIndex": 0, "text": "꼬집어", "translation": "to pinch", "etymology": "" },
+ {"captionIndex": 1, "text": "밤새", "translation": "all night", "etymology": "" }]
+\`\`\``;
+    page.on("dialog", (dialog) => {
+      if (dialog.type() === "prompt") dialog.accept(wrapped);
+      else dialog.accept();
+    });
+    await page.getByText("Import AI result").click();
+
+    // Verify bookmarks created
+    const panel = page.getByTestId("resizable-panel");
+    await panel.getByRole("button", { name: /Bookmarks/ }).click();
+    await expect(page.locator("[data-bookmark-id]")).toHaveCount(2);
+    await expect(
+      page.locator("[data-bookmark-id]").first().getByText("to pinch"),
+    ).toBeVisible();
+  });
+
+  test("AI fill prompt: copy and import updates existing bookmark", async ({
+    page,
+    context,
+  }) => {
+    await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+    await openPanelWithTracks(page);
+
+    // Create a bookmark first
+    await createBookmarkAt(page, 0, 0, 3);
+
+    // Verify unfilled state
+    const panel = page.getByTestId("resizable-panel");
+    await panel.getByRole("button", { name: /Bookmarks/ }).click();
+    await expect(page.getByText("unfilled")).toBeVisible();
+    const bookmarkId = await page
+      .locator("[data-bookmark-id]")
+      .first()
+      .getAttribute("data-bookmark-id");
+
+    // Copy fill prompt
+    await page.getByTitle("Settings").click();
+    const aiSelect = page.locator("select").last();
+    await aiSelect.selectOption("fill");
+    const clipboard = await page.evaluate(() => navigator.clipboard.readText());
+    expect(clipboard).toContain("Fill bookmark metadata");
+    expect(clipboard).toContain("꼬집어");
+
+    // Import fill result
+    const json = JSON.stringify([
+      {
+        id: bookmarkId,
+        translation: "to pinch",
+        etymology: "",
+        notes: "Figurative use.",
+      },
+    ]);
+    page.on("dialog", (dialog) => {
+      if (dialog.type() === "prompt") dialog.accept(json);
+      else dialog.accept();
+    });
+    await page.getByText("Import AI result").click();
+
+    // Verify translation appears and unfilled badge is gone
+    await expect(page.getByText("to pinch")).toBeVisible();
+    await expect(page.getByText("unfilled")).not.toBeVisible();
+  });
 });
