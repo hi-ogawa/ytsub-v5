@@ -229,7 +229,7 @@ function AiPromptCopy({
 
   return (
     <div className="px-2 py-1.5">
-      <label className="mb-1 block text-xs text-muted-foreground">
+      <label className="mb-1 block text-xs text-muted-foreground flex items-center gap-1">
         AI prompt{" "}
         <a
           href="https://github.com/hi-ogawa/ytsub-v5/blob/main/docs/ai-integration.md"
@@ -238,7 +238,7 @@ function AiPromptCopy({
           className="inline-flex align-middle text-muted-foreground/70 hover:text-foreground"
           title="How to use AI prompts"
         >
-          <ExternalLink className="h-3 w-3" />
+          <ExternalLink className="size-3.5" />
         </a>
       </label>
       <div className="flex gap-1">
