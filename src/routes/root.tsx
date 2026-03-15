@@ -1,5 +1,5 @@
-import { useMutation } from "@tanstack/react-query";
-import { Database, EllipsisVertical, Upload } from "lucide-react";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { Database, EllipsisVertical, LogIn, Upload } from "lucide-react";
 import { useState } from "react";
 import {
   Link,
@@ -9,6 +9,7 @@ import {
   useRouteLoaderData,
 } from "react-router";
 import { ImportDialog } from "../components/import-dialog.tsx";
+import { LoginDialog } from "../components/login-dialog.tsx";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -63,14 +64,38 @@ export function AuthLayout() {
 }
 
 export function DevLayout() {
+  const authQuery = useQuery(orpc.auth.check.queryOptions());
+  const authenticated = authQuery.data?.authenticated === true;
+  const [showLogin, setShowLogin] = useState(false);
+
   return (
     <div className="flex h-screen flex-col">
       <header className="flex h-10 flex-none items-center justify-between border-b px-3">
         <Link to="/dev" className="text-sm font-semibold">
           Zamak <span className="text-muted-foreground">(dev)</span>
         </Link>
-        <HeaderMenu authenticated={false} />
+        <div className="flex items-center gap-1">
+          {!authenticated && (
+            <button
+              type="button"
+              onClick={() => setShowLogin(true)}
+              className="flex items-center gap-1 rounded px-2 py-1 text-xs text-muted-foreground hover:bg-muted"
+            >
+              <LogIn className="h-3 w-3" />
+              Sign in
+            </button>
+          )}
+          <HeaderMenu authenticated={authenticated} />
+        </div>
       </header>
+      <LoginDialog
+        open={showLogin}
+        onOpenChange={setShowLogin}
+        onLogin={async (input) => {
+          await orpc.auth.login.call(input);
+          authQuery.refetch();
+        }}
+      />
       <main className="flex-1 overflow-auto">
         <Outlet />
       </main>
