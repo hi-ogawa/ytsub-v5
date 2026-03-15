@@ -6,7 +6,7 @@ import type { Router } from "./server/rpc.ts";
 
 const rpcConfig = {
   url: async () => new URL("/api", self.location.href),
-  fetch,
+  fetch: globalThis.fetch.bind(globalThis),
 };
 
 /** Override the RPC URL and/or fetch function. Call before any API requests. */
