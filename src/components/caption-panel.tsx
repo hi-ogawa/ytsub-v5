@@ -53,7 +53,7 @@ import {
   extractBookmarkSelection,
 } from "../lib/extension-bookmarks.ts";
 import { createLocalStorageStore, useStore } from "../lib/external-store.ts";
-import type { SyncHandle } from "../lib/sync.ts";
+import type { SyncStatus } from "../lib/sync.ts";
 import type {
   Json3File,
   YouTubeCaptionTrack,
@@ -329,79 +329,53 @@ function formatTimestamp(seconds: number): string {
   return `${m}:${String(s).padStart(2, "0")}`;
 }
 
-// --- SyncButton ---
-
-function SyncButton({
-  sync: { state, error, onSync },
-  store,
-}: {
-  sync: SyncHandle;
-  store: CaptionSessionManager;
-}) {
+function SyncIndicator({ sync: { state, onNavigate } }: { sync: SyncStatus }) {
   const iconClass = "size-4";
   let icon: React.ReactNode;
   let title: string;
-  let disabled = false;
-  let onClick: () => void = () => onSync({ store });
 
   switch (state) {
     case "unauthenticated":
       icon = <LogIn className={`${iconClass} text-muted-foreground`} />;
       title = "Login required to sync";
-      disabled = true;
       break;
     case "checking":
       icon = <Loader2 className={`${iconClass} animate-spin`} />;
       title = "Checking sync status...";
-      disabled = true;
       break;
     case "synced":
       icon = <CheckCircle2 className={`${iconClass} text-green-500`} />;
-      title = "Synced";
-      disabled = true;
+      title = "Synced — open bookmarks page";
       break;
     case "push":
-      icon = <ArrowUpFromLine className={iconClass} />;
-      title = "Push local changes to server";
-      onClick = () => onSync({ direction: "push", store });
+      icon = <ArrowUpFromLine className={`${iconClass} text-yellow-500`} />;
+      title = "Local changes not synced — open bookmarks page";
       break;
     case "pull":
-      icon = <ArrowDownToLine className={iconClass} />;
-      title = "Pull server changes";
-      onClick = () => onSync({ direction: "pull", store });
+      icon = <ArrowDownToLine className={`${iconClass} text-yellow-500`} />;
+      title = "Server has updates — open bookmarks page";
       break;
     case "conflict":
       icon = <AlertTriangle className={`${iconClass} text-yellow-500`} />;
-      title = "Both sides changed — click to resolve";
-      onClick = () => {
-        const choice = window.prompt(
-          "Both local and server have changes.\nType 'push' to keep local, 'pull' to keep server:",
-        );
-        if (choice === "push" || choice === "pull") {
-          onSync({ direction: choice, store });
-        }
-      };
+      title = "Both sides changed — open bookmarks page";
       break;
     case "syncing":
       icon = <RefreshCw className={`${iconClass} animate-spin`} />;
       title = "Syncing...";
-      disabled = true;
       break;
     case "error":
       icon = <AlertTriangle className={`${iconClass} text-destructive`} />;
-      title = error ? `Sync error: ${error.message}` : "Sync error";
-      disabled = true;
+      title = "Sync error — open bookmarks page";
       break;
   }
 
   return (
     <button
       type="button"
-      className="shrink-0 rounded p-0.5 text-muted-foreground hover:bg-muted disabled:opacity-50"
+      className="shrink-0 rounded p-0.5 text-muted-foreground hover:bg-muted"
       title={title}
-      disabled={disabled}
-      onClick={onClick}
-      data-testid="sync-button"
+      onClick={onNavigate}
+      data-testid="sync-status"
       data-sync-state={state}
     >
       {icon}
@@ -414,7 +388,7 @@ type CaptionPanelProps = {
   player?: YTPlayer;
   fetchJson3: (track: YouTubeCaptionTrack) => Promise<Json3File>;
   videoMeta: YouTubeVideoData;
-  sync?: SyncHandle;
+  sync?: SyncStatus;
   sessionOnly?: boolean;
 };
 
@@ -654,7 +628,7 @@ function CaptionPanelWithStore({
   player?: YTPlayer;
   onSelectTracks: (v1?: string, v2?: string) => void;
   onSelectStrategy: (s: MergeStrategy) => void;
-  sync?: SyncHandle;
+  sync?: SyncStatus;
 }) {
   useSyncExternalStore(store.subscribe, () => store.version);
 
@@ -673,7 +647,7 @@ function CaptionPanelWithStore({
               disabled={store.bookmarks.length > 0}
             />
           </div>
-          {sync && <SyncButton sync={sync} store={store} />}
+          {sync && <SyncIndicator sync={sync} />}
           <SettingsDropdown
             store={store}
             autoScroll={autoScroll}

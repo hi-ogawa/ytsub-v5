@@ -61,7 +61,10 @@ function computeSyncState(params: {
 
 type SyncDirection = "push" | "pull";
 
-export type SyncHandle = ReturnType<typeof useSyncState>;
+export type SyncStatus = {
+  state: SyncState;
+  onNavigate: () => void;
+};
 
 export function useSyncState({ youtubeId }: { youtubeId: string }) {
   const queryClient = useQueryClient();

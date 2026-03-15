@@ -1,4 +1,4 @@
-import { useParams } from "react-router";
+import { useNavigate, useParams } from "react-router";
 import { CaptionPanel } from "../components/caption-panel.tsx";
 import { useYouTubePlayer } from "../components/youtube-player.tsx";
 import { useStore } from "../lib/external-store.ts";
@@ -16,8 +16,10 @@ export function VideoViewerPage() {
   const [entries] = useStore(videoIndexStore);
   const entry = entries.find((e) => e.youtubeId === youtubeId);
 
+  const navigate = useNavigate();
   const { ref: playerElRef, player } = useYouTubePlayer(youtubeId);
   const syncState = useSyncState({ youtubeId: youtubeId! });
+  const sync = { state: syncState.state, onNavigate: () => navigate("/") };
 
   if (!youtubeId) {
     return (
@@ -56,7 +58,7 @@ export function VideoViewerPage() {
           player={player}
           fetchJson3={neverFetchJson3}
           videoMeta={videoMeta}
-          sync={syncState}
+          sync={sync}
         />
       </div>
     </div>
