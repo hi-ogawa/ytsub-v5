@@ -177,7 +177,9 @@ test.describe("dev-viewer video-index", () => {
 });
 
 test.describe("video-list sync", () => {
-  test("local video shows push badge, synced after push", async ({ page }) => {
+  test("push badge syncs local data to server, persists after reload", async ({
+    page,
+  }) => {
     await setupDb({ seed: true });
     await login(page, { username: "dev-empty" });
 
@@ -194,9 +196,13 @@ test.describe("video-list sync", () => {
     // Push
     await badge.click();
     await expect(badge).toHaveAttribute("data-sync-status", "synced");
+
+    // Reload — pushed video should still be there
+    await page.goto("/");
+    await expect(page.getByText("cloud palace")).toBeVisible();
   });
 
-  test("server-only video shows pull badge, synced after pull", async ({
+  test("pull badge syncs server data to local, bookmarks survive reload", async ({
     page,
   }) => {
     await setupDb({ seed: true });
@@ -216,6 +222,15 @@ test.describe("video-list sync", () => {
     await expect(card.getByTestId("video-card-badge")).toHaveText(
       "15 bookmarks",
     );
+
+    // Verify pulled bookmarks survive page reload (IndexedDB persistence)
+    await page.goto(`/dev/videos/${FIXTURE_VIDEO_ID}`);
+    await page.getByTitle("Show captions").click();
+    await expect(page.locator("[data-index='0']")).toBeVisible();
+    const panel = page.getByTestId("resizable-panel");
+    await expect(
+      panel.getByRole("button", { name: "Bookmarks (15)" }),
+    ).toBeVisible();
   });
 
   test("conflict badge resolves via prompt", async ({ page }) => {
@@ -238,22 +253,4 @@ test.describe("video-list sync", () => {
     await expect(badge).toHaveAttribute("data-sync-status", "synced");
   });
 
-  test("pushed video appears on server video list", async ({ page }) => {
-    await setupDb({ seed: true });
-    await login(page, { username: "dev-empty" });
-
-    // Create bookmark and push via video list
-    await page.goto(`/dev/videos/${FIXTURE_VIDEO_ID}`);
-    await openPanelWithTracks(page);
-    await createBookmarkAt(page, { index: 0, start: 0, end: 3 });
-
-    await page.goto("/");
-    const badge = syncBadge(page, FIXTURE_VIDEO_ID);
-    await badge.click();
-    await expect(badge).toHaveAttribute("data-sync-status", "synced");
-
-    // Reload — video should still be there
-    await page.goto("/");
-    await expect(page.getByText("cloud palace")).toBeVisible();
-  });
 });
