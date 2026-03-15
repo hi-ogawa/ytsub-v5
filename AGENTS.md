@@ -2,12 +2,15 @@
 
 ## Quick Reference
 
-| Command                 | When             |
-| ----------------------- | ---------------- |
-| `pnpm dev`              | Start dev server |
-| `pnpm tsc && pnpm lint` | After changes    |
-| `pnpm build`            | Before commit    |
-| `pnpm test-e2e`         | Run e2e tests    |
+| Command                 | When                       |
+| ----------------------- | -------------------------- |
+| `pnpm dev`              | Start dev server           |
+| `pnpm tsc && pnpm lint` | After changes              |
+| `pnpm build`            | Before commit              |
+| `pnpm test-e2e`         | Run web app e2e tests      |
+| `pnpm build-ext`        | Build Chrome extension     |
+| `pnpm test-e2e-ext`     | Run extension e2e tests    |
+| `pnpm test-e2e-full`    | Run both web app + ext e2e |
 
 ## Key Docs
 
@@ -24,7 +27,7 @@ Read `docs/prd.md` for the task list and `docs/background/architecture.md` for a
 
 Pages/views across extension and web app:
 
-- **Extension** (cannot be tested directly in e2e — web app `/dev` routes mirror these)
+- **Extension** (bookmarks page tested via `test-e2e-ext`; content script not directly testable — `/dev` routes mirror it)
   - Content script (YouTube video page) → `CaptionPanel` — dual captions + bookmarking overlay
   - Extension page `/bookmarks.html` → `BookmarksPage` — video list, opens in a full browser tab
 - **Web app**
@@ -89,14 +92,15 @@ When adding new tests, prefer `/dev` routes unless the feature requires server i
 
 ### Test organization
 
-| File               | What it tests                       | Needs auth/DB? |
-| ------------------ | ----------------------------------- | -------------- |
-| dev-viewer.spec.ts | Caption panel, bookmarks, AI prompt | No             |
-| sync.spec.ts       | Push/pull sync flows                | Yes            |
-| video-list.spec.ts | Video list, import, delete          | Yes            |
-| basic.spec.ts      | Auth UI, navigation, toast, theme   | Mixed          |
-| api.spec.ts        | Server API CRUD                     | Yes (API only) |
-| auth.spec.ts       | Auth API endpoints                  | Yes (API only) |
+| File                  | What it tests                       | Needs auth/DB? |
+| --------------------- | ----------------------------------- | -------------- |
+| dev-viewer.spec.ts    | Caption panel, bookmarks, AI prompt | No             |
+| sync.spec.ts          | Push/pull sync flows                | Yes            |
+| video-list.spec.ts    | Video list, import, delete          | Yes            |
+| basic.spec.ts         | Auth UI, navigation, toast, theme   | Mixed          |
+| api.spec.ts           | Server API CRUD                     | Yes (API only) |
+| auth.spec.ts          | Auth API endpoints                  | Yes (API only) |
+| ext/bookmarks.spec.ts | Extension bookmarks, sync badges    | Yes            |
 
 ### Writing tests
 
@@ -106,6 +110,17 @@ When adding new tests, prefer `/dev` routes unless the feature requires server i
 - **Selector preference**: scope to `data-testid` or panel containers to avoid ambiguity (e.g. FAB text can collide with tab button names). Prefer `getByTestId` > `getByRole` scoped to a container > page-wide `getByText`.
 - **Iterate with bail**: use `pnpm test-e2e -x` to stop on first failure when fixing tests. Avoids waiting for the full suite on each iteration.
 - **JSON report** at `test-results/report.json` — use it to measure timing impact of changes.
+
+### Extension e2e tests (`e2e/ext/`)
+
+Extension tests load the built extension in a real Chromium instance. **Must run `pnpm build-ext` before `pnpm test-e2e-ext`** — tests use `dist/extension/`.
+
+- Separate Playwright project (`ext`) with its own fixtures in `e2e/ext/helper.ts`
+- `test` fixture launches Chromium with `--load-extension`, provides `context`, `extensionId`, `page`
+- `gotoBookmarks(page, extensionId)` — navigates to `chrome-extension://<id>/bookmarks.html` with server URL override
+- `seedChromeStorage(context, data)` — seeds `chrome.storage.local` via the service worker
+- `login(page)` — logs in via the extension bookmarks page UI (distinct from the web app `login` helper)
+- Push/pull sync requires a YouTube tab (tab RPC). Tests without a YouTube tab verify error toasts.
 
 ## Git Workflow
 

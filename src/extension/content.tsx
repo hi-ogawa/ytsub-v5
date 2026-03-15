@@ -10,6 +10,8 @@ import {
 } from "../components/caption-panel.tsx";
 import { PortalContainerProvider } from "../components/ui/portal-container.tsx";
 import type { YTPlayer } from "../components/youtube-player.tsx";
+import { getSession, saveSession } from "../lib/caption-session-db.ts";
+import type { PersistedCaptionSession } from "../lib/caption-session-db.ts";
 import { useStore } from "../lib/external-store.ts";
 import { type SyncState, computeSyncState } from "../lib/sync.ts";
 import { videoIndexStore } from "../lib/video-index.ts";
@@ -17,9 +19,20 @@ import type { YouTubeExtractionResult } from "../lib/youtube.ts";
 import { fetchPlayerApi, fetchTrackJson3 } from "../lib/youtube.ts";
 import type { bgRpcHandlers } from "./background.ts";
 import contentCss from "./content.css?inline";
-import { createRpc } from "./lib/extension-rpc.ts";
+import { createRpc, registerTabRpcHandlers } from "./lib/extension-rpc.ts";
 
 const bgRpc = createRpc<typeof bgRpcHandlers>();
+
+// Register handlers for reverse (tab) RPC — background can request IDB access
+// on the youtube.com origin through this content script.
+registerTabRpcHandlers({
+  async getSession({ youtubeId }: { youtubeId: string }) {
+    return await getSession(youtubeId);
+  },
+  async saveSession({ session }: { session: PersistedCaptionSession }) {
+    await saveSession(session);
+  },
+});
 
 declare const __BUILD_TIME__: string;
 declare const __GIT_REV__: string;
