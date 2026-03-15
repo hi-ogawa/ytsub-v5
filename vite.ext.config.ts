@@ -30,7 +30,7 @@ export default defineConfig({
           },
           output: {
             format: "iife",
-            entryFileNames: "content.js",
+            entryFileNames: "[name].js",
           },
         },
       },
@@ -61,7 +61,7 @@ export default defineConfig({
           },
           output: {
             format: "iife",
-            entryFileNames: "background.js",
+            entryFileNames: "[name].js",
           },
         },
       },
@@ -78,7 +78,7 @@ export default defineConfig({
           },
           output: {
             format: "iife",
-            entryFileNames: "relay.js",
+            entryFileNames: "[name].js",
           },
         },
       },
@@ -110,7 +110,7 @@ export default defineConfig({
       );
       rmSync(resolve(outDir, "src"), { force: true, recursive: true });
 
-      // Copy raw assets (manifest, icons, theme-init.js)
+      // Copy raw assets
       cpSync("./src/extension/public", outDir, { recursive: true });
 
       // Modify manifest.json
