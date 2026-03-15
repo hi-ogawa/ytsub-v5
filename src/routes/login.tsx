@@ -1,13 +1,14 @@
 import { useMutation } from "@tanstack/react-query";
-import { Link, useNavigate } from "react-router";
+import { Link } from "react-router";
 import { LoginForm } from "../components/login-form.tsx";
 import { orpc } from "../rpc.ts";
 
 export function LoginPage() {
-  const navigate = useNavigate();
   const mutation = useMutation(
     orpc.auth.login.mutationOptions({
-      onSuccess: () => navigate("/", { replace: true }),
+      onSuccess: () => {
+        window.location.href = "/";
+      },
       meta: { toastOnError: false },
     }),
   );
@@ -33,10 +34,11 @@ export function LoginPage() {
 }
 
 export function RegisterPage() {
-  const navigate = useNavigate();
   const mutation = useMutation(
     orpc.auth.register.mutationOptions({
-      onSuccess: () => navigate("/", { replace: true }),
+      onSuccess: () => {
+        window.location.href = "/";
+      },
       meta: { toastOnError: false },
     }),
   );
