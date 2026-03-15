@@ -66,6 +66,13 @@ Supported: Any YouTube video with subtitles. Works best with videos that have tw
 The project is open source and the source code is available on https://github.com/hi-ogawa/ytsub-v5.
 ```
 
+## Store URLs
+
+These are entered in the Chrome Web Store Developer Dashboard fields:
+
+- **Support URL**: `https://github.com/hi-ogawa/ytsub-v5/issues`
+- **Privacy policy URL**: `https://github.com/hi-ogawa/ytsub-v5/blob/main/PRIVACY.md`
+
 ## Category
 
 ```
