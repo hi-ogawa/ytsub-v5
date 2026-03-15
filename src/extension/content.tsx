@@ -1,6 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useQuery } from "@tanstack/react-query";
-import { StrictMode, useState } from "react";
+import { StrictMode, useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import {
   CaptionFab,
@@ -10,8 +10,12 @@ import {
 } from "../components/caption-panel.tsx";
 import { PortalContainerProvider } from "../components/ui/portal-container.tsx";
 import type { YTPlayer } from "../components/youtube-player.tsx";
+import { useStore } from "../lib/external-store.ts";
+import { type SyncState, computeSyncState } from "../lib/sync.ts";
+import { videoIndexStore } from "../lib/video-index.ts";
 import type { YouTubeExtractionResult } from "../lib/youtube.ts";
 import { fetchPlayerApi, fetchTrackJson3 } from "../lib/youtube.ts";
+import type { GetSyncStateResponse } from "./background.ts";
 import contentCss from "./content.css?inline";
 
 declare const __BUILD_TIME__: string;
@@ -102,6 +106,49 @@ function ExtensionViewer({ videoId }: { videoId: string }) {
   );
 }
 
+const SYNC_STATE_KEY = "zamak:sync-state-response";
+
+function requestSyncState(youtubeId: string): Promise<GetSyncStateResponse> {
+  return new Promise((resolve) => {
+    const onResult = () => {
+      window.removeEventListener("zamak:sync-state-result", onResult);
+      try {
+        const raw = localStorage.getItem(SYNC_STATE_KEY);
+        resolve(raw ? JSON.parse(raw) : { authenticated: false });
+      } catch {
+        resolve({ authenticated: false });
+      }
+    };
+    window.addEventListener("zamak:sync-state-result", onResult);
+    window.dispatchEvent(
+      new CustomEvent("zamak:get-sync-state", { detail: youtubeId }),
+    );
+  });
+}
+
+function openBookmarksPage() {
+  window.dispatchEvent(new Event("zamak:open-bookmarks"));
+}
+
+function useExtensionSyncState(youtubeId: string): SyncState {
+  const [videoIndex] = useStore(videoIndexStore);
+  const [serverResponse, setServerResponse] = useState<GetSyncStateResponse>();
+
+  useEffect(() => {
+    requestSyncState(youtubeId).then(setServerResponse);
+  }, [youtubeId]);
+
+  if (!serverResponse) return "checking";
+  if (!serverResponse.authenticated) return "unauthenticated";
+
+  const localEntry = videoIndex.find((e) => e.youtubeId === youtubeId);
+  return computeSyncState({
+    localUpdatedAt: localEntry?.updatedAt,
+    syncedAt: localEntry?.syncedAt,
+    serverUpdatedAt: serverResponse.serverUpdatedAt,
+  });
+}
+
 function ExtensionSession({
   data,
   player,
@@ -109,12 +156,16 @@ function ExtensionSession({
   data: YouTubeExtractionResult;
   player?: YTPlayer;
 }) {
+  const state = useExtensionSyncState(data.video.youtubeId);
+  const sync = { state, onNavigate: openBookmarksPage };
+
   return (
     <CaptionPanel
       tracks={data.captionTracks}
       player={player}
       fetchJson3={(track) => fetchTrackJson3(track.baseUrl)}
       videoMeta={data.video}
+      sync={sync}
     />
   );
 }

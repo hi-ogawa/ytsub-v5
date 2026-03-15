@@ -25,7 +25,7 @@ type GetFullSessionOutput = NonNullable<
   InferRouterOutputs<Router>["videos"]["getFullSession"]
 >;
 
-type SyncState =
+export type SyncState =
   | "unauthenticated"
   | "checking"
   | "synced"
@@ -35,7 +35,7 @@ type SyncState =
   | "syncing"
   | "error";
 
-function computeSyncState(params: {
+export function computeSyncState(params: {
   localUpdatedAt?: string;
   syncedAt?: string;
   serverUpdatedAt?: string;
