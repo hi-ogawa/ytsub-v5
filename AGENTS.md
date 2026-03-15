@@ -20,14 +20,21 @@
 
 Read `docs/prd.md` for the task list and `docs/background/architecture.md` for architecture context before implementing features.
 
-## Two isolated UI paths
+## UI surfaces
 
-The codebase has two independent caption/bookmark UIs. Know which one you're working on:
+Pages/views across extension and web app:
 
-- **Web app** (`routes/video-viewer.tsx`) — full-stack, server DB via oRPC/React Query. Self-contained in one route file.
-- **Extension** (`components/caption-panel.tsx`, `components/caption-list.tsx`) — client-only, IndexedDB. The dev-viewer (`routes/dev-viewer.tsx`) renders these with fixture data so extension UI can be iterated without loading YouTube. See `docs/background/architecture-extension.md`.
+- **Extension** (cannot be tested directly in e2e — web app `/dev` routes mirror these)
+  - Content script (YouTube video page) → `CaptionPanel` — dual captions + bookmarking overlay
+  - Extension page `/bookmarks.html` → `BookmarksPage` — video list, opens in a full browser tab
+- **Web app**
+  - `/` → `BookmarksPage` (auth gated)
+  - `/videos/:id` → `VideoViewerPage` with shared `CaptionPanel` (auth gated, reads from local storage synced from server)
+  - `/dev` → `BookmarksPage` without auth — mirrors extension bookmarks page for testing
+  - `/dev/fixtures` → fixture list with links to `/dev/videos/...` (dev ergonomics)
+  - `/dev/videos/:id` → `CaptionPanel` with fixture data — mirrors extension content script for testing
 
-They implement the same UI independently because the extension has no backend. Consolidation is planned (see `docs/prd.md`). Changes to one path don't automatically apply to the other.
+The `/dev` routes exist so extension UI can be developed and e2e-tested without loading YouTube or the Chrome extension runtime. They use the same shared components (`BookmarksPage`, `CaptionPanel`, `VideoCard`) with fixture data instead of IndexedDB/server data.
 
 ## Task Documents
 

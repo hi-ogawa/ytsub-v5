@@ -71,7 +71,7 @@ export function DevLayout() {
   return (
     <div className="flex h-screen flex-col">
       <header className="flex h-10 flex-none items-center justify-between border-b px-3">
-        <Link to="/dev" className="text-sm font-semibold">
+        <Link to="/" className="text-sm font-semibold">
           Zamak <span className="text-muted-foreground">(dev)</span>
         </Link>
         <div className="flex items-center gap-1">
@@ -134,20 +134,6 @@ function HeaderMenu({ authenticated }: { authenticated: boolean }) {
               Import
             </DropdownMenuItem>
           )}
-          {import.meta.env.DEV && (
-            <DropdownMenuItem
-              data-testid="bootstrap-fixtures"
-              onSelect={async () => {
-                const { bootstrapFixtures } =
-                  await import("../lib/dev-fixtures.ts");
-                await bootstrapFixtures();
-              }}
-              className="gap-2"
-            >
-              <Database className="size-4" />
-              Dev Bootstrap
-            </DropdownMenuItem>
-          )}
           <DropdownMenuItem
             data-testid="theme-toggle"
             data-theme={theme}
@@ -160,6 +146,28 @@ function HeaderMenu({ authenticated }: { authenticated: boolean }) {
             <Icon className="size-4" />
             <span className="capitalize">{theme}</span>
           </DropdownMenuItem>
+          {import.meta.env.DEV && (
+            <>
+              <DropdownMenuItem
+                data-testid="bootstrap-fixtures"
+                onSelect={async () => {
+                  const { bootstrapFixtures } =
+                    await import("../lib/dev-fixtures.ts");
+                  await bootstrapFixtures();
+                }}
+                className="gap-2"
+              >
+                <Database className="size-4" />
+                Dev Bootstrap
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to="/dev">/dev</Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to="/dev/fixtures">/dev/fixtures</Link>
+              </DropdownMenuItem>
+            </>
+          )}
           {authenticated && (
             <DropdownMenuItem onSelect={() => logoutMutation.mutate({})}>
               Log out

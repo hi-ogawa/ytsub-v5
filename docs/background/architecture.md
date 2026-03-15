@@ -25,6 +25,14 @@ The AI prompt clipboard flow is model/provider-agnostic (Claude, ChatGPT, Gemini
 
 The extension is the **only** way data enters the system. The web app cannot fetch from YouTube — it only displays data that was synced from the extension via the server.
 
+## User flow
+
+1. User installs Chrome extension, watches YouTube — caption panel appears on video page
+2. User bookmarks words/phrases from captions — stored in IndexedDB
+3. Clicking the extension icon opens **bookmarks page** (full browser tab) listing all bookmarked videos — clicking a card navigates to that YouTube video
+4. (Optional) User signs in — data syncs to server
+5. (Optional) User visits **web app** on another device — sees synced videos, can view captions/bookmarks but cannot fetch new videos from YouTube
+
 ## Subtitle fetching
 
 See [architecture-extension.md](./architecture-extension.md) for how the extension fetches subtitles from YouTube (same-origin access + iOS client spoofing to bypass CORS and POT).
