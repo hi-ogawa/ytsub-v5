@@ -635,15 +635,6 @@ function CaptionPanelWithStore({
 
   const [autoScroll, setAutoScroll] = useStore(autoScrollStore);
 
-  const settingsDropdownProps = {
-    store,
-    autoScroll,
-    onSetAutoScroll: setAutoScroll,
-    onSelectStrategy,
-    sync,
-    sessionOnly,
-  };
-
   return (
     <div className="flex h-full flex-col">
       <div className="flex items-center border-b gap-1">
@@ -662,7 +653,14 @@ function CaptionPanelWithStore({
             {store.vssId1.split(".").pop()} · {store.vssId2.split(".").pop()}
           </span>
         )}
-        <SettingsDropdown {...settingsDropdownProps} />
+        <SettingsDropdown
+          store={store}
+          autoScroll={autoScroll}
+          onSetAutoScroll={setAutoScroll}
+          onSelectStrategy={onSelectStrategy}
+          sync={sync}
+          sessionOnly={sessionOnly}
+        />
       </div>
       <CaptionPanelContent
         store={store}
