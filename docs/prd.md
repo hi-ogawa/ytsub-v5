@@ -110,6 +110,7 @@ A web app for language learning via YouTube subtitles. Watch videos with dual ca
 - [ ] chore: consolidate `playwright.youtube.config.ts` with `playwright.config.ts` — merge configs and split via projects (`playwright.youtube.config.ts:3`)
 - [ ] refactor(ext): integrate background.js and rely.js in build (rewrite typescript)
 - [ ] refactor(ext): chrome global typing
+- [ ] refactor(ext): chrome storage abstraction (like local stroage store)
 
 ## TODO: Backlog
 
