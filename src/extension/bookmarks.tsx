@@ -104,7 +104,7 @@ function ExtensionBookmarksPage() {
               data-testid="header-menu"
               className="flex h-7 w-7 items-center justify-center rounded text-muted-foreground hover:bg-muted"
             >
-              <EllipsisVertical className="h-4 w-4" />
+              <EllipsisVertical className="size-4" />
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-44">
               <DropdownMenuItem
@@ -114,7 +114,7 @@ function ExtensionBookmarksPage() {
                 }}
                 className="gap-2"
               >
-                <Icon className="h-4 w-4" />
+                <Icon className="size-4" />
                 <span className="capitalize">{theme}</span>
               </DropdownMenuItem>
               <div className="my-1 h-px bg-border" />
@@ -124,7 +124,7 @@ function ExtensionBookmarksPage() {
                   onSelect={handleLogout}
                   className="gap-2"
                 >
-                  <LogOut className="h-4 w-4" />
+                  <LogOut className="size-4" />
                   Sign out
                 </DropdownMenuItem>
               ) : (
@@ -133,7 +133,7 @@ function ExtensionBookmarksPage() {
                   onSelect={() => setShowLogin(true)}
                   className="gap-2"
                 >
-                  <LogIn className="h-4 w-4" />
+                  <LogIn className="size-4" />
                   Sign in
                 </DropdownMenuItem>
               )}
