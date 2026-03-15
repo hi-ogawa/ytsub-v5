@@ -70,6 +70,8 @@ test("login with wrong then correct password", async ({ page }) => {
   await page.getByRole("button", { name: "Login" }).click();
   await expect(page).toHaveURL("/");
   await expect(page.locator("h1")).toHaveText("Bookmarked Videos");
+  // Regression: login form must not reappear after successful login
+  await expect(page.getByPlaceholder("Username")).not.toBeVisible();
 });
 
 test("navigate between login and register", async ({ page }) => {
