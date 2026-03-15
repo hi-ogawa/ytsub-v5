@@ -54,7 +54,7 @@ const extensionSyncActions: VideoSyncActions = {
 };
 
 const SERVER_PRESETS = [
-  { label: "Production", url: "https://zamak.hiroshi.workers.dev" },
+  { label: "Production", url: "https://zamak.hiro18181.workers.dev" },
   { label: "Local", url: "http://localhost:5173" },
 ];
 
