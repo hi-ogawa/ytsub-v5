@@ -30,7 +30,7 @@ export default defineConfig({
           },
           output: {
             format: "iife",
-            entryFileNames: "content.js",
+            entryFileNames: "[name].js",
           },
         },
       },
@@ -45,6 +45,40 @@ export default defineConfig({
         rolldownOptions: {
           input: {
             bookmarks: "./src/extension/bookmarks.html",
+          },
+        },
+      },
+    },
+    background: {
+      build: {
+        outDir: "./dist/extension",
+        minify: false,
+        emptyOutDir: false,
+        copyPublicDir: false,
+        rolldownOptions: {
+          input: {
+            background: "./src/extension/background.ts",
+          },
+          output: {
+            format: "iife",
+            entryFileNames: "[name].js",
+          },
+        },
+      },
+    },
+    relay: {
+      build: {
+        outDir: "./dist/extension",
+        minify: false,
+        emptyOutDir: false,
+        copyPublicDir: false,
+        rolldownOptions: {
+          input: {
+            relay: "./src/extension/relay.ts",
+          },
+          output: {
+            format: "iife",
+            entryFileNames: "[name].js",
           },
         },
       },
@@ -65,6 +99,8 @@ export default defineConfig({
     async buildApp(builder) {
       await builder.build(builder.environments.client);
       await builder.build(builder.environments.bookmarks);
+      await builder.build(builder.environments.background);
+      await builder.build(builder.environments.relay);
       const outDir = builder.environments.client.config.build.outDir;
 
       // Move html

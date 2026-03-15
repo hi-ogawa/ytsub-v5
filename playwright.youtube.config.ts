@@ -1,12 +1,9 @@
 import { defineConfig, devices } from "@playwright/test";
 
-// TODO: consolidate with `playwright.config.ts` and `e2e` (could we just merge and split project?)
-
 // Separate config for YouTube extraction tests.
 // No web server — these tests run against real YouTube pages.
 export default defineConfig({
-  testDir: "./e2e",
-  testMatch: "youtube-*.spec.ts",
+  testDir: "./e2e/youtube",
   workers: 1,
   expect: {
     timeout: 10_000,
