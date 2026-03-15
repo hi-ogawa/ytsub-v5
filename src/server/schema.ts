@@ -22,7 +22,7 @@ export const videos = sqliteTable(
   {
     id: int().primaryKey({ autoIncrement: true }),
     userId: int("user_id").references(() => users.id, { onDelete: "cascade" }),
-    youtubeId: text("youtube_id").notNull().unique(),
+    youtubeId: text("youtube_id").notNull(),
     title: text().notNull(),
     channelName: text("channel_name").notNull().default(""),
     channelId: text("channel_id").notNull().default(""),
@@ -38,7 +38,10 @@ export const videos = sqliteTable(
       .notNull()
       .default(sql`(datetime('now'))`),
   },
-  (t) => [index("idx_videos_user").on(t.userId)],
+  (t) => [
+    unique().on(t.userId, t.youtubeId),
+    index("idx_videos_user").on(t.userId),
+  ],
 );
 
 export const captions = sqliteTable(

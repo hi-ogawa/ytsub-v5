@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS users (
 CREATE TABLE IF NOT EXISTS videos (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-  youtube_id TEXT NOT NULL UNIQUE,
+  youtube_id TEXT NOT NULL,
   title TEXT NOT NULL,
   channel_name TEXT NOT NULL DEFAULT '',
   channel_id TEXT NOT NULL DEFAULT '',
@@ -18,7 +18,8 @@ CREATE TABLE IF NOT EXISTS videos (
   vss_id1 TEXT NOT NULL DEFAULT '',
   vss_id2 TEXT NOT NULL DEFAULT '',
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
-  updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+  updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+  UNIQUE(user_id, youtube_id)
 );
 
 CREATE INDEX IF NOT EXISTS idx_videos_user ON videos(user_id);
