@@ -81,7 +81,7 @@ export function DevLayout() {
               onClick={() => setShowLogin(true)}
               className="flex items-center gap-1 rounded px-2 py-1 text-xs text-muted-foreground hover:bg-muted"
             >
-              <LogIn className="h-3 w-3" />
+              <LogIn className="size-3" />
               Sign in
             </button>
           )}

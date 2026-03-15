@@ -255,9 +255,9 @@ function AiPromptCopy({
           disabled={!rows}
         >
           {copied ? (
-            <Check className="h-4 w-4 text-green-500" />
+            <Check className="size-4 text-green-500" />
           ) : (
-            <Copy className="h-4 w-4" />
+            <Copy className="size-4" />
           )}
         </button>
         <button
@@ -267,7 +267,7 @@ function AiPromptCopy({
           onClick={() => downloadPrompt(selected)}
           disabled={!rows}
         >
-          <Download className="h-4 w-4" />
+          <Download className="size-4" />
         </button>
       </div>
     </div>
@@ -329,7 +329,7 @@ function SyncButton({
   sync: SyncHandle;
   store: CaptionSessionManager;
 }) {
-  const iconClass = "h-4 w-4";
+  const iconClass = "size-4";
   let icon: React.ReactNode;
   let title: string;
   let disabled = false;
@@ -687,7 +687,7 @@ function CaptionPanelWithStore({
 function SettingsDropdownSkeleton() {
   return (
     <div className="mr-1 shrink-0 rounded p-0.5 text-muted-foreground opacity-50">
-      <EllipsisVertical className="h-4 w-4" />
+      <EllipsisVertical className="size-4" />
     </div>
   );
 }
@@ -711,7 +711,7 @@ function SettingsDropdown({
         className="mr-1 shrink-0 rounded p-0.5 text-muted-foreground hover:bg-muted"
         title="Settings"
       >
-        <EllipsisVertical className="h-4 w-4" />
+        <EllipsisVertical className="size-4" />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         <DropdownMenuItem
@@ -722,7 +722,7 @@ function SettingsDropdown({
           }}
         >
           <Check
-            className={`mr-2 h-4 w-4 ${autoScroll ? "opacity-100" : "opacity-0"}`}
+            className={`mr-2 size-4 ${autoScroll ? "opacity-100" : "opacity-0"}`}
           />
           Auto-scroll
         </DropdownMenuItem>
@@ -756,7 +756,7 @@ function SettingsDropdown({
           youtubeId={store.videoMeta.youtubeId}
         />
         <DropdownMenuItem onSelect={() => importAiResult(store)}>
-          <ClipboardPaste className="mr-2 h-4 w-4" />
+          <ClipboardPaste className="mr-2 size-4" />
           Import AI result
         </DropdownMenuItem>
         <DropdownMenuItem
@@ -773,7 +773,7 @@ function SettingsDropdown({
             URL.revokeObjectURL(url);
           }}
         >
-          <Download className="mr-2 h-4 w-4" />
+          <Download className="mr-2 size-4" />
           Export import.json
         </DropdownMenuItem>
         <DropdownMenuItem
@@ -784,7 +784,7 @@ function SettingsDropdown({
           }}
           disabled={!hasBookmarks}
         >
-          <Trash2 className="mr-2 h-4 w-4" />
+          <Trash2 className="mr-2 size-4" />
           Clear bookmarks
         </DropdownMenuItem>
       </DropdownMenuContent>
@@ -951,14 +951,14 @@ function CaptionPanelContent({
                 onClick={onPrevBookmark}
                 title="Previous bookmark"
               >
-                <ChevronLeft className="h-4 w-4" />
+                <ChevronLeft className="size-4" />
               </button>
               <button
                 className="rounded p-0.5 text-muted-foreground hover:bg-muted"
                 onClick={onNextBookmark}
                 title="Next bookmark"
               >
-                <ChevronRight className="h-4 w-4" />
+                <ChevronRight className="size-4" />
               </button>
             </div>
           )}
@@ -1015,7 +1015,7 @@ function CaptionPanelContent({
               onClick={onCancelBookmark}
               title="Cancel"
             >
-              <X className="h-5 w-5" />
+              <X className="size-5" />
             </button>
             <button
               className="flex h-10 w-10 items-center justify-center rounded-full bg-accent text-accent-foreground shadow hover:bg-accent/90"
@@ -1024,9 +1024,9 @@ function CaptionPanelContent({
               title="Create bookmark"
             >
               {isCreating ? (
-                <Loader2 className="h-5 w-5 animate-spin" />
+                <Loader2 className="size-5 animate-spin" />
               ) : (
-                <Bookmark className="h-5 w-5 fill-current" />
+                <Bookmark className="size-5 fill-current" />
               )}
             </button>
           </div>
@@ -1098,7 +1098,7 @@ function ExtensionBookmarksList({
                   className="-mr-1 -mt-0.5 shrink-0 rounded p-1 text-muted-foreground hover:bg-muted"
                   onClick={(e) => e.stopPropagation()}
                 >
-                  <EllipsisVertical className="h-3.5 w-3.5" />
+                  <EllipsisVertical className="size-3.5" />
                 </DropdownMenuTrigger>
                 <DropdownMenuContent
                   align="end"
@@ -1112,7 +1112,7 @@ function ExtensionBookmarksList({
                       }
                     }}
                   >
-                    <Trash2 className="mr-2 h-4 w-4" />
+                    <Trash2 className="mr-2 size-4" />
                     Delete
                   </DropdownMenuItem>
                 </DropdownMenuContent>
@@ -1151,7 +1151,7 @@ function ExtensionBookmarksList({
                       onGoToCaption(bm.captionIndex);
                     }}
                   >
-                    <ExternalLink className="h-3.5 w-3.5" />
+                    <ExternalLink className="size-3.5" />
                   </button>
                 </div>
               </div>
