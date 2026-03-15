@@ -2,6 +2,7 @@ import {
   ArrowDownToLine,
   ArrowUpFromLine,
   CheckCircle2,
+  Download,
   EllipsisVertical,
   Loader2,
   Trash2,
@@ -50,42 +51,71 @@ export function BookmarksPage({
         </p>
       ) : (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {sorted.map((entry) => (
-            <VideoCard
-              key={entry.youtubeId}
-              youtubeId={entry.youtubeId}
-              href={`https://www.youtube.com/watch?v=${entry.youtubeId}`}
-              title={entry.title}
-              channelName={entry.channelName}
-              titleRight={
-                onDelete && (
-                  <CardMenu entry={entry} onDelete={() => onDelete(entry)} />
-                )
-              }
-              badge={
-                <>
-                  <span className="rounded bg-muted px-2 py-0.5 font-mono">
-                    {entry.bookmarkCount} bookmark
-                    {entry.bookmarkCount === 1 ? "" : "s"}
-                  </span>
-                  {sync && entry.syncStatus && (
-                    <span className="ml-auto">
-                      <SyncBadge
-                        status={entry.syncStatus}
-                        syncing={sync.syncing.has(entry.youtubeId)}
-                        onPull={() => sync.onPull(entry.youtubeId)}
-                        onPush={() => sync.onPush(entry.youtubeId)}
-                      />
+          {sorted.map((entry) => {
+            const isServerOnly = entry.syncStatus === "server-only";
+            const isSyncing = sync?.syncing.has(entry.youtubeId);
+            return (
+              <VideoCard
+                key={entry.youtubeId}
+                youtubeId={entry.youtubeId}
+                href={`https://www.youtube.com/watch?v=${entry.youtubeId}`}
+                title={entry.title}
+                channelName={entry.channelName}
+                titleRight={
+                  onDelete && (
+                    <CardMenu entry={entry} onDelete={() => onDelete(entry)} />
+                  )
+                }
+                overlay={
+                  isServerOnly ? (
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/50">
+                      <button
+                        type="button"
+                        data-testid="server-only-pull"
+                        className="flex items-center gap-2 rounded-lg bg-white px-4 py-2 text-sm font-medium text-gray-900 shadow-md hover:bg-gray-100 disabled:opacity-50"
+                        disabled={isSyncing}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          sync?.onPull(entry.youtubeId);
+                        }}
+                      >
+                        {isSyncing ? (
+                          <Loader2 className="size-4 animate-spin" />
+                        ) : (
+                          <Download className="size-4" />
+                        )}
+                        {isSyncing ? "Pulling…" : "Pull to device"}
+                      </button>
+                    </div>
+                  ) : undefined
+                }
+                badge={
+                  <>
+                    <span className="rounded bg-muted px-2 py-0.5 font-mono">
+                      {entry.bookmarkCount} bookmark
+                      {entry.bookmarkCount === 1 ? "" : "s"}
                     </span>
-                  )}
-                </>
-              }
-              onClick={(e) => {
-                e.preventDefault();
-                onVideoClick(entry.youtubeId);
-              }}
-            />
-          ))}
+                    {sync && entry.syncStatus && (
+                      <span className="ml-auto">
+                        <SyncBadge
+                          status={entry.syncStatus}
+                          syncing={sync.syncing.has(entry.youtubeId)}
+                          onPull={() => sync.onPull(entry.youtubeId)}
+                          onPush={() => sync.onPush(entry.youtubeId)}
+                        />
+                      </span>
+                    )}
+                  </>
+                }
+                onClick={(e) => {
+                  e.preventDefault();
+                  if (isServerOnly) return;
+                  onVideoClick(entry.youtubeId);
+                }}
+              />
+            );
+          })}
         </div>
       )}
     </div>
