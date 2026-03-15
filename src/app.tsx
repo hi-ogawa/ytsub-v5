@@ -21,6 +21,9 @@ import { VideoViewerPage } from "./routes/video-viewer.tsx";
 const queryClient = new QueryClient({
   mutationCache: new MutationCache({
     onError: (error, _variables, _context, mutation) => {
+      // test types from query.d.ts
+      mutation.meta?.toastOnError satisfies boolean | undefined;
+
       if (mutation.meta?.toastOnError === false) return;
       toast.error(error.message || "Something went wrong");
     },
