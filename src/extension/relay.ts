@@ -3,11 +3,16 @@
 // The MAIN world content script writes to localStorage and dispatches a
 // plain Event as a signal; this script reads the data and forwards it.
 
-const KEY = "zamak:video-index";
+import type { ExtensionMessage } from "./messages.ts";
+import { STORAGE_KEY } from "./messages.ts";
 
-window.addEventListener(`zamak:store:${KEY}`, () => {
+declare const chrome: {
+  runtime: { sendMessage: (msg: ExtensionMessage) => void };
+};
+
+window.addEventListener(`zamak:store:${STORAGE_KEY}`, () => {
   try {
-    const raw = localStorage.getItem(KEY);
+    const raw = localStorage.getItem(STORAGE_KEY);
     const entries = raw ? JSON.parse(raw) : [];
     chrome.runtime.sendMessage({
       type: "video-index-updated",

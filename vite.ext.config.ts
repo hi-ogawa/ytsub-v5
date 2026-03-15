@@ -49,6 +49,40 @@ export default defineConfig({
         },
       },
     },
+    background: {
+      build: {
+        outDir: "./dist/extension",
+        minify: false,
+        emptyOutDir: false,
+        copyPublicDir: false,
+        rolldownOptions: {
+          input: {
+            background: "./src/extension/background.ts",
+          },
+          output: {
+            format: "iife",
+            entryFileNames: "background.js",
+          },
+        },
+      },
+    },
+    relay: {
+      build: {
+        outDir: "./dist/extension",
+        minify: false,
+        emptyOutDir: false,
+        copyPublicDir: false,
+        rolldownOptions: {
+          input: {
+            relay: "./src/extension/relay.ts",
+          },
+          output: {
+            format: "iife",
+            entryFileNames: "relay.js",
+          },
+        },
+      },
+    },
   },
   define: {
     "process.env.NODE_ENV": JSON.stringify("production"),
@@ -65,6 +99,8 @@ export default defineConfig({
     async buildApp(builder) {
       await builder.build(builder.environments.client);
       await builder.build(builder.environments.bookmarks);
+      await builder.build(builder.environments.background);
+      await builder.build(builder.environments.relay);
       const outDir = builder.environments.client.config.build.outDir;
 
       // Move html
@@ -74,7 +110,7 @@ export default defineConfig({
       );
       rmSync(resolve(outDir, "src"), { force: true, recursive: true });
 
-      // Copy raw assets
+      // Copy raw assets (manifest, icons, theme-init.js)
       cpSync("./src/extension/public", outDir, { recursive: true });
 
       // Modify manifest.json
