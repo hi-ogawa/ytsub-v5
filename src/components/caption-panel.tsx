@@ -235,10 +235,10 @@ function AiPromptCopy({
           href="https://github.com/hi-ogawa/ytsub-v5/blob/main/docs/ai-integration.md"
           target="_blank"
           rel="noopener noreferrer"
-          className="text-muted-foreground/70 hover:text-foreground"
+          className="inline-flex align-middle text-muted-foreground/70 hover:text-foreground"
           title="How to use AI prompts"
         >
-          [?]
+          <ExternalLink className="h-3 w-3" />
         </a>
       </label>
       <div className="flex gap-1">
