@@ -1,11 +1,16 @@
 import { QueryClientProvider, useQuery } from "@tanstack/react-query";
-import { EllipsisVertical, LogIn, LogOut, Server } from "lucide-react";
+import { EllipsisVertical, LogIn, LogOut, Settings } from "lucide-react";
 import { StrictMode, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { MemoryRouter } from "react-router";
 import { Toaster } from "sonner";
 import { BookmarksPage } from "../components/bookmarks-page.tsx";
 import { LoginDialog } from "../components/login-dialog.tsx";
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+} from "../components/ui/dialog.tsx";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -28,6 +33,71 @@ import "../styles.css";
 
 declare const __DEV_EXT__: boolean;
 
+const SERVER_PRESETS = [
+  { label: "Production", url: "https://zamak.hiroshi.workers.dev" },
+  { label: "Local", url: "http://localhost:5173" },
+];
+
+function AdvancedDialog({
+  open,
+  onOpenChange,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
+  const [url, setUrl] = useState(getServerUrl());
+
+  const save = async (value: string) => {
+    if (!value) {
+      await chromeStorage.remove(["serverUrl"]);
+    } else {
+      await chromeStorage.set({ serverUrl: value });
+    }
+    chrome.runtime.reload();
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogTitle>Advanced</DialogTitle>
+        <div className="space-y-3">
+          <label className="block text-sm font-medium">Server URL</label>
+          <div className="flex gap-1.5">
+            {SERVER_PRESETS.map((p) => (
+              <button
+                key={p.url}
+                type="button"
+                onClick={() => setUrl(p.url)}
+                className={`rounded-md border px-2.5 py-1 text-xs ${
+                  url === p.url
+                    ? "border-primary bg-primary text-primary-foreground"
+                    : "border-border text-muted-foreground hover:bg-muted"
+                }`}
+              >
+                {p.label}
+              </button>
+            ))}
+          </div>
+          <input
+            type="text"
+            value={url}
+            onChange={(e) => setUrl(e.target.value)}
+            placeholder="https://..."
+            className="w-full rounded-md border border-border bg-background px-3 py-1.5 text-sm"
+          />
+          <button
+            type="button"
+            onClick={() => save(url)}
+            className="w-full rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+          >
+            Save & reload
+          </button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 const queryClient = createAppQueryClient({
   defaultOptions: { queries: { refetchOnWindowFocus: false } },
 });
@@ -40,6 +110,7 @@ function ExtensionBookmarksPage() {
   const { theme, cycle, Icon } = useTheme();
   const sync = useVideoSync();
   const [showLogin, setShowLogin] = useState(false);
+  const [showAdvanced, setShowAdvanced] = useState(false);
 
   const handleLogout = async () => {
     await orpc.auth.logout.call({});
@@ -86,24 +157,11 @@ function ExtensionBookmarksPage() {
               </DropdownMenuItem>
               {__DEV_EXT__ && (
                 <DropdownMenuItem
-                  onSelect={async () => {
-                    const current = getServerUrl();
-                    const input = window.prompt(
-                      "Server URL (empty = default).\nReload extension from chrome://extensions after changing.",
-                      current,
-                    );
-                    if (input === null) return;
-                    if (input === "") {
-                      await chromeStorage.remove(["serverUrl"]);
-                    } else {
-                      await chromeStorage.set({ serverUrl: input });
-                    }
-                    window.location.reload();
-                  }}
+                  onSelect={() => setShowAdvanced(true)}
                   className="gap-2"
                 >
-                  <Server className="size-4" />
-                  Server URL
+                  <Settings className="size-4" />
+                  Advanced
                 </DropdownMenuItem>
               )}
               <div className="my-1 h-px bg-border" />
@@ -130,6 +188,9 @@ function ExtensionBookmarksPage() {
           </DropdownMenu>
         </div>
       </header>
+      {__DEV_EXT__ && (
+        <AdvancedDialog open={showAdvanced} onOpenChange={setShowAdvanced} />
+      )}
       <LoginDialog
         open={showLogin}
         onOpenChange={setShowLogin}
