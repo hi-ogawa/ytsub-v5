@@ -4,5 +4,4 @@ import { spawn } from "node:child_process";
 
 spawn("node", ["--run", "build-ext"], {
   stdio: "inherit",
-  env: { ...process.env, DEV_EXT: "1" },
 });

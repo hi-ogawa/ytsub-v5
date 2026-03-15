@@ -18,5 +18,8 @@ export default defineConfig({
   ],
   server: {
     forwardConsole: true,
+    cors: {
+      origin: /^chrome-extension:\/\//,
+    },
   },
 });

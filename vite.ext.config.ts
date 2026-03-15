@@ -54,6 +54,11 @@ export default defineConfig({
     "process.env.NODE_ENV": JSON.stringify("production"),
     __BUILD_TIME__: JSON.stringify(buildTime.toISOString()),
     __GIT_REV__: JSON.stringify(rev + dirty),
+    __SERVER_URL__: JSON.stringify(
+      process.env.DEV_EXT
+        ? "http://localhost:5173"
+        : "https://ytsub-v5.hiroshi.workers.dev",
+    ),
   },
   plugins: [react(), tailwindcss()],
   builder: {
