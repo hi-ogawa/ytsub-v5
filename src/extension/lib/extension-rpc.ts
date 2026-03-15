@@ -80,11 +80,29 @@ type RpcClient<Handlers> = {
       ) => Promise<HandlerResult<Handlers[M]>>;
 };
 
-/** Create a typed RPC client proxy. Type parameter should be `typeof bgRpcHandlers`. */
-export function createRpc<Handlers extends Record<string, Function>>() {
+/** Send RPC directly via chrome.runtime.sendMessage (for ISOLATED world / relay). */
+function directCall(method: string, params?: unknown): Promise<unknown> {
+  const request: RpcRequest = {
+    type: "zamak-rpc",
+    id: "",
+    method,
+    params,
+  };
+  return chrome.runtime.sendMessage(request);
+}
+
+/**
+ * Create a typed RPC client proxy. Type parameter should be `typeof bgRpcHandlers`.
+ * - Default (MAIN world): routes through localStorage event bridge via relay
+ * - `direct: true` (ISOLATED world / relay): calls chrome.runtime.sendMessage directly
+ */
+export function createRpc<Handlers extends Record<string, Function>>(options?: {
+  direct?: boolean;
+}) {
+  const fn = options?.direct ? directCall : call;
   return new Proxy({} as never, {
     get(_target, method: string) {
-      return (params?: unknown) => call(method, params);
+      return (params?: unknown) => fn(method, params);
     },
   }) as RpcClient<Handlers>;
 }

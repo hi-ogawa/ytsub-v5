@@ -3,24 +3,21 @@
 
 import { storeEventName } from "../lib/external-store.ts";
 import { VIDEO_INDEX_KEY } from "../lib/video-index.ts";
-import { type RpcRequest, setupRpcRelay } from "./lib/extension-rpc.ts";
+import type { bgRpcHandlers } from "./background.ts";
+import { createRpc, setupRpcRelay } from "./lib/extension-rpc.ts";
+
+const bgRpc = createRpc<typeof bgRpcHandlers>({ direct: true });
 
 function main() {
   // Generic RPC relay — forwards all zamak:rpc events to background
   setupRpcRelay();
 
-  // Video index: localStorage change → fire-and-forget RPC to background
+  // Video index: localStorage change → notify background to sync to chrome.storage
   window.addEventListener(storeEventName(VIDEO_INDEX_KEY), () => {
     try {
       const raw = localStorage.getItem(VIDEO_INDEX_KEY);
       const entries = raw ? JSON.parse(raw) : [];
-      const msg: RpcRequest = {
-        type: "zamak-rpc",
-        id: "",
-        method: "videoIndexUpdated",
-        params: { entries },
-      };
-      chrome.runtime.sendMessage(msg);
+      bgRpc.videoIndexUpdated({ entries });
     } catch (e) {
       console.warn("[zamak relay]", e);
     }
