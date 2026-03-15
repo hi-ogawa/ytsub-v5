@@ -107,6 +107,72 @@ test.describe("auth endpoints", () => {
     expect((await json(after)).authenticated).toBe(true);
   });
 
+  test("login returns token in body", async ({ request }) => {
+    await rpc(request, "auth/register", {
+      username: "tokenuser",
+      password: "testpassword",
+    });
+    // Logout to clear cookie
+    await rpc(request, "auth/logout");
+
+    const res = await rpc(request, "auth/login", {
+      username: "tokenuser",
+      password: "testpassword",
+    });
+    const body = await json(res);
+    expect(body.token).toBeTruthy();
+    expect(typeof body.token).toBe("string");
+  });
+
+  test("bearer token auth works for API calls", async ({ request }) => {
+    await rpc(request, "auth/register", {
+      username: "beareruser",
+      password: "testpassword",
+    });
+    const loginRes = await rpc(request, "auth/login", {
+      username: "beareruser",
+      password: "testpassword",
+    });
+    const { token } = await json(loginRes);
+
+    // Logout to clear cookie — force bearer-only path
+    await rpc(request, "auth/logout");
+
+    // Use bearer token directly
+    const res = await request.post("/api/videos/listVideos", {
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      data: { json: {} },
+    });
+    expect(res.ok()).toBe(true);
+  });
+
+  test("bearer token auth check works", async ({ request }) => {
+    await rpc(request, "auth/register", {
+      username: "bearercheck",
+      password: "testpassword",
+    });
+    const loginRes = await rpc(request, "auth/login", {
+      username: "bearercheck",
+      password: "testpassword",
+    });
+    const { token } = await json(loginRes);
+    await rpc(request, "auth/logout");
+
+    const res = await request.post("/api/auth/check", {
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      data: { json: {} },
+    });
+    expect(res.ok()).toBe(true);
+    const body = await res.json();
+    expect(body.json.authenticated).toBe(true);
+  });
+
   test("logout clears session", async ({ request }) => {
     await rpc(request, "auth/register", {
       username: "logoutuser",
