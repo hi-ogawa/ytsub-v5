@@ -49,3 +49,40 @@ export async function login(
 
   await expect(page).toHaveURL("/");
 }
+
+export const FIXTURE_VIDEO_ID = "7GU_VQfgMT0";
+
+/** Open panel and select ko/en tracks so caption rows appear */
+export async function openPanelWithTracks(page: Page) {
+  await page.getByTitle("Show captions").click();
+  const selects = page.locator("select");
+  await selects.nth(0).selectOption(".ko");
+  await selects.nth(1).selectOption(".en");
+  await expect(page.locator("[data-index='0']")).toBeVisible();
+}
+
+/** Select text in a caption row and create a bookmark */
+export async function createBookmarkAt(
+  page: Page,
+  index: number,
+  start: number,
+  end: number,
+) {
+  await page.evaluate(
+    ({ index, start, end }) => {
+      const sideEl = document
+        .querySelector(`[data-index='${index}']`)!
+        .querySelector("[data-side='0']")!;
+      const textSpan = sideEl.querySelector("[data-offset]")!;
+      const textNode = textSpan.firstChild!;
+      const range = document.createRange();
+      range.setStart(textNode, start);
+      range.setEnd(textNode, end);
+      const selection = document.getSelection()!;
+      selection.removeAllRanges();
+      selection.addRange(range);
+    },
+    { index, start, end },
+  );
+  await page.getByRole("button", { name: "Create bookmark" }).click();
+}

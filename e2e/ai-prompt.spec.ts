@@ -1,38 +1,5 @@
 import { expect, type Page, test } from "@playwright/test";
-import { login } from "./helper.ts";
-
-async function openPanelWithTracks(page: Page) {
-  await page.getByTitle("Show captions").click();
-  const selects = page.locator("select");
-  await selects.nth(0).selectOption(".ko");
-  await selects.nth(1).selectOption(".en");
-  await expect(page.locator("[data-index='0']")).toBeVisible();
-}
-
-async function createBookmarkAt(
-  page: Page,
-  index: number,
-  start: number,
-  end: number,
-) {
-  await page.evaluate(
-    ({ index, start, end }) => {
-      const sideEl = document
-        .querySelector(`[data-index='${index}']`)!
-        .querySelector("[data-side='0']")!;
-      const textSpan = sideEl.querySelector("[data-offset]")!;
-      const textNode = textSpan.firstChild!;
-      const range = document.createRange();
-      range.setStart(textNode, start);
-      range.setEnd(textNode, end);
-      const selection = document.getSelection()!;
-      selection.removeAllRanges();
-      selection.addRange(range);
-    },
-    { index, start, end },
-  );
-  await page.getByRole("button", { name: "Create bookmark" }).click();
-}
+import { createBookmarkAt, login, openPanelWithTracks } from "./helper.ts";
 
 async function openSettings(page: Page) {
   await page.getByTitle("Settings").click();
