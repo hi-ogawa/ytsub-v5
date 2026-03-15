@@ -207,10 +207,9 @@ function mergeVideoEntries(
 
 export type VideoSyncHandle = ReturnType<typeof useVideoSync>;
 
-export function useVideoSync(options?: { localEntries?: VideoIndexEntry[] }) {
+export function useVideoSync() {
   const queryClient = useQueryClient();
-  const [storeIndex] = useStore(videoIndexStore);
-  const videoIndex = options?.localEntries ?? storeIndex;
+  const [videoIndex] = useStore(videoIndexStore);
 
   const authQuery = useQuery(orpc.auth.check.queryOptions());
   const authenticated = authQuery.data?.authenticated === true;

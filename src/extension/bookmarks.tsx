@@ -69,7 +69,7 @@ function ExtensionBookmarksPage() {
   const [entries, setEntries] = useState<VideoIndexEntry[]>([]);
   const [username, setUsername] = useState<string>();
   const { theme, cycle, Icon } = useTheme();
-  const sync = useVideoSync({ localEntries: entries });
+  const sync = useVideoSync();
   const [showLogin, setShowLogin] = useState(false);
 
   useEffect(() => {
