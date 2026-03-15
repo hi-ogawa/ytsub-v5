@@ -358,19 +358,19 @@ test.describe("dev-viewer caption panel", () => {
   }) => {
     await openPanelWithTracks(page);
 
-    // No nav buttons without bookmarks
-    await expect(
-      page.getByRole("button", { name: "Previous bookmark" }),
-    ).not.toBeVisible();
+    // Nav buttons visible but disabled without bookmarks
+    const prevBtn = page.getByRole("button", { name: "Previous bookmark" });
+    const nextBtn = page.getByRole("button", { name: "Next bookmark" });
+    await expect(prevBtn).toBeVisible();
+    await expect(prevBtn).toBeDisabled();
+    await expect(nextBtn).toBeVisible();
+    await expect(nextBtn).toBeDisabled();
 
     await createBookmarkAt(page, { index: 0, start: 0, end: 3 });
 
-    await expect(
-      page.getByRole("button", { name: "Previous bookmark" }),
-    ).toBeVisible();
-    await expect(
-      page.getByRole("button", { name: "Next bookmark" }),
-    ).toBeVisible();
+    // Enabled after bookmark created
+    await expect(prevBtn).toBeEnabled();
+    await expect(nextBtn).toBeEnabled();
   });
 
   test("go-to-caption button switches from bookmarks to captions tab", async ({

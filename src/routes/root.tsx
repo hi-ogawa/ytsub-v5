@@ -34,7 +34,7 @@ export function RootLayout() {
 
   return (
     <div className="flex h-screen flex-col">
-      <header className="flex h-10 flex-none items-center justify-between border-b px-3">
+      <header className="flex h-8 flex-none items-center justify-between border-b px-3 lg:h-10">
         <Link to="/" className="text-sm font-semibold">
           Zamak
         </Link>
@@ -70,7 +70,7 @@ export function DevLayout() {
 
   return (
     <div className="flex h-screen flex-col">
-      <header className="flex h-10 flex-none items-center justify-between border-b px-3">
+      <header className="flex h-8 flex-none items-center justify-between border-b px-3 lg:h-10">
         <Link to="/" className="text-sm font-semibold">
           Zamak <span className="text-muted-foreground">(dev)</span>
         </Link>

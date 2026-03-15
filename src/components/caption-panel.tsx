@@ -323,6 +323,13 @@ function importAiResult(store: CaptionSessionManager): void {
 
 // --- CaptionPanel: display component ---
 
+const displayNames = new Intl.DisplayNames(["en"], { type: "language" });
+
+function langName(vssId: string): string {
+  const code = vssId.split(".").pop()!;
+  return displayNames.of(code) ?? code;
+}
+
 function formatTimestamp(seconds: number): string {
   const m = Math.floor(seconds / 60);
   const s = Math.floor(seconds % 60);
@@ -637,8 +644,8 @@ function CaptionPanelWithStore({
 
   return (
     <div className="flex h-full flex-col">
-      {!sessionOnly && (
-        <div className="flex items-center border-b gap-1">
+      <div className="flex items-center border-b gap-1">
+        {!sessionOnly ? (
           <div className="min-w-0 flex-1">
             <TrackPicker
               tracks={tracks}
@@ -648,15 +655,20 @@ function CaptionPanelWithStore({
               disabled={store.bookmarks.length > 0}
             />
           </div>
-          <SettingsDropdown
-            store={store}
-            autoScroll={autoScroll}
-            onSetAutoScroll={setAutoScroll}
-            onSelectStrategy={onSelectStrategy}
-            sync={sync}
-          />
-        </div>
-      )}
+        ) : (
+          <span className="flex-1 px-2 py-1 text-sm text-muted-foreground lg:py-1.5">
+            {langName(store.vssId1)} · {langName(store.vssId2)}
+          </span>
+        )}
+        <SettingsDropdown
+          store={store}
+          autoScroll={autoScroll}
+          onSetAutoScroll={setAutoScroll}
+          onSelectStrategy={onSelectStrategy}
+          sync={sync}
+          sessionOnly={sessionOnly}
+        />
+      </div>
       <CaptionPanelContent
         store={store}
         player={player}
@@ -682,12 +694,14 @@ function SettingsDropdown({
   onSetAutoScroll,
   onSelectStrategy,
   sync,
+  sessionOnly,
 }: {
   store: CaptionSessionManager;
   autoScroll: boolean;
   onSetAutoScroll: (value: boolean | ((prev: boolean) => boolean)) => void;
   onSelectStrategy: (s: MergeStrategy) => void;
   sync: SyncStatus;
+  sessionOnly?: boolean;
 }) {
   const hasBookmarks = store.bookmarks.length > 0;
 
@@ -713,28 +727,32 @@ function SettingsDropdown({
           />
           Auto-scroll
         </DropdownMenuItem>
-        <div className="px-2 py-1.5">
-          <label className="mb-1 block text-xs text-muted-foreground">
-            Track alignment
-          </label>
-          <select
-            className={`w-full rounded border bg-background px-1 py-0.5 text-sm ${hasBookmarks ? "cursor-not-allowed opacity-50" : ""}`}
-            value={store.strategy}
-            onChange={(e) => onSelectStrategy(e.target.value as MergeStrategy)}
-            title={
-              hasBookmarks
-                ? "Cannot change while bookmarks exist"
-                : "Alignment strategy"
-            }
-            disabled={hasBookmarks}
-          >
-            {ALL_STRATEGIES.map((st) => (
-              <option key={st} value={st}>
-                {st}
-              </option>
-            ))}
-          </select>
-        </div>
+        {!sessionOnly && (
+          <div className="px-2 py-1.5">
+            <label className="mb-1 block text-xs text-muted-foreground">
+              Track alignment
+            </label>
+            <select
+              className={`w-full rounded border bg-background px-1 py-0.5 text-sm ${hasBookmarks ? "cursor-not-allowed opacity-50" : ""}`}
+              value={store.strategy}
+              onChange={(e) =>
+                onSelectStrategy(e.target.value as MergeStrategy)
+              }
+              title={
+                hasBookmarks
+                  ? "Cannot change while bookmarks exist"
+                  : "Alignment strategy"
+              }
+              disabled={hasBookmarks}
+            >
+              {ALL_STRATEGIES.map((st) => (
+                <option key={st} value={st}>
+                  {st}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
         <AiPromptCopy
           rows={store.rows}
           bookmarks={store.bookmarks}
@@ -906,7 +924,7 @@ function CaptionPanelContent({
   return (
     <div ref={contentRef} className="flex min-h-0 flex-[1_0_0] flex-col">
       {/* Tab bar */}
-      <div className="flex flex-none items-center gap-1 border-b px-2 py-1">
+      <div className="flex flex-none items-center gap-1 border-b px-2 py-0.5 lg:py-1">
         <button
           className={[
             "rounded px-2 py-0.5 text-sm",
@@ -931,24 +949,24 @@ function CaptionPanelContent({
           {sortedBookmarks.length > 0 && ` (${sortedBookmarks.length})`}
         </button>
         <div className="ml-auto flex items-center gap-0.5">
-          {sortedBookmarks.length > 0 && (
-            <div className="flex gap-0.5">
-              <button
-                className="rounded p-0.5 text-muted-foreground hover:bg-muted"
-                onClick={onPrevBookmark}
-                title="Previous bookmark"
-              >
-                <ChevronLeft className="size-4" />
-              </button>
-              <button
-                className="rounded p-0.5 text-muted-foreground hover:bg-muted"
-                onClick={onNextBookmark}
-                title="Next bookmark"
-              >
-                <ChevronRight className="size-4" />
-              </button>
-            </div>
-          )}
+          <div className="flex gap-0.5">
+            <button
+              className={`rounded p-0.5 text-muted-foreground ${sortedBookmarks.length > 0 ? "hover:bg-muted" : "opacity-30"}`}
+              onClick={onPrevBookmark}
+              disabled={sortedBookmarks.length === 0}
+              title="Previous bookmark"
+            >
+              <ChevronLeft className="size-4" />
+            </button>
+            <button
+              className={`rounded p-0.5 text-muted-foreground ${sortedBookmarks.length > 0 ? "hover:bg-muted" : "opacity-30"}`}
+              onClick={onNextBookmark}
+              disabled={sortedBookmarks.length === 0}
+              title="Next bookmark"
+            >
+              <ChevronRight className="size-4" />
+            </button>
+          </div>
         </div>
       </div>
 
