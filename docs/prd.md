@@ -112,6 +112,7 @@ A web app for language learning via YouTube subtitles. Watch videos with dual ca
 - [ ] refactor(ext): chrome global typing
 - [ ] refactor(ext): chrome storage abstraction (like local stroage store)
 - [ ] test(ext): enhance extension page e2e (seed, sync, etc.)
+- [ ] chore: security review after extension side login feature
 
 ## TODO: Backlog
 
