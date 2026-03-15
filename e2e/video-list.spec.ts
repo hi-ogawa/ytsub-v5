@@ -39,6 +39,25 @@ test("video card shows thumbnail and channel, clicking navigates to viewer", asy
   await expect(page).toHaveURL(/\/videos\/.+/);
 });
 
+test("cancel then confirm delete video", async ({ page }) => {
+  await setupDb({ seed: true });
+  await login(page);
+
+  const card = page.getByRole("link", { name: /cloud palace/ });
+  await expect(card).toBeVisible();
+
+  const menuTrigger = card.getByTestId("video-card-menu");
+  page.once("dialog", (dialog) => dialog.dismiss());
+  await menuTrigger.click();
+  await page.getByRole("menuitem", { name: /Delete/ }).click();
+  await expect(card).toBeVisible();
+
+  page.once("dialog", (dialog) => dialog.accept());
+  await menuTrigger.click();
+  await page.getByRole("menuitem", { name: /Delete/ }).click();
+  await expect(card).not.toBeVisible();
+});
+
 test("no sync badges when unauthenticated", async ({ page }) => {
   await page.goto("/dev");
 
