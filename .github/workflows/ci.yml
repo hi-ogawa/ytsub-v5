@@ -40,7 +40,7 @@ jobs:
       - run: corepack enable
       - run: pnpm i
       - run: pnpm build-ext
-      - run: pnpm exec playwright install chromium --with-deps --only-shell
+      - run: pnpm exec playwright install chromium --with-deps
       - run: pnpm test-e2e-full
       - uses: actions/upload-artifact@v7
         if: failure()
