@@ -114,7 +114,6 @@ export async function seedYouTubeIdb(
 /** Log in via the extension bookmarks page UI */
 export async function login(page: Page, options?: { username?: string }) {
   const username = options?.username ?? "dev";
-  await page.getByTestId("header-menu").click();
   await page.getByTestId("sign-in").click();
   await page.getByPlaceholder("Username").fill(username);
   await page.getByPlaceholder("Password").fill("devpassword");

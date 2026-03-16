@@ -155,13 +155,25 @@ function ExtensionBookmarksPage() {
           </span>
         </span>
         <div className="flex items-center gap-1">
-          {sync.authenticated && usernameQuery.data && (
-            <span
-              data-testid="auth-username"
-              className="text-xs text-muted-foreground"
+          {sync.authenticated ? (
+            usernameQuery.data && (
+              <span
+                data-testid="auth-username"
+                className="text-xs text-muted-foreground"
+              >
+                {usernameQuery.data}
+              </span>
+            )
+          ) : (
+            <button
+              type="button"
+              data-testid="sign-in"
+              onClick={() => setShowLogin(true)}
+              className="flex items-center gap-1 rounded px-2 py-1 text-xs text-muted-foreground hover:bg-muted"
             >
-              {usernameQuery.data}
-            </span>
+              <LogIn className="size-3" />
+              Sign in
+            </button>
           )}
           <DropdownMenu>
             <DropdownMenuTrigger
@@ -201,25 +213,18 @@ function ExtensionBookmarksPage() {
                   Open web app
                 </DropdownMenuItem>
               )}
-              <div className="my-1 h-px bg-border" />
-              {sync.authenticated ? (
-                <DropdownMenuItem
-                  data-testid="sign-out"
-                  onSelect={handleLogout}
-                  className="gap-2"
-                >
-                  <LogOut className="size-4" />
-                  Sign out
-                </DropdownMenuItem>
-              ) : (
-                <DropdownMenuItem
-                  data-testid="sign-in"
-                  onSelect={() => setShowLogin(true)}
-                  className="gap-2"
-                >
-                  <LogIn className="size-4" />
-                  Sign in
-                </DropdownMenuItem>
+              {sync.authenticated && (
+                <>
+                  <div className="my-1 h-px bg-border" />
+                  <DropdownMenuItem
+                    data-testid="sign-out"
+                    onSelect={handleLogout}
+                    className="gap-2"
+                  >
+                    <LogOut className="size-4" />
+                    Sign out
+                  </DropdownMenuItem>
+                </>
               )}
             </DropdownMenuContent>
           </DropdownMenu>
