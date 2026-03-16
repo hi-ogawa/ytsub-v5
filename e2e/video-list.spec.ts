@@ -71,7 +71,9 @@ test("import JSON file adds video to list with captions and bookmarks", async ({
     .locator("[role=dialog], .fixed")
     .getByRole("button", { name: "Import" })
     .click();
-  await expect(page.getByText("Import Video")).not.toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Import Video" }),
+  ).not.toBeVisible();
   await expect(page.getByRole("link", { name: /cloud palace/ })).toBeVisible();
 
   // Navigate to viewer — session loaded from IndexedDB
