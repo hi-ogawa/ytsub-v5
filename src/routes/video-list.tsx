@@ -7,7 +7,8 @@ import { useVideoSync, type VideoSyncEntry } from "../lib/sync.ts";
 import { removeFromVideoIndex, videoIndexStore } from "../lib/video-index.ts";
 import { orpc } from "../rpc.ts";
 
-const GITHUB_URL = "https://github.com/hi-ogawa/ytsub-v5";
+const CHROME_STORE_URL =
+  "https://chromewebstore.google.com/detail/zamak/gkonhebhbkfoeggebiipfbblfecdbabn";
 
 function WebAppEmptyState() {
   return (
@@ -16,7 +17,7 @@ function WebAppEmptyState() {
       <p>
         Install the{" "}
         <a
-          href={GITHUB_URL}
+          href={CHROME_STORE_URL}
           target="_blank"
           rel="noopener noreferrer"
           className="inline-flex items-center gap-1 text-primary underline"

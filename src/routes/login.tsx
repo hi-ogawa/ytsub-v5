@@ -4,7 +4,8 @@ import { Link } from "react-router";
 import { LoginForm } from "../components/login-form.tsx";
 import { orpc } from "../rpc.ts";
 
-const GITHUB_URL = "https://github.com/hi-ogawa/ytsub-v5";
+const CHROME_STORE_URL =
+  "https://chromewebstore.google.com/detail/zamak/gkonhebhbkfoeggebiipfbblfecdbabn";
 
 function MarketingPanel() {
   return (
@@ -32,7 +33,7 @@ function MarketingPanel() {
         </ul>
         <div className="pt-2">
           <a
-            href={GITHUB_URL}
+            href={CHROME_STORE_URL}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
