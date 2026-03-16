@@ -25,10 +25,12 @@ function BookmarkWord({
   onPopoverOpenChange: (open: boolean) => void;
 }) {
   const filled = !!bookmark.translation;
+  const triggerRef = useRef<HTMLSpanElement>(null);
   return (
     <Popover onOpenChange={onPopoverOpenChange}>
       <PopoverTrigger asChild>
         <span
+          ref={triggerRef}
           className="inline-block cursor-pointer"
           data-testid="bookmark-highlight"
           data-offset={offset}
@@ -50,6 +52,17 @@ function BookmarkWord({
         side="top"
         avoidCollisions
         onOpenAutoFocus={(e) => e.preventDefault()}
+        onPointerDownOutside={(e) => {
+          // When modal=false (extension shadow DOM), DismissableLayer closes
+          // on pointerdown before the trigger's click can toggle. Prevent the
+          // dismiss when clicking the trigger so the toggle handles it.
+          // Use composedPath() because shadow DOM retargets event.target to
+          // the host element.
+          const target = e.detail.originalEvent.composedPath()[0] as Node;
+          if (triggerRef.current?.contains(target)) {
+            e.preventDefault();
+          }
+        }}
       >
         <span className="block text-xs font-medium text-popover-foreground">
           {bookmark.text}
