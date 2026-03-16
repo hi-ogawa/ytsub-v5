@@ -169,10 +169,10 @@ function ExtensionBookmarksPage() {
               type="button"
               data-testid="sign-in"
               onClick={() => setShowLogin(true)}
-              className="flex items-center gap-1 rounded px-2 py-1 text-xs text-muted-foreground hover:bg-muted"
+              className="flex items-center gap-1 rounded px-2 py-1 text-sm text-muted-foreground hover:bg-muted"
             >
               <LogIn className="size-3" />
-              Sign in
+              Sign in to sync
             </button>
           )}
           <DropdownMenu>
@@ -246,6 +246,7 @@ function ExtensionBookmarksPage() {
           sync.refetch();
         }}
         signUpUrl={new URL("/register", serverUrl).href}
+        description="Sync your bookmarks to access them on any device via the web app."
       />
       <main className="flex-1 overflow-auto">
         <BookmarksPage

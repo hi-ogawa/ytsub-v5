@@ -7,11 +7,13 @@ export function LoginDialog({
   onOpenChange,
   onLogin,
   signUpUrl,
+  description,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onLogin: (input: { username: string; password: string }) => Promise<void>;
   signUpUrl?: string;
+  description?: string;
 }) {
   const mutation = useMutation({
     mutationFn: onLogin,
@@ -23,6 +25,9 @@ export function LoginDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent data-testid="login-dialog">
         <DialogTitle>Sign in</DialogTitle>
+        {description && (
+          <p className="-mt-2 text-xs text-muted-foreground">{description}</p>
+        )}
         <LoginForm
           mutation={mutation}
           submitLabel="Sign in"
