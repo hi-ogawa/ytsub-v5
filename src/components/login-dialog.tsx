@@ -13,7 +13,7 @@ export function LoginDialog({
   onOpenChange: (open: boolean) => void;
   onLogin: (input: { username: string; password: string }) => Promise<void>;
   signUpUrl?: string;
-  description?: string;
+  description?: React.ReactNode;
 }) {
   const mutation = useMutation({
     mutationFn: onLogin,
@@ -23,7 +23,7 @@ export function LoginDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent data-testid="login-dialog">
+      <DialogContent data-testid="login-dialog" className="flex flex-col gap-2">
         <DialogTitle>Sign in</DialogTitle>
         {description && (
           <p className="-mt-2 text-xs text-muted-foreground">{description}</p>

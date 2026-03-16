@@ -154,7 +154,7 @@ function ExtensionBookmarksPage() {
             ext
           </span>
         </span>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-2">
           {sync.authenticated ? (
             usernameQuery.data && (
               <span
