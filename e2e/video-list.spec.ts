@@ -56,9 +56,8 @@ test("import JSON file adds video to list with captions and bookmarks", async ({
   // Open import dialog from header menu
   await page.getByTestId("header-menu").click();
   await page.getByRole("menuitem", { name: "Import" }).click();
-  await expect(
-    page.getByRole("heading", { name: "Import Video" }),
-  ).toBeVisible();
+  const importDialog = page.getByTestId("import-dialog");
+  await expect(importDialog).toBeVisible();
 
   // Upload shows preview
   await page.getByTestId("file-input").setInputFiles(fixturePath);
@@ -67,13 +66,8 @@ test("import JSON file adds video to list with captions and bookmarks", async ({
   await expect(page.getByText(/\d+ bookmarks/)).toBeVisible();
 
   // Confirm import — dialog closes, video appears in list
-  await page
-    .locator("[role=dialog], .fixed")
-    .getByRole("button", { name: "Import" })
-    .click();
-  await expect(
-    page.getByRole("heading", { name: "Import Video" }),
-  ).not.toBeVisible();
+  await importDialog.getByRole("button", { name: "Import" }).click();
+  await expect(importDialog).not.toBeVisible();
   await expect(page.getByRole("link", { name: /cloud palace/ })).toBeVisible();
 
   // Navigate to viewer — session loaded from IndexedDB
