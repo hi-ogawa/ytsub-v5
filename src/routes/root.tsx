@@ -161,7 +161,7 @@ export function DevLayout() {
       <LoginDialog
         open={showLogin}
         onOpenChange={setShowLogin}
-        description="Sync your bookmarks to access them on any device via the web app."
+        description="Sync your bookmarks to access them on any device."
         onLogin={async (input) => {
           await orpc.auth.login.call(input);
           authQuery.refetch();

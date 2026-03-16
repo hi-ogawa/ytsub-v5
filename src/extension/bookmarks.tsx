@@ -246,7 +246,20 @@ function ExtensionBookmarksPage() {
           sync.refetch();
         }}
         signUpUrl={new URL("/register", serverUrl).href}
-        description="Sync your bookmarks to access them on any device via the web app."
+        description={
+          <>
+            Sync your bookmarks to access them on any device via the{" "}
+            <a
+              href={serverUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary underline"
+            >
+              web app
+            </a>
+            .
+          </>
+        }
       />
       <main className="flex-1 overflow-auto">
         <BookmarksPage
