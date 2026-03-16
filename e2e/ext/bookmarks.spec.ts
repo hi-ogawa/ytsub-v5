@@ -94,8 +94,7 @@ test("bookmarks page: load, login, logout", async ({ page, extensionId }) => {
   await expect(page.locator("text=Zamak")).toBeVisible();
   await expect(page.getByText("No bookmarked videos yet")).toBeVisible();
 
-  // Open login dialog via menu — invalid login shows error
-  await page.getByTestId("header-menu").click();
+  // Open login dialog — invalid login shows error
   await page.getByTestId("sign-in").click();
   await expect(page.getByTestId("login-dialog")).toBeVisible();
   await page.getByPlaceholder("Username").fill("nobody");
@@ -113,10 +112,7 @@ test("bookmarks page: load, login, logout", async ({ page, extensionId }) => {
   // Logout via menu
   await page.getByTestId("header-menu").click();
   await page.getByTestId("sign-out").click();
-  await expect(async () => {
-    await page.getByTestId("header-menu").click();
-    await expect(page.getByTestId("sign-in")).toBeVisible();
-  }).toPass({ timeout: 10000 });
+  await expect(page.getByTestId("sign-in")).toBeVisible({ timeout: 10000 });
 });
 
 test("bookmarks page: sync badges show correct states per entry", async ({
