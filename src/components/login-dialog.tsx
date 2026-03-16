@@ -23,10 +23,12 @@ export function LoginDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent data-testid="login-dialog" className="flex flex-col gap-2">
+      <DialogContent data-testid="login-dialog">
         <DialogTitle>Sign in</DialogTitle>
         {description && (
-          <p className="-mt-2 text-xs text-muted-foreground">{description}</p>
+          <p className="-mt-2 mb-2 text-xs text-muted-foreground">
+            {description}
+          </p>
         )}
         <LoginForm
           mutation={mutation}
