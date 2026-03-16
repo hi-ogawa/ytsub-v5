@@ -229,7 +229,7 @@ function AiPromptCopy({
 
   return (
     <div className="px-2 py-1.5">
-      <label className="mb-1 block text-xs text-muted-foreground flex items-center gap-1">
+      <label className="mb-1 block text-sm text-muted-foreground flex items-center gap-1">
         AI prompt{" "}
         <a
           href="https://github.com/hi-ogawa/ytsub-v5/blob/main/docs/ai-integration.md"
@@ -729,7 +729,7 @@ function SettingsDropdown({
         </DropdownMenuItem>
         {!sessionOnly && (
           <div className="px-2 py-1.5">
-            <label className="mb-1 block text-xs text-muted-foreground">
+            <label className="mb-1 block text-sm text-muted-foreground">
               Track alignment
             </label>
             <select
@@ -1129,15 +1129,15 @@ function ExtensionBookmarksList({
               </div>
             )}
             {bm.etymology && (
-              <div className="text-xs text-muted-foreground">
+              <div className="text-sm text-muted-foreground">
                 {bm.etymology}
               </div>
             )}
             {bm.notes && (
-              <div className="text-xs text-muted-foreground">{bm.notes}</div>
+              <div className="text-sm text-muted-foreground">{bm.notes}</div>
             )}
             {caption && (
-              <div className="mt-0.5 flex items-start gap-1 border-t border-border pt-1 text-xs text-muted-foreground">
+              <div className="mt-0.5 flex items-start gap-1 border-t border-border pt-1 text-sm text-muted-foreground">
                 <div className="flex-1">
                   <div>{caption.text1}</div>
                   <div>{caption.text2}</div>

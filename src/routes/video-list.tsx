@@ -27,7 +27,7 @@ function WebAppEmptyState() {
         </a>{" "}
         to bookmark vocabulary from YouTube videos, then sync them here.
       </p>
-      <p className="text-xs">
+      <p className="text-sm">
         You can also import videos from the header menu.
       </p>
     </div>

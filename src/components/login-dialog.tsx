@@ -26,7 +26,7 @@ export function LoginDialog({
       <DialogContent data-testid="login-dialog">
         <DialogTitle>Sign in</DialogTitle>
         {description && (
-          <p className="-mt-2 mb-2 text-xs text-muted-foreground">
+          <p className="-mt-2 mb-2 text-sm text-muted-foreground">
             {description}
           </p>
         )}
