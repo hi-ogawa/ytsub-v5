@@ -22,11 +22,13 @@ export function BookmarksPage({
   videoHref,
   onDelete,
   sync,
+  emptyState,
 }: {
   entries: VideoIndexEntry[];
   videoHref: (youtubeId: string) => string;
   onDelete?: (entry: VideoSyncEntry) => void;
   sync?: VideoSyncHandle;
+  emptyState?: React.ReactNode;
 }) {
   const displayEntries: VideoSyncEntry[] = sync?.isPending
     ? []
@@ -45,10 +47,12 @@ export function BookmarksPage({
         <div className="flex-1" />
       </div>
       {sorted.length === 0 && !sync?.isPending ? (
-        <p className="text-sm text-muted-foreground">
-          No bookmarked videos yet. Open a YouTube video and create bookmarks to
-          see them here.
-        </p>
+        (emptyState ?? (
+          <p className="text-sm text-muted-foreground">
+            No bookmarked videos yet. Open a YouTube video and create bookmarks
+            to see them here.
+          </p>
+        ))
       ) : (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
           {sorted.map((entry) => (

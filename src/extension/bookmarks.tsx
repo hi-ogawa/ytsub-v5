@@ -1,5 +1,11 @@
 import { QueryClientProvider, useQuery } from "@tanstack/react-query";
-import { EllipsisVertical, LogIn, LogOut, Settings } from "lucide-react";
+import {
+  EllipsisVertical,
+  ExternalLink,
+  LogIn,
+  LogOut,
+  Settings,
+} from "lucide-react";
 import { StrictMode, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { MemoryRouter } from "react-router";
@@ -148,14 +154,26 @@ function ExtensionBookmarksPage() {
             ext
           </span>
         </span>
-        <div className="flex items-center gap-1">
-          {sync.authenticated && usernameQuery.data && (
-            <span
-              data-testid="auth-username"
-              className="text-xs text-muted-foreground"
+        <div className="flex items-center gap-2">
+          {sync.authenticated ? (
+            usernameQuery.data && (
+              <span
+                data-testid="auth-username"
+                className="text-xs text-muted-foreground"
+              >
+                {usernameQuery.data}
+              </span>
+            )
+          ) : (
+            <button
+              type="button"
+              data-testid="sign-in"
+              onClick={() => setShowLogin(true)}
+              className="flex items-center gap-1 rounded px-2 py-1 text-sm text-muted-foreground hover:bg-muted"
             >
-              {usernameQuery.data}
-            </span>
+              <LogIn className="size-3" />
+              Sign in to sync
+            </button>
           )}
           <DropdownMenu>
             <DropdownMenuTrigger
@@ -184,25 +202,29 @@ function ExtensionBookmarksPage() {
                   Advanced
                 </DropdownMenuItem>
               )}
-              <div className="my-1 h-px bg-border" />
-              {sync.authenticated ? (
+              {sync.authenticated && (
                 <DropdownMenuItem
-                  data-testid="sign-out"
-                  onSelect={handleLogout}
+                  onSelect={() =>
+                    window.open(serverUrl, "_blank", "noopener,noreferrer")
+                  }
                   className="gap-2"
                 >
-                  <LogOut className="size-4" />
-                  Sign out
+                  <ExternalLink className="size-4" />
+                  Open web app
                 </DropdownMenuItem>
-              ) : (
-                <DropdownMenuItem
-                  data-testid="sign-in"
-                  onSelect={() => setShowLogin(true)}
-                  className="gap-2"
-                >
-                  <LogIn className="size-4" />
-                  Sign in
-                </DropdownMenuItem>
+              )}
+              {sync.authenticated && (
+                <>
+                  <div className="my-1 h-px bg-border" />
+                  <DropdownMenuItem
+                    data-testid="sign-out"
+                    onSelect={handleLogout}
+                    className="gap-2"
+                  >
+                    <LogOut className="size-4" />
+                    Sign out
+                  </DropdownMenuItem>
+                </>
               )}
             </DropdownMenuContent>
           </DropdownMenu>
@@ -224,12 +246,32 @@ function ExtensionBookmarksPage() {
           sync.refetch();
         }}
         signUpUrl={new URL("/register", serverUrl).href}
+        description={
+          <>
+            Sync your bookmarks to access them on any device via the{" "}
+            <a
+              href={serverUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary underline"
+            >
+              web app
+            </a>
+            .
+          </>
+        }
       />
       <main className="flex-1 overflow-auto">
         <BookmarksPage
           entries={entries}
           videoHref={(id) => `https://www.youtube.com/watch?v=${id}`}
           sync={sync}
+          emptyState={
+            <p className="text-sm text-muted-foreground">
+              No bookmarked videos yet. Open a YouTube video and create
+              bookmarks to see them here.
+            </p>
+          }
         />
       </main>
     </div>
