@@ -1,5 +1,11 @@
 import { QueryClientProvider, useQuery } from "@tanstack/react-query";
-import { EllipsisVertical, LogIn, LogOut, Settings } from "lucide-react";
+import {
+  EllipsisVertical,
+  ExternalLink,
+  LogIn,
+  LogOut,
+  Settings,
+} from "lucide-react";
 import { StrictMode, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { MemoryRouter } from "react-router";
@@ -184,6 +190,17 @@ function ExtensionBookmarksPage() {
                   Advanced
                 </DropdownMenuItem>
               )}
+              {sync.authenticated && (
+                <DropdownMenuItem
+                  onSelect={() =>
+                    window.open(serverUrl, "_blank", "noopener,noreferrer")
+                  }
+                  className="gap-2"
+                >
+                  <ExternalLink className="size-4" />
+                  Open web app
+                </DropdownMenuItem>
+              )}
               <div className="my-1 h-px bg-border" />
               {sync.authenticated ? (
                 <DropdownMenuItem
@@ -230,6 +247,12 @@ function ExtensionBookmarksPage() {
           entries={entries}
           videoHref={(id) => `https://www.youtube.com/watch?v=${id}`}
           sync={sync}
+          emptyState={
+            <p className="text-sm text-muted-foreground">
+              No bookmarked videos yet. Open a YouTube video and create
+              bookmarks to see them here.
+            </p>
+          }
         />
       </main>
     </div>

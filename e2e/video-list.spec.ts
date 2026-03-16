@@ -55,8 +55,10 @@ test("import JSON file adds video to list with captions and bookmarks", async ({
 
   // Open import dialog from header menu
   await page.getByTestId("header-menu").click();
-  await page.getByText("Import").click();
-  await expect(page.getByText("Import Video")).toBeVisible();
+  await page.getByRole("menuitem", { name: "Import" }).click();
+  await expect(
+    page.getByRole("heading", { name: "Import Video" }),
+  ).toBeVisible();
 
   // Upload shows preview
   await page.getByTestId("file-input").setInputFiles(fixturePath);

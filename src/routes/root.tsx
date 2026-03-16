@@ -52,7 +52,11 @@ export function GuestLayout() {
     ReturnType<typeof authLoader>
   >;
   if (authenticated) return <Navigate to="/" replace />;
-  return <Outlet />;
+  return (
+    <div className="h-full">
+      <Outlet />
+    </div>
+  );
 }
 
 export function AuthLayout() {

@@ -1,10 +1,37 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { ExternalLink } from "lucide-react";
 import { BookmarksPage } from "../components/bookmarks-page.tsx";
 import { deleteSession } from "../lib/caption-session-db.ts";
 import { useStore } from "../lib/external-store.ts";
 import { useVideoSync, type VideoSyncEntry } from "../lib/sync.ts";
 import { removeFromVideoIndex, videoIndexStore } from "../lib/video-index.ts";
 import { orpc } from "../rpc.ts";
+
+const GITHUB_URL = "https://github.com/hi-ogawa/ytsub-v5";
+
+function WebAppEmptyState() {
+  return (
+    <div className="space-y-3 text-sm text-muted-foreground">
+      <p>No bookmarked videos yet.</p>
+      <p>
+        Install the{" "}
+        <a
+          href={GITHUB_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1 text-primary underline"
+        >
+          Chrome extension
+          <ExternalLink className="size-3" />
+        </a>{" "}
+        to bookmark vocabulary from YouTube videos, then sync them here.
+      </p>
+      <p className="text-xs">
+        You can also import videos from the header menu.
+      </p>
+    </div>
+  );
+}
 
 export function VideoListPage() {
   const [entries] = useStore(videoIndexStore);
@@ -35,6 +62,7 @@ export function VideoListPage() {
       videoHref={(id) => `/videos/${id}`}
       onDelete={onDelete}
       sync={sync}
+      emptyState={<WebAppEmptyState />}
     />
   );
 }

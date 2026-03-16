@@ -344,7 +344,7 @@ function SyncMenuItem({ sync: { state, onNavigate } }: { sync: SyncStatus }) {
   switch (state) {
     case "unauthenticated":
       icon = <LogIn className={`${iconClass} text-muted-foreground`} />;
-      label = "Sign in to sync";
+      label = "Sign in to sync across devices";
       break;
     case "checking":
       icon = <Loader2 className={`${iconClass} animate-spin`} />;
