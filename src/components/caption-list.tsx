@@ -56,9 +56,10 @@ function BookmarkWord({
           // When modal=false (extension shadow DOM), DismissableLayer closes
           // on pointerdown before the trigger's click can toggle. Prevent the
           // dismiss when clicking the trigger so the toggle handles it.
-          if (
-            triggerRef.current?.contains(e.detail.originalEvent.target as Node)
-          ) {
+          // Use composedPath() because shadow DOM retargets event.target to
+          // the host element.
+          const target = e.detail.originalEvent.composedPath()[0] as Node;
+          if (triggerRef.current?.contains(target)) {
             e.preventDefault();
           }
         }}
