@@ -6,7 +6,8 @@ You are helping me learn Korean from a YouTube video. Scan the captions below an
 
 ## What to pick
 
-- Words and expressions a Korean learner is unlikely to already know (from upper intermediate to TOPIK2 class vocabulary)
+- Words a Korean learner is unlikely to already know (from upper intermediate to TOPIK2 class vocabulary)
+- Prefer single words over phrases — pick the word itself, not the surrounding expression
 - Skip: beginner vocabulary, basic/common words (하다, 가다, 있다, particles, greetings), transparent English loanwords (포인트, 스타일)
 - Aim for 5-10 picks per ~150 captions. Prefer fewer quality picks over padding.
 
@@ -21,9 +22,9 @@ Output your picks as a JSON code block. You may include brief commentary outside
 Each entry:
 
 - `captionIndex`: the [idx] from captions above
-- `text`: exact substring from the Korean column (no speaker labels like [나경])
+- `text`: exact substring from the Korean column
 - `translation`: contextual English meaning for this caption, not a dictionary dump. Concise.
-- `etymology`: Hanja if applicable (e.g. "體重"). Empty string for native Korean words.
+- `etymology`: Hanja if applicable. Empty string for native Korean words.
 
 ```json
 [
