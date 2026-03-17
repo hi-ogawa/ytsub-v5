@@ -25,9 +25,10 @@ jobs:
       - run: pnpm test
       - run: pnpm build
       - run: pnpm build-ext
+      - run: echo "SHORT_SHA=${GITHUB_SHA::7}" >> $GITHUB_ENV
       - uses: actions/upload-artifact@v7
         with:
-          name: zamak-extension-${{ github.event.pull_request.number && format('pr{0}', github.event.pull_request.number) || github.sha }}
+          name: zamak-extension-${{ github.event.pull_request.number && format('pr{0}-{1}', github.event.pull_request.number, env.SHORT_SHA) || env.SHORT_SHA }}
           path: dist/extension/*
 
   e2e:
