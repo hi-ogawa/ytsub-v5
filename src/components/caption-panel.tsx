@@ -396,6 +396,7 @@ type CaptionPanelProps = {
   videoMeta: YouTubeVideoData;
   sync: SyncStatus;
   sessionOnly?: boolean;
+  onSessionReady?: (hasSession: boolean) => void;
 };
 
 export function CaptionPanel(props: CaptionPanelProps) {
@@ -444,6 +445,7 @@ function CaptionPanelInner({
   sync,
   sessionOnly,
   initialStore,
+  onSessionReady,
 }: CaptionPanelProps & {
   initialStore?: CaptionSessionManager;
 }) {
@@ -459,6 +461,12 @@ function CaptionPanelInner({
     };
   });
   const [userStrategy, setUserStrategy] = useState<MergeStrategy>();
+
+  const onSessionReadyRef = useRef(onSessionReady);
+  onSessionReadyRef.current = onSessionReady;
+  useEffect(() => {
+    onSessionReadyRef.current?.(!!store);
+  }, [store]);
 
   const selectTracks = useCallback(
     (v1?: string, v2?: string) => {

@@ -67,11 +67,18 @@ export type SyncStatus = {
   onNavigate: () => void;
 };
 
-export function useSyncState({ youtubeId }: { youtubeId: string }) {
+export function useSyncState({
+  youtubeId,
+  hasSession,
+}: {
+  youtubeId: string;
+  hasSession?: boolean;
+}) {
   const queryClient = useQueryClient();
   const [syncVersion, setSyncVersion] = useState(0);
 
   const [videoIndex] = useStore(videoIndexStore);
+  const localEntry = videoIndex.find((e) => e.youtubeId === youtubeId);
 
   const authQuery = useQuery(orpc.auth.check.queryOptions());
   const authenticated = authQuery.data?.authenticated === true;
@@ -89,12 +96,20 @@ export function useSyncState({ youtubeId }: { youtubeId: string }) {
     if (serverQuery.isLoading) return "checking";
     if (serverQuery.isError) return "error";
 
-    const localEntry = videoIndex.find((e) => e.youtubeId === youtubeId);
-    return computeSyncState({
+    const state = computeSyncState({
       localUpdatedAt: localEntry?.updatedAt,
       syncedAt: localEntry?.syncedAt,
       serverUpdatedAt: serverQuery.data?.updatedAt ?? undefined,
     });
+
+    // When both sides are empty ("synced" vacuously) but the client has a
+    // loaded session, the video hasn't actually been synced yet — treat it
+    // as "push" so the user knows they can save it to the server.
+    if (state === "synced" && hasSession && !localEntry) {
+      return "push";
+    }
+
+    return state;
   }, [
     youtubeId,
     authQuery.isFetching,
@@ -102,8 +117,9 @@ export function useSyncState({ youtubeId }: { youtubeId: string }) {
     serverQuery.isLoading,
     serverQuery.isError,
     serverQuery.data,
-    videoIndex,
+    localEntry,
     syncVersion,
+    hasSession,
   ]);
 
   const pushMutation = useMutation(
@@ -146,6 +162,16 @@ export function useSyncState({ youtubeId }: { youtubeId: string }) {
     if (isSyncing) return;
     const action = options.direction ?? computedState;
     if (action === "push" || action === "conflict") {
+      // Ensure a video index entry exists before pushing so that setSyncedAt
+      // (called in onSuccess) can record the synced timestamp correctly.
+      if (!localEntry) {
+        updateVideoIndex(
+          options.store.videoMeta.youtubeId,
+          options.store.videoMeta.title,
+          options.store.videoMeta.channelName,
+          options.store.bookmarks.length,
+        );
+      }
       pushMutation.mutate(options.store.toExportData());
     } else if (action === "pull") {
       pullMutation.mutate(options.store);

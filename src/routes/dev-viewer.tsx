@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import {
   CaptionFab,
@@ -76,7 +76,8 @@ function DevViewerSession({
     [videoId],
   );
 
-  const syncState = useSyncState({ youtubeId: videoId });
+  const [hasSession, setHasSession] = useState(false);
+  const syncState = useSyncState({ youtubeId: videoId, hasSession });
   const sync = { state: syncState.state, onNavigate: () => navigate("/dev") };
 
   return (
@@ -86,6 +87,7 @@ function DevViewerSession({
       fetchJson3={fetchJson3}
       videoMeta={meta.video}
       sync={sync}
+      onSessionReady={setHasSession}
     />
   );
 }

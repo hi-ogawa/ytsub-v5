@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { CaptionPanel } from "../components/caption-panel.tsx";
 import { useYouTubePlayer } from "../components/youtube-player.tsx";
@@ -18,7 +19,8 @@ export function VideoViewerPage() {
 
   const navigate = useNavigate();
   const { ref: playerElRef, player } = useYouTubePlayer(youtubeId);
-  const syncState = useSyncState({ youtubeId: youtubeId! });
+  const [hasSession, setHasSession] = useState(false);
+  const syncState = useSyncState({ youtubeId: youtubeId!, hasSession });
   const sync = { state: syncState.state, onNavigate: () => navigate("/") };
 
   if (!youtubeId) {
@@ -59,6 +61,7 @@ export function VideoViewerPage() {
           fetchJson3={neverFetchJson3}
           videoMeta={videoMeta}
           sync={sync}
+          onSessionReady={setHasSession}
         />
       </div>
     </div>

@@ -21,7 +21,7 @@ test.describe("dev-viewer sync indicator", () => {
     await page.goto(`/dev/videos/${FIXTURE_VIDEO_ID}`);
   });
 
-  test("shows synced state initially, push after bookmark, navigates on click", async ({
+  test("shows push state initially (session loaded, no server data), navigates on click", async ({
     page,
   }) => {
     await openPanelWithTracks(page);
@@ -31,14 +31,15 @@ test.describe("dev-viewer sync indicator", () => {
     const indicator = page.getByTestId("sync-status");
     await expect(indicator).toBeVisible();
 
-    // Initially synced (no local data, no server data for dev-empty)
-    await expect(indicator).toHaveAttribute("data-sync-state", "synced");
+    // Session loaded but never synced: no local bookmarks, no server data for
+    // dev-empty → "push" (client has a session the server doesn't know about)
+    await expect(indicator).toHaveAttribute("data-sync-state", "push");
 
     // Close dropdown, create a bookmark
     await page.keyboard.press("Escape");
     await createBookmarkAt(page, { index: 0, start: 0, end: 3 });
 
-    // Reopen dropdown — should show push state
+    // Reopen dropdown — should still show push state
     await page.getByTitle("Settings").click();
     await expect(indicator).toHaveAttribute("data-sync-state", "push");
 
