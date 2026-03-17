@@ -192,13 +192,11 @@ function AiPromptCopy({
   rows,
   bookmarks,
   title,
-  duration,
   youtubeId,
 }: {
   rows: MergedCaption[] | undefined;
   bookmarks: ExtensionBookmark[];
   title: string;
-  duration: number | undefined;
   youtubeId: string;
 }) {
   const [selected, setSelected] = useState<AiTask>(AI_TASKS[0].task);
@@ -206,7 +204,7 @@ function AiPromptCopy({
 
   function getPrompt(task: AiTask) {
     if (!rows) return "";
-    return makeAiPrompt(task, rows, bookmarks, title, duration);
+    return makeAiPrompt(task, rows, bookmarks, title);
   }
 
   function copyPrompt(task: AiTask) {
@@ -757,7 +755,6 @@ function SettingsDropdown({
           rows={store.rows}
           bookmarks={store.bookmarks}
           title={store.videoMeta.title}
-          duration={store.videoMeta.duration}
           youtubeId={store.videoMeta.youtubeId}
         />
         <DropdownMenuItem onSelect={() => importAiResult(store)}>
