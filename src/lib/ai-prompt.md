@@ -6,11 +6,9 @@ You are helping me learn Korean from a YouTube video. Scan the captions below an
 
 ## What to pick
 
-- Intermediate+ level (skip basic words like 하다/가다/오다, particles, greetings)
-- Slang, colloquial, internet-speak
-- Hanja-based words where etymology aids memorization
-- Context-dependent meanings
-- Aim for 5-10 picks per ~150 captions. Prefer fewer quality picks over padding with basic words.
+- Words and expressions a Korean learner is unlikely to already know (from upper intermediate to TOPIK2 class vocabulary)
+- Skip: beginner vocabulary, basic/common words (하다, 가다, 있다, particles, greetings), transparent English loanwords (포인트, 스타일)
+- Aim for 5-10 picks per ~150 captions. Prefer fewer quality picks over padding.
 
 ## Splitting
 
