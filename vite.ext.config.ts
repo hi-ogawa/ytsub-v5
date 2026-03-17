@@ -125,6 +125,13 @@ export default defineConfig({
           minute: "2-digit",
         });
         manifest.name = `Zamak-dev [${branch} ${rev} ${time}]`;
+      } else if (process.env.CI) {
+        const prMatch = process.env.GITHUB_REF?.match(/refs\/pull\/(\d+)\//);
+        if (prMatch) {
+          manifest.name = `Zamak [PR#${prMatch[1]} ${rev}]`;
+        } else {
+          manifest.name = `Zamak [${rev}]`;
+        }
       }
       writeFileSync(manifestPath, JSON.stringify(manifest, null, 2));
 
