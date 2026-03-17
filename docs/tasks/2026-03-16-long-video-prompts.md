@@ -2,207 +2,122 @@
 
 ## Problem
 
-A 30-minute video (e.g. `youtube.com/watch?v=-pLYheT4FL4`) produces ~70KB of prompt text when all captions are inlined. This can:
+The pick-fill prompt sends all captions to a chat LLM in a single turn. Two issues emerge with longer videos:
 
-1. **Freeze chat UIs** — pasting 70KB+ into Claude.ai/ChatGPT text box causes lag or crashes
-2. **Degrade LLM quality** — large context dilutes attention; vocab picking quality drops
-3. **Hit token limits** — 70KB ≈ 25-30K tokens; some models/tiers have 8-16K input limits
-4. **Waste tokens/money** — most of a 30-min transcript is irrelevant to any single vocabulary pick
+1. **Attention quality degrades** — the LLM scans hundreds of captions in one pass, diluting focus. Picks become less interesting and more padded.
+2. **Target pick count is nonsensical** — current formula (`duration_seconds / 10`) produces ~183 picks for a 30-min video. No learner wants 183 flashcards from one video. The number is arbitrary linear scaling with no pedagogical basis.
 
-Current `makeAiPrompt()` dumps ALL captions via `formatCaptions(rows)` with no size awareness.
+### What's NOT a problem (initial assumptions corrected)
 
-### Scale reference
+- **Token limits**: 70KB ≈ 25K tokens. Gemini (1M), Claude (200K), ChatGPT (128K) all handle this easily.
+- **Clipboard freeze**: already solved by file download button.
+- **App-side chunking**: unnecessary complexity. The LLM can self-pace via prompt instructions.
 
-| Duration | Captions | Prompt size | Tokens (est.) |
-| -------- | -------- | ----------- | ------------- |
-| 5 min    | ~30      | ~5 KB       | ~2K           |
-| 10 min   | ~60      | ~10 KB      | ~4K           |
-| 30 min   | ~180     | ~70 KB      | ~25K          |
-| 1 hour   | ~360     | ~140 KB     | ~50K          |
-| 2 hours  | ~720     | ~280 KB     | ~100K         |
+### Real prompt samples
 
-## Approaches
+| Video ID    | Captions | Prompt size | Current target picks |
+| ----------- | -------- | ----------- | -------------------- |
+| DtK-CkwNHSY | 41       | 8 KB        | ~5-15                |
+| p7WIBWWVGFg | 108      | 12 KB       | ~11                  |
+| HuBek2qFGto | 203      | 20 KB       | ~20                  |
+| aD8OiMk9SCg | 346      | 32 KB       | ~35                  |
+| WoUnMQZ1L3c | 357      | 37 KB       | ~36                  |
+| XsQwg-T0E4k | 544      | 47 KB       | ~113                 |
+| -pLYheT4FL4 | 745      | 70 KB       | ~183                 |
 
-### A. Time-range chunking (recommended starting point)
+## Approach: prompt-only multi-turn batching
 
-Split captions into fixed-duration chunks (e.g. 5-minute windows) and generate one prompt per chunk. User processes chunks sequentially; app merges results.
+No app-side chunking, no progressive UI, no ZIP files. Just two prompt changes:
 
-**How it works:**
+### 1. Multi-turn splitting instruction
 
-1. `makeAiPrompt()` accepts an optional `range: { start: number; end: number }` (caption indices or timestamps)
-2. UI shows chunk navigator: "Chunk 1/6 (0:00–5:00)" with prev/next buttons
-3. Each chunk prompt includes only that chunk's captions + full instructions
-4. Import merges results — caption indices are offset-adjusted so they map to global indices
-5. Target count scales per chunk: `chunkDuration / 10` instead of `totalDuration / 10`
+Tell the LLM to process ~150 captions at a time and ask the user to say "continue". All chat LLMs (Gemini, ChatGPT, Claude) support multi-turn natively. Each turn outputs a JSON code block that the user copies and imports — the app's existing additive import handles accumulation.
 
-**Pros:** Simple, predictable prompt size, works with any LLM
-**Cons:** Multiple round-trips, user must manually process each chunk
+- **≤150 captions**: single turn, no change from current behavior
+- **>150 captions**: LLM self-paces, user says "continue" between batches
 
-**Variant — auto-chunk with download:**
+| Captions | Turns |
+| -------- | ----- |
+| 41       | 1     |
+| 108      | 1     |
+| 203      | 2     |
+| 346      | 3     |
+| 544      | 4     |
+| 745      | 5     |
 
-- Download a `.zip` or numbered `.txt` files: `prompt-1of6.txt`, `prompt-2of6.txt`
-- User uploads each to LLM, pastes results back sequentially
-- App accumulates bookmarks across chunks
+### 2. Per-batch pick target instead of global count
 
-### B. Smart caption filtering (pre-processing)
+Replace the global `duration / 10` formula with a loose per-batch range: "pick 5-10 interesting words per ~150 captions." The LLM picks based on quality, not quota. Total accumulates naturally across turns:
 
-Reduce prompt size by filtering out low-value captions before sending.
+- Short video (41 caps): ~5-10 picks total
+- Long video (745 caps): ~25-50 picks across 5 turns
 
-**Strategies:**
+This replaces `{{TARGET}}` in the prompt template and removes the `duration`-based calculation from `makeAiPrompt()`.
 
-1. **Deduplicate** — Remove repeated/near-identical captions (common in music videos, repetitive speech)
-2. **Skip silence/music markers** — Filter captions that are just `[음악]`, `[박수]`, `♪♪`, etc.
-3. **Language complexity filter** — Use character-class heuristics to skip captions with only basic vocabulary (short captions with only common syllables)
-4. **Density sampling** — For very long videos, sample every Nth caption to stay under a size budget
+### Why this works
 
-**Pros:** Transparent to user, smaller prompts, better signal-to-noise
-**Cons:** May miss interesting words in filtered captions; heuristics are imperfect
+- **All chat LLMs support artifacts/canvas** — each turn's JSON code block is independently copyable
+- **Import is already additive** — `createBookmarks()` appends via `[...this.bookmarks, ...newBookmarks]`
+- **No app code changes needed** beyond removing the target calculation — it's a prompt-only change
+- **LLM self-manages pacing** — no app-side chunking logic, no chunk navigator UI, no offset math
 
-### C. Caption compression
+## Implementation
 
-Make each caption line shorter without losing information.
+### Files to modify
 
-**Ideas:**
+- `src/lib/ai-prompt.md` — rewrite pick-fill instructions (splitting + per-batch target)
+- `src/lib/ai-prompt.ts` — remove `{{TARGET}}` replacement, remove `duration` param from `makeAiPrompt()` (or keep for other uses)
 
-1. **Drop timestamps** — For pick-fill, timestamps aren't used by the LLM (we reconstruct from captionIndex). Saves ~8 chars/line.
-2. **Drop English for pick-fill** — LLM only needs Korean to pick words; English can be omitted or sampled. Saves ~50% of caption data.
-3. **Abbreviate format** — `[0] text1 | text2` instead of `[0] 0:25 | text1 | text2`
-4. **Group short captions** — Merge consecutive short captions (< 10 chars) into single lines
+### Prompt changes (draft)
 
-**Pros:** No information loss (or minimal), no UX change
-**Cons:** Limited savings alone (~30-50% reduction); doesn't solve the fundamental scaling issue
+In the pick-fill section, replace:
 
-### D. Two-pass approach
+> pick {{TARGET}} interesting vocabulary words
 
-First pass: LLM scans a compressed overview and identifies interesting regions. Second pass: app sends detailed captions for only those regions.
+With:
 
-**Pass 1 prompt:**
+> Pick 5-10 of the most interesting vocabulary words from each batch of captions.
 
-- Compressed captions (Korean only, no timestamps, every-other-line sampled)
-- Instruction: "List the caption index ranges that contain interesting vocabulary"
-- Output: `[{ "start": 12, "end": 25 }, { "start": 80, "end": 95 }]`
+Add splitting instruction:
 
-**Pass 2 prompt:**
+> If there are more than 150 captions, process ~150 at a time. After each batch, output your picks as a JSON code block, state where you stopped, and ask the user to say "continue".
 
-- Full captions for identified ranges only
-- Normal pick-fill instructions
+## Future: app-side input splitting
 
-**Pros:** LLM focuses attention on interesting parts; minimal wasted context
-**Cons:** Two round-trips per session; pass-1 quality depends on compressed view being representative
+The multi-turn prompt approach lets the LLM self-pace over one big input. The natural next step is splitting the **input** itself — generate separate prompt files per chunk (e.g. `prompt-1of5.txt`, `prompt-2of5.txt`).
 
-### E. Progressive UI with accumulated results
+Benefits over LLM-self-paced multi-turn:
 
-Instead of one big prompt, design the UX around incremental processing.
+- **Better attention** — each turn's context is only ~150 captions, not 745 with "start from where you left off"
+- **Parallelizable** — user can open multiple chat sessions and process chunks simultaneously
+- **Deterministic** — app controls chunk boundaries, no reliance on LLM remembering where it stopped
 
-**Flow:**
+Engineering required:
 
-1. App auto-chunks video into 5-min segments
-2. UI shows a progress bar: "Segments: [✓] [✓] [○] [○] [○] [○]"
-3. User clicks a segment → prompt is copied/downloaded for just that segment
-4. User imports result → segment marked complete, bookmarks appear immediately
-5. User can process segments in any order, skip boring parts
+- Chunk generation in `makeAiPrompt()` (split captions array, preserve global indices)
+- Download as ZIP containing `prompt-1of5.txt`, `prompt-2of5.txt`, etc.
+- ChatGPT unpacks ZIP natively; Claude can via code execution tool; others require manual unzip
+- Same additive import handles results — no merge logic needed
 
-**Pros:** Natural for long videos; user sees progress; can stop early
-**Cons:** More UI complexity; need to track per-segment state
+Could be a quick win at a high caption threshold (e.g. >300 caps) since very long videos are uncommon. The ZIP download is straightforward; the main UX question is just guiding the user through "upload each file, copy each result, import."
 
-### F. File upload workflow (already partially supported)
+Not needed now — the prompt-only approach is simpler and may be sufficient. Revisit if LLM self-pacing proves unreliable or users want parallel processing.
 
-For large prompts, always use file download + upload instead of clipboard.
+## Future: artifact/canvas output for context efficiency
 
-**Current state:** Download button exists but copy is the primary action.
+Instruct the LLM to output JSON as an artifact (Claude), canvas (ChatGPT/Gemini) rather than inline in chat. All three platforms support this as of March 2026.
 
-**Enhancement:**
+Why it matters for multi-turn: inline JSON responses accumulate in conversation context — each "continue" turn carries all previous JSON outputs as history, growing the context. Artifacts/canvas live in a side panel and are not re-processed as conversation context on subsequent turns, keeping each turn lean.
 
-- Auto-detect when prompt > 20KB
-- Hide copy button, show only download
-- Add guidance text: "Prompt too large to copy. Download and upload to your LLM chat."
-- Consider splitting into instruction file + data file for chat UIs that support multi-file upload
-
-**Pros:** Avoids clipboard freezing; works today with most chat UIs
-**Cons:** Doesn't solve LLM quality degradation from long context
-
-### G. Hybrid: compression + chunking + progressive UI
-
-Combine the best of multiple approaches:
-
-1. **Always apply compression** (drop timestamps for pick-fill, skip music markers)
-2. **Auto-chunk when compressed size > threshold** (e.g. 15KB / ~5K tokens)
-3. **Show progressive UI** when chunked
-4. **File download** when single chunk still > 20KB
-
-This gives the best experience across video lengths:
-
-- Short videos (< 10 min): single prompt, copy to clipboard — no change
-- Medium videos (10-20 min): single prompt after compression, may fit in clipboard
-- Long videos (20+ min): auto-chunked with progressive UI
-
-## Recommendation
-
-**Phase 1: Quick wins (compression + file-upload awareness)**
-
-- Drop timestamps from pick-fill prompts (LLM doesn't need them)
-- Skip music/silence marker captions
-- Auto-switch to download-only when prompt > 20KB
-- Show prompt size in UI: "Prompt: 12KB (~4K tokens)"
-
-**Phase 2: Time-range chunking with progressive UI**
-
-- Auto-chunk into 5-min segments when total > threshold
-- Chunk navigator in AI prompt section
-- Per-chunk copy/download + import
-- Caption index offset handling on import
-- Progress tracking (which chunks are done)
-
-**Phase 3: Smart filtering (optional)**
-
-- Two-pass approach for very long videos
-- Caption deduplication
-- Language complexity heuristics
-
-## Key implementation details
-
-### Caption index mapping for chunks
-
-When chunking, each chunk's captions start at index 0 in the prompt but map to global indices. The prompt should include the global index to avoid mapping issues:
-
-```
-[142] 23:45 | 한국어 텍스트 | English text
-[143] 23:48 | 다음 자막 | Next caption
-```
-
-This way the LLM returns `captionIndex: 142` which maps directly to the global array. No offset math needed.
-
-### Chunk boundary handling
-
-Words/phrases can span caption boundaries. Use overlapping chunks (e.g. 5-min chunks with 30s overlap) and deduplicate results by `captionIndex + text` on import.
-
-### Size budget calculation
-
-```typescript
-const CLIPBOARD_LIMIT = 20_000; // bytes, switch to download-only
-const CHUNK_TARGET = 15_000; // bytes per chunk
-const INSTRUCTION_OVERHEAD = 1500; // bytes for template without captions
-
-function getChunkCount(captionsSize: number): number {
-  const dataSize = captionsSize + INSTRUCTION_OVERHEAD;
-  if (dataSize <= CHUNK_TARGET) return 1;
-  return Math.ceil(captionsSize / (CHUNK_TARGET - INSTRUCTION_OVERHEAD));
-}
-```
-
-## Files to modify
-
-- `src/lib/ai-prompt.ts` — chunking logic, compression, size calculation
-- `src/lib/ai-prompt.md` — adjust templates (may need chunk-aware instructions)
-- `src/components/caption-panel.tsx` — chunk navigator UI, progressive state, size display
-- `e2e/dev-viewer.spec.ts` — tests for chunked prompts and multi-import
+Prompt change would be minimal — add "Output your picks as a code artifact" or similar. Worth testing whether this actually reduces context accumulation in practice (platform-dependent behavior).
 
 ## Status
 
-- **Phase**: Planning — awaiting feedback on approach direction
-- **What's done**: Problem analysis, approach exploration, task doc
-- **Next**: Get feedback on recommended approach, then implement Phase 1
+- **Phase**: Planning — prompt wording draft ready
+- **What's done**: Problem reframing, approach settled (prompt-only multi-turn batching)
+- **Next**: Finalize prompt wording, implement, test with real samples
 
 ## Feedback Log
 
-(append user feedback here)
+- Initial doc over-engineered the problem (ZIP files, progressive UI, app-side chunking). Corrected after reviewing actual LLM context limits and chat app capabilities.
+- Per-batch pick guidance preferred over global target count.
