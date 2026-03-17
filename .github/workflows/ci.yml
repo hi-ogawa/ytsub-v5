@@ -27,7 +27,7 @@ jobs:
       - run: pnpm build-ext
       - uses: actions/upload-artifact@v7
         with:
-          name: zamak-extension
+          name: zamak-extension-${{ github.event.pull_request.number && format('pr{0}', github.event.pull_request.number) || github.sha }}
           path: dist/extension/*
 
   e2e:
