@@ -21,7 +21,7 @@ test.describe("dev-viewer sync indicator", () => {
     await page.goto(`/dev/videos/${FIXTURE_VIDEO_ID}`);
   });
 
-  test("save to library, push with zero bookmarks, then add bookmark push again", async ({
+  test("fresh video push with zero bookmarks, then add bookmark push again", async ({
     page,
   }) => {
     await openPanelWithTracks(page);
@@ -31,17 +31,10 @@ test.describe("dev-viewer sync indicator", () => {
     const indicator = page.getByTestId("sync-status");
     await expect(indicator).toBeVisible();
 
-    // Fresh video — not in library yet, shows "Save to library"
-    await expect(indicator).toHaveAttribute("data-sync-state", "unknown");
-
-    // Click "Save to library" — saves session, enters video index
-    await indicator.click();
-
-    // Reopen dropdown — should now show push
-    await page.getByTitle("Settings").click();
+    // Fresh video with captions loaded — in video index, pushable to server
     await expect(indicator).toHaveAttribute("data-sync-state", "push");
 
-    // Navigate to video list
+    // Navigate to video list via sync menu item
     await indicator.click();
     await expect(page).toHaveURL("/dev");
 
@@ -64,7 +57,7 @@ test.describe("dev-viewer sync indicator", () => {
   });
 });
 
-test("dev-viewer sync › shows pull when server has data but video not in library", async ({
+test("dev-viewer sync › shows conflict when local captions and server data both exist", async ({
   page,
 }) => {
   await setupDb({ seed: true });
@@ -72,10 +65,10 @@ test("dev-viewer sync › shows pull when server has data but video not in libra
   await page.goto(`/dev/videos/${FIXTURE_VIDEO_ID}`);
   await openPanelWithTracks(page);
 
-  // Server has seed data, video not in library → pull
+  // Local captions persisted on load + server has seed data → conflict (never synced)
   await page.getByTitle("Settings").click();
   const indicator = page.getByTestId("sync-status");
-  await expect(indicator).toHaveAttribute("data-sync-state", "pull", {
+  await expect(indicator).toHaveAttribute("data-sync-state", "conflict", {
     timeout: 5000,
   });
 });
@@ -143,8 +136,7 @@ test.describe("video-list sync", () => {
     await expect(page.getByText("cloud palace")).toBeVisible();
   });
 
-  // Blocked by timestamp format mismatch — see docs/tasks/2026-03-18-integer-timestamps.md
-  test.fixme("pull badge syncs server data to local, bookmarks survive reload", async ({
+  test("pull badge syncs server data to local, bookmarks survive reload", async ({
     page,
   }) => {
     await setupDb({ seed: true });
@@ -175,10 +167,7 @@ test.describe("video-list sync", () => {
     ).toBeVisible();
   });
 
-  // Blocked by timestamp format mismatch — see docs/tasks/2026-03-18-integer-timestamps.md
-  test.fixme("conflict badge resolves via dialog — upload", async ({
-    page,
-  }) => {
+  test("conflict badge resolves via dialog — upload", async ({ page }) => {
     await setupDb({ seed: true });
     await login(page);
 
@@ -198,10 +187,7 @@ test.describe("video-list sync", () => {
     await expect(badge).toHaveAttribute("data-sync-status", "synced");
   });
 
-  // Blocked by timestamp format mismatch — see docs/tasks/2026-03-18-integer-timestamps.md
-  test.fixme("conflict badge resolves via dialog — download", async ({
-    page,
-  }) => {
+  test("conflict badge resolves via dialog — download", async ({ page }) => {
     await setupDb({ seed: true });
     await login(page);
 

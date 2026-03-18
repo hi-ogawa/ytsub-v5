@@ -16,8 +16,8 @@ import {
 import { useStore } from "./external-store.ts";
 import {
   type VideoIndexEntry,
-  addToVideoIndex,
   setSyncedAt,
+  updateVideoIndex,
   videoIndexStore,
 } from "./video-index.ts";
 
@@ -79,7 +79,6 @@ type SyncDirection = "push" | "pull";
 export type SyncStatus = {
   state: SyncState;
   onNavigate: () => void;
-  onSaveToLibrary?: () => void;
 };
 
 export function useSyncState({ youtubeId }: { youtubeId: string }) {
@@ -237,7 +236,7 @@ const defaultSyncActions: VideoSyncActions = {
     if (!data) throw new Error("Video not found on server");
     const session = serverSessionToLocal(data);
     await saveSession(session);
-    addToVideoIndex(
+    updateVideoIndex(
       session.youtubeId,
       session.title,
       session.channelName,

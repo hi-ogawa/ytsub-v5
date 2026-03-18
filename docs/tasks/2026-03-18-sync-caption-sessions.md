@@ -11,40 +11,53 @@ Currently sync is bookmark-gated: a video only enters the video index (and becom
 
 This matters because **the extension is the only way data enters the system** — the server cannot scrape YouTube. If a user opens a video on the extension, the captions are fetched from YouTube and stored in IndexedDB, but they're invisible to sync until bookmarked. The web app on another device can't access those captions.
 
-## Design: "Save to library" via sync indicator
+## Approach: action-based session lifecycle
 
-Two paths into the library:
+Replace the current reactive model (session visibility driven by bookmark count) with explicit user actions:
 
-1. **Explicit save** — sync indicator shows "Save to library" when video isn't in index. Click → persists session + enters index → becomes "Sync: upload".
-2. **Implicit save via bookmark** — creating a bookmark automatically saves to library (existing behavior, kept).
-
-### Sync indicator states for caption panel
-
-| Video state            | Indicator                 | Click action           |
-| ---------------------- | ------------------------- | ---------------------- |
-| Not in library (fresh) | "Save to library" (muted) | Persist + enter index  |
-| In library, not synced | "Sync: upload" (yellow)   | Navigate to video list |
-| In library, synced     | "Synced" (green)          | Navigate to video list |
-| Not authed             | "Sign in to sync"         | Navigate to video list |
-
-### Session lifecycle
+### Current (reactive)
 
 ```
-(not saved) --[click "Save to library"]--> (in library, pushable)
-(not saved) --[create bookmark]----------> (in library, pushable)
-(in library) --[delete all bookmarks]----> (stays in library, 0 bookmarks, still syncable)
-(in library) --[explicit delete on list]-> (removed from library + IDB + server)
+open video → captions in IndexedDB (invisible to sync/index)
+add bookmark → appears in video index, syncable
+delete last bookmark → removed from video index (implicit deletion)
 ```
 
-### Implementation
+### Proposed (action-based)
 
-1. **`persistSession()` does NOT call `syncVideoIndex()`** — decoupled. Persistence (IDB) and library entry (video index) are separate concerns.
-2. **`createBookmarks()` calls `syncVideoIndex()` + `persistSession()`** — implicit save on bookmark.
-3. **New `saveToLibrary()` method on `CaptionSessionManager`** — calls `persistSession()` + `syncVideoIndex()`. Triggered by sync indicator click when state is "unknown".
-4. **`SyncMenuItem` handles "unknown" state** — shows "Save to library", click calls `saveToLibrary()` on the store instead of navigating.
-5. **Other mutations (`deleteBookmark`, `clearBookmarks`, `replace`, `updateCaptions`)** call `persistSession()` only — they update the session but don't need to re-enter the library (already there if bookmarks were created).
-6. **`syncVideoIndex()` still called from mutations that change bookmark count** — to update the count in the video index. But only when the video is already in the library.
+```
+(no session) --[create bookmark]--> (session in index, syncable)
+(no session) --[manual sync/pull]--> (session in index, syncable)
+(session exists) --[delete all bookmarks]--> (session stays, 0 bookmarks, still syncable)
+(session exists) --[explicit delete action]--> (no session)
+```
 
-Wait — simpler: `persistSession()` should call `syncVideoIndex()` only if the video is already in the index (update count), not add it. `saveToLibrary()` and `createBookmarks()` are the only entry points.
+Key differences:
 
-Actually simplest: keep `syncVideoIndex()` in `persistSession()` but make `syncVideoIndex()` only update existing entries, not create new ones. New method `addToLibrary()` creates the entry.
+1. **Session enters the index** on first bookmark or manual sync — not on video open (avoids indexing every casually opened video)
+2. **Session persists** when bookmarks reach 0 — clearing bookmarks is not the same as deleting the session
+3. **Session deletion is explicit** — a separate user action (e.g. delete button on bookmarks page), not a side effect of bookmark count
+
+This naturally solves the sync problem: once a session exists in the index, it stays syncable regardless of bookmark count. Caption data reaches the server on first sync and remains available.
+
+## Key files
+
+- `src/lib/caption-session.ts` — `syncVideoIndex()` (line ~322) gates on `bookmarks.length > 0`, calls `removeFromVideoIndex` when 0
+- `src/lib/video-index.ts` — `updateVideoIndex`, `removeFromVideoIndex`
+- `src/lib/sync.ts` — `computeSyncState`, `useSyncState`, `mergeVideoEntries`
+- `src/lib/dev-fixtures.ts` — `bootstrapFixtures` calls `updateVideoIndex` with bookmarkCount=0
+
+## Implementation sketch
+
+1. **Remove reactive deletion**: `syncVideoIndex()` should always call `updateVideoIndex`, never `removeFromVideoIndex` based on bookmark count
+2. **Keep explicit delete**: `removeFromVideoIndex` stays, but only called from user-initiated delete actions (bookmarks page delete button, which already exists)
+3. **Also delete from IndexedDB**: explicit delete should clean up both video index and IndexedDB session
+4. **Bookmarks page**: already shows videos from the index — now it will include 0-bookmark videos. May want UI indication (dimmed card, "no bookmarks yet" label) but no filtering needed
+
+## Open questions
+
+1. **First-open behavior**: When a user opens a video for the first time (captions load), should it immediately enter the index? Or only on first bookmark / explicit save? Entering on open would index every casually browsed video. Entering on first bookmark keeps the current "intent signal" but delays sync availability.
+
+2. **Server-side delete cascade**: When a user explicitly deletes a session locally, should it also delete from the server on next sync? Or should server data persist independently?
+
+3. **Extension vs web app**: The web app pulls sessions from the server. If a session is deleted locally on the web app, should it also delete from server? The extension is the data source — the web app is a view.

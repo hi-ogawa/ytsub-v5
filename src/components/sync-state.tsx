@@ -3,7 +3,6 @@ import {
   ArrowDownToLine,
   ArrowUpFromLine,
   CheckCircle2,
-  Library,
   Loader2,
   LogIn,
   RefreshCw,
@@ -57,8 +56,8 @@ export function syncStateDisplay(state: SyncState): {
       };
     case "unknown":
       return {
-        icon: <Library className="size-4 text-muted-foreground" />,
-        label: "Save to library",
+        icon: <AlertTriangle className="size-4 text-destructive" />,
+        label: "Sync: unknown",
       };
     default: {
       return state satisfies never;

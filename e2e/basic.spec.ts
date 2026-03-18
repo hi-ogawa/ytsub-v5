@@ -126,10 +126,7 @@ test("shows toast on mutation error", async ({ page }) => {
   await expect(toast).toBeVisible();
 });
 
-// Blocked by timestamp format mismatch — see docs/tasks/2026-03-18-integer-timestamps.md
-test.fixme("video-viewer settings dropdown and track label", async ({
-  page,
-}) => {
+test("video-viewer settings dropdown and track label", async ({ page }) => {
   await login(page);
 
   // Pull seed data to IndexedDB via video-list sync badge
