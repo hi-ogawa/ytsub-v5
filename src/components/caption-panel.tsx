@@ -372,6 +372,10 @@ function SyncMenuItem({ sync: { state, onNavigate } }: { sync: SyncStatus }) {
       icon = <AlertTriangle className={`${iconClass} text-destructive`} />;
       label = "Sync error";
       break;
+    case "unknown":
+      icon = <AlertTriangle className={`${iconClass} text-destructive`} />;
+      label = "Sync: unknown";
+      break;
   }
 
   return (
