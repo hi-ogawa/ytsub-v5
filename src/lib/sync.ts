@@ -37,11 +37,18 @@ export type SyncState =
   | "error"
   | "unknown";
 
+export type ComputedSyncState =
+  | "synced"
+  | "push"
+  | "pull"
+  | "conflict"
+  | "unknown";
+
 export function computeSyncState(params: {
   localUpdatedAt?: string;
   syncedAt?: string;
   serverUpdatedAt?: string;
-}): SyncState {
+}): ComputedSyncState {
   const { localUpdatedAt, syncedAt, serverUpdatedAt } = params;
 
   // No local entry — caller should handle this before calling computeSyncState
@@ -166,7 +173,7 @@ export function useSyncState({ youtubeId }: { youtubeId: string }) {
 }
 
 export type VideoSyncEntry = VideoIndexEntry & {
-  syncStatus?: "synced" | "push" | "pull" | "conflict";
+  syncStatus?: ComputedSyncState;
   serverId?: number;
 };
 
@@ -190,13 +197,7 @@ function mergeVideoEntries(
       bookmarkCount: local.bookmarkCount,
       updatedAt: local.updatedAt,
       serverId: server?.id,
-      syncStatus:
-        status === "synced" ||
-        status === "push" ||
-        status === "pull" ||
-        status === "conflict"
-          ? status
-          : "push",
+      syncStatus: status,
     });
   }
 

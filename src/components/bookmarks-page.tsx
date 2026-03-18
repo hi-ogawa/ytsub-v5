@@ -1,14 +1,7 @@
-import {
-  AlertTriangle,
-  ArrowDownToLine,
-  ArrowUpFromLine,
-  CheckCircle2,
-  EllipsisVertical,
-  Loader2,
-  Trash2,
-} from "lucide-react";
+import { EllipsisVertical, Loader2, Trash2 } from "lucide-react";
 import type { VideoSyncEntry, VideoSyncHandle } from "../lib/sync.ts";
 import type { VideoIndexEntry } from "../lib/video-index.ts";
+import { syncStateDisplay } from "./sync-state.tsx";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -146,76 +139,50 @@ function SyncBadge({
   onPull: () => void;
   onPush: () => void;
 }) {
+  const displayState = syncing ? "syncing" : status;
+  const { icon, label } = syncStateDisplay(displayState);
   const testAttrs = {
     "data-testid": "video-sync-badge",
-    "data-sync-status": syncing ? "syncing" : status,
+    "data-sync-status": displayState,
   };
 
-  if (syncing) {
+  if (
+    displayState === "synced" ||
+    displayState === "syncing" ||
+    displayState === "unknown"
+  ) {
     return (
-      <span className="inline-flex p-1.5" title="Syncing..." {...testAttrs}>
-        <Loader2 className="size-4 animate-spin text-muted-foreground" />
+      <span className="inline-flex p-1.5" title={label} {...testAttrs}>
+        {icon}
       </span>
     );
   }
-  switch (status) {
-    case "synced":
-      return (
-        <span className="inline-flex p-1.5" title="Synced" {...testAttrs}>
-          <CheckCircle2 className="size-4 text-green-500" />
-        </span>
+
+  const onClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (displayState === "conflict") {
+      const choice = window.prompt(
+        "Both local and server have changes.\nType 'push' to keep local, 'pull' to keep server:",
       );
-    case "pull":
-      return (
-        <button
-          type="button"
-          title="Pull server changes"
-          className="rounded p-1.5 text-muted-foreground hover:bg-muted"
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            onPull();
-          }}
-          {...testAttrs}
-        >
-          <ArrowDownToLine className="size-4" />
-        </button>
-      );
-    case "push":
-      return (
-        <button
-          type="button"
-          title="Push local changes to server"
-          className="rounded p-1.5 text-muted-foreground hover:bg-muted"
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            onPush();
-          }}
-          {...testAttrs}
-        >
-          <ArrowUpFromLine className="size-4" />
-        </button>
-      );
-    case "conflict":
-      return (
-        <button
-          type="button"
-          title="Both sides changed — click to resolve"
-          className="rounded p-1.5 text-muted-foreground hover:bg-muted"
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            const choice = window.prompt(
-              "Both local and server have changes.\nType 'push' to keep local, 'pull' to keep server:",
-            );
-            if (choice === "push") onPush();
-            else if (choice === "pull") onPull();
-          }}
-          {...testAttrs}
-        >
-          <AlertTriangle className="size-4 text-yellow-500" />
-        </button>
-      );
-  }
+      if (choice === "push") onPush();
+      else if (choice === "pull") onPull();
+    } else if (displayState === "push") {
+      onPush();
+    } else {
+      onPull();
+    }
+  };
+
+  return (
+    <button
+      type="button"
+      title={label}
+      className="rounded p-1.5 text-muted-foreground hover:bg-muted"
+      onClick={onClick}
+      {...testAttrs}
+    >
+      {icon}
+    </button>
+  );
 }
