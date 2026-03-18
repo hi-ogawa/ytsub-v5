@@ -34,25 +34,39 @@ export type SyncState =
   | "pull"
   | "conflict"
   | "syncing"
-  | "error";
+  | "error"
+  | "unknown";
+
+export type ComputedSyncState =
+  | "synced"
+  | "push"
+  | "pull"
+  | "conflict"
+  | "unknown";
 
 export function computeSyncState(params: {
   localUpdatedAt?: string;
   syncedAt?: string;
   serverUpdatedAt?: string;
-}): SyncState {
+}): ComputedSyncState {
   const { localUpdatedAt, syncedAt, serverUpdatedAt } = params;
-  if (!localUpdatedAt && !serverUpdatedAt) return "synced";
+
+  // No local entry
+  if (!localUpdatedAt) return serverUpdatedAt ? "pull" : "unknown";
+
+  // syncedAt without localUpdatedAt is structurally impossible (syncedAt lives on VideoIndexEntry)
+  // but handled above. syncedAt without serverUpdatedAt is degenerate (server data deleted).
 
   if (!syncedAt) {
-    if (localUpdatedAt && !serverUpdatedAt) return "push";
-    if (!localUpdatedAt && serverUpdatedAt) return "pull";
-    if (localUpdatedAt && serverUpdatedAt) return "conflict";
-    return "synced";
+    if (!serverUpdatedAt) return "push";
+    return "conflict";
   }
 
-  const localChanged = localUpdatedAt ? localUpdatedAt > syncedAt : false;
-  const serverChanged = serverUpdatedAt ? serverUpdatedAt > syncedAt : false;
+  // Server data gone after a previous sync — need to re-push
+  if (!serverUpdatedAt) return "push";
+
+  const localChanged = localUpdatedAt > syncedAt;
+  const serverChanged = serverUpdatedAt > syncedAt;
 
   if (!localChanged && !serverChanged) return "synced";
   if (localChanged && !serverChanged) return "push";
@@ -159,7 +173,7 @@ export function useSyncState({ youtubeId }: { youtubeId: string }) {
 }
 
 export type VideoSyncEntry = VideoIndexEntry & {
-  syncStatus?: "synced" | "push" | "pull" | "conflict";
+  syncStatus?: ComputedSyncState;
   serverId?: number;
 };
 
@@ -183,13 +197,7 @@ function mergeVideoEntries(
       bookmarkCount: local.bookmarkCount,
       updatedAt: local.updatedAt,
       serverId: server?.id,
-      syncStatus:
-        status === "synced" ||
-        status === "push" ||
-        status === "pull" ||
-        status === "conflict"
-          ? status
-          : "push",
+      syncStatus: status,
     });
   }
 
