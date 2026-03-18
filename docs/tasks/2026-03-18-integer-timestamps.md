@@ -89,4 +89,15 @@ Client-side timestamps (localStorage, not DB):
 
 ## Status
 
-- Planning — awaiting feedback on open questions
+- Done:
+  - Added `src/server/migrations/0002_integer_timestamps.sql` to convert existing `users`, `videos`, and `bookmarks` timestamp columns from SQLite datetime text to epoch-second integers.
+  - Updated `src/server/schema.ts` and route-level writes in `src/server/routes/videos.ts` and `src/server/routes/bookmarks.ts` to use integer timestamps via `unixepoch()`.
+  - Switched local `video-index` timestamps (`updatedAt`, `syncedAt`) to numbers and added read-time normalization so existing ISO-string local data still loads.
+  - Updated `src/lib/sync.ts` and `src/lib/sync.test.ts` to compare numeric timestamps.
+  - Reworked sync e2e helpers/specs to simulate remote updates by bumping `videos.updated_at` directly, and updated extension fixture entries to use numeric `updatedAt`.
+  - Kept bookmark `createdAt` as ISO strings in IndexedDB/chrome storage; server bookmark timestamps are converted back to ISO when pulled into local sessions.
+- Remaining:
+  - The reworked Playwright sync specs were updated but not executed in this session.
+  - The new D1 migration still needs to be applied in each environment before deploying code that expects integer timestamps.
+- Blockers/open questions:
+  - None for implementation. The remaining work is operational rollout.

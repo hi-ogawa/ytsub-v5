@@ -15,14 +15,14 @@ const fixtureEntries = [
     title: "Test Video One",
     channelName: "Test Channel",
     bookmarkCount: 3,
-    updatedAt: "2026-03-10T00:00:00.000Z",
+    updatedAt: 1773100800,
   },
   {
     youtubeId: "def456",
     title: "Test Video Two",
     channelName: "Another Channel",
     bookmarkCount: 1,
-    updatedAt: "2026-03-09T00:00:00.000Z",
+    updatedAt: 1773014400,
   },
 ];
 
@@ -130,14 +130,14 @@ test("bookmarks page: sync badges show correct states per entry", async ({
       title: "cloud palace",
       channelName: "Billlie",
       bookmarkCount: 2,
-      updatedAt: "2026-03-15T00:00:00.000Z",
+      updatedAt: 1773532800,
     },
     {
       youtubeId: "local-only-123",
       title: "Local Only Video",
       channelName: "Some Channel",
       bookmarkCount: 1,
-      updatedAt: "2026-03-14T00:00:00.000Z",
+      updatedAt: 1773446400,
     },
   ];
   await seedChromeStorage(context, { "zamak:video-index": localEntries });
@@ -186,7 +186,7 @@ test("bookmarks page: push shows error toast when no YouTube tab open", async ({
       title: "Push Test Video",
       channelName: "Test",
       bookmarkCount: 1,
-      updatedAt: "2026-03-15T00:00:00.000Z",
+      updatedAt: 1773532800,
     },
   ];
   await seedChromeStorage(context, { "zamak:video-index": localEntries });
@@ -284,7 +284,7 @@ test("bookmarks page: push syncs local data to server via YouTube tab", async ({
         title: "Push E2E Test",
         channelName: "Test Channel",
         bookmarkCount: 1,
-        updatedAt: "2026-03-15T00:00:00.000Z",
+        updatedAt: 1773532800,
       },
     ],
   });

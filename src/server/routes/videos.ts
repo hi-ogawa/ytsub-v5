@@ -34,7 +34,7 @@ export const videosRouter = authed.router({
             language2: input.language2,
             vssId1: input.vssId1,
             vssId2: input.vssId2,
-            updatedAt: sql`datetime('now')`,
+            updatedAt: sql`unixepoch()`,
           },
         })
         .returning();
@@ -201,7 +201,7 @@ export const videosRouter = authed.router({
             language2: input.video.language2,
             vssId1: input.video.vssId1,
             vssId2: input.video.vssId2,
-            updatedAt: sql`datetime('now')`,
+            updatedAt: sql`unixepoch()`,
           },
         })
         .returning();

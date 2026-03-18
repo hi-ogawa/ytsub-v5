@@ -45,9 +45,9 @@ export type ComputedSyncState =
   | "unknown";
 
 export function computeSyncState(params: {
-  localUpdatedAt?: string;
-  syncedAt?: string;
-  serverUpdatedAt?: string;
+  localUpdatedAt?: number;
+  syncedAt?: number;
+  serverUpdatedAt?: number;
 }): ComputedSyncState {
   const { localUpdatedAt, syncedAt, serverUpdatedAt } = params;
 
@@ -345,7 +345,7 @@ export function serverSessionToLocal(
       translation: b.translation,
       etymology: b.etymology,
       notes: b.notes,
-      createdAt: b.createdAt,
+      createdAt: new Date(b.createdAt * 1000).toISOString(),
     })),
   };
 }
