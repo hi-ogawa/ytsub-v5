@@ -178,7 +178,7 @@ function SyncBadge({
     <button
       type="button"
       title={label}
-      className="rounded p-1.5 text-muted-foreground hover:bg-muted"
+      className="rounded p-1.5 hover:bg-muted"
       onClick={onClick}
       {...testAttrs}
     >
