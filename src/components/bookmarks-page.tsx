@@ -1,7 +1,15 @@
-import { EllipsisVertical, Loader2, Trash2 } from "lucide-react";
+import {
+  ArrowDownToLine,
+  ArrowUpFromLine,
+  EllipsisVertical,
+  Loader2,
+  Trash2,
+} from "lucide-react";
+import { useState } from "react";
 import type { VideoSyncEntry, VideoSyncHandle } from "../lib/sync.ts";
 import type { VideoIndexEntry } from "../lib/video-index.ts";
 import { syncStateDisplay } from "./sync-state.tsx";
+import { Dialog, DialogContent, DialogTitle } from "./ui/dialog.tsx";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -139,6 +147,7 @@ function SyncBadge({
   onPull: () => void;
   onPush: () => void;
 }) {
+  const [conflictOpen, setConflictOpen] = useState(false);
   const displayState = syncing ? "syncing" : status;
   const { icon, label } = syncStateDisplay(displayState);
   const testAttrs = {
@@ -162,11 +171,7 @@ function SyncBadge({
     e.preventDefault();
     e.stopPropagation();
     if (displayState === "conflict") {
-      const choice = window.prompt(
-        "Both local and server have changes.\nType 'push' to keep local, 'pull' to keep server:",
-      );
-      if (choice === "push") onPush();
-      else if (choice === "pull") onPull();
+      setConflictOpen(true);
     } else if (displayState === "push") {
       onPush();
     } else {
@@ -175,14 +180,50 @@ function SyncBadge({
   };
 
   return (
-    <button
-      type="button"
-      title={label}
-      className="rounded p-1.5 hover:bg-muted"
-      onClick={onClick}
-      {...testAttrs}
-    >
-      {icon}
-    </button>
+    <>
+      <button
+        type="button"
+        title={label}
+        className="rounded p-1.5 hover:bg-muted"
+        onClick={onClick}
+        {...testAttrs}
+      >
+        {icon}
+      </button>
+      <Dialog open={conflictOpen} onOpenChange={setConflictOpen}>
+        <DialogContent>
+          <DialogTitle>Sync conflict</DialogTitle>
+          <p className="mb-4 text-sm text-muted-foreground">
+            Both local and server have changes. Choose which version to keep.
+          </p>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              className="flex flex-1 items-center justify-center gap-2 rounded bg-muted px-4 py-2 text-sm hover:bg-accent"
+              onClick={(e) => {
+                e.stopPropagation();
+                setConflictOpen(false);
+                onPush();
+              }}
+            >
+              <ArrowUpFromLine className="size-4" />
+              Upload local
+            </button>
+            <button
+              type="button"
+              className="flex flex-1 items-center justify-center gap-2 rounded bg-muted px-4 py-2 text-sm hover:bg-accent"
+              onClick={(e) => {
+                e.stopPropagation();
+                setConflictOpen(false);
+                onPull();
+              }}
+            >
+              <ArrowDownToLine className="size-4" />
+              Download server
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
