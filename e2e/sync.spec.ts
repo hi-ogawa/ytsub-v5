@@ -31,8 +31,7 @@ test.describe("dev-viewer sync indicator", () => {
     const indicator = page.getByTestId("sync-status");
     await expect(indicator).toBeVisible();
 
-    // TODO: should be "push" once session lifecycle is action-based
-    // (see docs/tasks/2026-03-18-sync-caption-sessions.md)
+    // Fresh video with no bookmarks — not in video index yet, nothing to sync
     await expect(indicator).toHaveAttribute("data-sync-state", "unknown");
 
     // Close dropdown, create a bookmark
