@@ -51,8 +51,8 @@ export function computeSyncState(params: {
 }): ComputedSyncState {
   const { localUpdatedAt, syncedAt, serverUpdatedAt } = params;
 
-  // No local entry — caller should handle this before calling computeSyncState
-  if (!localUpdatedAt) return "unknown";
+  // No local entry
+  if (!localUpdatedAt) return serverUpdatedAt ? "pull" : "unknown";
 
   // syncedAt without localUpdatedAt is structurally impossible (syncedAt lives on VideoIndexEntry)
   // but handled above. syncedAt without serverUpdatedAt is degenerate (server data deleted).
@@ -104,12 +104,9 @@ export function useSyncState({ youtubeId }: { youtubeId: string }) {
     if (serverQuery.isError) return "error";
 
     const localEntry = videoIndex.find((e) => e.youtubeId === youtubeId);
-    if (!localEntry) {
-      return serverQuery.data?.updatedAt ? "pull" : "unknown";
-    }
     return computeSyncState({
-      localUpdatedAt: localEntry.updatedAt,
-      syncedAt: localEntry.syncedAt,
+      localUpdatedAt: localEntry?.updatedAt,
+      syncedAt: localEntry?.syncedAt,
       serverUpdatedAt: serverQuery.data?.updatedAt ?? undefined,
     });
   }, [
