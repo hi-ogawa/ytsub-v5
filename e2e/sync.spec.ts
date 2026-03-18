@@ -21,7 +21,7 @@ test.describe("dev-viewer sync indicator", () => {
     await page.goto(`/dev/videos/${FIXTURE_VIDEO_ID}`);
   });
 
-  test("fresh video shows push, can sync with zero bookmarks, then synced", async ({
+  test("fresh video push with zero bookmarks, then add bookmark push again", async ({
     page,
   }) => {
     await openPanelWithTracks(page);
@@ -40,6 +40,17 @@ test.describe("dev-viewer sync indicator", () => {
 
     // Video appears in list with push badge — push it (zero bookmarks)
     const badge = syncBadge(page, FIXTURE_VIDEO_ID);
+    await expect(badge).toHaveAttribute("data-sync-status", "push");
+    await badge.click();
+    await expect(badge).toHaveAttribute("data-sync-status", "synced");
+
+    // Go back, create a bookmark — should become push again
+    await page.goto(`/dev/videos/${FIXTURE_VIDEO_ID}`);
+    await expect(page.locator("[data-index='0']")).toBeVisible();
+    await createBookmarkAt(page, { index: 0, start: 0, end: 3 });
+
+    // Video list shows push, push it, verify synced
+    await page.goto("/dev");
     await expect(badge).toHaveAttribute("data-sync-status", "push");
     await badge.click();
     await expect(badge).toHaveAttribute("data-sync-status", "synced");
