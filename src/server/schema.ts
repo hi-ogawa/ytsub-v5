@@ -1,5 +1,6 @@
 import { sql } from "drizzle-orm";
 import {
+  customType,
   index,
   int,
   real,
@@ -8,11 +9,20 @@ import {
   unique,
 } from "drizzle-orm/sqlite-core";
 
+const utcDatetime = customType<{ data: string; driverData: string }>({
+  dataType() {
+    return "text";
+  },
+  fromDriver(value) {
+    return value.replace(" ", "T") + "Z";
+  },
+});
+
 export const users = sqliteTable("users", {
   id: int().primaryKey({ autoIncrement: true }),
   username: text().notNull().unique(),
   passwordHash: text("password_hash").notNull(),
-  createdAt: text("created_at")
+  createdAt: utcDatetime("created_at")
     .notNull()
     .default(sql`(datetime('now'))`),
 });
@@ -33,10 +43,10 @@ export const videos = sqliteTable(
     language2: text().notNull(),
     vssId1: text("vss_id1").notNull(),
     vssId2: text("vss_id2").notNull(),
-    createdAt: text("created_at")
+    createdAt: utcDatetime("created_at")
       .notNull()
       .default(sql`(datetime('now'))`),
-    updatedAt: text("updated_at")
+    updatedAt: utcDatetime("updated_at")
       .notNull()
       .default(sql`(datetime('now'))`),
   },
@@ -83,7 +93,7 @@ export const bookmarks = sqliteTable(
     timestamp: real().notNull().default(0),
     etymology: text().notNull().default(""),
     notes: text().notNull().default(""),
-    createdAt: text("created_at")
+    createdAt: utcDatetime("created_at")
       .notNull()
       .default(sql`(datetime('now'))`),
   },
