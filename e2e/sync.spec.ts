@@ -31,7 +31,8 @@ test.describe("dev-viewer sync indicator", () => {
     const indicator = page.getByTestId("sync-status");
     await expect(indicator).toBeVisible();
 
-    // No local data, no server data for dev-empty — shows "unknown" (nothing to sync)
+    // TODO: should be "push" once session lifecycle is action-based
+    // (see docs/tasks/2026-03-18-sync-caption-sessions.md)
     await expect(indicator).toHaveAttribute("data-sync-state", "unknown");
 
     // Close dropdown, create a bookmark
