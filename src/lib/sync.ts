@@ -104,9 +104,12 @@ export function useSyncState({ youtubeId }: { youtubeId: string }) {
     if (serverQuery.isError) return "error";
 
     const localEntry = videoIndex.find((e) => e.youtubeId === youtubeId);
+    if (!localEntry) {
+      return serverQuery.data?.updatedAt ? "pull" : "unknown";
+    }
     return computeSyncState({
-      localUpdatedAt: localEntry?.updatedAt,
-      syncedAt: localEntry?.syncedAt,
+      localUpdatedAt: localEntry.updatedAt,
+      syncedAt: localEntry.syncedAt,
       serverUpdatedAt: serverQuery.data?.updatedAt ?? undefined,
     });
   }, [
