@@ -40,11 +40,14 @@ export function storeEventName(key: string) {
 export function createLocalStorageStore<T>(
   key: string,
   defaultValue: T,
+  normalize?: (value: unknown) => T,
 ): ExternalStore<T> {
   function readFromStorage(): T {
     try {
       const raw = localStorage.getItem(key);
-      return raw !== null ? (JSON.parse(raw) as T) : defaultValue;
+      if (raw === null) return defaultValue;
+      const parsed = JSON.parse(raw) as unknown;
+      return normalize ? normalize(parsed) : (parsed as T);
     } catch {
       return defaultValue;
     }

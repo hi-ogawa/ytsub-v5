@@ -5,9 +5,9 @@ import { computeSyncState } from "./sync";
 // 3 inputs (localUpdatedAt, syncedAt, serverUpdatedAt).
 // 0 present: 1, 1 present: 3, 2 present: 3×2!=6, 3 present: 3!=6 → total 16 cases.
 test(computeSyncState, () => {
-  const T1 = "2025-01-01T00:00:00Z";
-  const T2 = "2025-01-02T00:00:00Z";
-  const T3 = "2025-01-03T00:00:00Z";
+  const T1 = 1000;
+  const T2 = 2000;
+  const T3 = 3000;
   const __ = undefined;
 
   // oxfmt-ignore

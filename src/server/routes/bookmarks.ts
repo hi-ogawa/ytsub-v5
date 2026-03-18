@@ -28,7 +28,7 @@ async function assertBookmarkOwner(bookmarkId: number, userId: number) {
 async function touchVideo(videoId: number) {
   await db
     .update(videos)
-    .set({ updatedAt: sql`datetime('now')` })
+    .set({ updatedAt: sql`unixepoch()` })
     .where(eq(videos.id, videoId));
 }
 

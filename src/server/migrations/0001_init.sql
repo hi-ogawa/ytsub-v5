@@ -2,7 +2,7 @@ CREATE TABLE IF NOT EXISTS users (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   username TEXT NOT NULL UNIQUE,
   password_hash TEXT NOT NULL,
-  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  created_at INTEGER NOT NULL DEFAULT (unixepoch())
 );
 
 CREATE TABLE IF NOT EXISTS videos (
@@ -17,8 +17,8 @@ CREATE TABLE IF NOT EXISTS videos (
   language2 TEXT NOT NULL,
   vss_id1 TEXT NOT NULL DEFAULT '',
   vss_id2 TEXT NOT NULL DEFAULT '',
-  created_at TEXT NOT NULL DEFAULT (datetime('now')),
-  updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+  created_at INTEGER NOT NULL DEFAULT (unixepoch()),
+  updated_at INTEGER NOT NULL DEFAULT (unixepoch()),
   UNIQUE(user_id, youtube_id)
 );
 
@@ -49,7 +49,7 @@ CREATE TABLE IF NOT EXISTS bookmarks (
   timestamp REAL NOT NULL DEFAULT 0,
   etymology TEXT NOT NULL DEFAULT '',
   notes TEXT NOT NULL DEFAULT '',
-  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  created_at INTEGER NOT NULL DEFAULT (unixepoch())
 );
 
 CREATE INDEX IF NOT EXISTS idx_bookmarks_video ON bookmarks(video_id);

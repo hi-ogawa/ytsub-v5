@@ -5,17 +5,37 @@ import { expect, type Page } from "@playwright/test";
 
 export const execAsync = promisify(exec);
 
+function getDbPath() {
+  return globSync(
+    ".wrangler/state/e2e/v3/d1/miniflare-D1DatabaseObject/*.sqlite",
+  ).sort((a, b) => statSync(b).mtimeMs - statSync(a).mtimeMs)[0];
+}
+
 // Write to miniflare's D1 sqlite file directly instead of going through
 // wrangler CLI (0.15s vs 2s per call). WAL mode makes this safe while
 // the dev server is running.
 export async function setupDb(options: { seed?: boolean } = {}) {
-  const dbPath = globSync(
-    ".wrangler/state/e2e/v3/d1/miniflare-D1DatabaseObject/*.sqlite",
-  ).sort((a, b) => statSync(b).mtimeMs - statSync(a).mtimeMs)[0];
+  const dbPath = getDbPath();
   const sql = options.seed
     ? "scripts/db-clear.sql scripts/db-seed.sql"
     : "scripts/db-clear.sql";
   await execAsync(`cat ${sql} | sqlite3 ${dbPath}`);
+}
+
+export async function bumpServerUpdatedAt(options: {
+  username: string;
+  youtubeId: string;
+  secondsAhead?: number;
+}) {
+  const dbPath = getDbPath();
+  const secondsAhead = options.secondsAhead ?? 120;
+  const sql = `
+    UPDATE videos
+    SET updated_at = unixepoch() + ${secondsAhead}
+    WHERE youtube_id = '${options.youtubeId}'
+      AND user_id = (SELECT id FROM users WHERE username = '${options.username}');
+  `;
+  await execAsync(`sqlite3 ${dbPath} "${sql}"`);
 }
 
 /** Log in as a seed user (requires setupDb({ seed: true }) beforehand). */

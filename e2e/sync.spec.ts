@@ -1,5 +1,6 @@
 import { expect, type Page, test } from "@playwright/test";
 import {
+  bumpServerUpdatedAt,
   createBookmarkAt,
   login,
   openPanelWithTracks,
@@ -140,9 +141,33 @@ test.describe("video-list sync", () => {
     page,
   }) => {
     await setupDb({ seed: true });
-    await login(page);
+    await login(page, { username: "dev-empty" });
 
-    // Seed video exists on server for "dev" user — no local data
+    // Create explicit server state for this user first.
+    await page.goto(`/dev/videos/${FIXTURE_VIDEO_ID}`);
+    await openPanelWithTracks(page);
+    await createBookmarkAt(page, { index: 0, start: 0, end: 3 });
+    await page.goto("/");
+    const pushedBadge = syncBadge(page, FIXTURE_VIDEO_ID);
+    await expect(pushedBadge).toHaveAttribute("data-sync-status", "push");
+    await pushedBadge.click();
+    await expect(pushedBadge).toHaveAttribute("data-sync-status", "synced");
+
+    await bumpServerUpdatedAt({
+      username: "dev-empty",
+      youtubeId: FIXTURE_VIDEO_ID,
+    });
+
+    // Clear local state so only server data remains.
+    await page.goto("/");
+    await page
+      .getByTestId(`video-card-${FIXTURE_VIDEO_ID}`)
+      .getByTestId("video-card-menu")
+      .click();
+    page.once("dialog", (dialog) => dialog.accept());
+    await page.getByRole("menuitem", { name: "Delete" }).click();
+
+    // Server-only video should now require pull.
     await page.goto("/");
     const badge = syncBadge(page, FIXTURE_VIDEO_ID);
     await expect(badge).toHaveAttribute("data-sync-status", "pull");
@@ -153,9 +178,7 @@ test.describe("video-list sync", () => {
 
     // Verify pulled data is in local video-index
     const card = page.getByTestId(`video-card-${FIXTURE_VIDEO_ID}`);
-    await expect(card.getByTestId("video-card-badge")).toHaveText(
-      "15 bookmarks",
-    );
+    await expect(card.getByTestId("video-card-badge")).toHaveText("1 bookmark");
 
     // Verify pulled bookmarks survive page reload (IndexedDB persistence)
     await page.goto(`/dev/videos/${FIXTURE_VIDEO_ID}`);
@@ -163,17 +186,32 @@ test.describe("video-list sync", () => {
     await expect(page.locator("[data-index='0']")).toBeVisible();
     const panel = page.getByTestId("resizable-panel");
     await expect(
-      panel.getByRole("button", { name: "Bookmarks (15)" }),
+      panel.getByRole("button", { name: "Bookmarks (1)" }),
     ).toBeVisible();
   });
 
   test("conflict badge resolves via dialog — upload", async ({ page }) => {
     await setupDb({ seed: true });
-    await login(page);
+    await login(page, { username: "dev-empty" });
 
-    // Create local bookmark on fixture video that already exists on server
+    // Push once so this user has synced server state.
     await page.goto(`/dev/videos/${FIXTURE_VIDEO_ID}`);
     await openPanelWithTracks(page);
+    await createBookmarkAt(page, { index: 0, start: 0, end: 3 });
+    await page.goto("/");
+    const initialBadge = syncBadge(page, FIXTURE_VIDEO_ID);
+    await expect(initialBadge).toHaveAttribute("data-sync-status", "push");
+    await initialBadge.click();
+    await expect(initialBadge).toHaveAttribute("data-sync-status", "synced");
+
+    await bumpServerUpdatedAt({
+      username: "dev-empty",
+      youtubeId: FIXTURE_VIDEO_ID,
+    });
+
+    // Add a new local change after the remote update.
+    await page.goto(`/dev/videos/${FIXTURE_VIDEO_ID}`);
+    await expect(page.locator("[data-index='0']")).toBeVisible();
     await createBookmarkAt(page, { index: 0, start: 0, end: 3 });
 
     // Video list should show conflict badge
@@ -189,11 +227,26 @@ test.describe("video-list sync", () => {
 
   test("conflict badge resolves via dialog — download", async ({ page }) => {
     await setupDb({ seed: true });
-    await login(page);
+    await login(page, { username: "dev-empty" });
 
-    // Create local bookmark on fixture video that already exists on server
+    // Push once so this user has synced server state.
     await page.goto(`/dev/videos/${FIXTURE_VIDEO_ID}`);
     await openPanelWithTracks(page);
+    await createBookmarkAt(page, { index: 0, start: 0, end: 3 });
+    await page.goto("/");
+    const initialBadge = syncBadge(page, FIXTURE_VIDEO_ID);
+    await expect(initialBadge).toHaveAttribute("data-sync-status", "push");
+    await initialBadge.click();
+    await expect(initialBadge).toHaveAttribute("data-sync-status", "synced");
+
+    await bumpServerUpdatedAt({
+      username: "dev-empty",
+      youtubeId: FIXTURE_VIDEO_ID,
+    });
+
+    // Add a new local change after the remote update.
+    await page.goto(`/dev/videos/${FIXTURE_VIDEO_ID}`);
+    await expect(page.locator("[data-index='0']")).toBeVisible();
     await createBookmarkAt(page, { index: 0, start: 0, end: 3 });
 
     // Video list should show conflict badge

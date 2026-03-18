@@ -34,9 +34,7 @@ export function BookmarksPage({
   const displayEntries: VideoSyncEntry[] = sync?.isPending
     ? []
     : (sync?.entries ?? entries);
-  const sorted = [...displayEntries].sort(
-    (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
-  );
+  const sorted = [...displayEntries].sort((a, b) => b.updatedAt - a.updatedAt);
 
   return (
     <div className="mx-auto max-w-5xl p-8">

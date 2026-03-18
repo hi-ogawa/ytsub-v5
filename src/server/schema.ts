@@ -12,9 +12,9 @@ export const users = sqliteTable("users", {
   id: int().primaryKey({ autoIncrement: true }),
   username: text().notNull().unique(),
   passwordHash: text("password_hash").notNull(),
-  createdAt: text("created_at")
+  createdAt: int("created_at")
     .notNull()
-    .default(sql`(datetime('now'))`),
+    .default(sql`(unixepoch())`),
 });
 
 export const videos = sqliteTable(
@@ -33,12 +33,12 @@ export const videos = sqliteTable(
     language2: text().notNull(),
     vssId1: text("vss_id1").notNull(),
     vssId2: text("vss_id2").notNull(),
-    createdAt: text("created_at")
+    createdAt: int("created_at")
       .notNull()
-      .default(sql`(datetime('now'))`),
-    updatedAt: text("updated_at")
+      .default(sql`(unixepoch())`),
+    updatedAt: int("updated_at")
       .notNull()
-      .default(sql`(datetime('now'))`),
+      .default(sql`(unixepoch())`),
   },
   (t) => [
     unique().on(t.userId, t.youtubeId),
@@ -83,9 +83,9 @@ export const bookmarks = sqliteTable(
     timestamp: real().notNull().default(0),
     etymology: text().notNull().default(""),
     notes: text().notNull().default(""),
-    createdAt: text("created_at")
+    createdAt: int("created_at")
       .notNull()
-      .default(sql`(datetime('now'))`),
+      .default(sql`(unixepoch())`),
   },
   (t) => [index("idx_bookmarks_video").on(t.videoId)],
 );
