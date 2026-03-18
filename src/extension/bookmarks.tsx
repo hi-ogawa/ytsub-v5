@@ -30,7 +30,7 @@ import { useTheme } from "../lib/theme.ts";
 import {
   VIDEO_INDEX_KEY,
   type VideoIndexEntry,
-  updateVideoIndex,
+  addToVideoIndex,
   videoIndexStore,
 } from "../lib/video-index.ts";
 import { orpc, setRpcConfig } from "../rpc.ts";
@@ -50,7 +50,7 @@ const extensionSyncActions: VideoSyncActions = {
   },
   async pullSession(youtubeId) {
     const result = await bgRpc.pullSession({ youtubeId });
-    updateVideoIndex(
+    addToVideoIndex(
       youtubeId,
       result.title,
       result.channelName,

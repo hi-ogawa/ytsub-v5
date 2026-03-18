@@ -1,6 +1,6 @@
 import { mergeCaptions } from "./caption-merge.ts";
 import { saveSession } from "./caption-session-db.ts";
-import { updateVideoIndex } from "./video-index.ts";
+import { addToVideoIndex } from "./video-index.ts";
 import {
   type Json3File,
   type YouTubeExtractionResult,
@@ -49,7 +49,7 @@ export async function bootstrapFixtures() {
       bookmarks: [],
     });
 
-    updateVideoIndex(
+    addToVideoIndex(
       meta.video.youtubeId,
       meta.video.title,
       meta.video.channelName,

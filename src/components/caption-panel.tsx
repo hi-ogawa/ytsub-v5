@@ -329,13 +329,19 @@ function formatTimestamp(seconds: number): string {
   return `${m}:${String(s).padStart(2, "0")}`;
 }
 
-function SyncMenuItem({ sync: { state, onNavigate } }: { sync: SyncStatus }) {
+function SyncMenuItem({
+  sync: { state, onNavigate, onSaveToLibrary },
+}: {
+  sync: SyncStatus;
+}) {
   const { icon, label } = syncStateDisplay(state);
 
   return (
     <>
       <DropdownMenuItem
-        onSelect={onNavigate}
+        onSelect={
+          state === "unknown" && onSaveToLibrary ? onSaveToLibrary : onNavigate
+        }
         data-testid="sync-status"
         data-sync-state={state}
       >
@@ -486,7 +492,7 @@ async function buildCaptionSession(options: {
     { json3: json3_2, vssId: options.track2.vssId },
     options.strategy,
   );
-  const store = new CaptionSessionManager({
+  return new CaptionSessionManager({
     videoMeta: options.videoMeta,
     vssId1: options.track1.vssId,
     vssId2: options.track2.vssId,
@@ -494,8 +500,6 @@ async function buildCaptionSession(options: {
     strategy: merged.strategy,
     bookmarks: [],
   });
-  await store.persistSession();
-  return store;
 }
 
 /** State B: tracks selected, fetching json3 → builds store and calls setStore */
@@ -672,7 +676,12 @@ function SettingsDropdown({
         <EllipsisVertical className="size-4" />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        <SyncMenuItem sync={sync} />
+        <SyncMenuItem
+          sync={{
+            ...sync,
+            onSaveToLibrary: () => store.saveToLibrary(),
+          }}
+        />
         <DropdownMenuItem
           data-checked={autoScroll}
           onSelect={(e) => {

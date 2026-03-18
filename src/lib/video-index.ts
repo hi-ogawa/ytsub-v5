@@ -16,6 +16,7 @@ export const videoIndexStore = createLocalStorageStore<VideoIndexEntry[]>(
   [],
 );
 
+/** Update an existing entry in the video index. No-op if not in index. */
 export function updateVideoIndex(
   youtubeId: string,
   title: string,
@@ -24,19 +25,40 @@ export function updateVideoIndex(
 ) {
   videoIndexStore.set((entries) => {
     const idx = entries.findIndex((e) => e.youtubeId === youtubeId);
-    const existing = idx >= 0 ? entries[idx] : undefined;
-    const entry: VideoIndexEntry = {
-      youtubeId,
-      title,
-      channelName,
-      bookmarkCount,
-      updatedAt: new Date().toISOString(),
-      syncedAt: existing?.syncedAt,
-    };
-    const next = [...entries];
-    if (idx >= 0) next[idx] = entry;
-    else next.push(entry);
-    return next;
+    if (idx < 0) return entries;
+    return entries.map((e, i) =>
+      i === idx
+        ? {
+            ...e,
+            title,
+            channelName,
+            bookmarkCount,
+            updatedAt: new Date().toISOString(),
+          }
+        : e,
+    );
+  });
+}
+
+/** Add a video to the index (library). No-op if already present. */
+export function addToVideoIndex(
+  youtubeId: string,
+  title: string,
+  channelName: string,
+  bookmarkCount: number,
+) {
+  videoIndexStore.set((entries) => {
+    if (entries.some((e) => e.youtubeId === youtubeId)) return entries;
+    return [
+      ...entries,
+      {
+        youtubeId,
+        title,
+        channelName,
+        bookmarkCount,
+        updatedAt: new Date().toISOString(),
+      },
+    ];
   });
 }
 

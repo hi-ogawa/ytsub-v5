@@ -6,7 +6,7 @@ import {
   saveSession,
 } from "./caption-session-db.ts";
 import type { ExtensionBookmark } from "./extension-bookmarks.ts";
-import { updateVideoIndex } from "./video-index.ts";
+import { addToVideoIndex, updateVideoIndex } from "./video-index.ts";
 import {
   type YouTubeCaptionTrack,
   type YouTubeVideoData,
@@ -151,7 +151,7 @@ export async function importExportData(data: ExportData): Promise<void> {
   };
   await saveSession(session);
   if (session.bookmarks.length > 0) {
-    updateVideoIndex(
+    addToVideoIndex(
       session.youtubeId,
       session.title,
       session.channelName,
@@ -232,6 +232,7 @@ export class CaptionSessionManager {
       ...sel,
     }));
     this.bookmarks = [...this.bookmarks, ...newBookmarks];
+    this.addToLibrary();
     this.notify();
     await this.persistSession();
   }
@@ -309,7 +310,25 @@ export class CaptionSessionManager {
     this.syncVideoIndex();
   }
 
-  syncVideoIndex(): void {
+  /** Explicit user action: save this video to library so it's syncable. */
+  async saveToLibrary(): Promise<void> {
+    this.addToLibrary();
+    this.notify();
+    await this.persistSession();
+  }
+
+  /** Add to library if not already there. Called by createBookmarks and saveToLibrary. */
+  private addToLibrary(): void {
+    addToVideoIndex(
+      this.videoMeta.youtubeId,
+      this.videoMeta.title,
+      this.videoMeta.channelName,
+      this.bookmarks.length,
+    );
+  }
+
+  /** Update existing video index entry. No-op if not in library. */
+  private syncVideoIndex(): void {
     updateVideoIndex(
       this.videoMeta.youtubeId,
       this.videoMeta.title,
