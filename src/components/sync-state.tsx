@@ -59,5 +59,8 @@ export function syncStateDisplay(state: SyncState): {
         icon: <AlertTriangle className="size-4 text-destructive" />,
         label: "Sync: unknown",
       };
+    default: {
+      return state satisfies never;
+    }
   }
 }
