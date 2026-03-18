@@ -232,14 +232,12 @@ export class CaptionSessionManager {
       ...sel,
     }));
     this.bookmarks = [...this.bookmarks, ...newBookmarks];
-    this.syncVideoIndex();
     this.notify();
     await this.persistSession();
   }
 
   async deleteBookmark(bookmarkId: string): Promise<void> {
     this.bookmarks = this.bookmarks.filter((b) => b.id !== bookmarkId);
-    this.syncVideoIndex();
     this.notify();
     await this.persistSession();
   }
@@ -258,7 +256,6 @@ export class CaptionSessionManager {
 
   async clearBookmarks(): Promise<void> {
     this.bookmarks = [];
-    this.syncVideoIndex();
     this.notify();
     await this.persistSession();
   }
@@ -273,7 +270,6 @@ export class CaptionSessionManager {
     this.bookmarks = options.bookmarks;
     if (options.vssId1 !== undefined) this.vssId1 = options.vssId1;
     if (options.vssId2 !== undefined) this.vssId2 = options.vssId2;
-    this.syncVideoIndex();
     this.notify();
     await this.persistSession();
   }
@@ -310,6 +306,7 @@ export class CaptionSessionManager {
       bookmarks: this.bookmarks,
     };
     await saveSession(session);
+    this.syncVideoIndex();
   }
 
   syncVideoIndex(): void {

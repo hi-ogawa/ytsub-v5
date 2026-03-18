@@ -21,7 +21,7 @@ test.describe("dev-viewer sync indicator", () => {
     await page.goto(`/dev/videos/${FIXTURE_VIDEO_ID}`);
   });
 
-  test("shows synced state initially, push after bookmark, navigates on click", async ({
+  test("fresh video shows push, can sync with zero bookmarks, then synced", async ({
     page,
   }) => {
     await openPanelWithTracks(page);
@@ -31,24 +31,22 @@ test.describe("dev-viewer sync indicator", () => {
     const indicator = page.getByTestId("sync-status");
     await expect(indicator).toBeVisible();
 
-    // Fresh video with no bookmarks — not in video index yet, nothing to sync
-    await expect(indicator).toHaveAttribute("data-sync-state", "unknown");
-
-    // Close dropdown, create a bookmark
-    await page.keyboard.press("Escape");
-    await createBookmarkAt(page, { index: 0, start: 0, end: 3 });
-
-    // Reopen dropdown — should show push state
-    await page.getByTitle("Settings").click();
+    // Fresh video with captions loaded — in video index, pushable to server
     await expect(indicator).toHaveAttribute("data-sync-state", "push");
 
-    // Click navigates to /dev (video list)
+    // Navigate to video list via sync menu item
     await indicator.click();
     await expect(page).toHaveURL("/dev");
+
+    // Video appears in list with push badge — push it (zero bookmarks)
+    const badge = syncBadge(page, FIXTURE_VIDEO_ID);
+    await expect(badge).toHaveAttribute("data-sync-status", "push");
+    await badge.click();
+    await expect(badge).toHaveAttribute("data-sync-status", "synced");
   });
 });
 
-test("dev-viewer sync › shows pull then conflict states for seeded user", async ({
+test("dev-viewer sync › shows conflict when local captions and server data both exist", async ({
   page,
 }) => {
   await setupDb({ seed: true });
@@ -56,19 +54,12 @@ test("dev-viewer sync › shows pull then conflict states for seeded user", asyn
   await page.goto(`/dev/videos/${FIXTURE_VIDEO_ID}`);
   await openPanelWithTracks(page);
 
-  // Server has seed data for "dev" — indicator shows pull (no local data, server has data)
+  // Local captions persisted on load + server has seed data → conflict (never synced)
   await page.getByTitle("Settings").click();
   const indicator = page.getByTestId("sync-status");
-  // May briefly show "checking" while server query completes
-  await expect(indicator).toHaveAttribute("data-sync-state", "pull", {
+  await expect(indicator).toHaveAttribute("data-sync-state", "conflict", {
     timeout: 5000,
   });
-
-  // Create a local bookmark — now both sides have data → conflict
-  await page.keyboard.press("Escape");
-  await createBookmarkAt(page, { index: 0, start: 0, end: 3 });
-  await page.getByTitle("Settings").click();
-  await expect(indicator).toHaveAttribute("data-sync-state", "conflict");
 });
 
 test.describe("dev-viewer video-index", () => {
