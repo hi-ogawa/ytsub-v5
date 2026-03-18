@@ -20,7 +20,7 @@ test(computeSyncState, () => {
     [__, T1, __, "unknown",  "#3  impossible: syncedAt without local"],
     [__, __, T1, "unknown",  "#4  server only, no local"],
     // 2 present: local + synced (no server)
-    [T1, T2, __, "synced",   "#5  local < synced, server gone"],
+    [T1, T2, __, "push",     "#5  local < synced, server gone → re-push"],
     [T2, T1, __, "push",     "#6  local > synced, server gone"],
     // 2 present: local + server (no synced)
     [T1, __, T2, "conflict", "#7  both exist, never synced"],

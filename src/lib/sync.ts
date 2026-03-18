@@ -55,8 +55,11 @@ export function computeSyncState(params: {
     return "conflict";
   }
 
+  // Server data gone after a previous sync — need to re-push
+  if (!serverUpdatedAt) return "push";
+
   const localChanged = localUpdatedAt > syncedAt;
-  const serverChanged = serverUpdatedAt ? serverUpdatedAt > syncedAt : false;
+  const serverChanged = serverUpdatedAt > syncedAt;
 
   if (!localChanged && !serverChanged) return "synced";
   if (localChanged && !serverChanged) return "push";
