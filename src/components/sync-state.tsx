@@ -22,7 +22,7 @@ export function syncStateDisplay(state: SyncState): {
     case "checking":
       return {
         icon: <Loader2 className="size-4 animate-spin" />,
-        label: "Checking…",
+        label: "Sync: checking…",
       };
     case "synced":
       return {
@@ -32,12 +32,12 @@ export function syncStateDisplay(state: SyncState): {
     case "push":
       return {
         icon: <ArrowUpFromLine className="size-4 text-yellow-500" />,
-        label: "Unsynced changes",
+        label: "Sync: upload",
       };
     case "pull":
       return {
         icon: <ArrowDownToLine className="size-4 text-yellow-500" />,
-        label: "Server has updates",
+        label: "Sync: download",
       };
     case "conflict":
       return {
