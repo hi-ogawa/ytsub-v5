@@ -1,5 +1,6 @@
 import { expect, type Page, test } from "@playwright/test";
 import {
+  bumpServerUpdatedAt,
   createBookmarkAt,
   login,
   openPanelWithTracks,
@@ -133,6 +134,31 @@ test.describe("video-list sync", () => {
     // Reload — pushed video should still be there
     await page.goto("/");
     await expect(page.getByText("cloud palace")).toBeVisible();
+  });
+
+  test("detects pull after push + remote update", async ({ page }) => {
+    await setupDb({ seed: true });
+    await login(page, { username: "dev-empty" });
+
+    // Create local bookmark and push to server
+    await page.goto(`/dev/videos/${FIXTURE_VIDEO_ID}`);
+    await openPanelWithTracks(page);
+    await createBookmarkAt(page, { index: 0, start: 0, end: 3 });
+    await page.goto("/");
+    const badge = syncBadge(page, FIXTURE_VIDEO_ID);
+    await expect(badge).toHaveAttribute("data-sync-status", "push");
+    await badge.click();
+    await expect(badge).toHaveAttribute("data-sync-status", "synced");
+
+    // Simulate another device pushing — bump server updated_at
+    await bumpServerUpdatedAt(FIXTURE_VIDEO_ID);
+
+    // Reload — should detect server is newer → pull
+    await page.goto("/");
+    await expect(syncBadge(page, FIXTURE_VIDEO_ID)).toHaveAttribute(
+      "data-sync-status",
+      "pull",
+    );
   });
 
   test("pull badge syncs server data to local, bookmarks survive reload", async ({
