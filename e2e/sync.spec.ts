@@ -1,5 +1,6 @@
 import { expect, type Page, test } from "@playwright/test";
 import {
+  bumpServerUpdatedAt,
   createBookmarkAt,
   login,
   openPanelWithTracks,
@@ -21,7 +22,7 @@ test.describe("dev-viewer sync indicator", () => {
     await page.goto(`/dev/videos/${FIXTURE_VIDEO_ID}`);
   });
 
-  test("shows synced state initially, push after bookmark, navigates on click", async ({
+  test("fresh video push with zero bookmarks, then add bookmark push again", async ({
     page,
   }) => {
     await openPanelWithTracks(page);
@@ -31,24 +32,33 @@ test.describe("dev-viewer sync indicator", () => {
     const indicator = page.getByTestId("sync-status");
     await expect(indicator).toBeVisible();
 
-    // Initially synced (no local data, no server data for dev-empty)
-    await expect(indicator).toHaveAttribute("data-sync-state", "synced");
-
-    // Close dropdown, create a bookmark
-    await page.keyboard.press("Escape");
-    await createBookmarkAt(page, { index: 0, start: 0, end: 3 });
-
-    // Reopen dropdown — should show push state
-    await page.getByTitle("Settings").click();
+    // Fresh video with captions loaded — in video index, pushable to server
     await expect(indicator).toHaveAttribute("data-sync-state", "push");
 
-    // Click navigates to /dev (video list)
+    // Navigate to video list via sync menu item
     await indicator.click();
     await expect(page).toHaveURL("/dev");
+
+    // Video appears in list with push badge — push it (zero bookmarks)
+    const badge = syncBadge(page, FIXTURE_VIDEO_ID);
+    await expect(badge).toHaveAttribute("data-sync-status", "push");
+    await badge.click();
+    await expect(badge).toHaveAttribute("data-sync-status", "synced");
+
+    // Go back, create a bookmark — should become push again
+    await page.goto(`/dev/videos/${FIXTURE_VIDEO_ID}`);
+    await expect(page.locator("[data-index='0']")).toBeVisible();
+    await createBookmarkAt(page, { index: 0, start: 0, end: 3 });
+
+    // Video list shows push, push it, verify synced
+    await page.goto("/dev");
+    await expect(badge).toHaveAttribute("data-sync-status", "push");
+    await badge.click();
+    await expect(badge).toHaveAttribute("data-sync-status", "synced");
   });
 });
 
-test("dev-viewer sync › shows pull then conflict states for seeded user", async ({
+test("dev-viewer sync › shows conflict when local captions and server data both exist", async ({
   page,
 }) => {
   await setupDb({ seed: true });
@@ -56,19 +66,12 @@ test("dev-viewer sync › shows pull then conflict states for seeded user", asyn
   await page.goto(`/dev/videos/${FIXTURE_VIDEO_ID}`);
   await openPanelWithTracks(page);
 
-  // Server has seed data for "dev" — indicator shows pull (no local data, server has data)
+  // Local captions persisted on load + server has seed data → conflict (never synced)
   await page.getByTitle("Settings").click();
   const indicator = page.getByTestId("sync-status");
-  // May briefly show "checking" while server query completes
-  await expect(indicator).toHaveAttribute("data-sync-state", "pull", {
+  await expect(indicator).toHaveAttribute("data-sync-state", "conflict", {
     timeout: 5000,
   });
-
-  // Create a local bookmark — now both sides have data → conflict
-  await page.keyboard.press("Escape");
-  await createBookmarkAt(page, { index: 0, start: 0, end: 3 });
-  await page.getByTitle("Settings").click();
-  await expect(indicator).toHaveAttribute("data-sync-state", "conflict");
 });
 
 test.describe("dev-viewer video-index", () => {
@@ -134,6 +137,31 @@ test.describe("video-list sync", () => {
     await expect(page.getByText("cloud palace")).toBeVisible();
   });
 
+  test("detects pull after push + remote update", async ({ page }) => {
+    await setupDb({ seed: true });
+    await login(page, { username: "dev-empty" });
+
+    // Create local bookmark and push to server
+    await page.goto(`/dev/videos/${FIXTURE_VIDEO_ID}`);
+    await openPanelWithTracks(page);
+    await createBookmarkAt(page, { index: 0, start: 0, end: 3 });
+    await page.goto("/");
+    const badge = syncBadge(page, FIXTURE_VIDEO_ID);
+    await expect(badge).toHaveAttribute("data-sync-status", "push");
+    await badge.click();
+    await expect(badge).toHaveAttribute("data-sync-status", "synced");
+
+    // Simulate another device pushing — bump server updated_at
+    await bumpServerUpdatedAt(FIXTURE_VIDEO_ID);
+
+    // Reload — should detect server is newer → pull
+    await page.goto("/");
+    await expect(syncBadge(page, FIXTURE_VIDEO_ID)).toHaveAttribute(
+      "data-sync-status",
+      "pull",
+    );
+  });
+
   test("pull badge syncs server data to local, bookmarks survive reload", async ({
     page,
   }) => {
@@ -165,7 +193,7 @@ test.describe("video-list sync", () => {
     ).toBeVisible();
   });
 
-  test("conflict badge resolves via prompt", async ({ page }) => {
+  test("conflict badge resolves via dialog — upload", async ({ page }) => {
     await setupDb({ seed: true });
     await login(page);
 
@@ -179,9 +207,29 @@ test.describe("video-list sync", () => {
     const badge = syncBadge(page, FIXTURE_VIDEO_ID);
     await expect(badge).toHaveAttribute("data-sync-status", "conflict");
 
-    // Resolve via push
-    page.once("dialog", (dialog) => dialog.accept("push"));
+    // Click opens conflict dialog, resolve by uploading local
     await badge.click();
+    await page.getByRole("button", { name: "Upload local" }).click();
+    await expect(badge).toHaveAttribute("data-sync-status", "synced");
+  });
+
+  test("conflict badge resolves via dialog — download", async ({ page }) => {
+    await setupDb({ seed: true });
+    await login(page);
+
+    // Create local bookmark on fixture video that already exists on server
+    await page.goto(`/dev/videos/${FIXTURE_VIDEO_ID}`);
+    await openPanelWithTracks(page);
+    await createBookmarkAt(page, { index: 0, start: 0, end: 3 });
+
+    // Video list should show conflict badge
+    await page.goto("/");
+    const badge = syncBadge(page, FIXTURE_VIDEO_ID);
+    await expect(badge).toHaveAttribute("data-sync-status", "conflict");
+
+    // Click opens conflict dialog, resolve by downloading server
+    await badge.click();
+    await page.getByRole("button", { name: "Download server" }).click();
     await expect(badge).toHaveAttribute("data-sync-status", "synced");
   });
 });

@@ -24,12 +24,14 @@ export function updateVideoIndex(
 ) {
   videoIndexStore.set((entries) => {
     const idx = entries.findIndex((e) => e.youtubeId === youtubeId);
+    const existing = idx >= 0 ? entries[idx] : undefined;
     const entry: VideoIndexEntry = {
       youtubeId,
       title,
       channelName,
       bookmarkCount,
       updatedAt: new Date().toISOString(),
+      syncedAt: existing?.syncedAt,
     };
     const next = [...entries];
     if (idx >= 0) next[idx] = entry;
