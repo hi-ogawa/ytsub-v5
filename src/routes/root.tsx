@@ -89,7 +89,7 @@ export function DevLayout() {
     <div className="flex h-screen flex-col">
       <header className="flex h-10 flex-none items-center justify-between border-b px-3">
         <span className="flex items-center gap-1.5 text-sm font-semibold">
-          Zamak
+          <Link to="/">Zamak</Link>
           <span className="rounded bg-amber-100 px-1.5 py-0.5 text-xs font-medium uppercase leading-none text-amber-700 dark:bg-amber-900 dark:text-amber-300">
             dev
           </span>
@@ -126,21 +126,7 @@ export function DevLayout() {
                 <Icon className="size-4" />
                 <span className="capitalize">{theme}</span>
               </DropdownMenuItem>
-              <DropdownMenuItem
-                data-testid="bootstrap-fixtures"
-                onSelect={async () => {
-                  const { bootstrapFixtures } =
-                    await import("../lib/dev-fixtures.ts");
-                  await bootstrapFixtures();
-                }}
-                className="gap-2"
-              >
-                <Database className="size-4" />
-                Bootstrap fixtures
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link to="/dev/fixtures">Fixtures</Link>
-              </DropdownMenuItem>
+              <DevMenuItems />
               {authenticated && (
                 <>
                   <div className="my-1 h-px bg-border" />
@@ -230,28 +216,7 @@ function HeaderMenu({ authenticated }: { authenticated: boolean }) {
             <Icon className="size-4" />
             <span className="capitalize">{theme}</span>
           </DropdownMenuItem>
-          {import.meta.env.DEV && (
-            <>
-              <DropdownMenuItem
-                data-testid="bootstrap-fixtures"
-                onSelect={async () => {
-                  const { bootstrapFixtures } =
-                    await import("../lib/dev-fixtures.ts");
-                  await bootstrapFixtures();
-                }}
-                className="gap-2"
-              >
-                <Database className="size-4" />
-                Dev Bootstrap
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link to="/dev">/dev</Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link to="/dev/fixtures">/dev/fixtures</Link>
-              </DropdownMenuItem>
-            </>
-          )}
+          {import.meta.env.DEV && <DevMenuItems />}
           {authenticated && (
             <DropdownMenuItem onSelect={() => logoutMutation.mutate({})}>
               Log out
@@ -262,6 +227,30 @@ function HeaderMenu({ authenticated }: { authenticated: boolean }) {
       {authenticated && (
         <ImportDialog open={showImport} onOpenChange={setShowImport} />
       )}
+    </>
+  );
+}
+
+function DevMenuItems() {
+  return (
+    <>
+      <DropdownMenuItem
+        data-testid="bootstrap-fixtures"
+        onSelect={async () => {
+          const { bootstrapFixtures } = await import("../lib/dev-fixtures.ts");
+          await bootstrapFixtures();
+        }}
+        className="gap-2"
+      >
+        <Database className="size-4" />
+        Dev Bootstrap
+      </DropdownMenuItem>
+      <DropdownMenuItem asChild>
+        <Link to="/dev">/dev</Link>
+      </DropdownMenuItem>
+      <DropdownMenuItem asChild>
+        <Link to="/dev/fixtures">/dev/fixtures</Link>
+      </DropdownMenuItem>
     </>
   );
 }
