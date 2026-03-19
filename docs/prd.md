@@ -117,6 +117,7 @@ A web app for language learning via YouTube subtitles. Watch videos with dual ca
 
 ## TODO: Backlog
 
+- [ ] refactor: migrate timestamp-related db columns `docs/tasks/2026-03-18-integer-timestamps.md`
 - [ ] fix: sync state doesn't surface push/pull mutation errors — `computedState` only checks `serverQuery.isError`, so after a push/pull failure the SyncButton reverts to "push"/"pull" icon instead of showing error. Need to check `pushMutation.isError || pullMutation.isError`.
 - [ ] fix: delete race condition — `video-list.tsx` fires `deleteMutation.mutate()` then immediately removes local data; if server delete fails, local data is already gone. Should `await mutateAsync` first.
 - [ ] fix: server routes throw plain `Error` instead of `ORPCError` — `videos.ts` and `bookmarks.ts` use `throw new Error("Video not found")` which becomes generic 500; should be `ORPCError("NOT_FOUND")` for proper status codes and client-readable messages.

@@ -486,7 +486,7 @@ async function buildCaptionSession(options: {
     { json3: json3_2, vssId: options.track2.vssId },
     options.strategy,
   );
-  return new CaptionSessionManager({
+  const store = new CaptionSessionManager({
     videoMeta: options.videoMeta,
     vssId1: options.track1.vssId,
     vssId2: options.track2.vssId,
@@ -494,6 +494,8 @@ async function buildCaptionSession(options: {
     strategy: merged.strategy,
     bookmarks: [],
   });
+  await store.persistSession();
+  return store;
 }
 
 /** State B: tracks selected, fetching json3 → builds store and calls setStore */

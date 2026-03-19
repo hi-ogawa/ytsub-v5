@@ -3,11 +3,10 @@ import type { Router } from "../server/rpc.ts";
 import { type MergeStrategy, type MergedCaption } from "./caption-merge.ts";
 import {
   type PersistedCaptionSession,
-  deleteSession,
   saveSession,
 } from "./caption-session-db.ts";
 import type { ExtensionBookmark } from "./extension-bookmarks.ts";
-import { removeFromVideoIndex, updateVideoIndex } from "./video-index.ts";
+import { updateVideoIndex } from "./video-index.ts";
 import {
   type YouTubeCaptionTrack,
   type YouTubeVideoData,
@@ -233,22 +232,14 @@ export class CaptionSessionManager {
       ...sel,
     }));
     this.bookmarks = [...this.bookmarks, ...newBookmarks];
-    this.syncVideoIndex();
     this.notify();
     await this.persistSession();
   }
 
   async deleteBookmark(bookmarkId: string): Promise<void> {
     this.bookmarks = this.bookmarks.filter((b) => b.id !== bookmarkId);
-    if (this.bookmarks.length > 0) {
-      this.syncVideoIndex();
-      this.notify();
-      await this.persistSession();
-    } else {
-      this.syncVideoIndex();
-      this.notify();
-      await deleteSession(this.videoMeta.youtubeId);
-    }
+    this.notify();
+    await this.persistSession();
   }
 
   async updateBookmarks(
@@ -265,9 +256,8 @@ export class CaptionSessionManager {
 
   async clearBookmarks(): Promise<void> {
     this.bookmarks = [];
-    this.syncVideoIndex();
     this.notify();
-    await deleteSession(this.videoMeta.youtubeId);
+    await this.persistSession();
   }
 
   async replace(options: {
@@ -280,7 +270,6 @@ export class CaptionSessionManager {
     this.bookmarks = options.bookmarks;
     if (options.vssId1 !== undefined) this.vssId1 = options.vssId1;
     if (options.vssId2 !== undefined) this.vssId2 = options.vssId2;
-    this.syncVideoIndex();
     this.notify();
     await this.persistSession();
   }
@@ -317,18 +306,15 @@ export class CaptionSessionManager {
       bookmarks: this.bookmarks,
     };
     await saveSession(session);
+    this.syncVideoIndex();
   }
 
   syncVideoIndex(): void {
-    if (this.bookmarks.length > 0) {
-      updateVideoIndex(
-        this.videoMeta.youtubeId,
-        this.videoMeta.title,
-        this.videoMeta.channelName,
-        this.bookmarks.length,
-      );
-    } else {
-      removeFromVideoIndex(this.videoMeta.youtubeId);
-    }
+    updateVideoIndex(
+      this.videoMeta.youtubeId,
+      this.videoMeta.title,
+      this.videoMeta.channelName,
+      this.bookmarks.length,
+    );
   }
 }
