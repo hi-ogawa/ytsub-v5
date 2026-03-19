@@ -14,7 +14,7 @@ const utcDatetime = customType<{ data: string; driverData: string }>({
     return "text";
   },
   fromDriver(value) {
-    return value.replace(" ", "T") + "Z";
+    return value.replace(" ", "T") + ".000Z";
   },
 });
 
