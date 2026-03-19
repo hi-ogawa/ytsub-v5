@@ -18,6 +18,16 @@ export async function setupDb(options: { seed?: boolean } = {}) {
   await execAsync(`cat ${sql} | sqlite3 ${dbPath}`);
 }
 
+/** Bump a video's updated_at to a future time, simulating a push from another device. */
+export async function bumpServerUpdatedAt(youtubeId: string) {
+  const dbPath = globSync(
+    ".wrangler/state/e2e/v3/d1/miniflare-D1DatabaseObject/*.sqlite",
+  ).sort((a, b) => statSync(b).mtimeMs - statSync(a).mtimeMs)[0];
+  await execAsync(
+    `sqlite3 ${dbPath} "UPDATE videos SET updated_at = datetime('now', '+1 hour') WHERE youtube_id = '${youtubeId}'"`,
+  );
+}
+
 /** Log in as a seed user (requires setupDb({ seed: true }) beforehand). */
 export async function login(page: Page, options?: { username?: string }) {
   await page.goto("/login");
