@@ -23,10 +23,10 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "../components/ui/dropdown-menu.tsx";
-import { STORE_UPDATED_EVENT, useStore } from "../lib/external-store.ts";
+import { useStore } from "../lib/external-store.ts";
 import { createAppQueryClient } from "../lib/query-client.ts";
 import { type VideoSyncActions, useVideoSync } from "../lib/sync.ts";
-import { SYNCED_STORES } from "../lib/synced-stores.ts";
+import { hydrateSyncedStores } from "../lib/synced-stores.ts";
 import { useTheme } from "../lib/theme.ts";
 import { updateVideoIndex, videoIndexStore } from "../lib/video-index.ts";
 import { orpc, setRpcConfig } from "../rpc.ts";
@@ -295,18 +295,7 @@ async function main() {
     },
   });
 
-  // Two-way bridge: chrome.storage.local <-> localStorage for all synced stores.
-  // Hydrate localStorage from chrome.storage on init, then keep them in sync.
-  const syncedByKey = new Map(SYNCED_STORES.map((s) => [s.key, s.store]));
-  for (const [key, store] of syncedByKey) {
-    const stored = await chromeStorage.get(key);
-    if (stored !== undefined) store.set(stored as never);
-  }
-  window.addEventListener(STORE_UPDATED_EVENT, (e) => {
-    const key = (e as CustomEvent<string>).detail;
-    const store = syncedByKey.get(key);
-    if (store) chromeStorage.set({ [key]: store.get() });
-  });
+  await hydrateSyncedStores();
 
   createRoot(document.getElementById("root")!).render(
     <StrictMode>
