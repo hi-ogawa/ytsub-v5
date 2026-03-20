@@ -33,9 +33,7 @@ function createExternalStore<T>(initialValue: T): ExternalStore<T> {
   };
 }
 
-export function storeEventName(key: string) {
-  return `zamak:store:${key}`;
-}
+export const STORE_UPDATED_EVENT = "zamak:store-updated";
 
 export function createLocalStorageStore<T>(
   key: string,
@@ -56,7 +54,9 @@ export function createLocalStorageStore<T>(
     set(value) {
       inner.set(value);
       localStorage.setItem(key, JSON.stringify(inner.get()));
-      window.dispatchEvent(new Event(storeEventName(key)));
+      window.dispatchEvent(
+        new CustomEvent(STORE_UPDATED_EVENT, { detail: key }),
+      );
     },
     subscribe: inner.subscribe,
   };

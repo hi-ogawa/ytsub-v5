@@ -6,7 +6,7 @@
 // 3. bookmarks.tsx (extension page): hydrate localStorage from chrome.storage on init,
 //    then listen for localStorage changes to write back to chrome.storage
 
-import { createLocalStorageStore, storeEventName } from "./external-store.ts";
+import { createLocalStorageStore } from "./external-store.ts";
 import type { VideoIndexEntry } from "./video-index.ts";
 
 const VIDEO_INDEX_KEY = "zamak:video-index";
@@ -16,10 +16,4 @@ export const videoIndexStore = createLocalStorageStore<VideoIndexEntry[]>(
   [],
 );
 
-export const SYNCED_STORES = [
-  {
-    key: VIDEO_INDEX_KEY,
-    store: videoIndexStore,
-    eventName: storeEventName(VIDEO_INDEX_KEY),
-  },
-];
+export const SYNCED_STORES = [{ key: VIDEO_INDEX_KEY, store: videoIndexStore }];
