@@ -1,14 +1,5 @@
-import { videoIndexStore } from "./synced-stores.ts";
-export { videoIndexStore };
-
-export type VideoIndexEntry = {
-  youtubeId: string;
-  title: string;
-  channelName: string;
-  bookmarkCount: number;
-  updatedAt: string;
-  syncedAt?: string;
-};
+import { type VideoIndexEntry, videoIndexStore } from "./synced-stores.ts";
+export { type VideoIndexEntry, videoIndexStore };
 
 export function updateVideoIndex(
   youtubeId: string,
