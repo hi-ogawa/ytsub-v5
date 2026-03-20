@@ -1,4 +1,5 @@
-import { createSyncedStore } from "./synced-stores.ts";
+import { videoIndexStore } from "./synced-stores.ts";
+export { videoIndexStore };
 
 export type VideoIndexEntry = {
   youtubeId: string;
@@ -8,13 +9,6 @@ export type VideoIndexEntry = {
   updatedAt: string;
   syncedAt?: string;
 };
-
-export const VIDEO_INDEX_KEY = "zamak:video-index";
-
-export const videoIndexStore = createSyncedStore<VideoIndexEntry[]>(
-  VIDEO_INDEX_KEY,
-  [],
-);
 
 export function updateVideoIndex(
   youtubeId: string,

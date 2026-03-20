@@ -2,9 +2,7 @@
 // and background worker, plus localStorage → chrome.storage sync for all
 // registered synced stores.
 
-import { getSyncedStores } from "../lib/synced-stores.ts";
-// Import to ensure the video-index store is registered before getSyncedStores()
-import "../lib/video-index.ts";
+import { SYNCED_STORES } from "../lib/synced-stores.ts";
 import type { bgRpcHandlers } from "./background.ts";
 import {
   createRpc,
@@ -22,7 +20,7 @@ function main() {
   setupTabRpcRelay();
 
   // Synced stores: localStorage change → notify background to sync to chrome.storage
-  for (const { key, eventName } of getSyncedStores()) {
+  for (const { key, eventName } of SYNCED_STORES) {
     window.addEventListener(eventName, () => {
       try {
         const raw = localStorage.getItem(key);
