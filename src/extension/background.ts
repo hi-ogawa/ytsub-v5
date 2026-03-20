@@ -3,8 +3,6 @@
 
 import { sessionToExportData } from "../lib/caption-session.ts";
 import { serverSessionToLocal } from "../lib/sync.ts";
-import type { VideoIndexEntry } from "../lib/video-index.ts";
-import { VIDEO_INDEX_KEY } from "../lib/video-index.ts";
 import { orpc, setRpcConfig } from "../rpc.ts";
 import { chromeStorage } from "./lib/chrome-storage.ts";
 import { registerRpcHandlers, sendTabRpc } from "./lib/extension-rpc.ts";
@@ -32,8 +30,8 @@ export const bgRpcHandlers = {
     chrome.tabs.create({ url: "bookmarks.html" });
   },
 
-  async videoIndexUpdated({ entries }: { entries: VideoIndexEntry[] }) {
-    chrome.storage.local.set({ [VIDEO_INDEX_KEY]: entries });
+  async syncedStoreUpdated({ key, value }: { key: string; value: unknown }) {
+    chrome.storage.local.set({ [key]: value });
   },
 
   async pushSession({ youtubeId }: { youtubeId: string }) {

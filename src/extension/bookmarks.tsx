@@ -26,13 +26,9 @@ import {
 import { useStore } from "../lib/external-store.ts";
 import { createAppQueryClient } from "../lib/query-client.ts";
 import { type VideoSyncActions, useVideoSync } from "../lib/sync.ts";
+import { getSyncedStores } from "../lib/synced-stores.ts";
 import { useTheme } from "../lib/theme.ts";
-import {
-  VIDEO_INDEX_KEY,
-  type VideoIndexEntry,
-  updateVideoIndex,
-  videoIndexStore,
-} from "../lib/video-index.ts";
+import { updateVideoIndex, videoIndexStore } from "../lib/video-index.ts";
 import { orpc, setRpcConfig } from "../rpc.ts";
 import type { bgRpcHandlers } from "./background.ts";
 import { chromeStorage } from "./lib/chrome-storage.ts";
@@ -299,16 +295,15 @@ async function main() {
     },
   });
 
-  // Two-way bridge: chrome.storage.local <-> localStorage for video-index.
-  // Hydrate localStorage from chrome.storage.local before rendering, then keep
-  // them in sync so videoIndexStore (localStorage-backed) works on this origin.
-  const entries = await chromeStorage.get<VideoIndexEntry[]>(VIDEO_INDEX_KEY);
-  videoIndexStore.set(entries ?? []);
-
-  // Sync back to chrome.storage.local when videoIndexStore writes
-  window.addEventListener(`zamak:store:${VIDEO_INDEX_KEY}`, () => {
-    chromeStorage.set({ [VIDEO_INDEX_KEY]: videoIndexStore.get() });
-  });
+  // Two-way bridge: chrome.storage.local <-> localStorage for all synced stores.
+  // Hydrate localStorage from chrome.storage on init, then keep them in sync.
+  for (const { key, store, eventName } of getSyncedStores()) {
+    const stored = await chromeStorage.get(key);
+    if (stored !== undefined) store.set(stored);
+    window.addEventListener(eventName, () => {
+      chromeStorage.set({ [key]: store.get() });
+    });
+  }
 
   createRoot(document.getElementById("root")!).render(
     <StrictMode>

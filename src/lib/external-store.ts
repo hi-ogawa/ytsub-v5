@@ -3,7 +3,7 @@ import { useSyncExternalStore } from "react";
 type Listener = () => void;
 type SetAction<T> = T | ((prev: T) => T);
 
-interface ExternalStore<T> {
+export interface ExternalStore<T> {
   get(): T;
   set(value: SetAction<T>): void;
   subscribe(listener: Listener): () => void;

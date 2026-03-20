@@ -1,4 +1,4 @@
-import { createLocalStorageStore } from "./external-store.ts";
+import { createSyncedStore } from "./synced-stores.ts";
 
 export type VideoIndexEntry = {
   youtubeId: string;
@@ -11,7 +11,7 @@ export type VideoIndexEntry = {
 
 export const VIDEO_INDEX_KEY = "zamak:video-index";
 
-export const videoIndexStore = createLocalStorageStore<VideoIndexEntry[]>(
+export const videoIndexStore = createSyncedStore<VideoIndexEntry[]>(
   VIDEO_INDEX_KEY,
   [],
 );
