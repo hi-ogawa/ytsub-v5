@@ -11,6 +11,9 @@ interface ExternalStore<T> {
 
 interface LocalStorageStore<T> extends ExternalStore<T> {
   storageKey: string;
+  /** Update in-memory + localStorage without dispatching STORE_UPDATED_EVENT.
+   *  Used by chrome.storage.onChanged listeners to break write-back loops. */
+  setLocal(value: T): void;
 }
 
 function createExternalStore<T>(initialValue: T): ExternalStore<T> {
@@ -53,15 +56,31 @@ export function createLocalStorageStore<T>(
   }
 
   const inner = createExternalStore<T>(readFromStorage());
+  let selfWrite = false;
+
+  // Re-read from localStorage when another context (e.g. extension relay)
+  // writes to the same key and dispatches STORE_UPDATED_EVENT.
+  window.addEventListener(STORE_UPDATED_EVENT, (e) => {
+    if (selfWrite) return;
+    if ((e as CustomEvent<string>).detail !== key) return;
+    inner.set(readFromStorage());
+  });
+
   return {
     ...inner,
     storageKey: key,
     set(value) {
       inner.set(value);
       localStorage.setItem(key, JSON.stringify(inner.get()));
+      selfWrite = true;
       window.dispatchEvent(
         new CustomEvent(STORE_UPDATED_EVENT, { detail: key }),
       );
+      selfWrite = false;
+    },
+    setLocal(value: T) {
+      inner.set(value);
+      localStorage.setItem(key, JSON.stringify(inner.get()));
     },
   };
 }

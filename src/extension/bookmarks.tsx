@@ -26,7 +26,7 @@ import {
 import { useStore } from "../lib/external-store.ts";
 import { createAppQueryClient } from "../lib/query-client.ts";
 import { type VideoSyncActions, useVideoSync } from "../lib/sync.ts";
-import { hydrateSyncedStores } from "../lib/synced-stores.ts";
+import { setupSyncedStoresForExtensionPage } from "../lib/synced-stores.ts";
 import { useTheme } from "../lib/theme.ts";
 import { updateVideoIndex, videoIndexStore } from "../lib/video-index.ts";
 import { orpc, setRpcConfig } from "../rpc.ts";
@@ -295,7 +295,7 @@ async function main() {
     },
   });
 
-  await hydrateSyncedStores();
+  await setupSyncedStoresForExtensionPage();
 
   createRoot(document.getElementById("root")!).render(
     <StrictMode>

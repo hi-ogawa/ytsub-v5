@@ -144,7 +144,8 @@ Tab B MAIN: browser `storage` event → re-read
 - [x] Simplified relay to write chrome.storage directly (removed bgRpc round-trip)
 - [x] Moved `videoIndexStore` to `video-index.ts`
 - [x] Added `storageKey` to `LocalStorageStore`
-- [ ] Add `setLocal()` to `LocalStorageStore`
-- [ ] Add `listenForChromeStorageChanges()` to `synced-stores.ts`
-- [ ] Wire up in relay and extension page
-- [ ] MAIN world: listen for browser `storage` event to pick up relay's localStorage writes
+- [x] Add `setLocal()` to `LocalStorageStore`
+- [x] Two-way sync in relay (`setupSyncedStoreRelay`) with `chrome.storage.onChanged`
+- [x] Two-way sync in extension page (`setupSyncedStoresForExtensionPage`) with `chrome.storage.onChanged`
+- [x] MAIN world: `createLocalStorageStore` listens for `STORE_UPDATED_EVENT` from other contexts and re-reads localStorage
+- [x] Loop prevention via guard flags in relay, extension page, and store
