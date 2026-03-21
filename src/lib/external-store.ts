@@ -3,10 +3,14 @@ import { useSyncExternalStore } from "react";
 type Listener = () => void;
 type SetAction<T> = T | ((prev: T) => T);
 
-export interface ExternalStore<T> {
+interface ExternalStore<T> {
   get(): T;
   set(value: SetAction<T>): void;
   subscribe(listener: Listener): () => void;
+}
+
+interface LocalStorageStore<T> extends ExternalStore<T> {
+  storageKey: string;
 }
 
 function createExternalStore<T>(initialValue: T): ExternalStore<T> {
@@ -38,7 +42,7 @@ export const STORE_UPDATED_EVENT = "zamak:store-updated";
 export function createLocalStorageStore<T>(
   key: string,
   defaultValue: T,
-): ExternalStore<T> {
+): LocalStorageStore<T> {
   function readFromStorage(): T {
     try {
       const raw = localStorage.getItem(key);
@@ -50,7 +54,8 @@ export function createLocalStorageStore<T>(
 
   const inner = createExternalStore<T>(readFromStorage());
   return {
-    get: inner.get,
+    ...inner,
+    storageKey: key,
     set(value) {
       inner.set(value);
       localStorage.setItem(key, JSON.stringify(inner.get()));
@@ -58,7 +63,6 @@ export function createLocalStorageStore<T>(
         new CustomEvent(STORE_UPDATED_EVENT, { detail: key }),
       );
     },
-    subscribe: inner.subscribe,
   };
 }
 

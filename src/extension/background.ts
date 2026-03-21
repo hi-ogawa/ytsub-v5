@@ -3,7 +3,6 @@
 
 import { sessionToExportData } from "../lib/caption-session.ts";
 import { serverSessionToLocal } from "../lib/sync.ts";
-import { syncedStoreUpdated } from "../lib/synced-stores.ts";
 import { orpc, setRpcConfig } from "../rpc.ts";
 import { chromeStorage } from "./lib/chrome-storage.ts";
 import { registerRpcHandlers, sendTabRpc } from "./lib/extension-rpc.ts";
@@ -29,10 +28,6 @@ export const bgRpcHandlers = {
 
   async openBookmarks() {
     chrome.tabs.create({ url: "bookmarks.html" });
-  },
-
-  async syncedStoreUpdated(params: { key: string; value: unknown }) {
-    return syncedStoreUpdated(params);
   },
 
   async pushSession({ youtubeId }: { youtubeId: string }) {

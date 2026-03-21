@@ -1,68 +1,47 @@
 // Declares all localStorage stores that need two-way sync with chrome.storage.local.
 //
-// Three extension entry points call the setup helpers:
+// Two extension entry points call the setup helpers:
 // 1. relay.ts (ISOLATED content script): setupSyncRelay
-// 2. background.ts (service worker): syncedStoreUpdated (RPC handler)
-// 3. bookmarks.tsx (extension page): hydrateSyncedStores
+// 2. bookmarks.tsx (extension page): hydrateSyncedStores
 //
 // Chrome APIs are only accessed inside these functions, never at top level,
 // so the web app can safely import the stores without triggering chrome errors.
 
-import {
-  STORE_UPDATED_EVENT,
-  createLocalStorageStore,
-} from "./external-store.ts";
-import type { VideoIndexEntry } from "./video-index.ts";
+import { STORE_UPDATED_EVENT } from "./external-store.ts";
+import { videoIndexStore } from "./video-index.ts";
 
-const VIDEO_INDEX_KEY = "zamak:video-index";
-
-export const videoIndexStore = createLocalStorageStore<VideoIndexEntry[]>(
-  VIDEO_INDEX_KEY,
-  [],
-);
-
-const SYNCED_STORES = [{ key: VIDEO_INDEX_KEY, store: videoIndexStore }];
+const SYNCED_STORES = [videoIndexStore];
 
 // --- Extension sync helpers (chrome APIs behind function boundary) ---
 
-// relay.ts: forward localStorage changes to background via RPC
-export function setupSyncRelay(send: (key: string, value: unknown) => void) {
-  const syncedKeys = new Set(SYNCED_STORES.map((s) => s.key));
+// relay.ts (ISOLATED world): listen for DOM events from MAIN world and
+// forward to chrome.storage.local. DOM events cross the world boundary;
+// in-memory subscribe() does not.
+export function setupSyncedStoreRelay() {
+  const syncedKeys = new Set(SYNCED_STORES.map((s) => s.storageKey));
   window.addEventListener(STORE_UPDATED_EVENT, (e) => {
     const key = (e as CustomEvent<string>).detail;
     if (!syncedKeys.has(key)) return;
     try {
       const raw = localStorage.getItem(key);
       const value = raw ? JSON.parse(raw) : undefined;
-      send(key, value);
+      chrome.storage.local.set({ [key]: value });
     } catch (err) {
       console.warn("[zamak relay]", err);
     }
   });
 }
 
-// background.ts: RPC handler — write to chrome.storage.local
-export function syncedStoreUpdated({
-  key,
-  value,
-}: {
-  key: string;
-  value: unknown;
-}) {
-  chrome.storage.local.set({ [key]: value });
-}
-
 // bookmarks.tsx: hydrate localStorage from chrome.storage, then keep in sync
 export async function hydrateSyncedStores() {
-  const syncedByKey = new Map(SYNCED_STORES.map((s) => [s.key, s.store]));
-  for (const [key, store] of syncedByKey) {
-    const result = await chrome.storage.local.get(key);
-    const stored = result[key];
+  for (const store of SYNCED_STORES) {
+    const result = await chrome.storage.local.get(store.storageKey);
+    const stored = result[store.storageKey];
     if (stored !== undefined) store.set(stored as never);
   }
-  window.addEventListener(STORE_UPDATED_EVENT, (e) => {
-    const key = (e as CustomEvent<string>).detail;
-    const store = syncedByKey.get(key);
-    if (store) chrome.storage.local.set({ [key]: store.get() });
-  });
+  for (const store of SYNCED_STORES) {
+    store.subscribe(() => {
+      chrome.storage.local.set({ [store.storageKey]: store.get() });
+    });
+  }
 }
