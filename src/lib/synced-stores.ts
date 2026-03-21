@@ -12,15 +12,7 @@ import {
   STORE_UPDATED_EVENT,
   createLocalStorageStore,
 } from "./external-store.ts";
-
-export type VideoIndexEntry = {
-  youtubeId: string;
-  title: string;
-  channelName: string;
-  bookmarkCount: number;
-  updatedAt: string;
-  syncedAt?: string;
-};
+import type { VideoIndexEntry } from "./video-index.ts";
 
 const VIDEO_INDEX_KEY = "zamak:video-index";
 
