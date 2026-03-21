@@ -15,7 +15,7 @@
     "tsc": "tsc -b",
     "lint": "vp fmt && knip --fix",
     "lint-check": "vp fmt --check && knip",
-    "test": "vitest",
+    "test": "vp test",
     "test-e2e": "playwright test --project=app",
     "test-e2e-ext": "playwright test --project=ext",
     "test-e2e-full": "playwright test",
@@ -57,15 +57,16 @@
     "sharp": "^0.34.5",
     "tailwindcss": "^4.2.1",
     "typescript": "^5.9.3",
-    "vite": "8.0.0-beta.18",
+    "vite": "latest",
     "vite-plus": "latest",
-    "vitest": "^4.1.0",
+    "vitest": "latest",
     "wrangler": "^4.69.0"
   },
   "packageManager": "pnpm@10.30.3+sha512.c961d1e0a2d8e354ecaa5166b822516668b7f44cb5bd95122d590dd81922f606f5473b6d23ec4a5be05e7fcd18e8488d47d978bbe981872f1145d06e9a740017",
   "pnpm": {
     "overrides": {
-      "vite": "$vite"
+      "vite": "8.0.0-beta.18",
+      "vitest": "npm:@voidzero-dev/vite-plus-test@latest"
     }
   }
 }

@@ -1,6 +1,9 @@
 import { defineConfig } from "vite-plus";
 
 export default defineConfig({
+  test: {
+    dir: "./src",
+  },
   fmt: {
     printWidth: 80,
     experimentalSortPackageJson: true,
