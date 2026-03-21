@@ -111,6 +111,8 @@ A web app for language learning via YouTube subtitles. Watch videos with dual ca
 
 ## TODO
 
+- [ ] feat: ability to customize base AI prompt
+  - [ ] fix: adjust prompt to be language independent (currently assumes korean)
 - [ ] feat: "sync all" button on bookmarks/list page
 - [ ] test(ext): enhance extension page e2e (seed, sync, etc.)
 - [ ] feat: improve CTA between extensions and web apps
@@ -124,7 +126,6 @@ A web app for language learning via YouTube subtitles. Watch videos with dual ca
 - [ ] feat: root ErrorBoundary — no React ErrorBoundary exists; unhandled render error white-screens the app.
 - [ ] feat: Bookmark export — export to import bookmarks for Anki study
 - [ ] chore: AI integration help page: record a short screen-recording (GIF or MP4) of the copy→paste→import flow and embed in the doc
-- [ ] fix: adjust prompt to be language independent (currently assumes korean)
 - [ ] chore: document and log AI prompt eval results (`docs/skills/eval/SKILL.md`) (consolidate `docs/skills/*` into `docs/eval/README.md`)
 - [ ] feat: bookmark approval flow — inline approve/reject buttons for `pending` bookmarks in viewer
 - [ ] feat: bookmark list page — browse/search all bookmarks across videos
