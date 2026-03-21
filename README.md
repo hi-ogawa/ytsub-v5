@@ -8,10 +8,10 @@ A web app and a browser extension for language learning via YouTube subtitles. W
 ## Development
 
 ```bash
-pnpm install
-pnpm db:bootstrap
+vp i
+vp run db:bootstrap
 
 # Web app: http://localhost:5173/
 # Extension: load dist/extension-dev as unpacked extension in Chrome
-pnpm dev-full
+vp run dev-full
 ```
