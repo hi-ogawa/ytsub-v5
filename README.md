@@ -8,7 +8,7 @@ A web app and a browser extension for language learning via YouTube subtitles. W
 ## Development
 
 ```bash
-pnpm install
+pnpm i
 pnpm db:bootstrap
 
 # Web app: http://localhost:5173/

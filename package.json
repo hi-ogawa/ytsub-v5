@@ -4,17 +4,18 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite dev",
-    "build": "vite build",
-    "preview": "vite preview",
+    "prepare": "vp config",
+    "dev": "vite -c vite.web.config.ts",
+    "build": "vite -c vite.web.config.ts build",
+    "preview": "vite -c vite.web.config.ts preview",
     "dev-ext": "DEV_EXT=1 node --watch --watch-path=./src scripts/dev-ext.ts",
     "build-ext": "vite build --config vite.ext.config.ts && cd dist/extension && zip -r ../extension.zip .",
     "dev-full": "pnpm run '/^(dev|dev-ext)$/'",
     "build-full": "pnpm build && pnpm build-ext",
     "tsc": "tsc -b",
-    "lint": "oxfmt",
-    "lint-check": "oxfmt --check && knip",
-    "test": "vitest",
+    "lint": "vp fmt && knip --fix",
+    "lint-check": "vp fmt --check && knip",
+    "test": "vp test",
     "test-e2e": "playwright test --project=app",
     "test-e2e-ext": "playwright test --project=ext",
     "test-e2e-full": "playwright test",
@@ -53,18 +54,19 @@
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "6.0.0-beta.0",
     "knip": "^5.85.0",
-    "oxfmt": "^0.36.0",
     "sharp": "^0.34.5",
     "tailwindcss": "^4.2.1",
     "typescript": "^5.9.3",
-    "vite": "8.0.0-beta.18",
-    "vitest": "^4.1.0",
+    "vite": "latest",
+    "vite-plus": "latest",
+    "vitest": "latest",
     "wrangler": "^4.69.0"
   },
   "packageManager": "pnpm@10.30.3+sha512.c961d1e0a2d8e354ecaa5166b822516668b7f44cb5bd95122d590dd81922f606f5473b6d23ec4a5be05e7fcd18e8488d47d978bbe981872f1145d06e9a740017",
   "pnpm": {
     "overrides": {
-      "vite": "$vite"
+      "vite": "8.0.0-beta.18",
+      "vitest": "npm:@voidzero-dev/vite-plus-test@latest"
     }
   }
 }
