@@ -30,10 +30,10 @@
     "db:seed": "wrangler d1 execute DB --local --file scripts/db-seed.sql -y"
   },
   "dependencies": {
-    "@orpc/client": "^1.13.6",
-    "@orpc/server": "^1.13.6",
-    "@orpc/tanstack-query": "^1.13.6",
-    "@tanstack/react-query": "^5.90.21",
+    "@orpc/client": "^1.13.9",
+    "@orpc/server": "^1.13.9",
+    "@orpc/tanstack-query": "^1.13.9",
+    "@tanstack/react-query": "^5.91.3",
     "drizzle-orm": "^0.45.1",
     "lucide-react": "^0.577.0",
     "radix-ui": "^1.4.3",
@@ -44,29 +44,23 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@cloudflare/vite-plugin": "^1.25.6",
-    "@cloudflare/workers-types": "^4.20260305.0",
+    "@cloudflare/vite-plugin": "1.29.0",
+    "@cloudflare/workers-types": "^4.20260317.1",
     "@playwright/test": "^1.58.2",
-    "@tailwindcss/vite": "^4.2.1",
-    "@types/chrome": "^0.1.37",
-    "@types/node": "^25.3.3",
+    "@tailwindcss/vite": "^4.2.2",
+    "@types/chrome": "^0.1.38",
+    "@types/node": "^25.5.0",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
-    "@vitejs/plugin-react": "6.0.0-beta.0",
-    "knip": "^5.85.0",
+    "@vitejs/plugin-react": "6.0.1",
+    "knip": "^6.0.1",
     "sharp": "^0.34.5",
-    "tailwindcss": "^4.2.1",
+    "tailwindcss": "^4.2.2",
     "typescript": "^5.9.3",
-    "vite": "latest",
+    "vite": "^8.0.1",
     "vite-plus": "latest",
-    "vitest": "latest",
-    "wrangler": "^4.69.0"
+    "vitest": "npm:@voidzero-dev/vite-plus-test@^0.1.13",
+    "wrangler": "4.74.0"
   },
-  "packageManager": "pnpm@10.30.3+sha512.c961d1e0a2d8e354ecaa5166b822516668b7f44cb5bd95122d590dd81922f606f5473b6d23ec4a5be05e7fcd18e8488d47d978bbe981872f1145d06e9a740017",
-  "pnpm": {
-    "overrides": {
-      "vite": "8.0.0-beta.18",
-      "vitest": "npm:@voidzero-dev/vite-plus-test@latest"
-    }
-  }
+  "packageManager": "pnpm@10.32.1+sha512.a706938f0e89ac1456b6563eab4edf1d1faf3368d1191fc5c59790e96dc918e4456ab2e67d613de1043d2e8c81f87303e6b40d4ffeca9df15ef1ad567348f2be"
 }
