@@ -5,9 +5,9 @@
   "type": "module",
   "scripts": {
     "prepare": "vp config",
-    "dev": "vite dev",
-    "build": "vite build",
-    "preview": "vite preview",
+    "dev": "vite -c vite.web.config.ts",
+    "build": "vite -c vite.web.config.ts build",
+    "preview": "vite -c vite.web.config.ts preview",
     "dev-ext": "DEV_EXT=1 node --watch --watch-path=./src scripts/dev-ext.ts",
     "build-ext": "vite build --config vite.ext.config.ts && cd dist/extension && zip -r ../extension.zip .",
     "dev-full": "pnpm run '/^(dev|dev-ext)$/'",
