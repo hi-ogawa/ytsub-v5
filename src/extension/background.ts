@@ -18,6 +18,8 @@ async function findYouTubeTab(): Promise<number> {
   return tabId;
 }
 
+const toRpc = createContentRpc<typeof tabRpcHandlers>;
+
 export const bgRpcHandlers = {
   async getSyncState({ youtubeId }: { youtubeId: string }) {
     const { authenticated } = await orpc.auth.check.call({});
@@ -38,10 +40,8 @@ export const bgRpcHandlers = {
   },
 
   async pushSession({ youtubeId }: { youtubeId: string }) {
-    const contentRpc = createContentRpc<typeof tabRpcHandlers>(
-      await findYouTubeTab(),
-    );
-    const session = await contentRpc.getSession({ youtubeId });
+    const tabId = await findYouTubeTab();
+    const session = await toRpc(tabId).getSession({ youtubeId });
     if (!session) throw new Error("No local session found");
     const exportData = sessionToExportData(
       session as Parameters<typeof sessionToExportData>[0],
@@ -54,8 +54,7 @@ export const bgRpcHandlers = {
     const data = await orpc.videos.getFullSession.call({ youtubeId });
     if (!data) throw new Error("Video not found on server");
     const session = serverSessionToLocal(data);
-    const contentRpc = createContentRpc<typeof tabRpcHandlers>(tabId);
-    await contentRpc.saveSession({ session });
+    await toRpc(tabId).saveSession({ session });
     return {
       title: session.title,
       channelName: session.channelName,
