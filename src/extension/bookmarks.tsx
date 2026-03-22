@@ -303,10 +303,10 @@ async function main() {
   // Hydrate localStorage from chrome.storage.local before rendering, then keep
   // them in sync so videoIndexStore (localStorage-backed) works on this origin.
   const entries = await chromeStorage.get<VideoIndexEntry[]>(VIDEO_INDEX_KEY);
-  videoIndexStore.set(entries ?? []);
+  videoIndexStore.setLocal(entries ?? []);
 
   // Sync back to chrome.storage.local when videoIndexStore writes
-  window.addEventListener(`zamak:store:${VIDEO_INDEX_KEY}`, () => {
+  videoIndexStore.subscribe(() => {
     chromeStorage.set({ [VIDEO_INDEX_KEY]: videoIndexStore.get() });
   });
 

@@ -9,6 +9,28 @@ interface ExternalStore<T> {
   subscribe(listener: Listener): () => void;
 }
 
+export interface LocalStorageStore<T> extends ExternalStore<T> {
+  storageKey: string;
+  /** Update in-memory state + localStorage without broadcasting. */
+  setLocal(value: SetAction<T>): void;
+}
+
+export const STORE_CHANNEL_NAME = "zamak:store";
+
+const storesByKey = new Map<string, { setLocal(value: unknown): void }>();
+
+let _storeChannel: BroadcastChannel | undefined;
+function getStoreChannel(): BroadcastChannel {
+  if (!_storeChannel) {
+    _storeChannel = new BroadcastChannel(STORE_CHANNEL_NAME);
+    _storeChannel.addEventListener("message", (e) => {
+      const { key, value } = e.data;
+      storesByKey.get(key)?.setLocal(value);
+    });
+  }
+  return _storeChannel;
+}
+
 function createExternalStore<T>(initialValue: T): ExternalStore<T> {
   let current = initialValue;
   const listeners = new Set<Listener>();
@@ -33,14 +55,10 @@ function createExternalStore<T>(initialValue: T): ExternalStore<T> {
   };
 }
 
-export function storeEventName(key: string) {
-  return `zamak:store:${key}`;
-}
-
 export function createLocalStorageStore<T>(
   key: string,
   defaultValue: T,
-): ExternalStore<T> {
+): LocalStorageStore<T> {
   function readFromStorage(): T {
     try {
       const raw = localStorage.getItem(key);
@@ -51,15 +69,27 @@ export function createLocalStorageStore<T>(
   }
 
   const inner = createExternalStore<T>(readFromStorage());
-  return {
+
+  function setLocal(value: SetAction<T>) {
+    inner.set(value);
+    localStorage.setItem(key, JSON.stringify(inner.get()));
+  }
+
+  const store: LocalStorageStore<T> = {
+    storageKey: key,
     get: inner.get,
     set(value) {
-      inner.set(value);
-      localStorage.setItem(key, JSON.stringify(inner.get()));
-      window.dispatchEvent(new Event(storeEventName(key)));
+      setLocal(value);
+      getStoreChannel().postMessage({ key, value: inner.get() });
     },
+    setLocal,
     subscribe: inner.subscribe,
   };
+
+  storesByKey.set(key, store as { setLocal(value: unknown): void });
+  getStoreChannel(); // ensure listener is set up
+
+  return store;
 }
 
 export function useStore<T>(

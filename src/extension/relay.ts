@@ -1,17 +1,10 @@
 // ISOLATED world content script — BroadcastChannel RPC relay between MAIN world
-// and background worker, plus video-index localStorage → background sync.
+// and background worker, plus store sync (localStorage → chrome.storage).
 
-import { storeEventName } from "../lib/external-store.ts";
+import { STORE_CHANNEL_NAME } from "../lib/external-store.ts";
 import { VIDEO_INDEX_KEY } from "../lib/video-index.ts";
-import type { bgRpcHandlers } from "./background.ts";
 import { connectContentPort } from "./lib/content-ports.ts";
-import {
-  createRuntimeRpc,
-  setupRpcRelay,
-  setupTabRpcRelay,
-} from "./lib/extension-rpc.ts";
-
-const bgRpc = createRuntimeRpc<typeof bgRpcHandlers>();
+import { setupRpcRelay, setupTabRpcRelay } from "./lib/extension-rpc.ts";
 
 function main() {
   // Register with background so it can find this tab for reverse RPC
@@ -23,14 +16,12 @@ function main() {
   // Reverse RPC relay — forwards background→tab calls to MAIN world
   setupTabRpcRelay();
 
-  // Video index: localStorage change → notify background to sync to chrome.storage
-  window.addEventListener(storeEventName(VIDEO_INDEX_KEY), () => {
-    try {
-      const raw = localStorage.getItem(VIDEO_INDEX_KEY);
-      const entries = raw ? JSON.parse(raw) : [];
-      bgRpc.videoIndexUpdated({ entries });
-    } catch (e) {
-      console.warn("[zamak relay]", e);
+  // Store sync: MAIN world store changes → chrome.storage
+  const storeChannel = new BroadcastChannel(STORE_CHANNEL_NAME);
+  storeChannel.addEventListener("message", (e) => {
+    const { key, value } = e.data;
+    if (key === VIDEO_INDEX_KEY) {
+      chrome.storage.local.set({ [key]: value });
     }
   });
 }
