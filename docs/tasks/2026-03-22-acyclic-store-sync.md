@@ -126,7 +126,7 @@ MAIN: set() → localStorage + BC(yt) post
   → ExtBroadcastChannel.postMessage({ key, value })
     → relay forwards to BG
 BG: fans out to ext pages (not back to sender)
-Ext page: onMessage → setLocal() → BC(ext) post to other ext tabs
+Ext page: onMessage → setBroadcast() → localStorage + BC(ext) post to other ext tabs
 ```
 
 ### Ext writes → content sees it
@@ -136,39 +136,28 @@ Ext: set() → localStorage + BC(ext) post
   → ExtBroadcastChannel.postMessage({ key, value })
     → sends to BG
 BG: fans out to content tabs (not back to sender)
-Relay: onMessage → setLocal() → BC(yt) post → MAIN + other tabs
+Relay: onMessage → setBroadcast() → localStorage + BC(yt) post → MAIN + other tabs
 ```
 
 ### Boot (unchanged)
 
 Any context reads chrome.storage on startup to hydrate store. Persistence path — no notifications.
 
-## Store sync (on top of ExtBroadcastChannel)
+## Store API (both approaches converge here)
+
+Three levels of set, matching the two broadcast scopes:
 
 ```ts
-// Generic setup for any synced store — same pattern everywhere
-const extChannel = createExtBroadcastChannel("zamak:store");
-
-// Notify other origins on local writes
-// (called explicitly at set() call sites, NOT from subscribe)
-function notifyStoreUpdate(store: LocalStorageStore<unknown>) {
-  extChannel.postMessage({ key: store.key, value: store.get() });
-}
-
-// Apply remote writes
-extChannel.addEventListener("message", (e) => {
-  const { key, value } = e.data;
-  const store = storesByKey.get(key);
-  store?.setLocal(value);
-});
-
-// Persistence (subscribe) — orthogonal, always runs
-store.subscribe(() => {
-  chromeStorage.set({ [store.key]: store.get() });
-});
+setLocal(); // in-memory + localStorage
+setBroadcast(); // setLocal + BC (same-origin)
+set(); // setBroadcast + ExtBC/RPC (same-origin + cross-origin)
 ```
 
-No version counter. No guard flag. No origin tagging at the store layer. The ExtBroadcastChannel handles no-self-delivery internally, just like BC does.
+- **BC listener** → `setLocal()` (sender already broadcast to same-origin)
+- **ExtBC/RPC handler** → `setBroadcast()` (cross-origin done, propagate within same-origin)
+- **Everything else** → `set()` (full broadcast)
+
+Persistence is orthogonal — subscribe writes to chrome.storage on any store change regardless of which set method was used.
 
 ## Reference files
 
@@ -181,21 +170,97 @@ No version counter. No guard flag. No origin tagging at the store layer. The Ext
 - `src/extension/lib/content-ports.ts` — content tab tracking
 - `src/extension/lib/extension-rpc.ts` — typed RPC framework
 
+## Implementation approaches
+
+### Approach A: manual RPC wiring (incremental)
+
+Add `storeUpdated` RPC handler + a new store method `setBroadcast()` for same-origin-only propagation.
+
+**Store API — three levels of set**:
+
+```ts
+setLocal(); // in-memory + localStorage (no broadcast)
+setBroadcast(); // setLocal + BC post (same-origin broadcast)  ← NEW
+set(); // setBroadcast + bgRpc.storeUpdated (same-origin + cross-origin)
+```
+
+`setBroadcast()` propagates within the same origin only. `set()` does the full thing — same-origin BC + cross-origin via BG. `setLocal()` is for receiving same-origin BC updates (already exists).
+
+**RPC payload**:
+
+```ts
+type StoreUpdatedParams = {
+  from: "content" | "ext";
+  key: string;
+  value: unknown;
+};
+```
+
+**BG handler** — routes to the opposite side:
+
+```ts
+async storeUpdated({ from, key, value }: StoreUpdatedParams) {
+  if (from === "content") {
+    extRpc.storeUpdated({ from, key, value });   // → ext page
+  } else {
+    contentRpc.storeUpdated({ from, key, value }); // → content tab
+  }
+}
+```
+
+**Content/ext tab handler** — receives cross-origin update, propagates within own origin:
+
+```ts
+async storeUpdated({ key, value }: StoreUpdatedParams) {
+  storesByKey.get(key)?.setBroadcast(value); // setLocal + BC → other same-origin tabs
+}
+```
+
+**No cycles**: `set()` → BG → opposite side → `setBroadcast()` → same-origin BC only, stops.
+
+`set()` needs to know its `from` value and have access to `bgRpc` — the store becomes aware of the cross-origin broadcast layer. This is where approach A converges to approach B.
+
+**Pros**: clean API (`set` vs `setBroadcast` vs `setLocal`), no manual wiring at call sites.
+**Cons**: store needs per-context configuration (from, bgRpc reference), BG→ext path still needed.
+
+### Approach B: ExtBroadcastChannel abstraction (clean generalization)
+
+Wrap the RPC transport in a BroadcastChannel-like API. `set()` posts to ExtBC internally; the handler calls `setBroadcast()`.
+
+```ts
+const extChannel = createExtBroadcastChannel("zamak:store");
+
+// set() internally does: setBroadcast() + extChannel.postMessage({ key, value })
+
+extChannel.addEventListener("message", (e) => {
+  const { key, value } = e.data;
+  storesByKey.get(key)?.setBroadcast(value); // same-origin propagation
+});
+```
+
+BG hub handles routing and sender exclusion internally. The store is configured with an ExtBC channel — same shape as the internal BC, just cross-origin.
+
+**Pros**: clean abstraction, no-self-delivery built in, store sync code is identical across contexts.
+**Cons**: more upfront work, BG→ext path still needed.
+
+### Shared prerequisite: BG → Ext RPC path
+
+Both approaches need this. Options:
+
+- `chrome.runtime.connect` (long-lived port) — ext page connects on load, BG tracks port
+- `chrome.runtime.sendMessage` from BG — reaches all extension pages (broadcast semantics, which is what we want)
+
 ## Implementation plan
 
 ### 1. BG → Ext RPC path
 
 Add ext page port tracking + message delivery, mirroring the content tab RPC pattern.
 
-### 2. ExtBroadcastChannel abstraction
+### 2. Store sync (approach A or B)
 
-Implement `createExtBroadcastChannel` with `postMessage` / `addEventListener("message")`. Uses RPC transport through BG. BG filters by sender so no self-delivery.
+Start with approach A (manual RPC wiring) if we want incremental progress. Refactor to approach B (ExtBroadcastChannel) when adding a second synced store.
 
-### 3. Store sync wiring
-
-For each synced store: `postMessage` on `set()`, `setLocal` on `onMessage`, subscribe for chrome.storage persistence.
-
-### 4. Clean up
+### 3. Clean up
 
 - Remove `versioned-chrome-storage.ts` (PR #156)
 - Remove any `chrome.storage.onChanged` listeners
@@ -211,7 +276,7 @@ For each synced store: `postMessage` on `set()`, `setLocal` on `onMessage`, subs
 ### Remaining
 
 - [ ] BG → Ext RPC path (infra gap)
-- [ ] `ExtBroadcastChannel` abstraction (broadcast + no self-delivery via BG hub)
-- [ ] `storeUpdated` handlers on content + ext (apply via `setLocal`)
-- [ ] Explicit notification at `set()` call sites
+- [ ] `setBroadcast()` method on `LocalStorageStore` (setLocal + BC)
+- [ ] Cross-origin notification in `set()` (approach A: bgRpc, approach B: ExtBC)
+- [ ] `storeUpdated` RPC handlers (call `setBroadcast`)
 - [ ] Remove versioned-chrome-storage.ts
