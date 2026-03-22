@@ -79,9 +79,8 @@ export function createRuntimeRelayRpc<
   Handlers extends Record<string, Function>,
 >() {
   const channel = new BroadcastChannel(RPC_CHANNEL);
-  let idCounter = 0;
   return createRpcProxy<Handlers>((method, params) => {
-    const id = `rpc-${++idCounter}-${Date.now()}`;
+    const id = crypto.randomUUID();
     return new Promise((resolve, reject) => {
       const ac = new AbortController();
       channel.addEventListener(
@@ -190,15 +189,13 @@ type TabRpcRequest = {
   params?: unknown;
 };
 
-let contentRpcIdCounter = 0;
-
 export function createContentRpc<Handlers extends Record<string, Function>>(
   tabId: number,
 ) {
   return createRpcProxy<Handlers>(async (method, params) => {
     const request: TabRpcRequest = {
       type: "zamak-tab-rpc",
-      id: `tab-rpc-${++contentRpcIdCounter}-${Date.now()}`,
+      id: crypto.randomUUID(),
       method,
       params,
     };
