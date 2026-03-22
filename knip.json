@@ -3,6 +3,7 @@
   "entry": [
     "src/extension/content.tsx",
     "src/extension/bookmarks.tsx",
+    "src/extension/download.tsx",
     "src/extension/background.ts",
     "src/extension/relay.ts",
     "scripts/*.ts"

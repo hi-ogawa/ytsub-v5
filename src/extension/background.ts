@@ -32,6 +32,14 @@ export const bgRpcHandlers = {
     chrome.tabs.create({ url: "bookmarks.html" });
   },
 
+  async openDownload() {
+    chrome.tabs.create({ url: "download.html" });
+  },
+
+  async setDownloadData({ data }: { data: unknown }) {
+    await chrome.storage.local.set({ "download-data": data });
+  },
+
   async videoIndexUpdated({ entries }: { entries: VideoIndexEntry[] }) {
     chrome.storage.local.set({ [VIDEO_INDEX_KEY]: entries });
   },

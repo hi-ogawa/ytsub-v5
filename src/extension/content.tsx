@@ -54,6 +54,32 @@ function getVideoPlayer(): YTPlayer | undefined {
   };
 }
 
+function DownloadFab() {
+  return (
+    <button
+      type="button"
+      onClick={() => bgRpc.openDownload()}
+      className="fixed right-3 bottom-16 flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border-none bg-primary text-primary-foreground shadow-lg pointer-events-auto"
+      title="Download audio"
+    >
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        className="size-5"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+        <polyline points="7 10 12 15 17 10" />
+        <line x1="12" y1="15" x2="12" y2="3" />
+      </svg>
+    </button>
+  );
+}
+
 function App({ videoId }: { videoId: string }) {
   const [open, toggleOpen] = useFabOpen(videoId);
 
@@ -73,6 +99,7 @@ function App({ videoId }: { videoId: string }) {
           <ExtensionViewer videoId={videoId} />
         </ResizablePanel>
       )}
+      <DownloadFab />
       <CaptionFab open={open} onClick={toggleOpen} />
     </div>
   );
@@ -96,7 +123,19 @@ function ExtensionViewer({ videoId }: { videoId: string }) {
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["extension-metadata", videoId],
-    queryFn: () => fetchPlayerApi({ videoId, userLangs: getUserLangs() }),
+    queryFn: async () => {
+      const result = await fetchPlayerApi({
+        videoId,
+        userLangs: getUserLangs(),
+      });
+      // Store streaming format data for the download page
+      if (result.streamingFormats?.length) {
+        bgRpc.setDownloadData({
+          data: { video: result.video, formats: result.streamingFormats },
+        });
+      }
+      return result;
+    },
   });
 
   if (isLoading) {

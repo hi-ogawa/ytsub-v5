@@ -23,9 +23,19 @@ export interface YouTubeCaptionTrack {
   vssId: string;
 }
 
+export interface YouTubeStreamingFormat {
+  url: string;
+  itag: number;
+  mimeType: string;
+  contentLength?: number;
+  width?: number;
+  height?: number;
+}
+
 export interface YouTubeExtractionResult {
   video: YouTubeVideoData;
   captionTracks: YouTubeCaptionTrack[];
+  streamingFormats?: YouTubeStreamingFormat[];
 }
 
 interface Json3Event {
@@ -301,6 +311,28 @@ export async function fetchPlayerApi(options: {
     }
   }
 
+  // Extract streaming formats (adaptiveFormats) for download feature
+  const streamingData = data.streamingData as
+    | Record<string, unknown>
+    | undefined;
+  const rawFormats = (streamingData?.adaptiveFormats ?? []) as Record<
+    string,
+    unknown
+  >[];
+  const streamingFormats: YouTubeStreamingFormat[] = rawFormats
+    .filter((f) => typeof f.url === "string")
+    .map((f) => ({
+      url: String(f.url),
+      itag: Number(f.itag),
+      mimeType: String(f.mimeType),
+      contentLength:
+        typeof f.contentLength === "string"
+          ? Number(f.contentLength)
+          : undefined,
+      width: typeof f.width === "number" ? f.width : undefined,
+      height: typeof f.height === "number" ? f.height : undefined,
+    }));
+
   return {
     video: {
       youtubeId: String(details.videoId),
@@ -310,6 +342,8 @@ export async function fetchPlayerApi(options: {
       duration: Number(details.lengthSeconds),
     },
     captionTracks,
+    streamingFormats:
+      streamingFormats.length > 0 ? streamingFormats : undefined,
   };
 }
 

@@ -49,6 +49,20 @@ export default defineConfig({
         },
       },
     },
+    download: {
+      consumer: "client",
+      build: {
+        outDir: "./dist/extension",
+        minify: false,
+        emptyOutDir: false,
+        copyPublicDir: false,
+        rolldownOptions: {
+          input: {
+            download: "./src/extension/download.html",
+          },
+        },
+      },
+    },
     background: {
       consumer: "client",
       build: {
@@ -102,6 +116,7 @@ export default defineConfig({
     async buildApp(builder) {
       await builder.build(builder.environments.client);
       await builder.build(builder.environments.bookmarks);
+      await builder.build(builder.environments.download);
       await builder.build(builder.environments.background);
       await builder.build(builder.environments.relay);
       const outDir = builder.environments.client.config.build.outDir;
@@ -110,6 +125,10 @@ export default defineConfig({
       cpSync(
         resolve(outDir, "src/extension/bookmarks.html"),
         resolve(outDir, "bookmarks.html"),
+      );
+      cpSync(
+        resolve(outDir, "src/extension/download.html"),
+        resolve(outDir, "download.html"),
       );
       rmSync(resolve(outDir, "src"), { force: true, recursive: true });
 
