@@ -115,6 +115,31 @@ test("bookmarks page: load, login, logout", async ({ page, extensionId }) => {
   await expect(page.getByTestId("sign-in")).toBeVisible({ timeout: 10000 });
 });
 
+test("bookmarks page: delete removes video from list", async ({
+  context,
+  page,
+  extensionId,
+}) => {
+  await seedChromeStorage(context, { "zamak:video-index": fixtureEntries });
+  await gotoBookmarks(page, extensionId);
+
+  // Both entries visible
+  await expect(page.getByText("Test Video One")).toBeVisible();
+  await expect(page.getByText("Test Video Two")).toBeVisible();
+
+  // Open card menu and click delete on first video
+  const card = page.getByTestId("video-card-abc123");
+  await card.getByTestId("video-card-menu").click();
+
+  // Accept the confirmation dialog
+  page.on("dialog", (dialog) => dialog.accept());
+  await page.getByText("Delete").click();
+
+  // First video removed, second still visible
+  await expect(page.getByText("Test Video One")).not.toBeVisible();
+  await expect(page.getByText("Test Video Two")).toBeVisible();
+});
+
 test("bookmarks page: sync badges show correct states per entry", async ({
   context,
   page,
