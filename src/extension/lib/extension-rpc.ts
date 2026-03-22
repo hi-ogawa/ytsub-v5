@@ -46,20 +46,25 @@ const TAB_RPC_CHANNEL = "zamak:tab-rpc";
 
 // --- Content-side: typed client factory (MAIN world) ---
 
+const rpcChannel = new BroadcastChannel(RPC_CHANNEL);
 let rpcIdCounter = 0;
 
 function call(method: string, params?: unknown): Promise<unknown> {
   const id = `rpc-${++rpcIdCounter}-${Date.now()}`;
   return new Promise((resolve, reject) => {
-    const channel = new BroadcastChannel(RPC_CHANNEL);
-    channel.addEventListener("message", (e) => {
-      const response: RpcResponse = e.data;
-      if (response.id !== id) return;
-      channel.close();
-      if (response.error) reject(new Error(response.error));
-      else resolve(response.result);
-    });
-    channel.postMessage({ id, method, params });
+    const ac = new AbortController();
+    rpcChannel.addEventListener(
+      "message",
+      (e) => {
+        const response: RpcResponse = e.data;
+        if (response.id !== id) return;
+        ac.abort();
+        if (response.error) reject(new Error(response.error));
+        else resolve(response.result);
+      },
+      { signal: ac.signal },
+    );
+    rpcChannel.postMessage({ id, method, params });
   });
 }
 
@@ -194,12 +199,18 @@ export function setupTabRpcRelay() {
     if (msg?.type !== "zamak-tab-rpc") return;
     const { id, method, params } = msg as TabRpcRequest;
 
-    channel.addEventListener("message", (e) => {
-      const response: RpcResponse = e.data;
-      if (response.id !== id) return;
-      if (response.error) sendResponse({ error: response.error });
-      else sendResponse({ result: response.result });
-    });
+    const ac = new AbortController();
+    channel.addEventListener(
+      "message",
+      (e) => {
+        const response: RpcResponse = e.data;
+        if (response.id !== id) return;
+        ac.abort();
+        if (response.error) sendResponse({ error: response.error });
+        else sendResponse({ result: response.result });
+      },
+      { signal: ac.signal },
+    );
     channel.postMessage({ id, method, params });
     return true; // keep channel open for async response
   });
