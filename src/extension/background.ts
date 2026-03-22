@@ -6,8 +6,9 @@ import { serverSessionToLocal } from "../lib/sync.ts";
 import type { VideoIndexEntry } from "../lib/video-index.ts";
 import { VIDEO_INDEX_KEY } from "../lib/video-index.ts";
 import { orpc, setRpcConfig } from "../rpc.ts";
+import type { tabRpcHandlers } from "./content.tsx";
 import { chromeStorage } from "./lib/chrome-storage.ts";
-import { registerRpcHandlers, sendTabRpc } from "./lib/extension-rpc.ts";
+import { createContentRpc, registerRpcHandlers } from "./lib/extension-rpc.ts";
 import { getServerUrl } from "./lib/server-url.ts";
 
 async function findYouTubeTab(): Promise<number> {
@@ -37,8 +38,10 @@ export const bgRpcHandlers = {
   },
 
   async pushSession({ youtubeId }: { youtubeId: string }) {
-    const tabId = await findYouTubeTab();
-    const session = await sendTabRpc(tabId, "getSession", { youtubeId });
+    const contentRpc = createContentRpc<typeof tabRpcHandlers>(
+      await findYouTubeTab(),
+    );
+    const session = await contentRpc.getSession({ youtubeId });
     if (!session) throw new Error("No local session found");
     const exportData = sessionToExportData(
       session as Parameters<typeof sessionToExportData>[0],
@@ -51,7 +54,8 @@ export const bgRpcHandlers = {
     const data = await orpc.videos.getFullSession.call({ youtubeId });
     if (!data) throw new Error("Video not found on server");
     const session = serverSessionToLocal(data);
-    await sendTabRpc(tabId, "saveSession", { session });
+    const contentRpc = createContentRpc<typeof tabRpcHandlers>(tabId);
+    await contentRpc.saveSession({ session });
     return {
       title: session.title,
       channelName: session.channelName,

@@ -5,12 +5,12 @@ import { storeEventName } from "../lib/external-store.ts";
 import { VIDEO_INDEX_KEY } from "../lib/video-index.ts";
 import type { bgRpcHandlers } from "./background.ts";
 import {
-  createRpc,
+  createRuntimeRpc,
   setupRpcRelay,
   setupTabRpcRelay,
 } from "./lib/extension-rpc.ts";
 
-const bgRpc = createRpc<typeof bgRpcHandlers>({ direct: true });
+const bgRpc = createRuntimeRpc<typeof bgRpcHandlers>();
 
 function main() {
   // Generic RPC relay — forwards all zamak:rpc events to background
