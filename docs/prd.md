@@ -111,6 +111,7 @@ A web app for language learning via YouTube subtitles. Watch videos with dual ca
 
 ## TODO
 
+- [ ] feat: ability to delete video from extention page
 - [ ] feat: ability to customize base AI prompt
   - [ ] fix: adjust prompt to be language independent (currently assumes korean)
 - [ ] feat: "sync all" button on bookmarks/list page

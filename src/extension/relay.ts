@@ -1,19 +1,25 @@
 // ISOLATED world content script — BroadcastChannel RPC relay between MAIN world
-// and background worker, plus video-index localStorage → background sync.
+// and background worker, plus store sync (localStorage ↔ chrome.storage).
 
-import { storeEventName } from "../lib/external-store.ts";
-import { VIDEO_INDEX_KEY } from "../lib/video-index.ts";
-import type { bgRpcHandlers } from "./background.ts";
+import { type VideoIndexEntry, videoIndexStore } from "../lib/video-index.ts";
+import { chromeStorage } from "./lib/chrome-storage.ts";
 import { connectContentPort } from "./lib/content-ports.ts";
-import {
-  createRuntimeRpc,
-  setupRpcRelay,
-  setupTabRpcRelay,
-} from "./lib/extension-rpc.ts";
+import { setupRpcRelay, setupTabRpcRelay } from "./lib/extension-rpc.ts";
 
-const bgRpc = createRuntimeRpc<typeof bgRpcHandlers>();
+async function main() {
+  // Boot hydration: chrome.storage → store (writes to shared localStorage
+  // so MAIN world's store picks up fresh data on init)
+  const entries = await chromeStorage.get<VideoIndexEntry[]>(
+    videoIndexStore.key,
+  );
+  videoIndexStore.setLocal(entries ?? []);
 
-function main() {
+  // Sync back: MAIN world store changes arrive via BroadcastChannel
+  // auto-listener → setLocal → subscribe fires → write to chrome.storage
+  videoIndexStore.subscribe(() => {
+    chromeStorage.set({ [videoIndexStore.key]: videoIndexStore.get() });
+  });
+
   // Register with background so it can find this tab for reverse RPC
   connectContentPort();
 
@@ -22,17 +28,6 @@ function main() {
 
   // Reverse RPC relay — forwards background→tab calls to MAIN world
   setupTabRpcRelay();
-
-  // Video index: localStorage change → notify background to sync to chrome.storage
-  window.addEventListener(storeEventName(VIDEO_INDEX_KEY), () => {
-    try {
-      const raw = localStorage.getItem(VIDEO_INDEX_KEY);
-      const entries = raw ? JSON.parse(raw) : [];
-      bgRpc.videoIndexUpdated({ entries });
-    } catch (e) {
-      console.warn("[zamak relay]", e);
-    }
-  });
 }
 
 main();
