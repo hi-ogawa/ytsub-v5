@@ -39,6 +39,11 @@ export const bgRpcHandlers = {
     return await toRpc(tabId).getStreamingFormats({ videoId });
   },
 
+  async downloadFormat({ videoId, itag }: { videoId: string; itag: number }) {
+    const tabId = contentTabs.findTab();
+    return await toRpc(tabId).downloadFormat({ videoId, itag });
+  },
+
   async videoIndexUpdated({ entries }: { entries: VideoIndexEntry[] }) {
     chrome.storage.local.set({ [VIDEO_INDEX_KEY]: entries });
   },

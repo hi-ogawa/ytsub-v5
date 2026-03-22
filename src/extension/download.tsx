@@ -17,7 +17,7 @@ interface DownloadPageData {
   formats: YouTubeStreamingFormat[];
 }
 
-// --- Video ID parsing (ported from youtube-dl-web-v2) ---
+// --- Video ID parsing ---
 
 function parseVideoId(value: string): string | undefined {
   const trimmed = value.trim();
@@ -30,60 +30,6 @@ function parseVideoId(value: string): string | undefined {
     } catch {}
   }
   return undefined;
-}
-
-// --- Chunked download ---
-
-const CHUNK_SIZE = 5_000_000; // 5MB
-
-interface DownloadProgress {
-  offset: number;
-  total: number;
-}
-
-async function downloadAudio(
-  format: YouTubeStreamingFormat,
-  onProgress: (p: DownloadProgress) => void,
-): Promise<Uint8Array> {
-  const filesize = format.contentLength;
-  if (!filesize) throw new Error("Unknown file size");
-
-  const numChunks = Math.ceil(filesize / CHUNK_SIZE);
-  const result = new Uint8Array(filesize);
-  let offset = 0;
-
-  for (let i = 0; i < numChunks; i++) {
-    const start = CHUNK_SIZE * i;
-    const end = Math.min(CHUNK_SIZE * (i + 1), filesize);
-    const res = await fetch(format.url, {
-      headers: { range: `bytes=${start}-${end - 1}` },
-    });
-    if (!res.ok && res.status !== 206) {
-      throw new Error(`Download failed: ${res.status}`);
-    }
-    if (!res.body) throw new Error("No response body");
-
-    const reader = res.body.getReader();
-    while (true) {
-      const { value, done } = await reader.read();
-      if (done) break;
-      result.set(value, offset);
-      offset += value.length;
-      onProgress({ offset, total: filesize });
-    }
-  }
-
-  return result;
-}
-
-function triggerBrowserDownload(data: Uint8Array, filename: string) {
-  const blob = new Blob([data as unknown as BlobPart]);
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  a.click();
-  URL.revokeObjectURL(url);
 }
 
 // --- Format helpers ---
@@ -175,36 +121,27 @@ function DownloadForm({ data }: { data: DownloadPageData }) {
   const [selectedItag, setSelectedItag] = useState<number>(
     audioFormats[0]?.itag ?? 0,
   );
-  const [progress, setProgress] = useState<DownloadProgress>();
   const [downloading, setDownloading] = useState(false);
   const [done, setDone] = useState(false);
 
   const handleDownload = async () => {
-    const format = audioFormats.find((f) => f.itag === selectedItag);
-    if (!format) return;
-
     setDownloading(true);
     setDone(false);
-    setProgress(undefined);
-
     try {
-      const result = await downloadAudio(format, setProgress);
-      const ext = format.mimeType.split(";")[0]?.split("/")[1] ?? "webm";
-      const filename = `${data.video.title}.${ext}`;
-      triggerBrowserDownload(result, filename);
+      const result = (await bgRpc.downloadFormat({
+        videoId: data.video.youtubeId,
+        itag: selectedItag,
+      })) as { filename: string; size: number };
       setDone(true);
-      toast.success("Download complete");
+      toast.success(
+        `Downloaded ${result.filename} (${formatBytes(result.size)})`,
+      );
     } catch (err) {
       toast.error(String(err));
     } finally {
       setDownloading(false);
     }
   };
-
-  const progressPercent =
-    progress && progress.total > 0
-      ? ((progress.offset / progress.total) * 100).toFixed(1)
-      : undefined;
 
   return (
     <div className="space-y-4">
@@ -248,7 +185,7 @@ function DownloadForm({ data }: { data: DownloadPageData }) {
             className="w-full rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
           >
             {!downloading && !done && "Download"}
-            {downloading && `Downloading... ${progressPercent ?? "0"}%`}
+            {downloading && "Downloading..."}
             {done && "Done"}
           </button>
         </>

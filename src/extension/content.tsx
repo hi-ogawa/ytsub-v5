@@ -42,6 +42,49 @@ export const tabRpcHandlers = {
       formats: result.streamingFormats ?? [],
     };
   },
+  async downloadFormat({ videoId, itag }: { videoId: string; itag: number }) {
+    const result = await fetchPlayerApi({ videoId, userLangs: [] });
+    const format = result.streamingFormats?.find((f) => f.itag === itag);
+    if (!format) throw new Error(`Format itag ${itag} not found`);
+    const filesize = format.contentLength;
+    if (!filesize) throw new Error("Unknown file size");
+
+    const CHUNK_SIZE = 5_000_000;
+    const numChunks = Math.ceil(filesize / CHUNK_SIZE);
+    const data = new Uint8Array(filesize);
+    let offset = 0;
+
+    for (let i = 0; i < numChunks; i++) {
+      const start = CHUNK_SIZE * i;
+      const end = Math.min(CHUNK_SIZE * (i + 1), filesize);
+      const res = await fetch(format.url, {
+        headers: { range: `bytes=${start}-${end - 1}` },
+      });
+      if (!res.ok && res.status !== 206) {
+        throw new Error(`Download failed: ${res.status}`);
+      }
+      if (!res.body) throw new Error("No response body");
+      const reader = res.body.getReader();
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        data.set(value, offset);
+        offset += value.length;
+      }
+    }
+
+    const ext = format.mimeType.split(";")[0]?.split("/")[1] ?? "webm";
+    const title = result.video.title;
+    const filename = `${title}.${ext}`;
+    const blob = new Blob([data]);
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+    return { filename, size: filesize };
+  },
 };
 registerTabRpcHandlers(tabRpcHandlers);
 
