@@ -99,6 +99,8 @@ chrome.storage is persistence only — read on boot, write on any change (via su
 - **Notification**: BC (same-origin) + ExtBroadcastChannel (cross-origin)
 - **Persistence**: chrome.storage (boot hydration + write-through)
 
+Every context's subscribe callback unconditionally writes to chrome.storage on any store change (both `set()` and `setLocal()`). This means when the ext page writes, two chrome.storage writes happen: one from the ext page's subscribe (`ext → chrome`), and one from the relay's subscribe after receiving the ExtBC message (`ext → extBC → relay setLocal → chrome`). The redundant write is harmless — same data, and no one is listening to `onChanged`.
+
 ## RPC framework: current state and gap
 
 | Direction    | Mechanism                                                          | Exists? |
