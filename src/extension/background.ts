@@ -1,10 +1,7 @@
-// Background service worker — handles RPC from content script (via relay)
-// and stores video index in chrome.storage.local.
+// Background service worker — handles RPC from content script (via relay).
 
 import { sessionToExportData } from "../lib/caption-session.ts";
 import { serverSessionToLocal } from "../lib/sync.ts";
-import type { VideoIndexEntry } from "../lib/video-index.ts";
-import { VIDEO_INDEX_KEY } from "../lib/video-index.ts";
 import { orpc, setRpcConfig } from "../rpc.ts";
 import type { tabRpcHandlers } from "./content.tsx";
 import { chromeStorage } from "./lib/chrome-storage.ts";
@@ -28,10 +25,6 @@ export const bgRpcHandlers = {
 
   async openBookmarks() {
     chrome.tabs.create({ url: "bookmarks.html" });
-  },
-
-  async videoIndexUpdated({ entries }: { entries: VideoIndexEntry[] }) {
-    chrome.storage.local.set({ [VIDEO_INDEX_KEY]: entries });
   },
 
   async pushSession({ youtubeId }: { youtubeId: string }) {
