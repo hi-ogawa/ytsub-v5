@@ -8,16 +8,11 @@ import { VIDEO_INDEX_KEY } from "../lib/video-index.ts";
 import { orpc, setRpcConfig } from "../rpc.ts";
 import type { tabRpcHandlers } from "./content.tsx";
 import { chromeStorage } from "./lib/chrome-storage.ts";
+import { createContentPortTracker } from "./lib/content-ports.ts";
 import { createContentRpc, registerRpcHandlers } from "./lib/extension-rpc.ts";
 import { getServerUrl } from "./lib/server-url.ts";
 
-async function findYouTubeTab(): Promise<number> {
-  const tabs = await chrome.tabs.query({ url: "https://www.youtube.com/*" });
-  const tabId = tabs[0]?.id;
-  if (tabId === undefined) throw new Error("No YouTube tab open");
-  return tabId;
-}
-
+const contentTabs = createContentPortTracker();
 const toRpc = createContentRpc<typeof tabRpcHandlers>;
 
 export const bgRpcHandlers = {
@@ -40,7 +35,7 @@ export const bgRpcHandlers = {
   },
 
   async pushSession({ youtubeId }: { youtubeId: string }) {
-    const tabId = await findYouTubeTab();
+    const tabId = contentTabs.findTab();
     const session = await toRpc(tabId).getSession({ youtubeId });
     if (!session) throw new Error("No local session found");
     const exportData = sessionToExportData(
@@ -50,7 +45,7 @@ export const bgRpcHandlers = {
   },
 
   async pullSession({ youtubeId }: { youtubeId: string }) {
-    const tabId = await findYouTubeTab();
+    const tabId = contentTabs.findTab();
     const data = await orpc.videos.getFullSession.call({ youtubeId });
     if (!data) throw new Error("Video not found on server");
     const session = serverSessionToLocal(data);

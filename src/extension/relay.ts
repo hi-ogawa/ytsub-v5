@@ -4,6 +4,7 @@
 import { storeEventName } from "../lib/external-store.ts";
 import { VIDEO_INDEX_KEY } from "../lib/video-index.ts";
 import type { bgRpcHandlers } from "./background.ts";
+import { connectContentPort } from "./lib/content-ports.ts";
 import {
   createRuntimeRpc,
   setupRpcRelay,
@@ -13,6 +14,9 @@ import {
 const bgRpc = createRuntimeRpc<typeof bgRpcHandlers>();
 
 function main() {
+  // Register with background so it can find this tab for reverse RPC
+  connectContentPort();
+
   // Generic RPC relay — forwards all zamak:rpc events to background
   setupRpcRelay();
 
