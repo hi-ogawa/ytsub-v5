@@ -3,26 +3,26 @@
 // Forward RPC (content-initiated, request → response):
 //
 //   MAIN world (content.tsx)
-//     → dispatches CustomEvent "zamak:rpc" with {id, method, params}
+//     → posts {id, method, params} on BroadcastChannel "zamak:rpc"
 //   ISOLATED world (relay.ts)
-//     → listens for event, calls chrome.runtime.sendMessage
+//     → receives message, calls chrome.runtime.sendMessage
 //   Background worker (background.ts)
 //     → handles message, returns response
 //   ISOLATED world (relay.ts)
-//     → writes response to localStorage, dispatches "zamak:rpc-response"
+//     → posts {id, result/error} on BroadcastChannel "zamak:rpc"
 //   MAIN world (content.tsx)
-//     → reads response from localStorage, resolves promise
+//     → receives response, resolves promise
 //
 // Reverse (tab) RPC (background-initiated, request → response):
 //
 //   Background worker (background.ts)
 //     → chrome.tabs.sendMessage(tabId, {type: "zamak-tab-rpc", ...})
 //   ISOLATED world (relay.ts)
-//     → chrome.runtime.onMessage listener, dispatches CustomEvent "zamak:tab-rpc"
+//     → chrome.runtime.onMessage listener, posts on BroadcastChannel "zamak:tab-rpc"
 //   MAIN world (content.tsx)
-//     → handler executes, writes result to localStorage, dispatches response event
+//     → handler executes, posts result on BroadcastChannel "zamak:tab-rpc"
 //   ISOLATED world (relay.ts)
-//     → reads localStorage, calls sendResponse back to background
+//     → receives response, calls sendResponse back to background
 
 // --- Wire format ---
 
@@ -39,37 +39,27 @@ type RpcResponse = {
   error?: string;
 };
 
-// --- Content-side: typed client factory (MAIN world) ---
+// --- BroadcastChannel names ---
 
-const RPC_REQUEST_EVENT = "zamak:rpc";
-const RPC_RESPONSE_EVENT = "zamak:rpc-response";
-const RPC_RESPONSE_KEY = "zamak:rpc-response";
+const RPC_CHANNEL = "zamak:rpc";
+const TAB_RPC_CHANNEL = "zamak:tab-rpc";
+
+// --- Content-side: typed client factory (MAIN world) ---
 
 let rpcIdCounter = 0;
 
 function call(method: string, params?: unknown): Promise<unknown> {
   const id = `rpc-${++rpcIdCounter}-${Date.now()}`;
   return new Promise((resolve, reject) => {
-    const onResponse = () => {
-      try {
-        const raw = localStorage.getItem(RPC_RESPONSE_KEY);
-        if (!raw) return;
-        const response: RpcResponse = JSON.parse(raw);
-        if (response.id !== id) return;
-        window.removeEventListener(RPC_RESPONSE_EVENT, onResponse);
-        if (response.error) reject(new Error(response.error));
-        else resolve(response.result);
-      } catch {
-        window.removeEventListener(RPC_RESPONSE_EVENT, onResponse);
-        reject(new Error("Failed to parse RPC response"));
-      }
+    const ch = new BroadcastChannel(RPC_CHANNEL);
+    ch.onmessage = (e) => {
+      const response: RpcResponse = e.data;
+      if (response.id !== id) return;
+      ch.close();
+      if (response.error) reject(new Error(response.error));
+      else resolve(response.result);
     };
-    window.addEventListener(RPC_RESPONSE_EVENT, onResponse);
-    window.dispatchEvent(
-      new CustomEvent(RPC_REQUEST_EVENT, {
-        detail: { id, method, params },
-      }),
-    );
+    ch.postMessage({ id, method, params });
   });
 }
 
@@ -106,7 +96,7 @@ async function directCall(method: string, params?: unknown): Promise<unknown> {
 
 /**
  * Create a typed RPC client proxy. Type parameter should be `typeof bgRpcHandlers`.
- * - Default (MAIN world): routes through localStorage event bridge via relay
+ * - Default (MAIN world): routes through BroadcastChannel bridge via relay
  * - `direct: true` (ISOLATED world / relay): calls chrome.runtime.sendMessage directly
  */
 export function createRpc<Handlers extends Record<string, Function>>(options?: {
@@ -123,25 +113,24 @@ export function createRpc<Handlers extends Record<string, Function>>(options?: {
 // --- Relay-side: generic passthrough (ISOLATED world) ---
 
 export function setupRpcRelay() {
-  window.addEventListener(RPC_REQUEST_EVENT, async (e) => {
-    const { id, method, params } = (e as CustomEvent).detail;
+  const ch = new BroadcastChannel(RPC_CHANNEL);
+  ch.onmessage = async (e) => {
+    const { id, method, params } = e.data;
     try {
       const request: RpcRequest = { type: "zamak-rpc", id, method, params };
       const result = await chrome.runtime.sendMessage(request);
       const response: RpcResponse = result?.__error
         ? { id, error: result.__error }
         : { id, result };
-      localStorage.setItem(RPC_RESPONSE_KEY, JSON.stringify(response));
-      window.dispatchEvent(new Event(RPC_RESPONSE_EVENT));
+      ch.postMessage(response);
     } catch (err) {
       const response: RpcResponse = {
         id,
         error: err instanceof Error ? err.message : "Unknown error",
       };
-      localStorage.setItem(RPC_RESPONSE_KEY, JSON.stringify(response));
-      window.dispatchEvent(new Event(RPC_RESPONSE_EVENT));
+      ch.postMessage(response);
     }
-  });
+  };
 }
 
 // --- Background-side: handler registration ---
@@ -174,10 +163,6 @@ type TabRpcRequest = {
   params?: unknown;
 };
 
-const TAB_RPC_REQUEST_EVENT = "zamak:tab-rpc";
-const TAB_RPC_RESPONSE_EVENT = "zamak:tab-rpc-response";
-const TAB_RPC_RESPONSE_KEY = "zamak:tab-rpc-response";
-
 let tabRpcIdCounter = 0;
 
 /** Background → tab: send RPC to a content script tab via relay. */
@@ -204,52 +189,37 @@ export async function sendTabRpc(
 
 /** ISOLATED world: relay tab RPC from background to MAIN world and back. */
 export function setupTabRpcRelay() {
+  const ch = new BroadcastChannel(TAB_RPC_CHANNEL);
   chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
     if (msg?.type !== "zamak-tab-rpc") return;
     const { id, method, params } = msg as TabRpcRequest;
 
-    const onResponse = () => {
-      try {
-        const raw = localStorage.getItem(TAB_RPC_RESPONSE_KEY);
-        if (!raw) return;
-        const response: RpcResponse = JSON.parse(raw);
-        if (response.id !== id) return;
-        window.removeEventListener(TAB_RPC_RESPONSE_EVENT, onResponse);
-        if (response.error) sendResponse({ error: response.error });
-        else sendResponse({ result: response.result });
-      } catch {
-        window.removeEventListener(TAB_RPC_RESPONSE_EVENT, onResponse);
-        sendResponse({ error: "Failed to parse tab RPC response" });
-      }
+    ch.onmessage = (e) => {
+      const response: RpcResponse = e.data;
+      if (response.id !== id) return;
+      if (response.error) sendResponse({ error: response.error });
+      else sendResponse({ result: response.result });
     };
-    window.addEventListener(TAB_RPC_RESPONSE_EVENT, onResponse);
-    window.dispatchEvent(
-      new CustomEvent(TAB_RPC_REQUEST_EVENT, {
-        detail: { id, method, params },
-      }),
-    );
+    ch.postMessage({ id, method, params });
     return true; // keep channel open for async response
   });
 }
 
 /** MAIN world: register handlers for tab RPC calls from background. */
 export function registerTabRpcHandlers(handlers: Record<string, Function>) {
-  window.addEventListener(TAB_RPC_REQUEST_EVENT, async (e) => {
-    const { id, method, params } = (e as CustomEvent).detail;
+  const ch = new BroadcastChannel(TAB_RPC_CHANNEL);
+  ch.onmessage = async (e) => {
+    const { id, method, params } = e.data;
     try {
       const handler = handlers[method];
       const result = handler ? await handler(params) : undefined;
-      const response: RpcResponse = { id, result };
-      localStorage.setItem(TAB_RPC_RESPONSE_KEY, JSON.stringify(response));
-      window.dispatchEvent(new Event(TAB_RPC_RESPONSE_EVENT));
+      ch.postMessage({ id, result } satisfies RpcResponse);
     } catch (err) {
       console.error(`[zamak tab-rpc handler] ${method}:`, err);
-      const response: RpcResponse = {
+      ch.postMessage({
         id,
         error: err instanceof Error ? err.message : "Unknown error",
-      };
-      localStorage.setItem(TAB_RPC_RESPONSE_KEY, JSON.stringify(response));
-      window.dispatchEvent(new Event(TAB_RPC_RESPONSE_EVENT));
+      } satisfies RpcResponse);
     }
-  });
+  };
 }

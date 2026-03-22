@@ -1,4 +1,4 @@
-// ISOLATED world content script — generic RPC relay between MAIN world
+// ISOLATED world content script — BroadcastChannel RPC relay between MAIN world
 // and background worker, plus video-index localStorage → background sync.
 
 import { storeEventName } from "../lib/external-store.ts";
