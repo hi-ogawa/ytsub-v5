@@ -34,9 +34,9 @@ export const bgRpcHandlers = {
     chrome.tabs.create({ url: "download.html" });
   },
 
-  async getDownloadData() {
+  async getDownloadData({ videoId }: { videoId: string }) {
     const tabId = contentTabs.findTab();
-    return await toRpc(tabId).getStreamingFormats();
+    return await toRpc(tabId).getStreamingFormats({ videoId });
   },
 
   async videoIndexUpdated({ entries }: { entries: VideoIndexEntry[] }) {

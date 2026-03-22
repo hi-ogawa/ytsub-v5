@@ -1,4 +1,4 @@
-import { StrictMode, useEffect, useState } from "react";
+import { StrictMode, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { Toaster, toast } from "sonner";
 import { useTheme } from "../lib/theme.ts";
@@ -15,6 +15,21 @@ const bgRpc = createRuntimeRpc<typeof bgRpcHandlers>();
 interface DownloadPageData {
   video: YouTubeVideoData;
   formats: YouTubeStreamingFormat[];
+}
+
+// --- Video ID parsing (ported from youtube-dl-web-v2) ---
+
+function parseVideoId(value: string): string | undefined {
+  const trimmed = value.trim();
+  if (trimmed.length === 11 && /^[\w-]+$/.test(trimmed)) return trimmed;
+  if (trimmed.match(/youtube\.com|youtu\.be/)) {
+    try {
+      const url = new URL(trimmed);
+      if (url.hostname === "youtu.be") return url.pathname.substring(1);
+      return url.searchParams.get("v") ?? undefined;
+    } catch {}
+  }
+  return undefined;
 }
 
 // --- Chunked download ---
@@ -96,45 +111,59 @@ function isAudioOnly(f: YouTubeStreamingFormat): boolean {
 // --- Components ---
 
 function DownloadPage() {
+  const [input, setInput] = useState("");
   const [data, setData] = useState<DownloadPageData>();
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string>();
+  const [searching, setSearching] = useState(false);
 
-  useEffect(() => {
-    bgRpc
-      .getDownloadData()
-      .then((d) => setData(d as DownloadPageData))
-      .catch((err) => setError(String(err)))
-      .finally(() => setLoading(false));
-  }, []);
+  const handleSearch = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const videoId = parseVideoId(input);
+    if (!videoId) {
+      toast.error("Invalid video ID or URL");
+      return;
+    }
+    setSearching(true);
+    setData(undefined);
+    try {
+      const result = await bgRpc.getDownloadData({ videoId });
+      setData(result as DownloadPageData);
+    } catch (err) {
+      toast.error(String(err));
+    } finally {
+      setSearching(false);
+    }
+  };
 
-  if (loading) {
-    return (
-      <div className="flex h-screen items-center justify-center text-muted-foreground">
-        Loading...
-      </div>
-    );
-  }
+  return (
+    <div className="mx-auto max-w-lg space-y-4 p-6">
+      <form onSubmit={handleSearch} className="space-y-3">
+        <div className="space-y-1.5">
+          <label className="block text-sm font-medium">Video ID</label>
+          <input
+            type="text"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder="ID or URL"
+            className="w-full rounded-md border border-border bg-background px-3 py-1.5 text-sm"
+          />
+        </div>
+        <button
+          type="submit"
+          disabled={searching}
+          className="w-full rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+        >
+          {searching ? "Searching..." : "Search"}
+        </button>
+      </form>
 
-  if (error) {
-    return (
-      <div className="flex h-screen items-center justify-center">
-        <p className="text-sm text-red-500">{error}</p>
-      </div>
-    );
-  }
-
-  if (!data) {
-    return (
-      <div className="flex h-screen items-center justify-center text-muted-foreground">
-        <p className="text-sm">
-          No video data. Open a YouTube video with the Zamak extension first.
-        </p>
-      </div>
-    );
-  }
-
-  return <DownloadForm data={data} />;
+      {data && (
+        <>
+          <div className="border-t pt-4" />
+          <DownloadForm data={data} />
+        </>
+      )}
+    </div>
+  );
 }
 
 function DownloadForm({ data }: { data: DownloadPageData }) {
@@ -178,7 +207,7 @@ function DownloadForm({ data }: { data: DownloadPageData }) {
       : undefined;
 
   return (
-    <div className="mx-auto max-w-lg space-y-4 p-6">
+    <div className="space-y-4">
       <div>
         <h1 className="text-lg font-semibold">{data.video.title}</h1>
         <p className="text-sm text-muted-foreground">

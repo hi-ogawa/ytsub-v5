@@ -35,9 +35,7 @@ export const tabRpcHandlers = {
   async saveSession({ session }: { session: PersistedCaptionSession }) {
     await saveSession(session);
   },
-  async getStreamingFormats() {
-    const videoId = new URL(window.location.href).searchParams.get("v");
-    if (!videoId) throw new Error("Not on a YouTube watch page");
+  async getStreamingFormats({ videoId }: { videoId: string }) {
     const result = await fetchPlayerApi({ videoId, userLangs: [] });
     return {
       video: result.video,
