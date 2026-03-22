@@ -14,8 +14,8 @@ async function main() {
   );
   videoIndexStore.setLocal(entries ?? []);
 
-  // Sync back: MAIN world store changes arrive via BroadcastChannel
-  // auto-listener → setLocal → subscribe fires → write to chrome.storage
+  // Persist MAIN world store changes to chrome.storage.
+  // MAIN writes → BC delivers to relay's store → subscribe fires → chrome.storage
   videoIndexStore.subscribe(() => {
     chromeStorage.set({ [videoIndexStore.key]: videoIndexStore.get() });
   });
