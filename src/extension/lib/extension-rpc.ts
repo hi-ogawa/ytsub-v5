@@ -51,15 +51,15 @@ let rpcIdCounter = 0;
 function call(method: string, params?: unknown): Promise<unknown> {
   const id = `rpc-${++rpcIdCounter}-${Date.now()}`;
   return new Promise((resolve, reject) => {
-    const ch = new BroadcastChannel(RPC_CHANNEL);
-    ch.onmessage = (e) => {
+    const channel = new BroadcastChannel(RPC_CHANNEL);
+    channel.addEventListener("message", (e) => {
       const response: RpcResponse = e.data;
       if (response.id !== id) return;
-      ch.close();
+      channel.close();
       if (response.error) reject(new Error(response.error));
       else resolve(response.result);
-    };
-    ch.postMessage({ id, method, params });
+    });
+    channel.postMessage({ id, method, params });
   });
 }
 
@@ -113,8 +113,8 @@ export function createRpc<Handlers extends Record<string, Function>>(options?: {
 // --- Relay-side: generic passthrough (ISOLATED world) ---
 
 export function setupRpcRelay() {
-  const ch = new BroadcastChannel(RPC_CHANNEL);
-  ch.onmessage = async (e) => {
+  const channel = new BroadcastChannel(RPC_CHANNEL);
+  channel.addEventListener("message", async (e) => {
     const { id, method, params } = e.data;
     try {
       const request: RpcRequest = { type: "zamak-rpc", id, method, params };
@@ -122,15 +122,15 @@ export function setupRpcRelay() {
       const response: RpcResponse = result?.__error
         ? { id, error: result.__error }
         : { id, result };
-      ch.postMessage(response);
+      channel.postMessage(response);
     } catch (err) {
       const response: RpcResponse = {
         id,
         error: err instanceof Error ? err.message : "Unknown error",
       };
-      ch.postMessage(response);
+      channel.postMessage(response);
     }
-  };
+  });
 }
 
 // --- Background-side: handler registration ---
@@ -189,37 +189,37 @@ export async function sendTabRpc(
 
 /** ISOLATED world: relay tab RPC from background to MAIN world and back. */
 export function setupTabRpcRelay() {
-  const ch = new BroadcastChannel(TAB_RPC_CHANNEL);
+  const channel = new BroadcastChannel(TAB_RPC_CHANNEL);
   chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
     if (msg?.type !== "zamak-tab-rpc") return;
     const { id, method, params } = msg as TabRpcRequest;
 
-    ch.onmessage = (e) => {
+    channel.addEventListener("message", (e) => {
       const response: RpcResponse = e.data;
       if (response.id !== id) return;
       if (response.error) sendResponse({ error: response.error });
       else sendResponse({ result: response.result });
-    };
-    ch.postMessage({ id, method, params });
+    });
+    channel.postMessage({ id, method, params });
     return true; // keep channel open for async response
   });
 }
 
 /** MAIN world: register handlers for tab RPC calls from background. */
 export function registerTabRpcHandlers(handlers: Record<string, Function>) {
-  const ch = new BroadcastChannel(TAB_RPC_CHANNEL);
-  ch.onmessage = async (e) => {
+  const channel = new BroadcastChannel(TAB_RPC_CHANNEL);
+  channel.addEventListener("message", async (e) => {
     const { id, method, params } = e.data;
     try {
       const handler = handlers[method];
       const result = handler ? await handler(params) : undefined;
-      ch.postMessage({ id, result } satisfies RpcResponse);
+      channel.postMessage({ id, result } satisfies RpcResponse);
     } catch (err) {
       console.error(`[zamak tab-rpc handler] ${method}:`, err);
-      ch.postMessage({
+      channel.postMessage({
         id,
         error: err instanceof Error ? err.message : "Unknown error",
       } satisfies RpcResponse);
     }
-  };
+  });
 }
