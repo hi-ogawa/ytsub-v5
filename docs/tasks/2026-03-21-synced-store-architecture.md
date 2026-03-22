@@ -246,9 +246,36 @@ Existing chrome.storage values have bare data (no `{ v, d }` envelope). `readVer
 
 ## Status
 
-- [ ] Simplified relay to write chrome.storage directly (removed bgRpc round-trip)
-- [ ] Moved `videoIndexStore` to `video-index.ts`
-- [ ] Added `storageKey` and `setLocal()` to `LocalStorageStore`
-- [ ] Two-way sync with guard flags (working but fragile)
-- [ ] Replace guard flags with versioned writes
-- [ ] Add boot hydration to relay
+### Done (PR #154)
+
+- [x] Replaced window `dispatchEvent`/`addEventListener` with `BroadcastChannel("zamak:store")`
+- [x] Each `LocalStorageStore` owns its own BroadcastChannel instance
+- [x] Added `storageKey` and `setLocal()` to `LocalStorageStore`
+- [x] Relay writes chrome.storage directly (removed `bgRpc.videoIndexUpdated` round-trip)
+- [x] Boot hydration in relay: chrome.storage → localStorage before MAIN world inits
+- [x] Relay and bookmarks page use same pattern: `setLocal` for hydration, `subscribe` for sync-back
+
+### Current sync coverage
+
+**Same-origin localStorage** — fully synced (reactive):
+
+BroadcastChannel delivers across tabs on the same origin. Two YouTube tabs (or two extension pages) reactively sync in-memory store state without chrome.storage involved.
+
+**youtube localStorage ↔ chrome.storage ↔ extension localStorage** — boot only:
+
+Both relay and bookmarks page read chrome.storage on boot and hydrate their localStorage via `setLocal`. Fresh data is available when the page loads.
+
+**youtube localStorage → chrome.storage ← extension localStorage** — always-on write:
+
+Both sides write to chrome.storage on every store change via `subscribe` callbacks. Changes propagate to chrome.storage immediately.
+
+**chrome.storage → youtube localStorage / extension localStorage** — NOT yet live:
+
+Missing `chrome.storage.onChanged` listeners. If the extension page writes, an already-open YouTube tab won't see the change until reload (and vice versa). This is the remaining gap for full always-on two-way sync.
+
+### Remaining
+
+- [ ] `chrome.storage.onChanged` listener in relay (chrome.storage → youtube localStorage, live)
+- [ ] `chrome.storage.onChanged` listener in bookmarks page (chrome.storage → extension localStorage, live)
+- [ ] Versioned writes for echo suppression (needed once `onChanged` listeners exist)
+- [ ] Generic synced store registry (for adding `zamak:ai-prompt` etc.)
