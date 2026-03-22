@@ -47,12 +47,6 @@ import type { bgRpcHandlers } from "./background.ts";
 import { chromeStorage } from "./lib/chrome-storage.ts";
 import { createRuntimeRpc } from "./lib/extension-rpc.ts";
 import { getServerUrl } from "./lib/server-url.ts";
-import {
-  bumpVersion,
-  readVersionedBoot,
-  readVersionedChange,
-  writeVersioned,
-} from "./lib/versioned-chrome-storage.ts";
 import "../styles.css";
 
 declare const __DEV_EXT__: boolean;
@@ -331,37 +325,14 @@ async function main() {
   // Two-way bridge: chrome.storage.local <-> localStorage for video-index.
   // Hydrate localStorage from chrome.storage.local before rendering, then keep
   // them in sync so videoIndexStore (localStorage-backed) works on this origin.
-  const raw = await chrome.storage.local.get(videoIndexStore.key);
-  const entries = readVersionedBoot<VideoIndexEntry[]>(
+  const entries = await chromeStorage.get<VideoIndexEntry[]>(
     videoIndexStore.key,
-    raw[videoIndexStore.key],
   );
   videoIndexStore.setLocal(entries ?? []);
 
-  // Subscribe writes to chrome.storage with current version (no bump).
+  // Sync back to chrome.storage.local when videoIndexStore writes
   videoIndexStore.subscribe(() => {
-    writeVersioned(videoIndexStore.key, videoIndexStore.get());
-  });
-
-  // Wrap set/update helpers to bump version before writing.
-  // videoIndexStore.set() is called by updateVideoIndex/removeFromVideoIndex/
-  // setSyncedAt — all go through the store's set() which triggers the internal
-  // BC listener on same-origin tabs, plus our subscribe above for chrome.storage.
-  // We intercept set() to bump the version as the originator.
-  const originalSet = videoIndexStore.set.bind(videoIndexStore);
-  videoIndexStore.set = (value) => {
-    bumpVersion(videoIndexStore.key);
-    originalSet(value);
-  };
-
-  // chrome.storage onChanged — adopt version, no bump
-  chrome.storage.onChanged.addListener((changes, area) => {
-    if (area !== "local") return;
-    const change = changes[videoIndexStore.key];
-    if (!change) return;
-    const data = readVersionedChange(videoIndexStore.key, change.newValue);
-    if (data === undefined) return;
-    videoIndexStore.setLocal(data as VideoIndexEntry[]);
+    chromeStorage.set({ [videoIndexStore.key]: videoIndexStore.get() });
   });
 
   createRoot(document.getElementById("root")!).render(
