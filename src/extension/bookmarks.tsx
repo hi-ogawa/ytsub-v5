@@ -36,13 +36,13 @@ import {
 import { orpc, setRpcConfig } from "../rpc.ts";
 import type { bgRpcHandlers } from "./background.ts";
 import { chromeStorage } from "./lib/chrome-storage.ts";
-import { createRpc } from "./lib/extension-rpc.ts";
+import { createRuntimeRpc } from "./lib/extension-rpc.ts";
 import { getServerUrl } from "./lib/server-url.ts";
 import "../styles.css";
 
 declare const __DEV_EXT__: boolean;
 
-const bgRpc = createRpc<typeof bgRpcHandlers>({ direct: true });
+const bgRpc = createRuntimeRpc<typeof bgRpcHandlers>();
 
 const extensionSyncActions: VideoSyncActions = {
   async pushSession(youtubeId) {
