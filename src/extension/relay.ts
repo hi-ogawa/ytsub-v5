@@ -10,14 +10,14 @@ async function main() {
   // Boot hydration: chrome.storage → store (writes to shared localStorage
   // so MAIN world's store picks up fresh data on init)
   const entries = await chromeStorage.get<VideoIndexEntry[]>(
-    videoIndexStore.storageKey,
+    videoIndexStore.key,
   );
   videoIndexStore.setLocal(entries ?? []);
 
   // Sync back: MAIN world store changes arrive via BroadcastChannel
   // auto-listener → setLocal → subscribe fires → write to chrome.storage
   videoIndexStore.subscribe(() => {
-    chromeStorage.set({ [videoIndexStore.storageKey]: videoIndexStore.get() });
+    chromeStorage.set({ [videoIndexStore.key]: videoIndexStore.get() });
   });
 
   // Register with background so it can find this tab for reverse RPC

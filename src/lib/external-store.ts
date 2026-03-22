@@ -9,14 +9,6 @@ interface ExternalStore<T> {
   subscribe(listener: Listener): () => void;
 }
 
-export interface LocalStorageStore<T> extends ExternalStore<T> {
-  storageKey: string;
-  /** Update in-memory state + localStorage without broadcasting. */
-  setLocal(value: SetAction<T>): void;
-}
-
-const STORE_CHANNEL_NAME = "zamak:store";
-
 function createExternalStore<T>(initialValue: T): ExternalStore<T> {
   let current = initialValue;
   const listeners = new Set<Listener>();
@@ -41,6 +33,14 @@ function createExternalStore<T>(initialValue: T): ExternalStore<T> {
   };
 }
 
+interface LocalStorageStore<T> extends ExternalStore<T> {
+  key: string;
+  /** Update in-memory state + localStorage without broadcasting. */
+  setLocal(value: SetAction<T>): void;
+}
+
+const STORE_CHANNEL_NAME = "zamak:store";
+
 export function createLocalStorageStore<T>(
   key: string,
   defaultValue: T,
@@ -54,28 +54,28 @@ export function createLocalStorageStore<T>(
     }
   }
 
-  const inner = createExternalStore<T>(readFromStorage());
+  const inner = createExternalStore(readFromStorage());
   const channel = new BroadcastChannel(STORE_CHANNEL_NAME);
 
   channel.addEventListener("message", (e) => {
-    if (e.data.key === key) setLocal(e.data.value);
+    if (e.data.key === key) {
+      store.setLocal(e.data.value);
+    }
   });
 
-  function setLocal(value: SetAction<T>) {
-    inner.set(value);
-    localStorage.setItem(key, JSON.stringify(inner.get()));
-  }
-
-  return {
-    storageKey: key,
-    get: inner.get,
+  const store: LocalStorageStore<T> = {
+    ...inner,
+    key,
     set(value) {
-      setLocal(value);
+      store.setLocal(value);
       channel.postMessage({ key, value: inner.get() });
     },
-    setLocal,
-    subscribe: inner.subscribe,
+    setLocal(value) {
+      inner.set(value);
+      localStorage.setItem(key, JSON.stringify(inner.get()));
+    },
   };
+  return store;
 }
 
 export function useStore<T>(
