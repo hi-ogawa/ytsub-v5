@@ -6,15 +6,16 @@ import type {
   YouTubeStreamingFormat,
   YouTubeVideoData,
 } from "../lib/youtube.ts";
-import { chromeStorage } from "./lib/chrome-storage.ts";
+import type { bgRpcHandlers } from "./background.ts";
+import { createRuntimeRpc } from "./lib/extension-rpc.ts";
 import "../styles.css";
 
-export interface DownloadPageData {
+const bgRpc = createRuntimeRpc<typeof bgRpcHandlers>();
+
+interface DownloadPageData {
   video: YouTubeVideoData;
   formats: YouTubeStreamingFormat[];
 }
-
-const STORAGE_KEY = "download-data";
 
 // --- Chunked download ---
 
@@ -97,18 +98,28 @@ function isAudioOnly(f: YouTubeStreamingFormat): boolean {
 function DownloadPage() {
   const [data, setData] = useState<DownloadPageData>();
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string>();
 
   useEffect(() => {
-    chromeStorage.get<DownloadPageData>(STORAGE_KEY).then((d) => {
-      setData(d ?? undefined);
-      setLoading(false);
-    });
+    bgRpc
+      .getDownloadData()
+      .then((d) => setData(d as DownloadPageData))
+      .catch((err) => setError(String(err)))
+      .finally(() => setLoading(false));
   }, []);
 
   if (loading) {
     return (
       <div className="flex h-screen items-center justify-center text-muted-foreground">
         Loading...
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <p className="text-sm text-red-500">{error}</p>
       </div>
     );
   }
