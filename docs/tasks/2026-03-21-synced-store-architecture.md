@@ -44,7 +44,7 @@ store.set() -> subscribe -> chrome.storage.set()
 
 The `subscribe` callback can't distinguish "I triggered this change" from "an external source triggered it." We need echo suppression.
 
-## Solution: versioned writes
+## Solution: versioned writes with originator-only bump
 
 Each key in chrome.storage stores a versioned envelope:
 
@@ -57,41 +57,67 @@ Each context tracks `lastVersion` per key. The invariant:
 
 > **A context applies an `onChanged` event if and only if `v > lastVersion`.**
 
-| Scenario          | What happens                                                                          |
-| ----------------- | ------------------------------------------------------------------------------------- |
-| **Boot**          | Read `{ v, d }` from chrome.storage -> set `lastVersion = v`, apply `d`               |
-| **Local write**   | Increment `lastVersion`, write `{ v: lastVersion, d }` to chrome.storage              |
-| **Remote change** | `onChanged` delivers `{ v, d }` with `v > lastVersion` -> apply, update `lastVersion` |
-| **Self-echo**     | `onChanged` delivers `{ v, d }` with `v <= lastVersion` -> skip                       |
+| Scenario              | What happens                                                                                                               |
+| --------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| **Boot**              | Read `{ v, d }` from chrome.storage -> set `lastVersion = v`, apply `d`                                                    |
+| **Originating write** | Increment `lastVersion`, then `setLocal()` -> subscribe writes `{ v: lastVersion, d }`                                     |
+| **Forwarding write**  | Adopt received `v` as `lastVersion`, then `setLocal()` -> subscribe writes `{ v: lastVersion, d }` (same version, no bump) |
+| **Remote change**     | `onChanged` delivers `{ v, d }` with `v > lastVersion` -> apply (forwarding write)                                         |
+| **Echo**              | `onChanged` delivers `{ v, d }` with `v <= lastVersion` -> skip                                                            |
 
-No guard flags, no value comparison. The version number is the only mechanism.
+The critical rule: **only the originating context bumps the version.** The subscribe callback always writes with the current `lastVersion` — it doesn't increment. When a forwarding context writes back the same version it received, all contexts already have that `lastVersion`, so the resulting `onChanged` events are skipped. This breaks the echo loop without guard flags or value comparison.
+
+### Who bumps?
+
+| Context  | Trigger                     | Bump? | Why                                                    |
+| -------- | --------------------------- | ----- | ------------------------------------------------------ |
+| Relay    | BroadcastChannel from MAIN  | Yes   | Proxy for MAIN world, which can't reach chrome.storage |
+| Ext page | `set()` from UI interaction | Yes   | Direct originator                                      |
+| Either   | `onChanged`                 | No    | Forwarding — adopt the received `v`                    |
+
+### Redundant forwarding writes (acceptable)
+
+When a context receives `onChanged(v=6)` and calls `setLocal()`, the subscribe callback writes `{v:6, d}` back to chrome.storage — a redundant write with identical version and data. This triggers another round of `onChanged` events in all contexts, but they all skip (`v <= lastVersion`). Harmless noise; not worth adding complexity to suppress.
 
 ### Race condition (acceptable)
 
-Two tabs write simultaneously from the same base version -> both produce `v = N+1` -> last-write-wins in chrome.storage. This is fine: the version exists for echo suppression, not conflict resolution. Both tabs end up with the same final state via `onChanged`.
+Two tabs write simultaneously from the same base version -> both produce `v = N+1` -> last-write-wins in chrome.storage. The loser's `onChanged` has `v <= lastVersion`, so it's skipped — the loser won't see the winner's data until the next write from either side. This is self-healing and acceptable: the version exists for echo suppression, not conflict resolution.
 
 ### Migration
 
-Existing chrome.storage values have bare data (no `{ v, d }` envelope). On boot, if `typeof value.v !== "number"`, treat as unversioned -> apply with `lastVersion = 0`. On next write, it gets wrapped in the envelope.
+Existing chrome.storage values have bare data (no `{ v, d }` envelope). On boot, if `typeof value.v !== "number"`, treat as unversioned -> apply with `lastVersion = 0`. On next write, it gets wrapped in the envelope. Unversioned `onChanged` events (during transition) are skipped — boot hydration handles the migration path.
 
 ## Data flows (after `onChanged` + versioning)
+
+### Double BroadcastChannel handling in relay
+
+`videoIndexStore` creates its own `BroadcastChannel("zamak:store")` listener internally (in `createLocalStorageStore`), which calls `setLocal()` on matching messages. The relay creates a second BC instance to intercept the same messages for version bumping. Both fire for each MAIN world message — order is unspecified.
+
+If the store's listener fires first: `setLocal()` → subscribe → `writeVersioned()` with the un-bumped version (e.g. v=5). Then the relay's listener bumps and calls `setLocal()` → subscribe → `writeVersioned()` with v=6. The v=5 write is harmless — other contexts skip it (`5 <= lastVersion`). The v=6 write is the one that propagates.
+
+This is an acceptable trade-off: one extra chrome.storage write per BC message, but the store API stays unchanged (no special flag to disable the internal BC listener).
 
 **Content script writes -> extension page sees it:**
 
 ```
 MAIN: store.set() -> localStorage, BroadcastChannel post
-Relay: BroadcastChannel listener -> setLocal() -> subscribe -> versioned chrome.storage.set()
-Relay: onChanged fires -> v <= lastVersion -> skip (self-echo)
-Ext page: onChanged fires -> v > lastVersion -> setLocal()
+Relay: store's internal BC listener -> setLocal() -> subscribe -> chrome.storage.set({v:5}) [harmless extra write]
+Relay: explicit BC listener -> bump v to 6 -> setLocal() -> subscribe -> chrome.storage.set({v:6})
+Relay: onChanged(v=6) -> 6 <= 6 -> skip ✓
+Ext page: onChanged(v=6) -> 6 > lastVersion -> adopt lastVersion=6 -> setLocal() -> subscribe -> chrome.storage.set({v:6})
+Ext page: onChanged(v=6) -> 6 <= 6 -> skip ✓
+Relay: onChanged(v=6) -> 6 <= 6 -> skip ✓
 ```
 
 **Extension page writes -> content script sees it:**
 
 ```
-Ext page: store.set() -> subscribe -> versioned chrome.storage.set()
-Ext page: onChanged fires -> v <= lastVersion -> skip (self-echo)
-Relay: onChanged fires -> v > lastVersion -> store.setLocal() -> BroadcastChannel post
-MAIN: BroadcastChannel listener -> setLocal() -> React re-render
+Ext page: bump v to 6 -> setLocal() -> subscribe -> chrome.storage.set({v:6})
+Ext page: onChanged(v=6) -> 6 <= 6 -> skip ✓
+Relay: onChanged(v=6) -> 6 > lastVersion -> adopt lastVersion=6 -> setLocal() -> BC post -> subscribe -> chrome.storage.set({v:6})
+MAIN: BC listener -> setLocal() -> React re-render ✓
+Relay: onChanged(v=6) -> 6 <= 6 -> skip ✓
+Ext page: onChanged(v=6) -> 6 <= 6 -> skip ✓
 ```
 
 **Cross-tab content scripts:**
@@ -99,8 +125,10 @@ MAIN: BroadcastChannel listener -> setLocal() -> React re-render
 ```
 Tab A MAIN: store.set() -> BroadcastChannel post
 Tab B MAIN: BroadcastChannel listener -> setLocal() (direct, no chrome.storage)
-Tab A Relay: BroadcastChannel listener -> setLocal() -> subscribe -> chrome.storage.set()
-Tab B Relay: onChanged -> v > lastVersion -> setLocal() (redundant, Tab B already up to date)
+Tab A Relay: store's internal BC listener -> setLocal() -> subscribe -> chrome.storage.set({v:5}) [harmless extra write]
+Tab A Relay: explicit BC listener -> bump v to 6 -> setLocal() -> subscribe -> chrome.storage.set({v:6})
+Tab B Relay: onChanged(v=6) -> 6 > lastVersion -> adopt lastVersion=6 -> setLocal() (redundant, Tab B already up to date) -> subscribe -> chrome.storage.set({v:6})
+All: subsequent onChanged(v=6) -> skip ✓
 ```
 
 ## Implementation plan
@@ -112,12 +140,30 @@ type Versioned<T> = { v: number; d: T };
 
 const versions = new Map<string, number>();
 
-function writeToChromeStorage(key: string, value: unknown) {
-  const v = (versions.get(key) ?? 0) + 1;
-  versions.set(key, v);
+/** Bump version (call at origination points only). */
+function bumpVersion(key: string): void {
+  versions.set(key, (versions.get(key) ?? 0) + 1);
+}
+
+/** Write with current lastVersion (called from subscribe — never increments). */
+function writeVersioned(key: string, value: unknown): void {
+  const v = versions.get(key) ?? 0;
   chrome.storage.local.set({ [key]: { v, d: value } });
 }
 
+/** Read boot value, adopting its version. */
+function readVersionedBoot<T>(raw: unknown, key: string): T | undefined {
+  const versioned = raw as Versioned<T> | undefined;
+  if (versioned && typeof versioned.v === "number") {
+    versions.set(key, versioned.v);
+    return versioned.d;
+  }
+  // Migration: bare (unversioned) data — apply with lastVersion = 0
+  if (raw !== undefined && raw !== null) return raw as T;
+  return undefined;
+}
+
+/** Read onChanged value. Returns data if v > lastVersion, undefined to skip. */
 function readVersionedChange(
   key: string,
   newValue: unknown,
@@ -130,9 +176,23 @@ function readVersionedChange(
 }
 ```
 
-### 2. Relay: add `onChanged` listener
+### 2. Relay: bump on BroadcastChannel, add `onChanged` listener
 
 ```ts
+// BroadcastChannel from MAIN — relay is proxy originator, so bump
+channel.addEventListener("message", (e) => {
+  if (e.data.key === key) {
+    bumpVersion(key);
+    store.setLocal(e.data.value); // -> subscribe -> writeVersioned (bumped v)
+  }
+});
+
+// subscribe writes to chrome.storage with current version (no bump)
+store.subscribe(() => {
+  writeVersioned(store.key, store.get());
+});
+
+// onChanged — adopt version, no bump
 chrome.storage.onChanged.addListener((changes, area) => {
   if (area !== "local") return;
   for (const [key, change] of Object.entries(changes)) {
@@ -140,14 +200,33 @@ chrome.storage.onChanged.addListener((changes, area) => {
     if (!store) continue;
     const data = readVersionedChange(key, change.newValue);
     if (data === undefined) continue;
-    store.setLocal(data); // BroadcastChannel post reaches MAIN
+    store.setLocal(data); // -> BC post to MAIN, subscribe -> writeVersioned (same v)
   }
 });
 ```
 
-### 3. Extension page: add `onChanged` listener
+### 3. Extension page: bump on `set()`, add `onChanged` listener
 
-Same pattern — `readVersionedChange` skips self-echo, applies remote changes via `setLocal`.
+```ts
+// Wrap set() to bump before setLocal
+function originatingSet(value) {
+  bumpVersion(store.key);
+  store.setLocal(value); // -> subscribe -> writeVersioned (bumped v)
+}
+
+// subscribe writes to chrome.storage with current version (no bump)
+store.subscribe(() => {
+  writeVersioned(store.key, store.get());
+});
+
+// onChanged — adopt version, no bump
+chrome.storage.onChanged.addListener((changes, area) => {
+  if (area !== "local") return;
+  const data = readVersionedChange(store.key, changes[store.key]?.newValue);
+  if (data === undefined) return;
+  store.setLocal(data); // -> subscribe -> writeVersioned (same v)
+});
+```
 
 ## Reference files
 
