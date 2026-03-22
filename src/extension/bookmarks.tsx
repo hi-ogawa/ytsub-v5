@@ -1,4 +1,8 @@
-import { QueryClientProvider, useQuery } from "@tanstack/react-query";
+import {
+  QueryClientProvider,
+  useMutation,
+  useQuery,
+} from "@tanstack/react-query";
 import {
   EllipsisVertical,
   ExternalLink,
@@ -23,12 +27,18 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "../components/ui/dropdown-menu.tsx";
+import { deleteSession } from "../lib/caption-session-db.ts";
 import { useStore } from "../lib/external-store.ts";
 import { createAppQueryClient } from "../lib/query-client.ts";
-import { type VideoSyncActions, useVideoSync } from "../lib/sync.ts";
+import {
+  type VideoSyncActions,
+  type VideoSyncEntry,
+  useVideoSync,
+} from "../lib/sync.ts";
 import { useTheme } from "../lib/theme.ts";
 import {
   type VideoIndexEntry,
+  removeFromVideoIndex,
   updateVideoIndex,
   videoIndexStore,
 } from "../lib/video-index.ts";
@@ -136,6 +146,19 @@ function ExtensionBookmarksPage() {
   const sync = useVideoSync(extensionSyncActions);
   const [showLogin, setShowLogin] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const deleteMutation = useMutation(
+    orpc.videos.deleteVideo.mutationOptions({
+      onSuccess: () => sync.refetch(),
+    }),
+  );
+
+  async function onDelete(entry: VideoSyncEntry) {
+    if (entry.serverId) {
+      deleteMutation.mutate({ id: entry.serverId });
+    }
+    removeFromVideoIndex(entry.youtubeId);
+    await deleteSession(entry.youtubeId);
+  }
 
   const handleLogout = async () => {
     await orpc.auth.logout.call({});
@@ -264,6 +287,7 @@ function ExtensionBookmarksPage() {
         <BookmarksPage
           entries={entries}
           videoHref={(id) => `https://www.youtube.com/watch?v=${id}`}
+          onDelete={onDelete}
           sync={sync}
           emptyState={
             <p className="text-sm text-muted-foreground">
