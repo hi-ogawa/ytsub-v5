@@ -15,7 +15,7 @@ export interface LocalStorageStore<T> extends ExternalStore<T> {
   setLocal(value: SetAction<T>): void;
 }
 
-export const STORE_CHANNEL_NAME = "zamak:store";
+const STORE_CHANNEL_NAME = "zamak:store";
 
 const storesByKey = new Map<string, { setLocal(value: unknown): void }>();
 
