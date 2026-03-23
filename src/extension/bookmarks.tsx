@@ -330,7 +330,7 @@ async function main() {
   ]);
   const extPort = connectExtPort();
   videoIndexStore.onSet = (key, value) => {
-    bgRpc.storeUpdated({ from: "ext", key, value });
+    bgRpc.storeUpdated({ key, value });
   };
   extPort.onMessage.addListener(
     (msg: { method: string; params: { key: string; value: unknown } }) => {

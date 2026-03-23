@@ -29,7 +29,7 @@ async function main() {
 
   // Cross-origin store sync: send local changes to BG for routing to ext pages
   videoIndexStore.onSet = (key, value) => {
-    bgRpc.storeUpdated({ from: "content", key, value });
+    bgRpc.storeUpdated({ key, value });
   };
 
   // Register with background so it can find this tab for reverse RPC

@@ -14,22 +14,15 @@ const contentTabs = createContentPortTracker();
 export const extPages = createExtPortTracker();
 const toRpc = createContentRpc<typeof tabRpcHandlers>;
 
-export type StoreUpdateParams = { key: string; value: unknown };
-
 export const bgRpcHandlers = {
-  async storeUpdated({
-    from,
-    key,
-    value,
-  }: StoreUpdateParams & { from: "content" | "ext" }) {
-    if (from === "content") {
-      extPages.broadcast({ method: "storeUpdated", params: { key, value } });
-    } else {
-      const tabId = contentTabs.findTabOrUndefined();
-      if (tabId !== undefined) {
-        await toRpc(tabId).storeUpdated({ key, value });
-      }
+  async storeUpdated({ key, value }: { key: string; value: unknown }) {
+    // Broadcast to all connected contexts. The sender's origin already
+    // has the data via BroadcastChannel — the redundant delivery is harmless.
+    const tabId = contentTabs.findTabOrUndefined();
+    if (tabId !== undefined) {
+      await toRpc(tabId).storeUpdated({ key, value });
     }
+    extPages.broadcast({ method: "storeUpdated", params: { key, value } });
   },
 
   async getSyncState({ youtubeId }: { youtubeId: string }) {
