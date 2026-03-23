@@ -291,6 +291,7 @@ export class CaptionSessionManager {
   }
 
   async persistSession(): Promise<void> {
+    this.syncVideoIndex();
     const session: PersistedCaptionSession = {
       youtubeId: this.videoMeta.youtubeId,
       title: this.videoMeta.title,
@@ -306,7 +307,6 @@ export class CaptionSessionManager {
       bookmarks: this.bookmarks,
     };
     await saveSession(session);
-    this.syncVideoIndex();
   }
 
   syncVideoIndex(): void {
