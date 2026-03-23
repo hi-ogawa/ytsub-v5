@@ -330,13 +330,13 @@ async function main() {
   ]);
   const extPort = connectExtPort();
   videoIndexStore.onSet = (key, value) => {
-    chrome.runtime.sendMessage({ type: "zamak-store-update", key, value });
+    bgRpc.storeUpdated({ from: "ext", key, value });
   };
   extPort.onMessage.addListener(
-    (msg: { type: string; key: string; value: unknown }) => {
-      if (msg?.type !== "zamak-store-update") return;
-      const store = storesByKey.get(msg.key);
-      store?.setBroadcast(msg.value);
+    (msg: { method: string; params: { key: string; value: unknown } }) => {
+      if (msg?.method === "storeUpdated") {
+        storesByKey.get(msg.params.key)?.setBroadcast(msg.params.value);
+      }
     },
   );
 

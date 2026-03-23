@@ -26,6 +26,11 @@ import {
 
 const bgRpc = createRuntimeRelayRpc<typeof bgRpcHandlers>();
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const storesByKey = new Map<string, { setBroadcast(value: any): void }>([
+  [videoIndexStore.key, videoIndexStore],
+]);
+
 // Handlers for reverse (tab) RPC — background can request IDB access
 // on the youtube.com origin through this content script.
 export const tabRpcHandlers = {
@@ -34,6 +39,9 @@ export const tabRpcHandlers = {
   },
   async saveSession({ session }: { session: PersistedCaptionSession }) {
     await saveSession(session);
+  },
+  async storeUpdated({ key, value }: { key: string; value: unknown }) {
+    storesByKey.get(key)?.setBroadcast(value);
   },
 };
 registerTabRpcHandlers(tabRpcHandlers);

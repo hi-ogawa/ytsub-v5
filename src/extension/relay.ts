@@ -2,14 +2,16 @@
 // and background worker, plus store sync (localStorage ↔ chrome.storage).
 
 import { type VideoIndexEntry, videoIndexStore } from "../lib/video-index.ts";
+import type { bgRpcHandlers } from "./background.ts";
 import { chromeStorage } from "./lib/chrome-storage.ts";
 import { connectContentPort } from "./lib/content-ports.ts";
-import { setupRpcRelay, setupTabRpcRelay } from "./lib/extension-rpc.ts";
+import {
+  createRuntimeRpc,
+  setupRpcRelay,
+  setupTabRpcRelay,
+} from "./lib/extension-rpc.ts";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const storesByKey = new Map<string, { setBroadcast(value: any): void }>([
-  [videoIndexStore.key, videoIndexStore],
-]);
+const bgRpc = createRuntimeRpc<typeof bgRpcHandlers>();
 
 async function main() {
   // Boot hydration: chrome.storage → store (writes to shared localStorage
@@ -25,15 +27,10 @@ async function main() {
     chromeStorage.set({ [videoIndexStore.key]: videoIndexStore.get() });
   });
 
-  // Cross-origin store sync: send local changes to BG, receive from ext pages via BG
+  // Cross-origin store sync: send local changes to BG for routing to ext pages
   videoIndexStore.onSet = (key, value) => {
-    chrome.runtime.sendMessage({ type: "zamak-store-update", key, value });
+    bgRpc.storeUpdated({ from: "content", key, value });
   };
-  chrome.runtime.onMessage.addListener((msg) => {
-    if (msg?.type !== "zamak-store-update") return;
-    const store = storesByKey.get(msg.key);
-    store?.setBroadcast(msg.value);
-  });
 
   // Register with background so it can find this tab for reverse RPC
   connectContentPort();
