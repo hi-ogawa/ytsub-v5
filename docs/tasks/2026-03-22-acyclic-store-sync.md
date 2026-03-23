@@ -254,9 +254,9 @@ Both approaches need this. Options:
 
 Start with approach A (manual RPC wiring). Only `videoIndexStore` needs cross-origin sync — the other `createLocalStorageStore` users (`autoScrollStore`, `fabOpenStore` in `caption-panel.tsx`) are UI-only and don't need it. Refactor to approach B when adding a second cross-origin synced store.
 
-## Decision: BG → Ext via `runtime.sendMessage`
+## Decision: BG → Ext via long-lived ports
 
-Use `chrome.runtime.sendMessage` from BG (not long-lived ports). Broadcast semantics are exactly what we want for ext pages, and it avoids port tracking complexity. Use a distinct message type (e.g. `"zamak-store-update"`) so the existing `"zamak-rpc"` handler in `registerRpcHandlers` ignores it.
+Use `chrome.runtime.connect` (long-lived ports) — ext page connects on load, BG tracks port. This mirrors the content tab pattern (`content-ports.ts`) and gives BG a uniform view of all connected contexts (content tabs + ext pages). This is the foundation for the hub/router pattern — BG needs to know its spokes to fan out messages selectively.
 
 ## `set()` wiring: callback, not store-internal bgRpc
 
@@ -274,9 +274,9 @@ Files: `src/lib/external-store.ts`
 
 ### 2. BG → Ext store update message
 
-Add a `"zamak-store-update"` message type. BG sends via `chrome.runtime.sendMessage`. Ext page listens via `chrome.runtime.onMessage`.
+Add ext page port tracking in BG, mirroring `content-ports.ts`. Ext page connects on load. BG sends store updates on the port.
 
-Files: `src/extension/background.ts`, `src/extension/bookmarks.tsx`
+Files: `src/extension/lib/content-ports.ts` (or new `ext-ports.ts`), `src/extension/background.ts`, `src/extension/bookmarks.tsx`
 
 ### 3. `storeUpdated` RPC handler + cross-origin wiring
 
@@ -303,7 +303,7 @@ Files: `src/extension/background.ts`, `src/extension/relay.ts`, `src/extension/b
 ### Remaining
 
 - [ ] `setBroadcast()` method on `LocalStorageStore` + `onSet` callback
-- [ ] BG → Ext store update message (`"zamak-store-update"` via `runtime.sendMessage`)
+- [ ] BG → Ext port tracking (mirrors content-ports pattern)
 - [ ] `storeUpdated` RPC handler in BG (routes content↔ext)
 - [ ] Wire `onSet` in relay and bookmarks to send `storeUpdated` to BG
 - [ ] Receiving-side handlers call `setBroadcast()`
