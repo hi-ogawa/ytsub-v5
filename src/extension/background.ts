@@ -15,15 +15,27 @@ export const extPages = createExtPortTracker();
 const toRpc = createContentRpc<typeof tabRpcHandlers>;
 
 export const bgRpcHandlers = {
-  async storeUpdated({ key, value }: { key: string; value: unknown }) {
-    // Send to one tab per origin — BC propagates within each origin.
-    const tabId = contentTabs.findTabOrUndefined();
-    if (tabId !== undefined) {
-      await toRpc(tabId).storeUpdated({ key, value });
+  async storeUpdated({
+    from,
+    key,
+    value,
+  }: {
+    from: "content" | "ext";
+    key: string;
+    value: unknown;
+  }) {
+    // Route to opposite side only — sender's origin already has the
+    // data via BroadcastChannel. BC propagates within each origin.
+    if (from === "content") {
+      extPages
+        .findPort()
+        ?.postMessage({ method: "storeUpdated", params: { key, value } });
+    } else {
+      const tabId = contentTabs.findTabOrUndefined();
+      if (tabId !== undefined) {
+        await toRpc(tabId).storeUpdated({ key, value });
+      }
     }
-    extPages
-      .findPort()
-      ?.postMessage({ method: "storeUpdated", params: { key, value } });
   },
 
   async getSyncState({ youtubeId }: { youtubeId: string }) {
