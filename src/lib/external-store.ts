@@ -59,7 +59,9 @@ export function createLocalStorageStore<T>(
 
   channel.addEventListener("message", (e) => {
     if (e.data.key === key) {
-      store.setLocal(e.data.value);
+      // Sender already wrote to localStorage (shared within same origin).
+      // Only update in-memory state + notify subscribers.
+      inner.set(e.data.value);
     }
   });
 
