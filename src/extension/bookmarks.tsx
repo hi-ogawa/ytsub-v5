@@ -45,6 +45,7 @@ import {
 import { orpc, setRpcConfig } from "../rpc.ts";
 import type { bgRpcHandlers } from "./background.ts";
 import { chromeStorage } from "./lib/chrome-storage.ts";
+import { connectExtPort } from "./lib/ext-ports.ts";
 import { createRuntimeRpc } from "./lib/extension-rpc.ts";
 import { getServerUrl } from "./lib/server-url.ts";
 import "../styles.css";
@@ -321,6 +322,9 @@ async function main() {
       return fetch(request);
     },
   });
+
+  // Register with background for cross-origin store sync
+  connectExtPort();
 
   // Two-way bridge: chrome.storage.local <-> localStorage for video-index.
   // Hydrate localStorage from chrome.storage.local before rendering, then keep

@@ -6,10 +6,12 @@ import { orpc, setRpcConfig } from "../rpc.ts";
 import type { tabRpcHandlers } from "./content.tsx";
 import { chromeStorage } from "./lib/chrome-storage.ts";
 import { createContentPortTracker } from "./lib/content-ports.ts";
+import { createExtPortTracker } from "./lib/ext-ports.ts";
 import { createContentRpc, registerRpcHandlers } from "./lib/extension-rpc.ts";
 import { getServerUrl } from "./lib/server-url.ts";
 
 const contentTabs = createContentPortTracker();
+export const extPages = createExtPortTracker();
 const toRpc = createContentRpc<typeof tabRpcHandlers>;
 
 export const bgRpcHandlers = {
