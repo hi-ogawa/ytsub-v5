@@ -17,11 +17,10 @@ export function createExtPortTracker() {
   });
 
   return {
-    /** Send a message to all connected extension pages. */
-    broadcast(message: unknown) {
-      for (const port of ports) {
-        port.postMessage(message);
-      }
+    /** Find one connected extension page port. BC propagates to the rest. */
+    findPort(): chrome.runtime.Port | undefined {
+      for (const port of ports) return port;
+      return undefined;
     },
   };
 }
