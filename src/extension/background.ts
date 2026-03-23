@@ -71,6 +71,27 @@ async function main() {
 
   registerRpcHandlers(bgRpcHandlers);
 
+  // Cross-origin store sync: route updates between content tabs and ext pages.
+  chrome.runtime.onMessage.addListener((msg, sender) => {
+    if (msg?.type !== "zamak-store-update") return;
+    const { key, value } = msg;
+    const isFromContentTab = sender.tab?.id !== undefined;
+    if (isFromContentTab) {
+      // Content → ext pages
+      extPages.broadcast({ type: "zamak-store-update", key, value });
+    } else {
+      // Ext page → content tab
+      const tabId = contentTabs.findTabOrUndefined();
+      if (tabId !== undefined) {
+        chrome.tabs.sendMessage(tabId, {
+          type: "zamak-store-update",
+          key,
+          value,
+        });
+      }
+    }
+  });
+
   // Open bookmarks page in a new tab when extension icon is clicked.
   chrome.action.onClicked.addListener(() => {
     chrome.tabs.create({ url: "bookmarks.html" });

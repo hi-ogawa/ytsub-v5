@@ -24,6 +24,12 @@ export function createContentPortTracker() {
       }
       throw new Error("No YouTube tab open");
     },
+    findTabOrUndefined(): number | undefined {
+      for (const tabId of tabIds) {
+        return tabId;
+      }
+      return undefined;
+    },
   };
 }
 

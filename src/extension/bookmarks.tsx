@@ -323,8 +323,22 @@ async function main() {
     },
   });
 
-  // Register with background for cross-origin store sync
-  connectExtPort();
+  // Cross-origin store sync via BG hub
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const storesByKey = new Map<string, { setBroadcast(value: any): void }>([
+    [videoIndexStore.key, videoIndexStore],
+  ]);
+  const extPort = connectExtPort();
+  videoIndexStore.onSet = (key, value) => {
+    chrome.runtime.sendMessage({ type: "zamak-store-update", key, value });
+  };
+  extPort.onMessage.addListener(
+    (msg: { type: string; key: string; value: unknown }) => {
+      if (msg?.type !== "zamak-store-update") return;
+      const store = storesByKey.get(msg.key);
+      store?.setBroadcast(msg.value);
+    },
+  );
 
   // Two-way bridge: chrome.storage.local <-> localStorage for video-index.
   // Hydrate localStorage from chrome.storage.local before rendering, then keep

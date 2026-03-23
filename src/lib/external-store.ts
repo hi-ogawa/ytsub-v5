@@ -39,6 +39,8 @@ interface LocalStorageStore<T> extends ExternalStore<T> {
   setLocal(value: SetAction<T>): void;
   /** setLocal + same-origin BroadcastChannel (no cross-origin). */
   setBroadcast(value: SetAction<T>): void;
+  /** Called by set() after same-origin broadcast. Wire to cross-origin transport. */
+  onSet?: (key: string, value: T) => void;
 }
 
 const STORE_CHANNEL_NAME = "zamak:store";
@@ -46,7 +48,6 @@ const STORE_CHANNEL_NAME = "zamak:store";
 export function createLocalStorageStore<T>(
   key: string,
   defaultValue: T,
-  options?: { onSet?: (key: string, value: T) => void },
 ): LocalStorageStore<T> {
   function readFromStorage(): T {
     try {
@@ -73,7 +74,7 @@ export function createLocalStorageStore<T>(
     key,
     set(value) {
       store.setBroadcast(value);
-      options?.onSet?.(key, inner.get());
+      store.onSet?.(key, inner.get());
     },
     setBroadcast(value) {
       store.setLocal(value);
