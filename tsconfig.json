@@ -2,20 +2,16 @@
   "include": ["src", "e2e", "scripts", "*.ts"],
   "compilerOptions": {
     "verbatimModuleSyntax": true,
-    "target": "esnext",
     "lib": ["DOM", "DOM.Iterable", "ESNext"],
-    "module": "ESNext",
     "skipLibCheck": true,
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
     "moduleDetection": "force",
     "noEmit": true,
     "jsx": "react-jsx",
-    "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
-    "noUncheckedSideEffectImports": true,
     "types": ["vite/client", "@cloudflare/workers-types", "@types/chrome"]
   }
 }
