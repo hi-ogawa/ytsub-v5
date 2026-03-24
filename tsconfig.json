@@ -2,7 +2,7 @@
   "include": ["src", "e2e", "scripts", "*.ts"],
   "compilerOptions": {
     "verbatimModuleSyntax": true,
-    "lib": ["DOM", "DOM.Iterable", "ESNext"],
+    "lib": ["DOM", "ESNext"],
     "skipLibCheck": true,
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
