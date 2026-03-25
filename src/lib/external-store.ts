@@ -37,6 +37,10 @@ interface LocalStorageStore<T> extends ExternalStore<T> {
   key: string;
   /** Update in-memory state + localStorage without broadcasting. */
   setLocal(value: SetAction<T>): void;
+  /** setLocal + same-origin BroadcastChannel (no cross-origin). */
+  setBroadcast(value: SetAction<T>): void;
+  /** Called by set() after same-origin broadcast. Wire to cross-origin transport. */
+  onSet?: (key: string, value: T) => void;
 }
 
 const STORE_CHANNEL_NAME = "zamak:store";
@@ -69,6 +73,10 @@ export function createLocalStorageStore<T>(
     ...inner,
     key,
     set(value) {
+      store.setBroadcast(value);
+      store.onSet?.(key, inner.get());
+    },
+    setBroadcast(value) {
       store.setLocal(value);
       channel.postMessage({ key, value: inner.get() });
     },

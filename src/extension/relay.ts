@@ -2,9 +2,16 @@
 // and background worker, plus store sync (localStorage ↔ chrome.storage).
 
 import { type VideoIndexEntry, videoIndexStore } from "../lib/video-index.ts";
+import type { bgRpcHandlers } from "./background.ts";
 import { chromeStorage } from "./lib/chrome-storage.ts";
 import { connectContentPort } from "./lib/content-ports.ts";
-import { setupRpcRelay, setupTabRpcRelay } from "./lib/extension-rpc.ts";
+import {
+  createRuntimeRpc,
+  setupRpcRelay,
+  setupTabRpcRelay,
+} from "./lib/extension-rpc.ts";
+
+const bgRpc = createRuntimeRpc<typeof bgRpcHandlers>();
 
 async function main() {
   // Boot hydration: chrome.storage → store (writes to shared localStorage
@@ -19,6 +26,11 @@ async function main() {
   videoIndexStore.subscribe(() => {
     chromeStorage.set({ [videoIndexStore.key]: videoIndexStore.get() });
   });
+
+  // Cross-origin store sync: send local changes to BG for routing to ext pages
+  videoIndexStore.onSet = (key, value) => {
+    bgRpc.storeUpdated({ from: "content", key, value });
+  };
 
   // Register with background so it can find this tab for reverse RPC
   connectContentPort();

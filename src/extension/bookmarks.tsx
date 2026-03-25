@@ -45,6 +45,7 @@ import {
 import { orpc, setRpcConfig } from "../rpc.ts";
 import type { bgRpcHandlers } from "./background.ts";
 import { chromeStorage } from "./lib/chrome-storage.ts";
+import { connectExtPort } from "./lib/ext-ports.ts";
 import { createRuntimeRpc } from "./lib/extension-rpc.ts";
 import { getServerUrl } from "./lib/server-url.ts";
 import "../styles.css";
@@ -321,6 +322,23 @@ async function main() {
       return fetch(request);
     },
   });
+
+  // Cross-origin store sync via BG hub
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const storesByKey = new Map<string, { setBroadcast(value: any): void }>([
+    [videoIndexStore.key, videoIndexStore],
+  ]);
+  const extPort = connectExtPort();
+  videoIndexStore.onSet = (key, value) => {
+    bgRpc.storeUpdated({ from: "ext", key, value });
+  };
+  extPort.onMessage.addListener(
+    (msg: { method: string; params: { key: string; value: unknown } }) => {
+      if (msg?.method === "storeUpdated") {
+        storesByKey.get(msg.params.key)?.setBroadcast(msg.params.value);
+      }
+    },
+  );
 
   // Two-way bridge: chrome.storage.local <-> localStorage for video-index.
   // Hydrate localStorage from chrome.storage.local before rendering, then keep

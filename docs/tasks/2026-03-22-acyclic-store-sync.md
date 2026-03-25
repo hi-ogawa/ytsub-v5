@@ -250,33 +250,60 @@ Both approaches need this. Options:
 - `chrome.runtime.connect` (long-lived port) — ext page connects on load, BG tracks port
 - `chrome.runtime.sendMessage` from BG — reaches all extension pages (broadcast semantics, which is what we want)
 
+## Decision: Approach A
+
+Start with approach A (manual RPC wiring). Only `videoIndexStore` needs cross-origin sync — the other `createLocalStorageStore` users (`autoScrollStore`, `fabOpenStore` in `caption-panel.tsx`) are UI-only and don't need it. Refactor to approach B when adding a second cross-origin synced store.
+
+## Decision: BG → Ext via long-lived ports
+
+Use `chrome.runtime.connect` (long-lived ports) — ext page connects on load, BG tracks port. This mirrors the content tab pattern (`content-ports.ts`) and gives BG a uniform view of all connected contexts (content tabs + ext pages). This is the foundation for the hub/router pattern — BG needs to know its spokes to fan out messages selectively.
+
+## `set()` wiring: callback, not store-internal bgRpc
+
+The store shouldn't know about extension RPC. Add an optional `onSet?: (key: string, value: T) => void` callback to `createLocalStorageStore`. The extension layer hooks it to send the cross-origin RPC; the web app doesn't set it. This keeps the store transport-agnostic.
+
+Call sites in `video-index.ts` (`updateVideoIndex`, `removeFromVideoIndex`, `setSyncedAt`) already call `videoIndexStore.set()` — no changes needed there.
+
 ## Implementation plan
 
-### 1. BG → Ext RPC path
+### 1. `setBroadcast()` on `LocalStorageStore`
 
-Add ext page port tracking + message delivery, mirroring the content tab RPC pattern.
+Rename current `set()` → `setBroadcast()` (setLocal + BC post). Add optional `onSet` callback param to `createLocalStorageStore`. New `set()` = `setBroadcast()` + `onSet(key, value)`.
 
-### 2. Store sync (approach A or B)
+Files: `src/lib/external-store.ts`
 
-Start with approach A (manual RPC wiring) if we want incremental progress. Refactor to approach B (ExtBroadcastChannel) when adding a second synced store.
+### 2. BG → Ext store update message
 
-### 3. Clean up
+Add ext page port tracking in BG, mirroring `content-ports.ts`. Ext page connects on load. BG sends store updates on the port.
 
-- Remove `versioned-chrome-storage.ts` (PR #156)
-- Remove any `chrome.storage.onChanged` listeners
+Files: `src/extension/lib/content-ports.ts` (or new `ext-ports.ts`), `src/extension/background.ts`, `src/extension/bookmarks.tsx`
+
+### 3. `storeUpdated` RPC handler + cross-origin wiring
+
+- Content → BG: add `storeUpdated` to `bgRpcHandlers`. BG forwards via `runtime.sendMessage` to ext pages.
+- Ext → BG: ext page sends `storeUpdated` via existing `createRuntimeRpc`. BG forwards via `tabs.sendMessage` to a content tab.
+- Receiving side calls `setBroadcast()` (same-origin propagation only, no cycle).
+
+Wire `onSet` callback in relay (`relay.ts`) and bookmarks (`bookmarks.tsx`) to send `storeUpdated` to BG.
+
+Files: `src/extension/background.ts`, `src/extension/relay.ts`, `src/extension/bookmarks.tsx`, `src/extension/lib/extension-rpc.ts` (if new message type needed)
+
+### 4. Verify no cycles
+
+`set()` → BG → opposite side → `setBroadcast()` → same-origin BC only → receivers call `setLocal()` → stops. No path loops back to `set()`.
 
 ## Status
 
 ### Done (PR #154)
 
 - [x] BroadcastChannel-based same-origin sync
-- [x] Boot hydration from chrome.storage
-- [x] Subscribe-based chrome.storage persistence
+- [x] Boot hydration from chrome.storage (both relay and ext page)
+- [x] Subscribe-based chrome.storage persistence (both relay and ext page)
 
 ### Remaining
 
-- [ ] BG → Ext RPC path (infra gap)
-- [ ] `setBroadcast()` method on `LocalStorageStore` (setLocal + BC)
-- [ ] Cross-origin notification in `set()` (approach A: bgRpc, approach B: ExtBC)
-- [ ] `storeUpdated` RPC handlers (call `setBroadcast`)
-- [ ] Remove versioned-chrome-storage.ts
+- [ ] `setBroadcast()` method on `LocalStorageStore` + `onSet` callback
+- [ ] BG → Ext port tracking (mirrors content-ports pattern)
+- [ ] `storeUpdated` RPC handler in BG (routes content↔ext)
+- [ ] Wire `onSet` in relay and bookmarks to send `storeUpdated` to BG
+- [ ] Receiving-side handlers call `setBroadcast()`
