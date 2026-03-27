@@ -1037,7 +1037,7 @@ function ExtensionBookmarksList({
 
   return (
     <div ref={scrollRef} className="flex flex-col gap-1.5 p-1.5">
-      {bookmarks.map((bm) => {
+      {bookmarks.map((bm, bmIndex) => {
         const caption = rows[bm.captionIndex];
         return (
           <div
@@ -1051,6 +1051,9 @@ function ExtensionBookmarksList({
             }}
           >
             <div className="flex items-start gap-1">
+              <span className="shrink-0 text-xs text-muted-foreground">
+                #{bmIndex + 1}
+              </span>
               <div className="flex-1 text-sm font-medium">{bm.text}</div>
               <span className="shrink-0 text-xs text-muted-foreground">
                 {formatTimestamp(bm.timestamp)}
