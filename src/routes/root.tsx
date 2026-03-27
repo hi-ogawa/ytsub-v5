@@ -14,6 +14,7 @@ import {
   useLoaderData,
   useRouteLoaderData,
 } from "react-router";
+import { toast } from "sonner";
 import { ImportDialog } from "../components/import-dialog.tsx";
 import { LoginDialog } from "../components/login-dialog.tsx";
 import {
@@ -26,13 +27,12 @@ import { useTheme } from "../lib/theme.ts";
 import { orpc } from "../rpc.ts";
 
 export async function authLoader() {
-  const res = await fetch("/api/auth/check", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ json: {} }),
-  });
-  const data = (await res.json()) as { json: { authenticated: boolean } };
-  return { authenticated: data.json.authenticated };
+  try {
+    return await orpc.auth.check.call({});
+  } catch {
+    toast.error("Connection error — please check your network");
+    return { authenticated: false };
+  }
 }
 
 export function RootLayout() {

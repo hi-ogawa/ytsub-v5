@@ -544,6 +544,7 @@ function CaptionPanelLoading({
     enabled: !!track1 && !!track2,
     gcTime: 0,
     staleTime: Infinity,
+    meta: { toastOnError: false },
   });
 
   useEffect(() => {

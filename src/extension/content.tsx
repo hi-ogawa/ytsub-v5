@@ -200,6 +200,7 @@ function addStyle(shadow: ShadowRoot, css: string) {
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
+      retry: false,
       refetchOnWindowFocus: false,
     },
   },
