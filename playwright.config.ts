@@ -42,6 +42,7 @@ export default defineConfig({
     baseURL: `http://localhost:${port}`,
     actionTimeout: 2000,
     ...devices["Desktop Chrome"],
+    channel: "chromium",
   },
   forbidOnly: !!process.env.CI,
   reporter: [
