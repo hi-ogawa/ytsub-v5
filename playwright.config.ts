@@ -1,34 +1,23 @@
 import net from "node:net";
 import { defineConfig, devices } from "@playwright/test";
 
-function getFreePort(preferred: number): Promise<number> {
-  return new Promise((resolve) => {
-    const server = net.createServer();
-    server.once("error", () => {
-      // preferred port in use, let OS pick a free one
-      const fallback = net.createServer();
-      fallback.listen(0, () => {
-        const port = (fallback.address() as net.AddressInfo).port;
-        fallback.close(() => resolve(port));
-      });
-    });
-    server.listen(preferred, () => {
-      server.close(() => resolve(preferred));
-    });
-  });
-}
-
-// Main process resolves port and passes it to workers via env var
+// Resolve the port once and share it with Playwright workers. Concurrent runs
+// from other worktrees must not share a preferred port, or one suite can test
+// the other's server.
 const port = process.env.E2E_PORT
   ? Number(process.env.E2E_PORT)
-  : await getFreePort(5190);
+  : await getFreePort();
 process.env.E2E_PORT = String(port);
+
+const traceEnabled =
+  process.env.E2E_TRACE === "1" ||
+  (!process.env.CI && process.env.E2E_TRACE !== "0");
 
 export default defineConfig({
   workers: 1,
   globalSetup: "./e2e/global-setup.ts",
   webServer: {
-    command: `pnpm dev --port ${port}`,
+    command: `pnpm dev --port ${port} --strictPort`,
     url: `http://localhost:${port}`,
     reuseExistingServer: false,
     env: {
@@ -41,6 +30,7 @@ export default defineConfig({
   use: {
     baseURL: `http://localhost:${port}`,
     actionTimeout: 2000,
+    trace: traceEnabled ? { mode: "on", screenshots: false } : "off",
     ...devices["Desktop Chrome"],
     channel: "chromium",
   },
@@ -48,6 +38,7 @@ export default defineConfig({
   reporter: [
     ["list"],
     ["json", { outputFile: "test-results/report.json" }],
+    ["@hiogawa/playwright-trace-pack/reporter"],
     ...(process.env.CI ? [["github"] as const] : []),
   ],
   projects: [
@@ -62,3 +53,20 @@ export default defineConfig({
     },
   ],
 });
+
+function getFreePort(): Promise<number> {
+  return new Promise((resolve, reject) => {
+    const server = net.createServer();
+    server.once("error", reject);
+    server.listen(0, () => {
+      const port = (server.address() as net.AddressInfo).port;
+      server.close((error) => {
+        if (error) {
+          reject(error);
+        } else {
+          resolve(port);
+        }
+      });
+    });
+  });
+}
