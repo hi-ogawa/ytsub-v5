@@ -1,58 +1,25 @@
----
-name: ytsub
-description: >-
-  Given a YouTube URL, produce clean bilingual captions (ko/en) and curated
-  vocab bookmarks as import.json.
----
+# Generate import.json From a YouTube Video
 
-# ytsub skill
-
-Given a YouTube URL, produce clean bilingual captions (ko/en) and curated vocab bookmarks as `import.json`. The user imports via the app's upload UI.
-
-## Target artifacts
-
-Each step produces a file in `data/<id>/` for user review before proceeding.
+This guide builds an `import.json` for a video from its YouTube subtitles, with clean bilingual captions (ko/en) and curated vocab bookmarks. It works without the extension, so use it for seed fixtures or for a one-off import through the app's upload dialog.
 
 | File             | Quality bar                                                           |
 | ---------------- | --------------------------------------------------------------------- |
 | `video.json`     | Correct metadata (title, channel, duration)                           |
 | `captions.json`  | Clean, well-segmented text1/text2 pairs where translations correspond |
-| `bookmarks.json` | 10-20 notable vocab items with correct offsets                        |
+| `bookmarks.json` | Notable vocab items with correct offsets                              |
 | `import.json`    | Valid payload assembled from above                                    |
 
-## File structure
+Work in a scratch directory outside the repo, and run the scripts by their path in the repo (`<repo>` below).
 
-```
-./
-├── SKILL.md              # this file
-├── scripts/
-│   ├── parse-json3.ts         # json3 → caption cues JSON
-│   ├── check-alignment.ts    # check 1:1 cue alignment, merge if aligned
-│   └── validate-bookmarks.ts  # auto-correct bookmark offsets
-└── data/
-    └── <id>/             # per-video working directory
-        ├── video.json        # metadata
-        ├── ko.json3          # raw Korean subs
-        ├── en.json3          # raw English subs
-        ├── ko.json           # parsed Korean cues
-        ├── en.json           # parsed English cues
-        ├── captions.json     # merged bilingual captions
-        ├── bookmarks.json    # curated vocab
-        └── import.json       # assembled payload
-```
+## Fetch and Assess
 
----
-
-## Step 1: Fetch & assess
-
-### Download metadata
+### Download Metadata
 
 ```bash
-mkdir -p ./data/<id> && cd ./data/<id>
 yt-dlp --print '{"youtubeId":"%(id)s","title":"%(title)s","channelName":"%(channel)s","channelId":"%(channel_id)s","duration":%(duration)s,"language1":"ko","language2":"en"}' --skip-download "<URL>" > video.json
 ```
 
-### List available subtitle tracks
+### List Available Subtitle Tracks
 
 ```bash
 yt-dlp --list-subs --skip-download "<URL>" 2>&1 | grep -E "^\[info\]|^Language|^ko |^en |^en-US"
@@ -60,7 +27,7 @@ yt-dlp --list-subs --skip-download "<URL>" 2>&1 | grep -E "^\[info\]|^Language|^
 
 The full output is ~1000 lines (hundreds of auto-translated languages). The grep filter shows section headers and ko/en rows. Check which section each row falls under: `Available subtitles` (manual) vs `Available automatic captions` (auto-generated). Adjust the grep pattern if targeting other languages (e.g. `^ja|^zh`).
 
-### Download subtitles
+### Download Subtitles
 
 Prefer manual subs over auto-generated. Use json3 format.
 
@@ -79,11 +46,11 @@ mv <id>.ko.json3 ko.json3
 ### Parse to JSON
 
 ```bash
-npx tsx ../../scripts/parse-json3.ts ko.json3 ko > ko.json
-npx tsx ../../scripts/parse-json3.ts en.json3 en > en.json
+node <repo>/scripts/import-json/parse-json3.ts ko.json3 ko > ko.json
+node <repo>/scripts/import-json/parse-json3.ts en.json3 en > en.json
 ```
 
-Output format — arrays of caption cues:
+The output is an array of caption cues:
 
 ```json
 {
@@ -95,7 +62,7 @@ Output format — arrays of caption cues:
 }
 ```
 
-### Assess source quality
+### Assess Source Quality
 
 After fetching and parsing, determine which scenario applies:
 
@@ -105,31 +72,27 @@ After fetching and parsing, determine which scenario applies:
 | B: Ko auto + En | auto      | manual    | Fix ko text using en as context, align to en timing |
 | C: Ko manual    | manual    | —         | LLM translates ko → en                              |
 | D: Ko auto only | auto      | —         | Fix ko text, then LLM translate                     |
-| E: Neither      | —         | —         | Stop, ask user                                      |
+| E: Neither      | —         | —         | Stop                                                |
 
-**Inform the user** which scenario was detected and which subs are manual vs auto-generated before proceeding. If auto-generated quality looks unsalvageable (common with song lyrics), flag this — the user may want a different video.
+If auto-generated quality looks unsalvageable (common with song lyrics), flag it, because a different video may be the better choice.
 
----
-
-## Step 2: Produce captions.json
+## Produce captions.json
 
 The goal is clean, well-segmented text1/text2 pairs where translations correspond.
 
-### Try script merge first (Scenario A)
+### Try the Script Merge First (Scenario A)
 
 When both ko and en subs are manual, check if they're already 1:1 aligned:
 
 ```bash
-npx tsx ../../scripts/check-alignment.ts ko.json en.json > captions.json
+node <repo>/scripts/import-json/check-alignment.ts ko.json en.json > captions.json
 ```
 
-If this succeeds (exit 0), the cues matched within 0.5s tolerance and `captions.json` is ready. Skip the LLM merge below and proceed to Step 3.
+If this succeeds (exit 0), the cues matched within 0.5s tolerance and `captions.json` is ready, so skip to bookmarks. If it fails (count mismatch or timestamp drift), fall back to the LLM merge.
 
-If it fails (count mismatch or timestamp drift), fall back to the LLM merge.
+### Merge With an LLM (Fallback or Scenarios B/C/D)
 
-### LLM merge (fallback or Scenarios B/C/D)
-
-Use the parsed cues (`ko.json`, `en.json`) as reference material and produce `captions.json` directly. This is a **translation auditing task**:
+Use the parsed cues (`ko.json`, `en.json`) as reference material and produce `captions.json` directly. This is a translation auditing task:
 
 | Scenario        | Ko source | En source | What to do                                          |
 | --------------- | --------- | --------- | --------------------------------------------------- |
@@ -144,10 +107,10 @@ When fixing auto-generated Korean, watch for:
 
 - Misheard syllables (e.g. "두정" → "두바이 쿠키", "악몽꽃" → "악몽 꿨어")
 - Missing/wrong spacing
-- `>>` speaker markers — remove these
+- `>>` speaker markers, which should be removed
 - Truncated words at cue boundaries
 
-### Output format
+### Output Format
 
 ```json
 [
@@ -161,23 +124,21 @@ When fixing auto-generated Korean, watch for:
 ]
 ```
 
-**Review:** Check alignment — do text1/text2 pairs make sense together? Flag any misaligned rows.
+Check that the text1/text2 pairs make sense together, and fix any misaligned rows.
 
----
+## Pick Bookmarks
 
-## Step 3: Pick bookmarks
+Propose bookmark candidates (interesting vocab from the Korean captions) and save them as `bookmarks.json`.
 
-Agent proposes bookmark candidates (interesting vocab from the Korean captions). User curates the list. Save as `bookmarks.json`.
-
-### What is "notable" vocab
+### What Counts as Notable Vocab
 
 - Intermediate level or above (skip basic greetings, particles, ultra-common verbs like 하다/가다/오다)
 - Slang, colloquial expressions, internet-speak that textbooks don't teach
 - Hanja-based words where etymology aids memorization (populate the `etymology` field with hanja characters and breakdowns)
 
-Target ~1 bookmark per 10s of video duration (e.g. 3 min → ~18, 10 min → ~60). Err on the side of over-bookmarking — the user has quick deletion UI for curation.
+Target ~1 bookmark per 10s of video duration (e.g. 3 min → ~18, 10 min → ~60). Err on the side of over-bookmarking, because the app has quick deletion for curation.
 
-### Bookmark fields
+### Bookmark Fields
 
 | Field       | Description                                                                    |
 | ----------- | ------------------------------------------------------------------------------ |
@@ -190,8 +151,6 @@ Target ~1 bookmark per 10s of video duration (e.g. 3 min → ~18, 10 min → ~60
 | etymology   | Hanja/etymology (e.g. `迷路` or `非現實的; 비(non) + 현실(reality) + 적(adj)`) |
 | notes       | Optional notes                                                                 |
 | status      | "pending" or "learned"                                                         |
-
-**Output:** `bookmarks.json`:
 
 ```json
 [
@@ -209,28 +168,21 @@ Target ~1 bookmark per 10s of video duration (e.g. 3 min → ~18, 10 min → ~60
 ]
 ```
 
-### Validate offsets
+### Validate Offsets
 
-LLMs are unreliable at counting character offsets. Always run validation after producing bookmarks:
+LLMs are unreliable at counting character offsets, so always run validation after producing bookmarks:
 
 ```bash
-npx tsx ../../scripts/validate-bookmarks.ts bookmarks.json captions.json > bookmarks-fixed.json && mv bookmarks-fixed.json bookmarks.json
+node <repo>/scripts/import-json/validate-bookmarks.ts bookmarks.json captions.json > bookmarks-fixed.json && mv bookmarks-fixed.json bookmarks.json
 ```
 
 The script auto-corrects offsets via `indexOf`, fixes context mismatches, and errors on bookmarks where `text` isn't found in the caption at all.
 
-**Review:** User reviews and curates the proposed list.
-
----
-
-## Step 4: Assemble import.json
-
-Assemble the final payload from intermediate files:
+## Assemble import.json
 
 ```bash
-cd ./data/<id>
 jq -n --slurpfile c captions.json --slurpfile b bookmarks.json \
   '{video: input, captions: $c[], bookmarks: $b[]}' video.json > import.json
 ```
 
-Hand `import.json` to the user. They import via the app's upload UI.
+Import it through the app's upload dialog. For a seed fixture, put it at `scripts/db-seed-json/<id>/import.json` and run `pnpm db:seed-gen`.

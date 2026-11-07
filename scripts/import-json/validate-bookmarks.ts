@@ -1,5 +1,5 @@
 // Validate and auto-correct bookmarks.json offsets against captions.json
-// Usage: npx tsx validate-bookmarks.ts <bookmarks.json> <captions.json>
+// Usage: node scripts/import-json/validate-bookmarks.ts <bookmarks.json> <captions.json>
 //
 // For each bookmark, verifies:
 //   1. context matches the caption text at captionIdx
@@ -35,7 +35,7 @@ const captionsFile = process.argv[3];
 
 if (!bookmarksFile || !captionsFile) {
   console.error(
-    "Usage: npx tsx validate-bookmarks.ts <bookmarks.json> <captions.json>",
+    "Usage: node scripts/import-json/validate-bookmarks.ts <bookmarks.json> <captions.json>",
   );
   process.exit(1);
 }

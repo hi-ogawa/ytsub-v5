@@ -80,7 +80,7 @@ function toSql(data: ImportData): string {
 const files = process.argv.slice(2);
 if (files.length === 0) {
   console.error(
-    "Usage: node scripts/db-seed-gen.ts docs/skills/ytsub/data/*/import.json",
+    "Usage: node scripts/db-seed-gen.ts scripts/db-seed-json/*/import.json",
   );
   process.exit(1);
 }

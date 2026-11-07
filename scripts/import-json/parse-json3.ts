@@ -1,5 +1,5 @@
 // Parse yt-dlp json3 subtitle file → caption cues JSON
-// Usage: node scripts/parse-json3.ts <file.json3> [language]
+// Usage: node scripts/import-json/parse-json3.ts <file.json3> [language]
 
 import { readFileSync } from "fs";
 
@@ -52,7 +52,9 @@ const language =
   process.argv[3] ?? file?.match(/([a-zA-Z-]+)\.json3$/)?.[1] ?? "ko";
 
 if (!file) {
-  console.error("Usage: npx tsx parse-json3.ts <file.json3> [language]");
+  console.error(
+    "Usage: node scripts/import-json/parse-json3.ts <file.json3> [language]",
+  );
   process.exit(1);
 }
 
