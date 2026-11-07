@@ -64,8 +64,10 @@ The values in `.dev.vars` are dev-only defaults. Secrets override them in produc
 
 ## Initial Setup (one-time, already done)
 
-See `docs/tasks/2026-03-04-deployment.md` for the original setup steps:
+Create the production D1 database and put the returned `database_id` in `wrangler.jsonc`:
 
-- Creating the D1 database
-- Setting secrets
-- First deploy
+```sh
+pnpm wrangler d1 create zamak
+```
+
+Then set the secrets and deploy as above.
