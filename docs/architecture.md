@@ -52,6 +52,15 @@ The extension is a thin shell. Core logic (subtitle extraction, json3 parsing, c
 
 Loading or reloading a Chrome extension on every change is slow. The dev-viewer (`/dev/videos/:videoId`) renders the same caption panel using local fixture data (`/scripts/youtube-json/`), so UI iteration happens via `pnpm dev` without touching the extension.
 
+## UI surfaces
+
+The extension and the web app render the same shared pages:
+
+- **Caption panel** shows dual captions and the bookmarking overlay. The extension's content script renders it on YouTube video pages, and the web app renders it at `/videos/:id` from synced data.
+- **Bookmarks page** lists bookmarked videos. The extension opens it as `bookmarks.html` in a full browser tab, and the web app serves it at `/`.
+
+The web app requires login for these pages. The `/dev` routes render them without auth so the extension UI can be developed and e2e-tested without YouTube or the extension runtime. `/dev` mirrors the extension bookmarks page, `/dev/videos/:id` mirrors the content script with fixture data, and `/dev/fixtures` links to the available fixtures.
+
 ## AI workflow
 
 The AI integration evolved through two approaches:
