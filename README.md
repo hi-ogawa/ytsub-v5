@@ -12,6 +12,6 @@ pnpm i
 pnpm db:bootstrap
 
 # Web app: http://localhost:5173/
-# Extension: load dist/extension-dev as unpacked extension in Chrome
+# Extension: load dist/extension as unpacked extension in Chrome
 pnpm dev-full
 ```
