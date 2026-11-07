@@ -134,14 +134,11 @@ export function makeAiPrompt(
   rows: MergedCaption[],
   bookmarks: ExtensionBookmark[],
   title: string,
-  duration: number | undefined,
 ): string {
   const template = sections[task];
   if (!template) return "";
-  const target = duration ? `~${Math.round(duration / 10)}` : "5-15";
   return template
     .replace(/\{\{TITLE\}\}/g, title)
-    .replace(/\{\{TARGET\}\}/g, target)
     .replace(/\{\{CAPTIONS\}\}/g, formatCaptions(rows))
     .replace(/\{\{BOOKMARKS\}\}/g, formatBookmarks(rows, bookmarks));
 }

@@ -19,20 +19,24 @@ import type { YouTubeExtractionResult } from "../lib/youtube.ts";
 import { fetchPlayerApi, fetchTrackJson3 } from "../lib/youtube.ts";
 import type { bgRpcHandlers } from "./background.ts";
 import contentCss from "./content.css?inline";
-import { createRpc, registerTabRpcHandlers } from "./lib/extension-rpc.ts";
+import {
+  createRuntimeRelayRpc,
+  registerTabRpcHandlers,
+} from "./lib/extension-rpc.ts";
 
-const bgRpc = createRpc<typeof bgRpcHandlers>();
+const bgRpc = createRuntimeRelayRpc<typeof bgRpcHandlers>();
 
-// Register handlers for reverse (tab) RPC — background can request IDB access
+// Handlers for reverse (tab) RPC — background can request IDB access
 // on the youtube.com origin through this content script.
-registerTabRpcHandlers({
+export const tabRpcHandlers = {
   async getSession({ youtubeId }: { youtubeId: string }) {
     return await getSession(youtubeId);
   },
   async saveSession({ session }: { session: PersistedCaptionSession }) {
     await saveSession(session);
   },
-});
+};
+registerTabRpcHandlers(tabRpcHandlers);
 
 declare const __BUILD_TIME__: string;
 declare const __GIT_REV__: string;

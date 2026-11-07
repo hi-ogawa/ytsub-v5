@@ -94,8 +94,7 @@ test("bookmarks page: load, login, logout", async ({ page, extensionId }) => {
   await expect(page.locator("text=Zamak")).toBeVisible();
   await expect(page.getByText("No bookmarked videos yet")).toBeVisible();
 
-  // Open login dialog via menu — invalid login shows error
-  await page.getByTestId("header-menu").click();
+  // Open login dialog — invalid login shows error
   await page.getByTestId("sign-in").click();
   await expect(page.getByTestId("login-dialog")).toBeVisible();
   await page.getByPlaceholder("Username").fill("nobody");
@@ -113,10 +112,32 @@ test("bookmarks page: load, login, logout", async ({ page, extensionId }) => {
   // Logout via menu
   await page.getByTestId("header-menu").click();
   await page.getByTestId("sign-out").click();
-  await expect(async () => {
-    await page.getByTestId("header-menu").click();
-    await expect(page.getByTestId("sign-in")).toBeVisible();
-  }).toPass({ timeout: 10000 });
+  await expect(page.getByTestId("sign-in")).toBeVisible({ timeout: 10000 });
+});
+
+test("bookmarks page: delete removes video from list", async ({
+  context,
+  page,
+  extensionId,
+}) => {
+  await seedChromeStorage(context, { "zamak:video-index": fixtureEntries });
+  await gotoBookmarks(page, extensionId);
+
+  // Both entries visible
+  await expect(page.getByText("Test Video One")).toBeVisible();
+  await expect(page.getByText("Test Video Two")).toBeVisible();
+
+  // Open card menu and click delete on first video
+  const card = page.getByTestId("video-card-abc123");
+  await card.getByTestId("video-card-menu").click();
+
+  // Accept the confirmation dialog
+  page.on("dialog", (dialog) => dialog.accept());
+  await page.getByText("Delete").click();
+
+  // First video removed, second still visible
+  await expect(page.getByText("Test Video One")).not.toBeVisible();
+  await expect(page.getByText("Test Video Two")).toBeVisible();
 });
 
 test("bookmarks page: sync badges show correct states per entry", async ({

@@ -2,25 +2,29 @@
 
 # Task: Pick Korean vocabulary & fill metadata
 
-You are helping me learn Korean from a YouTube video. Scan the captions below and pick {{TARGET}} interesting vocabulary words worth learning.
+You are helping me learn Korean from a YouTube video. Scan the captions below and pick interesting vocabulary words worth learning.
 
 ## What to pick
 
-- Intermediate+ level (skip basic words like 하다/가다/오다, particles, greetings)
-- Slang, colloquial, internet-speak
-- Hanja-based words where etymology aids memorization
-- Context-dependent meanings
+- Words a Korean learner is unlikely to already know (from upper intermediate to TOPIK2 class vocabulary)
+- Prefer single words over phrases — pick the word itself, not the surrounding expression
+- Skip: beginner vocabulary, basic/common words (하다, 가다, 있다, particles, greetings), transparent English loanwords (포인트, 스타일)
+- Aim for 5-10 picks per ~150 captions. Prefer fewer quality picks over padding.
 
-## Output format (CRITICAL)
+## Splitting
 
-Your ENTIRE response must be a single JSON code block. No prose, no tables, no explanations outside the JSON. The output is machine-parsed — anything outside the code fence will cause an error.
+If there are more than 150 captions, process ~150 at a time. After each batch, output your picks as a JSON code block, state where you stopped, and ask the user to say "continue".
+
+## Output format
+
+Output your picks as a JSON code block. You may include brief commentary outside the code block.
 
 Each entry:
 
 - `captionIndex`: the [idx] from captions above
-- `text`: exact substring from the Korean column (no speaker labels like [나경])
+- `text`: exact substring from the Korean column
 - `translation`: contextual English meaning for this caption, not a dictionary dump. Concise.
-- `etymology`: Hanja if applicable (e.g. "體重"). Empty string for native Korean words.
+- `etymology`: Hanja if applicable. Empty string for native Korean words.
 
 ```json
 [

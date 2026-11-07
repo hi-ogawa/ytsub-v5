@@ -102,6 +102,10 @@ When adding new tests, prefer `/dev` routes unless the feature requires server i
 | auth.spec.ts          | Auth API endpoints                  | Yes (API only) |
 | ext/bookmarks.spec.ts | Extension bookmarks, sync badges    | Yes            |
 
+### Bug fix tests
+
+Every bug fix must include a test that **fails on `main` and passes with the fix**. If existing tests don't cover the broken path, add one that does. A fix without a reproducing test isn't verified.
+
 ### Writing tests
 
 - **Flat structure**: no `test.describe` nesting — inline `setupDb()` and `login()` per test

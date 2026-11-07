@@ -112,6 +112,16 @@ Background's `chrome.tabs.query({url: "https://www.youtube.com/*"})` returns emp
 5. **Update relay.ts**
    - Add `setupTabRpcRelay()` call alongside existing `setupRpcRelay()`
 
+## Alternative considered: YouTube embed iframe inside extension page
+
+Investigated embedding `<iframe src="https://www.youtube.com/embed/">` in the extension bookmarks page so a content script (with `all_frames: true`) could inject into the iframe and access `youtube.com`-origin IDB — removing the requirement for an open YouTube tab.
+
+This approach was prototyped in `ytsub-v4` (`src/entrypoints/caption-editor/main.tsx`) and verified to work for **API access** (fetching metadata via the content script in the embed iframe). The `/embed/` endpoint allows framing (unlike regular YouTube pages which set `X-Frame-Options: SAMEORIGIN`).
+
+**However, it doesn't solve the IDB problem.** Chrome's [storage partitioning](https://developer.chrome.com/docs/privacy-sandbox/storage-partitioning/) keys third-party iframe storage by the top-level origin. An embed iframe inside `chrome-extension://...` gets a separate IDB partition from the real `youtube.com` tab where sessions are written. The iframe's IDB would be empty — it can't see data written by the content script on an actual YouTube tab.
+
+Tab RPC is the correct solution for cross-origin IDB access.
+
 ## Status
 
 - Done: reverse RPC channel implemented, all steps complete

@@ -111,19 +111,22 @@ A web app for language learning via YouTube subtitles. Watch videos with dual ca
 
 ## TODO
 
+- [ ] feat: ability to delete video from extention page
+- [ ] feat: ability to customize base AI prompt
+  - [ ] fix: adjust prompt to be language independent (currently assumes korean)
 - [ ] feat: "sync all" button on bookmarks/list page
 - [ ] test(ext): enhance extension page e2e (seed, sync, etc.)
 - [ ] feat: improve CTA between extensions and web apps
 
 ## TODO: Backlog
 
+- [ ] refactor: migrate timestamp-related db columns `docs/tasks/2026-03-18-integer-timestamps.md`
 - [ ] fix: sync state doesn't surface push/pull mutation errors — `computedState` only checks `serverQuery.isError`, so after a push/pull failure the SyncButton reverts to "push"/"pull" icon instead of showing error. Need to check `pushMutation.isError || pullMutation.isError`.
 - [ ] fix: delete race condition — `video-list.tsx` fires `deleteMutation.mutate()` then immediately removes local data; if server delete fails, local data is already gone. Should `await mutateAsync` first.
 - [ ] fix: server routes throw plain `Error` instead of `ORPCError` — `videos.ts` and `bookmarks.ts` use `throw new Error("Video not found")` which becomes generic 500; should be `ORPCError("NOT_FOUND")` for proper status codes and client-readable messages.
 - [ ] feat: root ErrorBoundary — no React ErrorBoundary exists; unhandled render error white-screens the app.
 - [ ] feat: Bookmark export — export to import bookmarks for Anki study
 - [ ] chore: AI integration help page: record a short screen-recording (GIF or MP4) of the copy→paste→import flow and embed in the doc
-- [ ] fix: adjust prompt to be language independent (currently assumes korean)
 - [ ] chore: document and log AI prompt eval results (`docs/skills/eval/SKILL.md`) (consolidate `docs/skills/*` into `docs/eval/README.md`)
 - [ ] feat: bookmark approval flow — inline approve/reject buttons for `pending` bookmarks in viewer
 - [ ] feat: bookmark list page — browse/search all bookmarks across videos
@@ -136,3 +139,4 @@ A web app for language learning via YouTube subtitles. Watch videos with dual ca
 - [ ] chore: rework "Bookmarked Videos" heading/framing — home page is just "Videos"; empty state text assumes extension but web app uses import/sync
 - [ ] refactor: `CaptionSessionManager.strategy` field feels misplaced — consider moving merge strategy out of the session object (`src/lib/caption-session.ts:176`)
 - [ ] fix: better loading indicator when IndexedDB initial store query is pending (currently returns `null`) (`src/components/caption-panel.tsx:437`)
+- [ ] fix: `text-xs` overuse — many places use 12px where 14px (`text-sm`) would be more readable. `text-xs` is fine for badges/timestamps/counts, but these should be `text-sm`: login dialog description and error message (`login-dialog.tsx:29`, `login-form.tsx:54`), empty state guidance (`video-list.tsx:30`), caption panel labels (`caption-panel.tsx:232,732`), bookmark fields like translation/notes/etymology (`caption-panel.tsx:1132,1137,1140`)

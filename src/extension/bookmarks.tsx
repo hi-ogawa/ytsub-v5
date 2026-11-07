@@ -1,5 +1,15 @@
-import { QueryClientProvider, useQuery } from "@tanstack/react-query";
-import { EllipsisVertical, LogIn, LogOut, Settings } from "lucide-react";
+import {
+  QueryClientProvider,
+  useMutation,
+  useQuery,
+} from "@tanstack/react-query";
+import {
+  EllipsisVertical,
+  ExternalLink,
+  LogIn,
+  LogOut,
+  Settings,
+} from "lucide-react";
 import { StrictMode, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { MemoryRouter } from "react-router";
@@ -17,26 +27,31 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "../components/ui/dropdown-menu.tsx";
+import { deleteSession } from "../lib/caption-session-db.ts";
 import { useStore } from "../lib/external-store.ts";
 import { createAppQueryClient } from "../lib/query-client.ts";
-import { type VideoSyncActions, useVideoSync } from "../lib/sync.ts";
+import {
+  type VideoSyncActions,
+  type VideoSyncEntry,
+  useVideoSync,
+} from "../lib/sync.ts";
 import { useTheme } from "../lib/theme.ts";
 import {
-  VIDEO_INDEX_KEY,
   type VideoIndexEntry,
+  removeFromVideoIndex,
   updateVideoIndex,
   videoIndexStore,
 } from "../lib/video-index.ts";
 import { orpc, setRpcConfig } from "../rpc.ts";
 import type { bgRpcHandlers } from "./background.ts";
 import { chromeStorage } from "./lib/chrome-storage.ts";
-import { createRpc } from "./lib/extension-rpc.ts";
+import { createRuntimeRpc } from "./lib/extension-rpc.ts";
 import { getServerUrl } from "./lib/server-url.ts";
 import "../styles.css";
 
 declare const __DEV_EXT__: boolean;
 
-const bgRpc = createRpc<typeof bgRpcHandlers>({ direct: true });
+const bgRpc = createRuntimeRpc<typeof bgRpcHandlers>();
 
 const extensionSyncActions: VideoSyncActions = {
   async pushSession(youtubeId) {
@@ -131,6 +146,19 @@ function ExtensionBookmarksPage() {
   const sync = useVideoSync(extensionSyncActions);
   const [showLogin, setShowLogin] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const deleteMutation = useMutation(
+    orpc.videos.deleteVideo.mutationOptions({
+      onSuccess: () => sync.refetch(),
+    }),
+  );
+
+  async function onDelete(entry: VideoSyncEntry) {
+    if (entry.serverId) {
+      deleteMutation.mutate({ id: entry.serverId });
+    }
+    removeFromVideoIndex(entry.youtubeId);
+    await deleteSession(entry.youtubeId);
+  }
 
   const handleLogout = async () => {
     await orpc.auth.logout.call({});
@@ -148,14 +176,26 @@ function ExtensionBookmarksPage() {
             ext
           </span>
         </span>
-        <div className="flex items-center gap-1">
-          {sync.authenticated && usernameQuery.data && (
-            <span
-              data-testid="auth-username"
-              className="text-xs text-muted-foreground"
+        <div className="flex items-center gap-2">
+          {sync.authenticated ? (
+            usernameQuery.data && (
+              <span
+                data-testid="auth-username"
+                className="text-xs text-muted-foreground"
+              >
+                {usernameQuery.data}
+              </span>
+            )
+          ) : (
+            <button
+              type="button"
+              data-testid="sign-in"
+              onClick={() => setShowLogin(true)}
+              className="flex items-center gap-1 rounded px-2 py-1 text-sm text-muted-foreground hover:bg-muted"
             >
-              {usernameQuery.data}
-            </span>
+              <LogIn className="size-3" />
+              Sign in to sync
+            </button>
           )}
           <DropdownMenu>
             <DropdownMenuTrigger
@@ -184,25 +224,29 @@ function ExtensionBookmarksPage() {
                   Advanced
                 </DropdownMenuItem>
               )}
-              <div className="my-1 h-px bg-border" />
-              {sync.authenticated ? (
+              {sync.authenticated && (
                 <DropdownMenuItem
-                  data-testid="sign-out"
-                  onSelect={handleLogout}
+                  onSelect={() =>
+                    window.open(serverUrl, "_blank", "noopener,noreferrer")
+                  }
                   className="gap-2"
                 >
-                  <LogOut className="size-4" />
-                  Sign out
+                  <ExternalLink className="size-4" />
+                  Open web app
                 </DropdownMenuItem>
-              ) : (
-                <DropdownMenuItem
-                  data-testid="sign-in"
-                  onSelect={() => setShowLogin(true)}
-                  className="gap-2"
-                >
-                  <LogIn className="size-4" />
-                  Sign in
-                </DropdownMenuItem>
+              )}
+              {sync.authenticated && (
+                <>
+                  <div className="my-1 h-px bg-border" />
+                  <DropdownMenuItem
+                    data-testid="sign-out"
+                    onSelect={handleLogout}
+                    className="gap-2"
+                  >
+                    <LogOut className="size-4" />
+                    Sign out
+                  </DropdownMenuItem>
+                </>
               )}
             </DropdownMenuContent>
           </DropdownMenu>
@@ -224,12 +268,33 @@ function ExtensionBookmarksPage() {
           sync.refetch();
         }}
         signUpUrl={new URL("/register", serverUrl).href}
+        description={
+          <>
+            Sync your bookmarks to access them on any device via the{" "}
+            <a
+              href={serverUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary underline"
+            >
+              web app
+            </a>
+            .
+          </>
+        }
       />
       <main className="flex-1 overflow-auto">
         <BookmarksPage
           entries={entries}
           videoHref={(id) => `https://www.youtube.com/watch?v=${id}`}
+          onDelete={onDelete}
           sync={sync}
+          emptyState={
+            <p className="text-sm text-muted-foreground">
+              No bookmarked videos yet. Open a YouTube video and create
+              bookmarks to see them here.
+            </p>
+          }
         />
       </main>
     </div>
@@ -260,12 +325,14 @@ async function main() {
   // Two-way bridge: chrome.storage.local <-> localStorage for video-index.
   // Hydrate localStorage from chrome.storage.local before rendering, then keep
   // them in sync so videoIndexStore (localStorage-backed) works on this origin.
-  const entries = await chromeStorage.get<VideoIndexEntry[]>(VIDEO_INDEX_KEY);
-  videoIndexStore.set(entries ?? []);
+  const entries = await chromeStorage.get<VideoIndexEntry[]>(
+    videoIndexStore.key,
+  );
+  videoIndexStore.setLocal(entries ?? []);
 
   // Sync back to chrome.storage.local when videoIndexStore writes
-  window.addEventListener(`zamak:store:${VIDEO_INDEX_KEY}`, () => {
-    chromeStorage.set({ [VIDEO_INDEX_KEY]: videoIndexStore.get() });
+  videoIndexStore.subscribe(() => {
+    chromeStorage.set({ [videoIndexStore.key]: videoIndexStore.get() });
   });
 
   createRoot(document.getElementById("root")!).render(

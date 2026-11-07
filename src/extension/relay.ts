@@ -1,34 +1,33 @@
-// ISOLATED world content script — generic RPC relay between MAIN world
-// and background worker, plus video-index localStorage → background sync.
+// ISOLATED world content script — BroadcastChannel RPC relay between MAIN world
+// and background worker, plus store sync (localStorage ↔ chrome.storage).
 
-import { storeEventName } from "../lib/external-store.ts";
-import { VIDEO_INDEX_KEY } from "../lib/video-index.ts";
-import type { bgRpcHandlers } from "./background.ts";
-import {
-  createRpc,
-  setupRpcRelay,
-  setupTabRpcRelay,
-} from "./lib/extension-rpc.ts";
+import { type VideoIndexEntry, videoIndexStore } from "../lib/video-index.ts";
+import { chromeStorage } from "./lib/chrome-storage.ts";
+import { connectContentPort } from "./lib/content-ports.ts";
+import { setupRpcRelay, setupTabRpcRelay } from "./lib/extension-rpc.ts";
 
-const bgRpc = createRpc<typeof bgRpcHandlers>({ direct: true });
+async function main() {
+  // Boot hydration: chrome.storage → store (writes to shared localStorage
+  // so MAIN world's store picks up fresh data on init)
+  const entries = await chromeStorage.get<VideoIndexEntry[]>(
+    videoIndexStore.key,
+  );
+  videoIndexStore.setLocal(entries ?? []);
 
-function main() {
+  // Persist MAIN world store changes to chrome.storage.
+  // MAIN writes → BC delivers to relay's store → subscribe fires → chrome.storage
+  videoIndexStore.subscribe(() => {
+    chromeStorage.set({ [videoIndexStore.key]: videoIndexStore.get() });
+  });
+
+  // Register with background so it can find this tab for reverse RPC
+  connectContentPort();
+
   // Generic RPC relay — forwards all zamak:rpc events to background
   setupRpcRelay();
 
   // Reverse RPC relay — forwards background→tab calls to MAIN world
   setupTabRpcRelay();
-
-  // Video index: localStorage change → notify background to sync to chrome.storage
-  window.addEventListener(storeEventName(VIDEO_INDEX_KEY), () => {
-    try {
-      const raw = localStorage.getItem(VIDEO_INDEX_KEY);
-      const entries = raw ? JSON.parse(raw) : [];
-      bgRpc.videoIndexUpdated({ entries });
-    } catch (e) {
-      console.warn("[zamak relay]", e);
-    }
-  });
 }
 
 main();

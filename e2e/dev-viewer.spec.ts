@@ -443,6 +443,10 @@ test.describe("dev-viewer caption panel", () => {
     await expect(
       popover.getByRole("button", { name: "Go to bookmark" }),
     ).toBeVisible();
+
+    // Click the highlight again to close the popover
+    await highlight.click();
+    await expect(popover).not.toBeVisible();
   });
 
   test("popover go-to-bookmark switches to bookmarks tab with flash-highlight", async ({

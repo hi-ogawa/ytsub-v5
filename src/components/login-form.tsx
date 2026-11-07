@@ -51,7 +51,7 @@ export function LoginForm({
         {mutation.isPending ? "..." : submitLabel}
       </button>
       {mutation.isError && (
-        <p data-testid="login-error" className="text-xs text-destructive">
+        <p data-testid="login-error" className="text-sm text-destructive">
           {errorMessage ?? mutation.error.message ?? "Something went wrong"}
         </p>
       )}

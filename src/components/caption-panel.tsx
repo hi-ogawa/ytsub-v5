@@ -1,11 +1,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  AlertTriangle,
-  ArrowDownToLine,
-  ArrowUpFromLine,
   Bookmark,
   Check,
-  CheckCircle2,
   ChevronLeft,
   ChevronRight,
   ClipboardPaste,
@@ -14,8 +10,6 @@ import {
   EllipsisVertical,
   ExternalLink,
   Loader2,
-  LogIn,
-  RefreshCw,
   Trash2,
   X,
 } from "lucide-react";
@@ -60,6 +54,7 @@ import type {
   YouTubeVideoData,
 } from "../lib/youtube.ts";
 import { CaptionList, type CaptionListHandle } from "./caption-list.tsx";
+import { syncStateDisplay } from "./sync-state.tsx";
 import { TrackPicker } from "./track-picker.tsx";
 import {
   DropdownMenu,
@@ -192,13 +187,11 @@ function AiPromptCopy({
   rows,
   bookmarks,
   title,
-  duration,
   youtubeId,
 }: {
   rows: MergedCaption[] | undefined;
   bookmarks: ExtensionBookmark[];
   title: string;
-  duration: number | undefined;
   youtubeId: string;
 }) {
   const [selected, setSelected] = useState<AiTask>(AI_TASKS[0].task);
@@ -206,7 +199,7 @@ function AiPromptCopy({
 
   function getPrompt(task: AiTask) {
     if (!rows) return "";
-    return makeAiPrompt(task, rows, bookmarks, title, duration);
+    return makeAiPrompt(task, rows, bookmarks, title);
   }
 
   function copyPrompt(task: AiTask) {
@@ -229,7 +222,7 @@ function AiPromptCopy({
 
   return (
     <div className="px-2 py-1.5">
-      <label className="mb-1 block text-xs text-muted-foreground flex items-center gap-1">
+      <label className="mb-1 block text-sm text-muted-foreground flex items-center gap-1">
         AI prompt{" "}
         <a
           href="https://github.com/hi-ogawa/ytsub-v5/blob/main/docs/ai-integration.md"
@@ -337,44 +330,7 @@ function formatTimestamp(seconds: number): string {
 }
 
 function SyncMenuItem({ sync: { state, onNavigate } }: { sync: SyncStatus }) {
-  const iconClass = "mr-2 size-4";
-  let icon: React.ReactNode;
-  let label: string;
-
-  switch (state) {
-    case "unauthenticated":
-      icon = <LogIn className={`${iconClass} text-muted-foreground`} />;
-      label = "Sign in to sync";
-      break;
-    case "checking":
-      icon = <Loader2 className={`${iconClass} animate-spin`} />;
-      label = "Checking…";
-      break;
-    case "synced":
-      icon = <CheckCircle2 className={`${iconClass} text-green-500`} />;
-      label = "Synced";
-      break;
-    case "push":
-      icon = <ArrowUpFromLine className={`${iconClass} text-yellow-500`} />;
-      label = "Unsynced changes";
-      break;
-    case "pull":
-      icon = <ArrowDownToLine className={`${iconClass} text-yellow-500`} />;
-      label = "Server has updates";
-      break;
-    case "conflict":
-      icon = <AlertTriangle className={`${iconClass} text-yellow-500`} />;
-      label = "Sync conflict";
-      break;
-    case "syncing":
-      icon = <RefreshCw className={`${iconClass} animate-spin`} />;
-      label = "Syncing…";
-      break;
-    case "error":
-      icon = <AlertTriangle className={`${iconClass} text-destructive`} />;
-      label = "Sync error";
-      break;
-  }
+  const { icon, label } = syncStateDisplay(state);
 
   return (
     <>
@@ -383,7 +339,7 @@ function SyncMenuItem({ sync: { state, onNavigate } }: { sync: SyncStatus }) {
         data-testid="sync-status"
         data-sync-state={state}
       >
-        {icon}
+        <span className="mr-2 size-4">{icon}</span>
         {label}
       </DropdownMenuItem>
       <div className="my-1 h-px bg-border" />
@@ -530,7 +486,7 @@ async function buildCaptionSession(options: {
     { json3: json3_2, vssId: options.track2.vssId },
     options.strategy,
   );
-  return new CaptionSessionManager({
+  const store = new CaptionSessionManager({
     videoMeta: options.videoMeta,
     vssId1: options.track1.vssId,
     vssId2: options.track2.vssId,
@@ -538,6 +494,8 @@ async function buildCaptionSession(options: {
     strategy: merged.strategy,
     bookmarks: [],
   });
+  await store.persistSession();
+  return store;
 }
 
 /** State B: tracks selected, fetching json3 → builds store and calls setStore */
@@ -729,7 +687,7 @@ function SettingsDropdown({
         </DropdownMenuItem>
         {!sessionOnly && (
           <div className="px-2 py-1.5">
-            <label className="mb-1 block text-xs text-muted-foreground">
+            <label className="mb-1 block text-sm text-muted-foreground">
               Track alignment
             </label>
             <select
@@ -757,7 +715,6 @@ function SettingsDropdown({
           rows={store.rows}
           bookmarks={store.bookmarks}
           title={store.videoMeta.title}
-          duration={store.videoMeta.duration}
           youtubeId={store.videoMeta.youtubeId}
         />
         <DropdownMenuItem onSelect={() => importAiResult(store)}>
@@ -1132,15 +1089,15 @@ function ExtensionBookmarksList({
               </div>
             )}
             {bm.etymology && (
-              <div className="text-xs text-muted-foreground">
+              <div className="text-sm text-muted-foreground">
                 {bm.etymology}
               </div>
             )}
             {bm.notes && (
-              <div className="text-xs text-muted-foreground">{bm.notes}</div>
+              <div className="text-sm text-muted-foreground">{bm.notes}</div>
             )}
             {caption && (
-              <div className="mt-0.5 flex items-start gap-1 border-t border-border pt-1 text-xs text-muted-foreground">
+              <div className="mt-0.5 flex items-start gap-1 border-t border-border pt-1 text-sm text-muted-foreground">
                 <div className="flex-1">
                   <div>{caption.text1}</div>
                   <div>{caption.text2}</div>

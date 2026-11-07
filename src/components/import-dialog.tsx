@@ -58,7 +58,7 @@ export function ImportDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent data-testid="import-dialog">
         <DialogTitle>Import Video</DialogTitle>
 
         <div

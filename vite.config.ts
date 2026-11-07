@@ -1,25 +1,20 @@
-import { cloudflare } from "@cloudflare/vite-plugin";
-import tailwindcss from "@tailwindcss/vite";
-import react from "@vitejs/plugin-react";
-import { defineConfig } from "vite";
+import { defineConfig } from "vite-plus";
 
 export default defineConfig({
-  plugins: [
-    react(),
-    tailwindcss(),
-    cloudflare({
-      inspectorPort: false,
-      persistState: process.env.APP_PERSIST_TO
-        ? {
-            path: process.env.APP_PERSIST_TO,
-          }
-        : undefined,
-    }),
-  ],
-  server: {
-    forwardConsole: true,
-    cors: {
-      origin: /^chrome-extension:\/\//,
+  test: {
+    dir: "./src",
+  },
+  fmt: {
+    printWidth: 80,
+    experimentalSortPackageJson: true,
+    experimentalSortImports: {
+      newlinesBetween: false,
+      partitionByNewline: true,
+      groups: [["builtin"], ["external"]],
     },
+    ignorePatterns: ["worker-configuration.d.ts", "scripts/**/*.json"],
+  },
+  staged: {
+    "*": "vp fmt",
   },
 });

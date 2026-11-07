@@ -8,7 +8,7 @@ test.beforeAll(async () => {
 test("redirects to /login when not authenticated", async ({ page }) => {
   await page.goto("/");
   await expect(page).toHaveURL("/login");
-  await expect(page.locator("h1")).toHaveText("Zamak — login");
+  await expect(page.locator("h1")).toHaveText("Log in");
   await expect(page.getByPlaceholder("Username")).toBeVisible();
   await expect(page.getByPlaceholder("Password")).toBeVisible();
 });
@@ -17,7 +17,7 @@ test("register with short password shows validation error", async ({
   page,
 }) => {
   await page.goto("/register");
-  await expect(page.locator("h1")).toHaveText("Zamak — sign up");
+  await expect(page.locator("h1")).toHaveText("Sign up");
   await page.getByPlaceholder("Username").fill("shortpw");
   await page.getByPlaceholder("Password").fill("short");
   await page.getByRole("button", { name: "Sign up" }).click();
@@ -78,11 +78,11 @@ test("navigate between login and register", async ({ page }) => {
   await page.goto("/login");
   await page.getByRole("link", { name: "Sign up" }).click();
   await expect(page).toHaveURL("/register");
-  await expect(page.locator("h1")).toHaveText("Zamak — sign up");
+  await expect(page.locator("h1")).toHaveText("Sign up");
 
   await page.getByRole("link", { name: "Login" }).click();
   await expect(page).toHaveURL("/login");
-  await expect(page.locator("h1")).toHaveText("Zamak — login");
+  await expect(page.locator("h1")).toHaveText("Log in");
 });
 
 test("header logo navigates back, logout redirects to login", async ({
