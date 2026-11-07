@@ -1,12 +1,6 @@
 import { execSync } from "node:child_process";
-import {
-  cpSync,
-  mkdirSync,
-  readFileSync,
-  rmSync,
-  writeFileSync,
-} from "node:fs";
-import { basename, resolve } from "node:path";
+import { cpSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { resolve } from "node:path";
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
@@ -16,6 +10,16 @@ const rev = git("git rev-parse --short HEAD");
 const branch = git("git branch --show-current");
 const dirty = git("git status --porcelain") ? "-dirty" : "";
 const buildTime = new Date();
+
+// Fixed key for dev and CI builds, so each new unpacked build replaces the
+// previous one instead of getting a new ID from its folder path.
+// It is separate from the Chrome Web Store key, so these builds don't collide
+// with an installed store copy.
+// Generated with `node scripts/generate-extension-key.ts`.
+// Extension ID: ehpiiciihgfigiocljcmapfenghjhhel
+// Changing this key changes the ID and drops the existing extension storage.
+const DEV_EXTENSION_PUBLIC_KEY =
+  "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAuIqAa4j0aNbmWe7RTwTqZShUGaxxvL5P1lJ29oOfeEutuhJYHfDyOYncJWJV/TeEQSuJPv2125JoUDFqoT5n+/AAgKOUQ6FHjDO8QO/m79rPShhq47b6UPwnP4wky3lT4pZ3siJpIoWfq61qWXB6LI/jPlhjRn8l3RVNHimIQuM2tDTXw3KwyFE4+/wQUIud6I3Eb3yQ4ZdDS+AlRTDkqczztRk+JYDiwFz0wmwQFmRZcCutfmp7RDHGnlZb/0TkWA0kFkHPMKTbecalUAUA180KSLWi320U5fvKtDhkVJunUGKvYK6Xfhg63b06Y0hvPf08f+YFcypNNZTMadQ2LQIDAQAB";
 
 export default defineConfig({
   environments: {
@@ -125,6 +129,7 @@ export default defineConfig({
           minute: "2-digit",
         });
         manifest.name = `Zamak-dev [${branch} ${rev} ${time}]`;
+        manifest.key = DEV_EXTENSION_PUBLIC_KEY;
       } else if (process.env.CI) {
         const prMatch = process.env.GITHUB_REF?.match(/refs\/pull\/(\d+)\//);
         if (prMatch) {
@@ -132,20 +137,9 @@ export default defineConfig({
         } else {
           manifest.name = `Zamak [${rev}]`;
         }
+        manifest.key = DEV_EXTENSION_PUBLIC_KEY;
       }
       writeFileSync(manifestPath, JSON.stringify(manifest, null, 2));
-
-      // Copy to main repo's dist/extension-dev for single Chrome load point
-      if (process.env.DEV_EXT) {
-        const cwd = process.cwd();
-        const dirName = basename(cwd);
-        const match = dirName.match(/^(.+)-wt\d+$/);
-        const mainRepo = match ? resolve(cwd, "..", match[1]) : cwd;
-        const dest = resolve(mainRepo, "dist", "extension-dev");
-        mkdirSync(dest, { recursive: true });
-        cpSync(outDir, dest, { recursive: true });
-        console.log(`[dev-ext] Copied extension → ${dest}`);
-      }
     },
   },
 });
