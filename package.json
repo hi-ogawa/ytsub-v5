@@ -12,6 +12,7 @@
     "build-ext": "vite build --config vite.ext.config.ts && cd dist/extension && zip -r ../extension.zip .",
     "dev-full": "pnpm run '/^(dev|dev-ext)$/'",
     "build-full": "pnpm build && pnpm build-ext",
+    "generate-extension-key": "node scripts/generate-extension-key.ts",
     "tsc": "tsc -b",
     "lint": "vp fmt && knip --fix",
     "lint-check": "vp fmt --check && knip",

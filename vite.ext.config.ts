@@ -11,11 +11,11 @@ const branch = git("git branch --show-current");
 const dirty = git("git status --porcelain") ? "-dirty" : "";
 const buildTime = new Date();
 
-// Fixed key for dev and CI builds, so each new unpacked build replaces the
-// previous one instead of getting a new ID from its folder path.
+// Fixed key for dev and CI artifact builds, so each new unpacked build
+// replaces the previous one instead of getting a new ID from its folder path.
 // It is separate from the Chrome Web Store key, so these builds don't collide
 // with an installed store copy.
-// Generated with `node scripts/generate-extension-key.ts`.
+// Generated with `pnpm generate-extension-key`.
 // Extension ID: ehpiiciihgfigiocljcmapfenghjhhel
 // Changing this key changes the ID and drops the existing extension storage.
 const DEV_EXTENSION_PUBLIC_KEY =
@@ -130,7 +130,7 @@ export default defineConfig({
         });
         manifest.name = `Zamak-dev [${branch} ${rev} ${time}]`;
         manifest.key = DEV_EXTENSION_PUBLIC_KEY;
-      } else if (process.env.CI) {
+      } else if (process.env.PATCH_MANIFEST === "true") {
         const prMatch = process.env.GITHUB_REF?.match(/refs\/pull\/(\d+)\//);
         if (prMatch) {
           manifest.name = `Zamak [PR#${prMatch[1]} ${rev}]`;
