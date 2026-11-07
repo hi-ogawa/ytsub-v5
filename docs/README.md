@@ -2,8 +2,7 @@
 
 ## Architecture
 
-- [Architecture overview](background/architecture.md): the problem, the core workflow, the three layers, and the data model.
-- [Browser extension](background/architecture-extension.md): why the extension is the primary client, how it is structured, and how the dev viewer mirrors it.
+- [Architecture overview](architecture.md): the problem, the core workflow, the extension, server, and web app layers, how the extension fetches subtitles, and the data model.
 
 ## Concepts
 
@@ -17,9 +16,4 @@
 
 ## References
 
-- [Prior repositories](background/references/prior-repos.md): earlier ytsub versions and related projects.
-- [Similar projects](background/references/similar-projects.md): other language-learning tools built on video subtitles.
-
-## History
-
-- [Brainstorm](background/brainstorm.md) and [skill integration notes](background/skill-integration.md): planning notes from March 2026, before the extension became the primary client.
+- [References](references.md): earlier ytsub versions, and similar language-learning tools built on video subtitles.

@@ -13,7 +13,7 @@
 
 ## Key Docs
 
-Read the [architecture overview](docs/background/architecture.md) before implementing features. [docs/README.md](docs/README.md) indexes the rest of the docs.
+Read the [architecture overview](docs/architecture.md) before implementing features. [docs/README.md](docs/README.md) indexes the rest of the docs.
 
 ## UI surfaces
 
