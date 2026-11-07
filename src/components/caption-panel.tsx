@@ -144,6 +144,11 @@ export function ResizablePanel({
     const startX = e.clientX;
     const startWidth = widthRef.current;
 
+    // A cross-origin iframe (the YouTube player) can take the pointer events
+    // when the drag passes over it, even with pointer capture.
+    const iframes = [...document.querySelectorAll("iframe")];
+    for (const iframe of iframes) iframe.style.pointerEvents = "none";
+
     const onPointerMove = (e: PointerEvent) => {
       // Dragging left = wider (panel is right-aligned)
       const newWidth = Math.max(
@@ -155,6 +160,7 @@ export function ResizablePanel({
 
     const onPointerUp = () => {
       target.releasePointerCapture(e.pointerId);
+      for (const iframe of iframes) iframe.style.pointerEvents = "";
       target.removeEventListener("pointermove", onPointerMove);
       target.removeEventListener("pointerup", onPointerUp);
       localStorage.setItem(WIDTH_KEY, String(widthRef.current));
