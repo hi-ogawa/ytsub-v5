@@ -422,6 +422,44 @@ test.describe("dev-viewer caption panel", () => {
     ).not.toBeVisible();
   });
 
+  test("bookmark numbers in popover and bookmarks tab", async ({ page }) => {
+    await openPanelWithTracks(page);
+    const panel = page.getByTestId("resizable-panel");
+    await createBookmarkAt(page, { index: 0, start: 0, end: 3 });
+    await createBookmarkAt(page, { index: 2, start: 0, end: 1 });
+    await createBookmarkAt(page, { index: 4, start: 0, end: 2 });
+
+    // Popover shows the bookmark's number
+    await page
+      .locator("[data-index='2']")
+      .getByTestId("bookmark-highlight")
+      .first()
+      .click();
+    await expect(page.getByTestId("bookmark-popover")).toContainText("#2널");
+    await page.keyboard.press("Escape");
+
+    // Bookmark cards are numbered in order
+    await panel.getByRole("button", { name: /Bookmarks/ }).click();
+    const cards = page.locator("[data-bookmark-id]");
+    await expect(cards).toHaveCount(3);
+    await expect(cards.nth(0)).toContainText("#1꼬집어");
+    await expect(cards.nth(1)).toContainText("#2널");
+    await expect(cards.nth(2)).toContainText("#3아직");
+
+    // Deleting the first bookmark renumbers the rest
+    page.on("dialog", (d) => d.accept());
+    await cards
+      .nth(0)
+      .getByRole("button")
+      .filter({ has: page.locator("svg") })
+      .first()
+      .click();
+    await page.getByRole("menuitem", { name: "Delete" }).click();
+    await expect(cards).toHaveCount(2);
+    await expect(cards.nth(0)).toContainText("#1널");
+    await expect(cards.nth(1)).toContainText("#2아직");
+  });
+
   test("bookmark highlight shows popover on click", async ({ page }) => {
     await openPanelWithTracks(page);
     await createBookmarkAt(page, { index: 0, start: 0, end: 3 });

@@ -13,12 +13,14 @@ function formatTimestamp(seconds: number): string {
 
 function BookmarkWord({
   bookmark,
+  bookmarkNumber,
   offset,
   children,
   onGoToBookmark,
   onPopoverOpenChange,
 }: {
   bookmark: ExtensionBookmark;
+  bookmarkNumber?: number;
   offset: number;
   children: React.ReactNode;
   onGoToBookmark: (bookmarkId: string) => void;
@@ -65,6 +67,11 @@ function BookmarkWord({
         }}
       >
         <span className="block text-xs font-medium text-popover-foreground">
+          {bookmarkNumber !== undefined && (
+            <span className="mr-1 text-muted-foreground">
+              #{bookmarkNumber}
+            </span>
+          )}
           {bookmark.text}
         </span>
         {bookmark.translation ? (
@@ -100,7 +107,12 @@ function BookmarkWord({
 
 function highlightText(
   text: string,
-  marks: { offset: number; length: number; bookmark?: ExtensionBookmark }[],
+  marks: {
+    offset: number;
+    length: number;
+    bookmark?: ExtensionBookmark;
+    bookmarkNumber?: number;
+  }[],
   onGoToBookmark: (bookmarkId: string) => void,
   onPopoverOpenChange: (open: boolean) => void,
 ) {
@@ -121,6 +133,7 @@ function highlightText(
         <BookmarkWord
           key={m.bookmark.id}
           bookmark={m.bookmark}
+          bookmarkNumber={m.bookmarkNumber}
           offset={m.offset}
           onGoToBookmark={onGoToBookmark}
           onPopoverOpenChange={onPopoverOpenChange}
@@ -177,14 +190,17 @@ export function CaptionList({
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  const bookmarksByIndex = useMemo(() => {
-    const map = new Map<number, ExtensionBookmark[]>();
-    for (const bm of bookmarks) {
-      const list = map.get(bm.captionIndex);
+  const { bookmarksByIndex, bookmarkNumberById } = useMemo(() => {
+    const byIndex = new Map<number, ExtensionBookmark[]>();
+    const numberById = new Map<string, number>();
+    for (let i = 0; i < bookmarks.length; i++) {
+      const bm = bookmarks[i];
+      numberById.set(bm.id, i + 1);
+      const list = byIndex.get(bm.captionIndex);
       if (list) list.push(bm);
-      else map.set(bm.captionIndex, [bm]);
+      else byIndex.set(bm.captionIndex, [bm]);
     }
-    return map;
+    return { bookmarksByIndex: byIndex, bookmarkNumberById: numberById };
   }, [bookmarks]);
 
   useImperativeHandle(ref, () => ({
@@ -284,6 +300,7 @@ export function CaptionList({
               offset: b.offset,
               length: b.text.length,
               bookmark: b,
+              bookmarkNumber: bookmarkNumberById.get(b.id),
             }));
           const text2Marks = rowBookmarks
             ?.filter((b) => b.side === 1)
@@ -291,6 +308,7 @@ export function CaptionList({
               offset: b.offset,
               length: b.text.length,
               bookmark: b,
+              bookmarkNumber: bookmarkNumberById.get(b.id),
             }));
 
           return (

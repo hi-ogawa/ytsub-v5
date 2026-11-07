@@ -32,6 +32,7 @@ export default defineConfig({
     actionTimeout: 2000,
     trace: traceEnabled ? { mode: "on", screenshots: false } : "off",
     ...devices["Desktop Chrome"],
+    channel: "chromium",
   },
   forbidOnly: !!process.env.CI,
   reporter: [
