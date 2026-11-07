@@ -79,6 +79,7 @@ Every bug fix must include a test that **fails on `main` and passes with the fix
 - **Selector preference**: scope to `data-testid` or panel containers to avoid ambiguity (e.g. FAB text can collide with tab button names). Prefer `getByTestId` > `getByRole` scoped to a container > page-wide `getByText`.
 - **Iterate with bail**: use `pnpm test-e2e -x` to stop on first failure when fixing tests. Avoids waiting for the full suite on each iteration.
 - **JSON report** at `test-results/report.json` — use it to measure timing impact of changes.
+- **Traces**: local runs write `test-results/trace-pack.html` by default. Use `E2E_TRACE=0` to disable tracing. For traces of a branch on GitHub Actions, see [E2E traces](docs/e2e.md).
 
 ### Extension e2e tests (`e2e/ext/`)
 

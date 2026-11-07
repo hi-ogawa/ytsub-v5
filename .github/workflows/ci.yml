@@ -10,6 +10,9 @@ concurrency:
   group: ci-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -19,17 +22,20 @@ jobs:
         with:
           node-version: "lts/*"
       - run: corepack enable
-      - run: pnpm i
+      - run: pnpm install --frozen-lockfile
       - run: pnpm lint-check
       - run: pnpm tsc
       - run: pnpm test
       - run: pnpm build
       - run: pnpm build-ext
       - run: echo "SHORT_SHA=${GITHUB_SHA::7}" >> $GITHUB_ENV
-      - uses: actions/upload-artifact@v7
+      - id: upload-extension
+        uses: actions/upload-artifact@v7
         with:
           name: zamak-extension-${{ github.event.pull_request.number && format('pr{0}-{1}', github.event.pull_request.number, env.SHORT_SHA) || env.SHORT_SHA }}
           path: dist/extension/*
+      - name: Extension artifact
+        run: echo "::notice title=Extension artifact::${{ steps.upload-extension.outputs.artifact-url }}"
 
   e2e:
     runs-on: ubuntu-latest
@@ -39,7 +45,7 @@ jobs:
         with:
           node-version: "lts/*"
       - run: corepack enable
-      - run: pnpm i
+      - run: pnpm install --frozen-lockfile
       - run: pnpm build-ext
       - run: pnpm exec playwright install chromium --with-deps
       - run: pnpm test-e2e-full

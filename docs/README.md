@@ -12,6 +12,7 @@
 
 - [AI integration](ai-integration.md): the copy-paste workflow for filling vocab with any LLM. The app's help link opens this page.
 - [Generate import.json from a YouTube video](generate-import-json.md): build captions and vocab bookmarks for a video with yt-dlp and an LLM, for seed fixtures or a one-off import without the extension.
+- [E2E traces](e2e.md): record Playwright traces locally and on GitHub Actions.
 - [Deployment](deployment.md): migrations, deploys, and secrets on Cloudflare Workers and D1.
 - [Chrome Web Store submissions](chrome-store-submissions.md): the listing details and the steps for submitting a new version.
 

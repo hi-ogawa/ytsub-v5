@@ -1,0 +1,10 @@
+{
+  "$schema": "https://raw.githubusercontent.com/fallow-rs/fallow/main/schema.json",
+  "entry": [
+    "src/extension/content.tsx",
+    "src/extension/bookmarks.tsx",
+    "src/extension/background.ts",
+    "src/extension/relay.ts",
+    "scripts/**/*.ts"
+  ]
+}
