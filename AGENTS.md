@@ -40,7 +40,7 @@ Read the [architecture overview](docs/architecture.md) before implementing featu
 
 ## Tests
 
-- Every bug fix includes a test that fails on `main` and passes with the fix, when a regression would be visible to a user. Don't test internal shapes, such as which fields saved data carries, when a regression would break nothing.
+- Before adding a test, check that the repo tests that kind of code and that a regression would be visible to a user. Don't test internal shapes, such as which fields saved data carries, when a regression would break nothing.
 - When an existing test fails, first verify from first principles whether its expectation is correct. Do not compensate in the implementation merely to preserve an incorrect test.
 - E2E tests split along the auth boundary. Prefer `/dev` route tests, which use fixture data and need no `login()` or `setupDb()`. Use `setupDb({ seed: true })` and `login(page)` only when the feature needs the server. Never add `login()` to a test that only uses `/dev` routes.
 - Follow the [E2E guide](docs/e2e.md) when writing or debugging e2e tests.
