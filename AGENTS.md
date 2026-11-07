@@ -13,13 +13,7 @@
 
 ## Key Docs
 
-| File                                         | Purpose                                     |
-| -------------------------------------------- | ------------------------------------------- |
-| `docs/background/architecture.md`            | Problem context, design decisions           |
-| `docs/concepts/youtube-subtitle-fetching.md` | How the extension fetches YouTube subtitles |
-| `docs/chrome-store-submissions.md`           | Chrome Web Store listing details            |
-
-Read `docs/background/architecture.md` for architecture context before implementing features.
+Read the [architecture overview](docs/background/architecture.md) before implementing features. [docs/README.md](docs/README.md) indexes the rest of the docs.
 
 ## UI surfaces
 
