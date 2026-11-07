@@ -1,6 +1,6 @@
 // Check if two parsed cue files (ko.json, en.json) have 1:1 alignment.
 // If aligned, outputs merged captions.json to stdout.
-// Usage: npx tsx check-alignment.ts <ko.json> <en.json> [--tolerance 0.5]
+// Usage: node scripts/import-json/check-alignment.ts <ko.json> <en.json> [--tolerance 0.5]
 //
 // "Aligned" means: same cue count and every begin timestamp matches
 // within tolerance (default 0.5s).
@@ -32,7 +32,7 @@ const [file1, file2] = args;
 
 if (!file1 || !file2) {
   console.error(
-    "Usage: npx tsx check-alignment.ts <lang1.json> <lang2.json> [--tolerance 0.5]",
+    "Usage: node scripts/import-json/check-alignment.ts <lang1.json> <lang2.json> [--tolerance 0.5]",
   );
   process.exit(1);
 }

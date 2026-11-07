@@ -138,7 +138,7 @@ export async function fetchTrackJson3(baseUrl: string): Promise<Json3File> {
  * Mobile clients don't require SUBS POT, so caption baseUrls work directly.
  * Must run in YouTube page context (same-origin).
  *
- * Client configs synced from yt-dlp (see docs/skills/yt-dlp/SKILL.md).
+ * Client configs synced from yt-dlp (see docs/concepts/youtube-subtitle-fetching.md).
  * Inlined in function body so page.evaluate() serialization works.
  */
 export async function fetchPlayerApi(options: {
