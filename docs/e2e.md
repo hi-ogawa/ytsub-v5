@@ -31,8 +31,13 @@ Extension tests load `dist/extension/` into a real Chromium instance, so run `pn
 - `gotoBookmarks(page, extensionId)` opens `chrome-extension://<id>/bookmarks.html` with the test server URL.
 - `seedChromeStorage(context, data)` seeds `chrome.storage.local` through the service worker.
 - `login(page)` logs in through the extension bookmarks page. It is a different helper from the web app `login`.
+- `openYouTubeTab(context, videoId)` opens a watch page and waits for the content script. `openPanelWithTracks(ytPage)` opens the caption panel with the ko and en tracks.
 
-Push and pull sync go through a YouTube tab (tab RPC). Without a YouTube tab, tests can only check the error toasts.
+The tests never load the real youtube.com. The `context` fixture serves `https://www.youtube.com/**` from a route handler in `e2e/ext/youtube-mock.ts`. Chrome injects content scripts by URL, so the mocked watch page still gets them. The page has only what the content script reads, and the player API and caption tracks come from the fixtures in `scripts/youtube-json/<id>/`, so `videoId` must be one of those. Every other youtube.com request is aborted. `pnpm test-youtube` covers changes to the real page and API.
+
+Push and pull sync go through a YouTube tab (tab RPC), so open one with `openYouTubeTab` before pushing or pulling. Without a YouTube tab, tests can only check the error toasts. To give push a session, create a bookmark in the content script panel rather than writing to IndexedDB. The bookmarks page then gets the video through the same path as in real use.
+
+When a test opens a YouTube tab after the default `page`, call `page.bringToFront()` before using the bookmarks page, because clicks in a background tab can stall.
 
 ## Iterate on Failures
 

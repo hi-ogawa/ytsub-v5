@@ -6,6 +6,7 @@ import {
   type BrowserContext,
   type Page,
 } from "@playwright/test";
+import { mockYouTube } from "./youtube-mock";
 
 const SERVER_URL = `http://localhost:${process.env.E2E_PORT}`;
 
@@ -28,6 +29,7 @@ export const test = baseTest.extend<{
         height: 800,
       },
     });
+    await mockYouTube(context);
     await use(context);
     await context.close();
   },
@@ -72,43 +74,27 @@ export async function seedChromeStorage(
 }
 
 /**
- * Open a YouTube video tab so the content script + relay load,
- * enabling tab RPC (push/pull) from the bookmarks page.
- * Uses a non-existent video ID for fast loading (no heavy YouTube JS/ads).
- * Waits for #zamak-host to confirm content script is ready.
+ * Open a mocked YouTube watch page and wait for the content script.
+ * The tab also gives the bookmarks page a tab for push and pull (tab RPC).
  */
-export async function openYouTubeTab(context: BrowserContext): Promise<Page> {
+export async function openYouTubeTab(
+  context: BrowserContext,
+  videoId: string,
+): Promise<Page> {
   const ytPage = await context.newPage();
-  await ytPage.goto("https://www.youtube.com/watch?v=not-found");
-  await expect(ytPage.locator("#zamak-host")).toBeAttached({ timeout: 15_000 });
+  await ytPage.goto(`https://www.youtube.com/watch?v=${videoId}`);
+  await expect(ytPage.locator("#zamak-host")).toBeAttached();
   return ytPage;
 }
 
-/**
- * Seed IndexedDB on the YouTube tab's origin with a caption session.
- * This makes push possible from the bookmarks page via tab RPC.
- */
-export async function seedYouTubeIdb(
-  ytPage: Page,
-  session: Record<string, unknown>,
-) {
-  await ytPage.evaluate((data) => {
-    return new Promise<void>((resolve, reject) => {
-      const req = indexedDB.open("zamak", 1);
-      req.onupgradeneeded = () => {
-        req.result.createObjectStore("caption-sessions", {
-          keyPath: "youtubeId",
-        });
-      };
-      req.onsuccess = () => {
-        const tx = req.result.transaction("caption-sessions", "readwrite");
-        tx.objectStore("caption-sessions").put(data);
-        tx.oncomplete = () => resolve();
-        tx.onerror = () => reject(tx.error);
-      };
-      req.onerror = () => reject(req.error);
-    });
-  }, session);
+/** Open the caption panel and select ko/en tracks */
+export async function openPanelWithTracks(ytPage: Page) {
+  const host = ytPage.locator("#zamak-host");
+  await host.getByTestId("caption-fab").click();
+  const selects = host.getByTestId("track-picker").locator("select");
+  await selects.nth(0).selectOption(".ko");
+  await selects.nth(1).selectOption(".en");
+  await expect(host.locator("[data-index='0']")).toBeVisible();
 }
 
 /** Log in via the extension bookmarks page UI */
