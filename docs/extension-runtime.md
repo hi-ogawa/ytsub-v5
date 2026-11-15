@@ -2,7 +2,7 @@
 
 The extension runs as four separate pieces of JavaScript. Each one can do things the others can't, so most features need several of them to work together. This doc explains what each piece is for and how they send messages to each other.
 
-![The content script and the relay run in every YouTube tab and share youtube.com storage. Three BroadcastChannels connect them. The relay talks to the background service worker through Chrome messages and a port. The background calls the server and writes chrome.storage. The bookmarks page reads and writes chrome.storage and calls the background.](images/extension-runtime.svg)
+![The content script and the relay run in every YouTube tab and share youtube.com storage. Window messages carry RPC between them, and a BroadcastChannel carries video index changes. The relay talks to the background service worker through Chrome messages and a port. The background calls the server and writes chrome.storage. The bookmarks page reads and writes chrome.storage and calls the background.](images/extension-runtime.svg)
 
 ## Split the Content Script Across Two Worlds
 
@@ -13,17 +13,19 @@ The extension needs both, so each YouTube tab runs two scripts:
 - **The content script** runs in the main world. It reads YouTube's own page config (`ytcfg`) to build subtitle requests, renders the caption panel, and keeps captions and bookmarks in youtube.com storage.
 - **The relay** runs in the isolated world. It has no UI. It passes messages between the content script and the rest of the extension, and it copies the video index into `chrome.storage.local`.
 
-The two worlds share the tab's origin, so they read and write the same IndexedDB and localStorage. They can't call each other's functions, so they talk through BroadcastChannels.
+The two worlds share the tab's origin, so they read and write the same IndexedDB and localStorage. They can't call each other's functions, so they send each other messages.
 
-## Talk Between the Worlds With BroadcastChannels
+## Talk Between the Worlds in One Tab
 
-Three channels connect the content script and the relay. A BroadcastChannel delivers a message to every other channel object with the same name on the same origin, which means it reaches the other world in the same tab.
+Three channels connect the content script and the relay:
 
-- **`zamak:rpc`** carries calls from the content script to the background. The content script posts a request with an ID. The relay forwards it to the background, then posts the result on the same channel, and the content script matches it by ID.
-- **`zamak:tab-rpc`** carries calls from the background to the content script. The relay receives a request from the background, posts it on the channel, and waits for the content script to post the result.
+- **`zamak:rpc`** carries calls from the content script to the background. The content script posts a request with an ID. The relay forwards it to the background, then posts the response, and the content script matches it by ID.
+- **`zamak:tab-rpc`** carries calls from the background to the content script. The relay receives a request from the background, posts it to the content script, and waits for the response.
 - **`zamak:store`** carries changes to the video index. When the content script changes the index, it posts the new index. The relay updates its in-memory copy and writes it to `chrome.storage.local`. When a tab loads, the relay first copies the index from `chrome.storage.local` into localStorage, where the content script reads it.
 
-The same delivery rule has a side effect. A BroadcastChannel can't be limited to one tab, so every message also reaches the relay and the content script in every other open YouTube tab. For `zamak:store`, that keeps open tabs in step, and it can't loop, because a listener only updates its local copy. The two RPC channels don't check whether a message is a request or a response, so with two YouTube tabs open, two relays keep answering each other's messages. This is [issue #184](https://github.com/hi-ogawa/ytsub-v5/issues/184).
+The two RPC channels use window messages, because both worlds share the tab's `window` and a window message never leaves the tab. Each message is also tagged as a request or a response, so a listener never answers a response.
+
+`zamak:store` uses a BroadcastChannel, which reaches every channel with the same name on the same origin. That includes every other open YouTube tab, so a change in one tab also updates the index in the others. It can't loop, because a listener only updates its local copy and never posts again. The RPC channels can't use one for this reason: a request would reach the relays in every tab, and their responses would reach every tab too. That was [issue #184](https://github.com/hi-ogawa/ytsub-v5/issues/184), which froze the browser with two YouTube tabs open.
 
 ## Keep Server Calls and Secrets in the Background
 
