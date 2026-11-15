@@ -6,11 +6,11 @@ The flow: Zamak builds a prompt with your video's captions baked in → you past
 
 ## Available tasks
 
-| Task               | What it does                                                                                                      |
-| ------------------ | ----------------------------------------------------------------------------------------------------------------- |
-| **Pick & Fill**    | AI scans captions and picks ~5–60 interesting Korean vocabulary words, returning translations and Hanja etymology |
-| **Fill Bookmarks** | You bookmark words first, then AI fills in translations and etymology for them                                    |
-| **Fix ASR**        | AI corrects errors in auto-generated Korean subtitles using the English captions as reference                     |
+| Task               | What it does                                                                                                |
+| ------------------ | ----------------------------------------------------------------------------------------------------------- |
+| **Pick & Fill**    | AI scans captions and picks ~5–60 interesting Korean vocabulary words, returning translations and etymology |
+| **Fill Bookmarks** | You bookmark words first, then AI fills in translations and etymology for them                              |
+| **Fix ASR**        | AI corrects errors in auto-generated Korean subtitles using the English captions as reference               |
 
 ## Step by step
 
@@ -54,7 +54,7 @@ Here's what a Pick & Fill result looks like:
     "captionIndex": 4,
     "text": "체중",
     "translation": "body weight",
-    "etymology": "體重",
+    "etymology": "體重 / 体重",
     "notes": "몸무게 (.syn:native)"
   },
   {

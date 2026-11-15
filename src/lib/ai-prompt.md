@@ -24,7 +24,14 @@ Each entry:
 - `captionIndex`: the [idx] from captions above
 - `text`: exact substring from the Korean column
 - `translation`: contextual English meaning for this caption, not a dictionary dump. Concise.
-- `etymology`: Hanja if applicable. Empty string for native Korean words.
+- `etymology`: the word's origin or structure when it helps learning, otherwise an empty string. Minimal format, no explanations:
+  - Sino-Korean: Hanja, followed by Japanese kanji when they differ (`價格 / 価格`, `希望`)
+  - auxiliary verb compounds: `잊다 + 버리다`
+  - passive, causative, and nominalization: `듣다 + 리 (passive)`, `웃다 + 기 (causative)`, `걷다 + 음 (nominalization)`
+  - compounds, with each root before sound change: `개 + 아지` for 강아지, `갈비 + 湯` for 갈비탕
+  - loanwords, with the borrowing path: `computer`, `アルバイト / Arbeit`
+  - contractions: the full form, such as `아이` for 애
+  - Leave it empty for native words with no analyzable structure (가다, 좋다), obvious splits (숨소리 is 숨 + 소리), and origins that aren't established. Don't guess a folk etymology.
 - `notes`: a short usage note when it helps, otherwise an empty string. Useful notes include:
   - the grammar pattern behind a pick that isn't a single word, such as -ㄹ수록 ("the more ...") in 조용할수록
   - a contrast with a similar form
@@ -36,7 +43,7 @@ Each entry:
     "captionIndex": 4,
     "text": "체중",
     "translation": "body weight",
-    "etymology": "體重",
+    "etymology": "體重 / 体重",
     "notes": "몸무게 (.syn:native)"
   },
   {
@@ -71,7 +78,14 @@ Each entry:
 
 - `id`: the bookmark id from above
 - `translation`: contextual English meaning for this caption, not a dictionary dump. Concise.
-- `etymology`: Hanja if applicable (e.g. "體重"). Empty string for native Korean words.
+- `etymology`: the word's origin or structure when it helps learning, otherwise an empty string. Minimal format, no explanations:
+  - Sino-Korean: Hanja, followed by Japanese kanji when they differ (`價格 / 価格`, `希望`)
+  - auxiliary verb compounds: `잊다 + 버리다`
+  - passive, causative, and nominalization: `듣다 + 리 (passive)`, `웃다 + 기 (causative)`, `걷다 + 음 (nominalization)`
+  - compounds, with each root before sound change: `개 + 아지` for 강아지, `갈비 + 湯` for 갈비탕
+  - loanwords, with the borrowing path: `computer`, `アルバイト / Arbeit`
+  - contractions: the full form, such as `아이` for 애
+  - Leave it empty for native words with no analyzable structure (가다, 좋다), obvious splits (숨소리 is 숨 + 소리), and origins that aren't established. Don't guess a folk etymology.
 - `notes`: a short usage note when it helps, otherwise an empty string. Useful notes include:
   - the grammar pattern behind a pick that isn't a single word, such as -ㄹ수록 ("the more ...") in 조용할수록
   - a contrast with a similar form
