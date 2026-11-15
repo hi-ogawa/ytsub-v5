@@ -1,9 +1,14 @@
 import net from "node:net";
 import { defineConfig, devices } from "@playwright/test";
 
-// Resolve the port once and share it with Playwright workers. Concurrent runs
-// from other worktrees must not share a preferred port, or one suite can test
-// the other's server.
+const server = process.env.E2E_SERVER ?? "build";
+if (server !== "build" && server !== "dev") {
+  throw new Error(`Invalid E2E_SERVER: ${server}. Expected build or dev.`);
+}
+
+// Resolve the port once and share it with Playwright workers. The server binds
+// it only after the build, and Playwright accepts any server that answers on it
+// by then, so concurrent runs from other worktrees must not share a preferred port.
 const port = process.env.E2E_PORT
   ? Number(process.env.E2E_PORT)
   : await getFreePort();
@@ -17,7 +22,10 @@ export default defineConfig({
   workers: 1,
   globalSetup: "./e2e/global-setup.ts",
   webServer: {
-    command: `pnpm dev --port ${port} --strictPort`,
+    command:
+      server === "dev"
+        ? `pnpm dev --port ${port} --strictPort`
+        : `pnpm build && pnpm preview --port ${port} --strictPort`,
     url: `http://localhost:${port}`,
     reuseExistingServer: false,
     env: {

@@ -48,9 +48,8 @@ jobs:
           node-version: "lts/*"
       - run: corepack enable
       - run: pnpm install --frozen-lockfile
-      - run: pnpm build-ext
       - run: pnpm exec playwright install chromium --with-deps --no-shell
-      - run: pnpm test-e2e-full
+      - run: pnpm test-e2e
       - uses: actions/upload-artifact@v7
         if: failure()
         with:
