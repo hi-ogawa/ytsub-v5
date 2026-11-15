@@ -33,11 +33,11 @@
   <text x="470" y="194" text-anchor="middle" class="s">no UI</text>
 
   <!-- Channels between the worlds -->
-  <line x1="244" y1="130" x2="376" y2="130" class="line" marker-start="url(#a)" marker-end="url(#a)"/>
+  <line x1="244" y1="130" x2="376" y2="130" class="line" marker-end="url(#a)"/>
   <text x="310" y="124" text-anchor="middle" class="c">zamak:rpc</text>
-  <line x1="244" y1="162" x2="376" y2="162" class="line" marker-start="url(#a)" marker-end="url(#a)"/>
+  <line x1="244" y1="162" x2="376" y2="162" class="line" marker-start="url(#a)"/>
   <text x="310" y="156" text-anchor="middle" class="c">zamak:tab-rpc</text>
-  <line x1="244" y1="194" x2="376" y2="194" class="bc" marker-start="url(#o)" marker-end="url(#o)"/>
+  <line x1="244" y1="194" x2="376" y2="194" class="bc" marker-end="url(#o)"/>
   <text x="310" y="188" text-anchor="middle" class="oc">zamak:store</text>
 
   <rect x="40" y="270" width="520" height="90" rx="6" fill="#fdfaf2" stroke="#a96"/>
@@ -96,9 +96,9 @@
 
   <!-- Legend -->
   <line x1="40" y1="430" x2="90" y2="430" class="bc"/>
-  <text x="100" y="434">BroadcastChannel: reaches the other world and every other YouTube tab</text>
+  <text x="100" y="434">BroadcastChannel notice, no response: also reaches every other YouTube tab</text>
   <line x1="40" y1="456" x2="90" y2="456" class="line"/>
-  <text x="100" y="460">window or Chrome message, one request and one response</text>
+  <text x="100" y="460">call, pointing from caller to callee: the response comes back on the same line</text>
   <line x1="40" y1="482" x2="90" y2="482" class="line" stroke-dasharray="5 4"/>
   <text x="100" y="486">long-lived port, closes when the tab goes away</text>
   <rect x="40" y="500" width="50" height="18" rx="4" fill="#fdfaf2" stroke="#a96"/>

@@ -17,11 +17,17 @@ The two worlds share the tab's origin, so they read and write the same IndexedDB
 
 ## Talk Between the Worlds in One Tab
 
-Three channels connect the content script and the relay:
+Three channels connect the content script and the relay. Each one works in a single direction:
 
-- **`zamak:rpc`** carries calls from the content script to the background. The content script posts a request with an ID. The relay forwards it to the background, then posts the response, and the content script matches it by ID.
-- **`zamak:tab-rpc`** carries calls from the background to the content script. The relay receives a request from the background, posts it to the content script, and waits for the response.
-- **`zamak:store`** carries changes to the video index. When the content script changes the index, it posts the new index. The relay updates its in-memory copy and writes it to `chrome.storage.local`. When a tab loads, the relay first copies the index from `chrome.storage.local` into localStorage, where the content script reads it.
+| Channel         | Who starts it                                       | Who answers                       | What comes back |
+| --------------- | --------------------------------------------------- | --------------------------------- | --------------- |
+| `zamak:rpc`     | The content script                                  | The background, through the relay | A response      |
+| `zamak:tab-rpc` | The background, through the relay                   | The content script                | A response      |
+| `zamak:store`   | The content script, when it changes the video index | Nobody                            | Nothing         |
+
+- **`zamak:rpc`** lets the content script call the background, such as to check the sync status. The content script posts a request with an ID. The relay forwards it to the background, then posts the response, and the content script matches it by ID. The background never starts a call on this channel.
+- **`zamak:tab-rpc`** is the same in reverse. The background sends a request to the relay, the relay posts it to the content script, and the content script posts the response. The content script never starts a call on this channel.
+- **`zamak:store`** is a change notice, not a call. When the content script changes the index, it posts the new index, and the relay writes it to `chrome.storage.local`. The relay never posts on it. When a tab loads, the relay copies the index from `chrome.storage.local` into localStorage without posting, and the content script reads it from there.
 
 The two RPC channels use window messages, because both worlds share the tab's `window` and a window message never leaves the tab. Each message is also tagged as a request or a response, so a listener never answers a response.
 
