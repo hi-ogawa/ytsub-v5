@@ -39,9 +39,21 @@ const WATCH_HTML = `<!doctype html>
 <html>
   <head>
     <script>window.ytcfg = { data_: { VISITOR_DATA: "e2e-visitor" } };</script>
+    <style>
+      body { margin: 0; font-family: sans-serif; color: #888; }
+      header { height: 56px; border-bottom: 1px dashed #ccc; padding: 0 24px; line-height: 56px; }
+      main { padding: 24px; width: 60%; }
+      video { display: block; width: 100%; aspect-ratio: 16 / 9; background: #ddd; }
+      .line { height: 16px; margin-top: 12px; background: #eee; }
+    </style>
   </head>
   <body>
-    <video></video>
+    <header>Mock YouTube (e2e/ext/youtube-mock.ts)</header>
+    <main>
+      <video></video>
+      <div class="line" style="width: 70%"></div>
+      <div class="line" style="width: 40%"></div>
+    </main>
   </body>
 </html>
 `;
