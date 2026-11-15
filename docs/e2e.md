@@ -21,6 +21,7 @@ Prefer `/dev` routes unless the feature needs the server.
 
 - Keep the structure flat. Don't nest `test.describe`, and call `setupDb()` and `login()` inline in each test.
 - Prefer one rich flow test over several thin tests with one assertion each. Each test pays about 500ms of navigation, so combining related assertions saves real time.
+- Wrap the body of a helper that performs several page actions in `test.step(name, fn, { box: true })`. Traces and the HTML report then show the helper as one named step, and a failure points at the spec line that called it.
 - Scope selectors to a `data-testid` or a panel container, because text can repeat across the page. For example, the FAB text can match a tab button name. Prefer `getByTestId`, then `getByRole` scoped to a container, then page-wide `getByText`.
 
 ## Test the Extension
