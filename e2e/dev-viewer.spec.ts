@@ -493,19 +493,28 @@ test.describe("dev-viewer caption panel", () => {
     await openPanelWithTracks(page);
     const panel = page.getByTestId("resizable-panel");
     await createBookmarkAt(page, { index: 0, start: 0, end: 3 });
+    await createBookmarkAt(page, { index: 2, start: 0, end: 1 });
+    const cards = page.locator("[data-bookmark-id]");
 
-    // Click highlight to open popover
-    const highlight = page
-      .locator("[data-index='0']")
-      .getByTestId("bookmark-highlight")
-      .first();
-    await highlight.click();
+    async function goToBookmark(index: number) {
+      await test.step(
+        `Go to bookmark at caption ${index}`,
+        async () => {
+          await page
+            .locator(`[data-index='${index}']`)
+            .getByTestId("bookmark-highlight")
+            .first()
+            .click();
+          await page
+            .getByTestId("bookmark-popover")
+            .getByRole("button", { name: "Go to bookmark" })
+            .dispatchEvent("mousedown");
+        },
+        { box: true },
+      );
+    }
 
-    // Click "Go to bookmark" in popover
-    const popover = page.getByTestId("bookmark-popover");
-    await popover
-      .getByRole("button", { name: "Go to bookmark" })
-      .dispatchEvent("mousedown");
+    await goToBookmark(0);
 
     // Should switch to bookmarks tab
     await expect(panel.getByRole("button", { name: /Bookmarks/ })).toHaveClass(
@@ -513,9 +522,14 @@ test.describe("dev-viewer caption panel", () => {
     );
 
     // Bookmark card should be visible with flash-highlight animation
-    const bookmarkCard = page.locator("[data-bookmark-id]").first();
-    await expect(bookmarkCard).toBeVisible();
-    await expect(bookmarkCard).toHaveClass(/flash-highlight/);
+    await expect(cards.nth(0)).toBeVisible();
+    await expect(cards.nth(0)).toHaveClass(/flash-highlight/);
+
+    // Hiding the tab mid-flash must not leave the class to replay later
+    await panel.getByRole("button", { name: /Captions/ }).click();
+    await goToBookmark(2);
+    await expect(cards.nth(1)).toHaveClass(/flash-highlight/);
+    await expect(cards.nth(0)).not.toHaveClass(/flash-highlight/);
   });
 
   test("AI pick prompt: copy and import with markdown fence", async ({

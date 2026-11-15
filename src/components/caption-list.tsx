@@ -2,6 +2,7 @@ import { ExternalLink } from "lucide-react";
 import { useEffect, useImperativeHandle, useMemo, useRef } from "react";
 import type { MergedCaption } from "../lib/caption-merge.ts";
 import type { ExtensionBookmark } from "../lib/extension-bookmarks.ts";
+import { flashHighlight } from "../lib/flash-highlight.ts";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover.tsx";
 import type { YTPlayer } from "./youtube-player.tsx";
 
@@ -210,9 +211,7 @@ export function CaptionList({
       ) as HTMLElement | null;
       if (el) {
         el.scrollIntoView({ behavior: "smooth", block: "center" });
-        el.classList.remove("flash-highlight");
-        void el.offsetWidth; // Force reflow to restart animation
-        el.classList.add("flash-highlight");
+        flashHighlight(el);
       }
       onManualScroll();
     },
