@@ -1,5 +1,5 @@
-// Track tabs with active, current-version content scripts via long-lived ports.
-// Relay connects on load; port auto-disconnects on tab close, navigation, or extension update.
+// Lets the background find a YouTube tab to read or write youtube.com storage.
+// See docs/extension-runtime.md.
 
 const PORT_NAME = "zamak:content";
 

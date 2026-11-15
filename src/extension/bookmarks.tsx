@@ -322,15 +322,12 @@ async function main() {
     },
   });
 
-  // Two-way bridge: chrome.storage.local <-> localStorage for video-index.
-  // Hydrate localStorage from chrome.storage.local before rendering, then keep
-  // them in sync so videoIndexStore (localStorage-backed) works on this origin.
+  // This page's copy of the video index. See docs/data-and-sync.md.
   const entries = await chromeStorage.get<VideoIndexEntry[]>(
     videoIndexStore.key,
   );
   videoIndexStore.setLocal(entries ?? []);
 
-  // Sync back to chrome.storage.local when videoIndexStore writes
   videoIndexStore.subscribe(() => {
     chromeStorage.set({ [videoIndexStore.key]: videoIndexStore.get() });
   });

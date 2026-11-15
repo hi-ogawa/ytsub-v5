@@ -26,8 +26,8 @@ import {
 
 const bgRpc = createRuntimeRelayRpc<typeof bgRpcHandlers>();
 
-// Handlers for reverse (tab) RPC — background can request IDB access
-// on the youtube.com origin through this content script.
+// The background reaches youtube.com IndexedDB through these handlers.
+// See docs/extension-runtime.md.
 export const tabRpcHandlers = {
   async getSession({ youtubeId }: { youtubeId: string }) {
     return await getSession(youtubeId);

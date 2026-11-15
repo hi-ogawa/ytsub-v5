@@ -31,6 +31,7 @@ Read the [product overview](docs/product.md) and the [architecture overview](doc
 - Order functions by reading flow, with primary entry points and callers before their implementation helpers
 - Comment a `useEffect` only when it carries its own block of logic, and describe the mechanism it maintains across renders. Effects that only set up and clean up need no comment
 - Comment only what the code cannot say, such as a non-obvious reason or a constraint the types do not show. Do not restate a name or type, do not describe other files, and state a rationale once, where it is enforced
+- Explain how parts work together, such as a message flow across contexts or files, in a doc under `docs/` with a diagram. In the code, point to that doc in one line instead of writing the flow out as ASCII art or a list in a comment
 - Prefer `undefined` over `null`
 - Prefer optional properties (`{ x?: T }`) over explicit undefined (`{ x: T | undefined }`)
 - Make props/params required when all call sites always pass them
