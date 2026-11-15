@@ -4,7 +4,9 @@ Zamak turns YouTube videos into vocabulary study. This doc explains the problem 
 
 ## Turn Watching Into Active Learning
 
-YouTube has endless native content for a language learner. Zamak was built for learning Korean, but it works with any language that has captions. Watching alone is passive, though, so the words you meet slip away. To learn from a video, you need to pull out the words worth knowing, understand them, and come back to them later.
+YouTube has endless native content for a language learner. But watching alone is passive, so the words you meet slip away. To learn from a video, you need to pull out the words worth knowing, understand them, and come back to them later.
+
+Zamak was built for learning Korean. The caption panel works with any language that has captions, but the AI prompts ask for Korean vocabulary and Hanja etymology.
 
 Existing tools mostly help one word at a time. Language Reactor and similar extensions show dual subtitles and translate a word when you click it. None of them pick out the useful vocabulary in a whole video and explain it in depth. An LLM is good at exactly that, so Zamak builds its workflow around one.
 
@@ -25,4 +27,4 @@ The Chrome extension is where you study. Once it's installed, a button appears o
 
 Signing in is optional. With an account, you can push a video to the server and pull it back on another browser, one video at a time. The bookmarks page shows which videos need a push or a pull.
 
-The web app is for reviewing on devices without the extension, such as a phone. After you sign in, it lists your synced videos and shows each one with its captions and bookmarks next to the video. It can't add new videos, because only the extension can get subtitles from YouTube. The one other way in is an `import.json` file, which the caption panel can export and the web app can import.
+The web app is for reviewing on devices without the extension, such as a phone. After you sign in, it lists your synced videos and shows each one with its captions and bookmarks next to the video. It can't fetch new videos, because only the extension can get subtitles from YouTube. It can import an `import.json` file instead. The caption panel exports one, and [Generate import.json](generate-import-json.md) builds one with yt-dlp and an LLM.

@@ -6,7 +6,7 @@ This doc explains how Zamak is built. [Product overview](product.md) explains wh
 
 The system has three parts:
 
-- **The Chrome extension** is the main client and the only way data enters the system. On a YouTube video page it shows the caption panel, fetches subtitles, and keeps your captions and bookmarks in the browser. It works without an account.
+- **The Chrome extension** is the main client and the only part that can fetch videos from YouTube. On a YouTube video page it shows the caption panel, fetches subtitles, and keeps your captions and bookmarks in the browser. It works without an account.
 - **The server** keeps a copy of your videos, captions, and bookmarks for access from other devices. It runs as a Cloudflare Worker with a D1 (SQLite) database, and it needs a login. No page reads from it directly. Clients pull data into local storage first.
 - **The web app** shows synced data on devices without the extension, such as a phone. It always needs a login. It pulls videos from the server into its own browser storage and renders the same caption panel. It cannot fetch anything from YouTube.
 
@@ -14,7 +14,7 @@ No part calls an AI service. The LLM step goes through the user's clipboard, so 
 
 ## Fetch Subtitles Where Only the Extension Can
 
-Only a script running on a youtube.com page can get subtitles. The page's origin lets it call YouTube's internal APIs without CORS errors, and the page holds the values that the API calls need. A server or the web app has neither, so all video data comes in through the extension.
+Only a script running on a youtube.com page can get subtitles. The page's origin lets it call YouTube's internal APIs without CORS errors, and the page holds the values that the API calls need. A server or the web app has neither, so new videos come from the extension. The other way in is an `import.json` file imported into the web app, which the extension exports or a yt-dlp script builds.
 
 YouTube also requires a proof-of-origin token for subtitles requested by its web client. The extension avoids it by asking for the video as a mobile client, the same workaround yt-dlp uses. See [YouTube subtitle fetching](concepts/youtube-subtitle-fetching.md) for how to follow yt-dlp when YouTube breaks this.
 
