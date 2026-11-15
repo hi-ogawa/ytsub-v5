@@ -15,7 +15,7 @@ Zamak is the fifth version of this project. Earlier versions stopped working whe
 ## Study a Video in Four Steps
 
 1. **Watch** a video with two caption tracks side by side, usually the language you're learning and a translation. The panel lines the two tracks up and follows playback.
-2. **Bookmark** words and phrases by selecting them in a caption. Or skip this step and let the LLM pick the interesting vocabulary for you.
+2. **Bookmark** words and phrases by selecting them in a caption. Or skip this step and let the LLM pick the interesting vocabulary for you. The panel lists every caption in the video, so you can also scroll and bookmark any line without playing it. Clicking a line jumps the video to it, but selecting text does not. To keep the list still while the video plays, turn off Auto-scroll in the panel menu.
 3. **Fill with an LLM.** Zamak builds a prompt with the captions and your bookmarks in it. You paste it into any LLM chat, such as Claude, ChatGPT, or Gemini, and paste the JSON answer back. The LLM adds a translation, the etymology, and usage notes to each bookmark. It can also fix errors in auto-generated captions.
 4. **Review** your bookmarks in the panel's bookmark list. Each bookmark keeps the caption it came from, and you can jump back to that moment in the video.
 
