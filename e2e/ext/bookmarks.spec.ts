@@ -1,5 +1,5 @@
 import { expect } from "@playwright/test";
-import { setupDb } from "../helper";
+import { createCheckpoint, setupDb } from "../helper";
 import {
   gotoBookmarks,
   login,
@@ -59,8 +59,10 @@ test("video page: bookmark a caption, then push it from the bookmarks page", asy
   await login(page, { username: "dev-empty" });
   const badge = card.getByTestId("video-sync-badge");
   await expect(badge).toHaveAttribute("data-sync-status", "push");
+  const checkpoint = createCheckpoint();
   await badge.click();
   await expect(badge).toHaveAttribute("data-sync-status", "synced");
+  checkpoint("push synced");
 });
 
 test("bookmarks page: shows local entries without login", async ({
@@ -287,8 +289,10 @@ test("bookmarks page: pull syncs server data to local via YouTube tab", async ({
   await expect(badge).toHaveAttribute("data-sync-status", "pull");
 
   // Click pull — should sync from server and show synced
+  const checkpoint = createCheckpoint();
   await badge.click();
   await expect(badge).toHaveAttribute("data-sync-status", "synced");
+  checkpoint("pull synced");
 
   // Verify pulled data shows bookmark count
   const card = page.getByTestId(`video-card-${SEED_VIDEO_ID}`);
