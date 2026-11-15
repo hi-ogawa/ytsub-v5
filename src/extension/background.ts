@@ -1,4 +1,4 @@
-// Background service worker — handles RPC from content script (via relay).
+// Background service worker. docs/extension-runtime.md explains its role.
 
 import { sessionToExportData } from "../lib/caption-session.ts";
 import { serverSessionToLocal } from "../lib/sync.ts";

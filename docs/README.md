@@ -1,8 +1,11 @@
 # Documentation
 
-## Architecture
+## Overview
 
-- [Architecture overview](architecture.md): the problem, the core workflow, the extension, server, and web app layers, how the extension fetches subtitles, the UI surfaces and their `/dev` mirrors, and the data model.
+- [Product overview](product.md): the problem Zamak solves, the four study steps, and the three setups: extension only, with an account, and with the web app.
+- [Architecture overview](architecture.md): the extension, server, and web app, why only the extension can fetch subtitles, and the shared UI and its `/dev` mirrors.
+- [Extension runtime](extension-runtime.md): the content script, relay, background, and bookmarks page, the channels between them, and why the background goes through a YouTube tab.
+- [Data and sync](data-and-sync.md): caption sessions and the video index in each origin's storage, how sync status is decided, what push and pull replace, and where copies drift apart.
 
 ## Concepts
 

@@ -1,28 +1,5 @@
-// Typed RPC mechanism for content script ↔ background worker communication.
-//
-// Forward RPC (content-initiated, request → response):
-//
-//   MAIN world (content.tsx)
-//     → posts a "zamak:rpc" request {id, method, params} on the window
-//   ISOLATED world (relay.ts)
-//     → receives message, calls chrome.runtime.sendMessage
-//   Background worker (background.ts)
-//     → handles message, returns response
-//   ISOLATED world (relay.ts)
-//     → posts a "zamak:rpc" response {id, result/error} on the window
-//   MAIN world (content.tsx)
-//     → receives response, resolves promise
-//
-// Reverse (tab) RPC (background-initiated, request → response):
-//
-//   Background worker (background.ts)
-//     → chrome.tabs.sendMessage(tabId, {type: "zamak-tab-rpc", ...})
-//   ISOLATED world (relay.ts)
-//     → chrome.runtime.onMessage listener, posts a "zamak:tab-rpc" request on the window
-//   MAIN world (content.tsx)
-//     → handler executes, posts a "zamak:tab-rpc" response on the window
-//   ISOLATED world (relay.ts)
-//     → receives response, calls sendResponse back to background
+// Typed RPC between the content script, the relay, the background, and the
+// bookmarks page. docs/extension-runtime.md explains how the calls flow.
 
 // --- Wire format ---
 
@@ -41,9 +18,8 @@ type RpcResponse = {
 
 // --- MAIN ↔ ISOLATED world messaging ---
 
-// Both worlds share the page's window, so window messages stay inside one tab.
-// A BroadcastChannel would reach every youtube.com tab, and two tabs would
-// answer each other's responses forever (#184).
+// Window messages, not a BroadcastChannel, so RPC stays inside one tab.
+// See docs/extension-runtime.md.
 
 const RPC_CHANNEL = "zamak:rpc";
 const TAB_RPC_CHANNEL = "zamak:tab-rpc";

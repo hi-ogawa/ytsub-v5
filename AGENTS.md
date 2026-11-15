@@ -15,7 +15,7 @@
 
 ## Key Docs
 
-Read the [architecture overview](docs/architecture.md) before implementing features. It also lists the UI surfaces and the `/dev` routes that mirror the extension. [docs/README.md](docs/README.md) indexes the rest of the docs.
+Read the [product overview](docs/product.md) and the [architecture overview](docs/architecture.md) before implementing features. It also lists the UI surfaces and the `/dev` routes that mirror the extension. Read [extension runtime](docs/extension-runtime.md) and [data and sync](docs/data-and-sync.md) before changing extension messaging or storage. [docs/README.md](docs/README.md) indexes the rest of the docs.
 
 ## Conventions
 
@@ -31,12 +31,14 @@ Read the [architecture overview](docs/architecture.md) before implementing featu
 - Order functions by reading flow, with primary entry points and callers before their implementation helpers
 - Comment a `useEffect` only when it carries its own block of logic, and describe the mechanism it maintains across renders. Effects that only set up and clean up need no comment
 - Comment only what the code cannot say, such as a non-obvious reason or a constraint the types do not show. Do not restate a name or type, do not describe other files, and state a rationale once, where it is enforced
+- Explain how parts work together, such as a message flow across contexts or files, in a doc under `docs/` with a diagram. In the code, point to that doc in one line instead of writing the flow out as ASCII art or a list in a comment
 - Prefer `undefined` over `null`
 - Prefer optional properties (`{ x?: T }`) over explicit undefined (`{ x: T | undefined }`)
 - Make props/params required when all call sites always pass them
 - Shape arguments the way a reader expects from the operation. Take a value positionally when the operation conventionally takes just that value. Use an options object when a call site would be ambiguous without names
 - Use braces for every `switch` case body (`case "x": { ... }`, `default: { ... }`)
 - Write docs, code comments, commit messages, and PR descriptions naturally for a first-time reader, without the awkward or defensive tone that builds up when text is revised alongside code changes
+- Docs: follow the writing conventions in [docs/AGENTS.md](docs/AGENTS.md)
 
 ## Tests
 
