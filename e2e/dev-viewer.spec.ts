@@ -516,10 +516,11 @@ test.describe("dev-viewer caption panel", () => {
 
     await goToBookmark(0);
 
-    // Should switch to bookmarks tab
+    // Should switch to bookmarks tab and close the popover
     await expect(panel.getByRole("button", { name: /Bookmarks/ })).toHaveClass(
       /font-medium/,
     );
+    await expect(page.getByTestId("bookmark-popover")).toHaveCount(0);
 
     // Bookmark card should be visible with flash-highlight animation
     await expect(cards.nth(0)).toBeVisible();
