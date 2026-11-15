@@ -23,8 +23,8 @@ The LLM step works through the clipboard on purpose. It works with any model and
 
 ## Start in the Extension, Continue Anywhere
 
-The Chrome extension is where you study. Once it's installed, a button appears on every YouTube video page, and it opens the caption panel. Your captions and bookmarks are saved in the browser, so you don't need an account. Clicking the extension's icon opens the bookmarks page, which lists every video you've studied. A card takes you back to the video on YouTube.
-
-Signing in is optional. With an account, you can push a video to the server and pull it back on another browser, one video at a time. The bookmarks page shows which videos need a push or a pull.
-
-The web app is for reviewing on devices without the extension, such as a phone. After you sign in, it lists your synced videos and shows each one with its captions and bookmarks next to the video. It can't fetch new videos, because only the extension can get subtitles from YouTube. It can import an `import.json` file instead. The caption panel exports one, and [Generate import.json](generate-import-json.md) builds one with yt-dlp and an LLM.
+1. **Install the extension and open a YouTube video.** A button on the video page opens the caption panel.
+2. **Bookmark from the captions.** Captions and bookmarks are saved in the browser, so you don't need an account.
+3. **Click the extension's icon** to open the bookmarks page, which lists every video you've studied. A card takes you back to the video on YouTube.
+4. **(Optional) Sign in to sync.** Push a video to the server or pull it back, one video at a time. The bookmarks page shows which videos need a push or a pull.
+5. **(Optional) Open the web app on another device,** such as a phone. It shows your synced videos with their captions and bookmarks. It can't fetch new videos from YouTube, but it can import an `import.json` file, which the caption panel exports or [Generate import.json](generate-import-json.md) builds with yt-dlp and an LLM.
