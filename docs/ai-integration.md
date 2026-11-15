@@ -24,7 +24,7 @@ The prompt contains the video title, all captions, and (for Fill Bookmarks) your
 
 ### 2. Paste into any AI chat
 
-Open your preferred LLM chat and paste the prompt. The prompt instructs the AI to respond with a JSON code block — no other formatting.
+Open your preferred LLM chat and paste the prompt. The prompt asks the AI to respond with one JSON code block, optionally with a short comment around it.
 
 Any model that can follow instructions and output JSON works. Larger models tend to produce better vocabulary picks and more accurate ASR fixes.
 
@@ -32,7 +32,7 @@ Any model that can follow instructions and output JSON works. Larger models tend
 
 ### 3. Import the result
 
-Copy the AI's entire response (the JSON code block).
+Copy the AI's entire response. Zamak reads the first JSON code block and ignores any text around it.
 
 Back in Zamak, open the settings menu and click **Import AI result**. Paste the JSON when prompted.
 

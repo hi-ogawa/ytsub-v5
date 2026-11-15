@@ -17,7 +17,7 @@ If there are more than 150 captions, process ~150 at a time. After each batch, o
 
 ## Output format
 
-Output your picks as a JSON code block. You may include brief commentary outside the code block.
+Output your picks as one JSON code block. The app reads the first fenced block, so you may add a short comment outside it.
 
 Each entry:
 
@@ -70,9 +70,9 @@ Title: {{TITLE}}
 
 You are helping me learn Korean from a YouTube video. Fill translation and metadata for the bookmarks below.
 
-## Output format (CRITICAL)
+## Output format
 
-Your ENTIRE response must be a single JSON code block. No prose, no tables, no explanations outside the JSON. The output is machine-parsed — anything outside the code fence will cause an error.
+Output the entries as one JSON code block. The app reads the first fenced block, so you may add a short comment outside it.
 
 Each entry:
 
@@ -126,11 +126,11 @@ Fix: misheard syllables, wrong spacing, `>>` markers, truncated words, repeated 
 Do NOT fix: correct casual/informal Korean, filler words, stylistic choices.
 If unsure about a correction, skip it and mention it separately.
 
-## Output format (CRITICAL)
+## Output format
 
-Your ENTIRE response must be a single JSON code block. No prose, no tables, no explanations outside the JSON. The output is machine-parsed — anything outside the code fence will cause an error.
+Output the fixes as one JSON code block. The app reads the first fenced block, so you may add a short comment outside it.
 
-Include ONLY the rows that need fixing:
+Include only the rows that need fixing:
 
 ```json
 [{ "idx": 3, "text1": "두바이 쿠키 먹어봤어?" }]
