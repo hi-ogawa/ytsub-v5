@@ -2,13 +2,15 @@
 
 ## System Shape
 
-Zamak turns YouTube videos into vocabulary study. You watch a video with two caption tracks side by side, bookmark words and phrases, and let any LLM fill in translations, etymology, and notes. The bookmarks stay tied to the caption and the moment in the video where you found them.
+This doc explains how Zamak is built. [Product overview](product.md) explains what it does for a learner.
 
 The system has three parts:
 
 - **The Chrome extension** is the main client and the only way data enters the system. On a YouTube video page it shows the caption panel, fetches subtitles, and keeps your captions and bookmarks in the browser. It works without an account.
 - **The server** keeps a copy of your videos, captions, and bookmarks for access from other devices. It runs as a Cloudflare Worker with a D1 (SQLite) database, and it needs a login. No page reads from it directly. Clients pull data into local storage first.
 - **The web app** shows synced data on devices without the extension, such as a phone. It always needs a login. It pulls videos from the server into its own browser storage and renders the same caption panel. It cannot fetch anything from YouTube.
+
+No part calls an AI service. The LLM step goes through the user's clipboard, so the caption panel only builds the prompt and parses the answer that the user pastes back.
 
 ## Fetch Subtitles Where Only the Extension Can
 
@@ -26,7 +28,3 @@ The extension and the web app render the same two pages from shared components:
 Reloading an extension on every change is slow, so the web app also has `/dev` routes that render these pages without a login. `/dev/videos/:id` shows the caption panel with fixture data recorded from real videos, and `/dev` shows the bookmarks page. UI work and most e2e tests use these routes instead of YouTube and the extension runtime.
 
 [Extension runtime](extension-runtime.md) explains how the extension's pieces talk to each other. [Data and sync](data-and-sync.md) explains where data is stored and how it moves between the browser and the server.
-
-## Fill Bookmarks With Any LLM
-
-The AI workflow works through the clipboard. The caption panel builds a self-contained prompt with the captions and bookmarks in it. You paste it into any LLM chat and paste the JSON answer back, and the panel applies it. This keeps the workflow independent of the model and the provider, and the prompt stays visible to you. It supports three tasks: pick interesting vocabulary and fill it in, fill in existing bookmarks, and fix errors in auto-generated captions. See [AI integration](ai-integration.md) for the steps.

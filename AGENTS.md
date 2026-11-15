@@ -15,7 +15,7 @@
 
 ## Key Docs
 
-Read the [architecture overview](docs/architecture.md) before implementing features. It also lists the UI surfaces and the `/dev` routes that mirror the extension. Read [extension runtime](docs/extension-runtime.md) and [data and sync](docs/data-and-sync.md) before changing extension messaging or storage. [docs/README.md](docs/README.md) indexes the rest of the docs.
+Read the [product overview](docs/product.md) and the [architecture overview](docs/architecture.md) before implementing features. It also lists the UI surfaces and the `/dev` routes that mirror the extension. Read [extension runtime](docs/extension-runtime.md) and [data and sync](docs/data-and-sync.md) before changing extension messaging or storage. [docs/README.md](docs/README.md) indexes the rest of the docs.
 
 ## Conventions
 
