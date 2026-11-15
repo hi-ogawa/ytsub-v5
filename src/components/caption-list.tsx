@@ -1,5 +1,11 @@
 import { ExternalLink } from "lucide-react";
-import { useEffect, useImperativeHandle, useMemo, useRef } from "react";
+import {
+  useEffect,
+  useImperativeHandle,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import type { MergedCaption } from "../lib/caption-merge.ts";
 import type { ExtensionBookmark } from "../lib/extension-bookmarks.ts";
 import { flashHighlight } from "../lib/flash-highlight.ts";
@@ -29,8 +35,13 @@ function BookmarkWord({
 }) {
   const filled = !!bookmark.translation;
   const triggerRef = useRef<HTMLSpanElement>(null);
+  const [open, setOpen] = useState(false);
+  function changeOpen(next: boolean) {
+    setOpen(next);
+    onPopoverOpenChange(next);
+  }
   return (
-    <Popover onOpenChange={onPopoverOpenChange}>
+    <Popover open={open} onOpenChange={changeOpen}>
       <PopoverTrigger asChild>
         <span
           ref={triggerRef}
@@ -95,6 +106,9 @@ function BookmarkWord({
             title="Go to bookmark"
             onMouseDown={(e) => {
               e.stopPropagation();
+              // The Captions tab gets hidden rather than unmounted, so an open
+              // popover would stay on screen, anchored to a zero-size trigger.
+              changeOpen(false);
               onGoToBookmark(bookmark.id);
             }}
           >
