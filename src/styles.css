@@ -142,8 +142,8 @@
 
 @keyframes flash-highlight {
   0% {
-    border-color: var(--color-ring);
-    background-color: var(--color-highlight-bg);
+    border-color: var(--ring);
+    background-color: var(--highlight-bg);
   }
   100% {
     border-color: transparent;
