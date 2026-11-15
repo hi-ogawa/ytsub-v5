@@ -65,9 +65,7 @@ test("dev-viewer sync › shows conflict when local bookmarks and server data bo
   // Local bookmark + server has seed data → conflict (never synced)
   await page.getByTitle("Settings").click();
   const indicator = page.getByTestId("sync-status");
-  await expect(indicator).toHaveAttribute("data-sync-state", "conflict", {
-    timeout: 5000,
-  });
+  await expect(indicator).toHaveAttribute("data-sync-state", "conflict");
 });
 
 test.describe("dev-viewer video-index", () => {
@@ -83,8 +81,9 @@ test.describe("dev-viewer video-index", () => {
     await openPanelWithTracks(page);
     await createBookmarkAt(page, { index: 0, start: 0, end: 2 });
 
-    // Navigate to video list and verify the video card
-    await page.goto("/");
+    // Navigate to video list and verify the video card. Navigate in the app,
+    // because a page load can abort the bookmark's pending IndexedDB write.
+    await page.getByRole("link", { name: "Zamak" }).click();
     const card = page.getByTestId(`video-card-${FIXTURE_VIDEO_ID}`);
     await expect(card).toBeVisible();
     await expect(card.getByTestId("video-card-title")).toHaveText(
@@ -98,7 +97,7 @@ test.describe("dev-viewer video-index", () => {
     // Panel stays open (FAB state persisted from earlier in this test)
     await expect(page.locator("[data-index='0']")).toBeVisible();
     await createBookmarkAt(page, { index: 1, start: 0, end: 2 });
-    await page.goto("/");
+    await page.getByRole("link", { name: "Zamak" }).click();
     await expect(
       page
         .getByTestId(`video-card-${FIXTURE_VIDEO_ID}`)
