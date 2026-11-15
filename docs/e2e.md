@@ -45,7 +45,7 @@ Local runs record traces in `test-results/trace-pack.html` by default. Use `E2E_
 
 ## Record Traces on GitHub Actions
 
-Add the `e2e-trace` label to a same-repository PR to trace changed e2e specs on each push. Find the trace link in the PR description. Remove the label to stop automatic runs. Changed specs under `e2e/youtube` are skipped.
+A same-repository PR that changes e2e specs traces those specs on each push. Find the trace link in the PR description. Changed specs under `e2e/youtube` are skipped.
 
 To trace existing specs that the PR does not change, or test a branch manually:
 
