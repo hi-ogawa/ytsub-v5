@@ -128,7 +128,7 @@ test("bookmarks page: load, login, logout", async ({ page, extensionId }) => {
   // Logout via menu
   await page.getByTestId("header-menu").click();
   await page.getByTestId("sign-out").click();
-  await expect(page.getByTestId("sign-in")).toBeVisible({ timeout: 10000 });
+  await expect(page.getByTestId("sign-in")).toBeVisible();
 });
 
 test("bookmarks page: delete removes video from list", async ({

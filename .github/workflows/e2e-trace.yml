@@ -63,8 +63,6 @@ jobs:
           node-version: "lts/*"
       - run: corepack enable
       - run: pnpm install --frozen-lockfile
-      # Extension specs load dist/extension.
-      - run: pnpm build-ext
       - run: pnpm exec playwright install --with-deps chromium
       - name: Run selected tests with tracing
         env:
@@ -77,7 +75,7 @@ jobs:
             echo "::error::Provide at least one test filter."
             exit 1
           fi
-          pnpm exec playwright test "${test_filters[@]}" --grep "$TEST_GREP"
+          pnpm test-e2e "${test_filters[@]}" --grep "$TEST_GREP"
       - uses: actions/upload-artifact@v7
         id: upload
         if: always() && hashFiles('test-results/trace-pack.html') != ''

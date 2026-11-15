@@ -1,13 +1,16 @@
 # E2E Tests
 
-The web app and extension e2e tests are two Playwright projects in `playwright.config.ts`. The subtitle extraction tests run against real YouTube pages with their own config, `playwright.youtube.config.ts`.
+The web app and extension e2e tests are two Playwright projects, `app` and `ext`, in `playwright.config.ts`. The subtitle extraction tests run against real YouTube pages with their own config, `playwright.youtube.config.ts`.
 
 ```sh
-pnpm test-e2e              # web app
-pnpm build-ext             # build dist/extension/ before extension tests
-pnpm test-e2e-ext          # extension
-pnpm test-youtube          # real YouTube pages
+pnpm test-e2e                          # web app and extension
+pnpm test-e2e e2e/ext/bookmarks.spec.ts # one file
+pnpm test-e2e --project=app            # one project
+E2E_SERVER=dev pnpm test-e2e           # against the dev server
+pnpm test-youtube                      # real YouTube pages
 ```
+
+`pnpm test-e2e` builds the extension into `dist/extension/`, then runs Playwright. Playwright builds the web app and serves it with `vite preview`, so the tests run the worker that ships. Set `E2E_SERVER=dev` to serve the web app with `pnpm dev` instead, which skips the web app build. Both servers persist local state to `.wrangler/state/e2e`, separate from the dev database.
 
 ## Choose Between `/dev` Routes and Auth-Gated Routes
 
@@ -26,7 +29,7 @@ Prefer `/dev` routes unless the feature needs the server.
 
 ## Test the Extension
 
-Extension tests load `dist/extension/` into a real Chromium instance, so run `pnpm build-ext` first. They use their own fixtures in `e2e/ext/helper.ts`:
+Extension tests load `dist/extension/`, which `pnpm test-e2e` builds, into a real Chromium instance. Running `pnpm exec playwright test` directly skips that build. They use their own fixtures in `e2e/ext/helper.ts`:
 
 - The `test` fixture launches Chromium with `--load-extension` and provides `context`, `extensionId`, and `page`.
 - `gotoBookmarks(page, extensionId)` opens `chrome-extension://<id>/bookmarks.html` with the test server URL.
