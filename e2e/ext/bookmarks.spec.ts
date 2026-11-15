@@ -1,11 +1,11 @@
 import { expect } from "@playwright/test";
-import { setupDb } from "../helper";
+import { createCheckpoint, setupDb } from "../helper";
 import {
   gotoBookmarks,
   login,
+  openPanelWithTracks,
   openYouTubeTab,
   seedChromeStorage,
-  seedYouTubeIdb,
   test,
 } from "./helper";
 
@@ -29,24 +29,40 @@ const fixtureEntries = [
 // Billlie - cloud palace (seeded on server for "dev" user)
 const SEED_VIDEO_ID = "7GU_VQfgMT0";
 
-// TODO: test content script
-test.skip("video page", async ({ page }) => {
-  await page.goto(`https://www.youtube.com/watch?v=${SEED_VIDEO_ID}`);
+test("video page: bookmark a caption, then push it from the bookmarks page", async ({
+  context,
+  page,
+  extensionId,
+}) => {
+  await setupDb({ seed: true });
 
-  const host = page.locator("#zamak-host");
-  await expect(host).toBeAttached({ timeout: 15_000 });
+  // Bookmark the first Korean caption in the content script panel
+  const ytPage = await openYouTubeTab(context, SEED_VIDEO_ID);
+  await openPanelWithTracks(ytPage);
+  const host = ytPage.locator("#zamak-host");
+  await host
+    .locator("[data-index='0'] [data-side='0'] [data-offset]")
+    .selectText();
+  await host.getByRole("button", { name: "Create bookmark" }).click();
+  await expect(
+    host.getByRole("button", { name: "Bookmarks (1)" }),
+  ).toBeVisible();
 
-  await host.getByTestId("caption-fab").click();
+  // The video reaches the bookmarks page without login
+  await gotoBookmarks(page, extensionId);
+  await page.bringToFront();
+  const card = page.getByTestId(`video-card-${SEED_VIDEO_ID}`);
+  await expect(card).toContainText("cloud palace");
+  await expect(card.getByTestId("video-card-badge")).toHaveText("1 bookmark");
 
-  const selects = host.getByTestId("track-picker").locator("select");
-  await selects.nth(0).selectOption(".ko");
-  await selects.nth(1).selectOption(".en");
-
-  await host.locator("[data-index='19']").click();
-  const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
-  await page.screenshot({
-    path: `./docs/assets/demo-${SEED_VIDEO_ID}-${timestamp}.png`,
-  });
+  // Push the session the content script saved
+  await login(page, { username: "dev-empty" });
+  const badge = card.getByTestId("video-sync-badge");
+  await expect(badge).toHaveAttribute("data-sync-status", "push");
+  const checkpoint = createCheckpoint();
+  await badge.click();
+  await expect(badge).toHaveAttribute("data-sync-status", "synced");
+  checkpoint("push synced");
 });
 
 test("bookmarks page: shows local entries without login", async ({
@@ -252,85 +268,6 @@ test("bookmarks page: pull shows error toast when no YouTube tab open", async ({
   await expect(errorToast).toContainText("No YouTube tab open");
 });
 
-test("bookmarks page: push syncs local data to server via YouTube tab", async ({
-  context,
-  page,
-  extensionId,
-}) => {
-  await setupDb({ seed: true });
-
-  // Open YouTube tab so tab RPC works
-  const ytPage = await openYouTubeTab(context);
-
-  // Seed a caption session into youtube.com's IndexedDB
-  const testVideoId = "push-e2e-test";
-  await seedYouTubeIdb(ytPage, {
-    youtubeId: testVideoId,
-    title: "Push E2E Test",
-    channelName: "Test Channel",
-    channelId: "UC123",
-    duration: 60,
-    vssId1: ".ko",
-    vssId2: ".en",
-    language1: "ko",
-    language2: "en",
-    captions: [
-      {
-        idx: 0,
-        begin: 0,
-        end: 5,
-        text1: "안녕",
-        text2: "hello",
-        cue1Indices: [],
-        cue2Indices: [],
-        text1Segments: ["안녕"],
-        text2Segments: ["hello"],
-      },
-    ],
-    bookmarks: [
-      {
-        id: "bk-1",
-        text: "안녕",
-        side: 0,
-        offset: 0,
-        captionIndex: 0,
-        timestamp: 0,
-        context: "",
-        createdAt: "2026-03-15T00:00:00.000Z",
-      },
-    ],
-  });
-
-  // Seed video-index so bookmarks page shows the entry
-  await seedChromeStorage(context, {
-    "zamak:video-index": [
-      {
-        youtubeId: testVideoId,
-        title: "Push E2E Test",
-        channelName: "Test Channel",
-        bookmarkCount: 1,
-        updatedAt: "2026-03-15T00:00:00.000Z",
-      },
-    ],
-  });
-
-  await gotoBookmarks(page, extensionId);
-  await page.bringToFront();
-  await login(page, { username: "dev-empty" });
-
-  // Push badge should appear
-  const badge = page
-    .getByTestId(`video-card-${testVideoId}`)
-    .getByTestId("video-sync-badge");
-  await expect(badge).toHaveAttribute("data-sync-status", "push");
-
-  // Click push — should sync to server and show synced
-  await badge.click();
-  await expect(badge).toHaveAttribute("data-sync-status", "synced", {
-    timeout: 10000,
-  });
-});
-
 test("bookmarks page: pull syncs server data to local via YouTube tab", async ({
   context,
   page,
@@ -339,7 +276,7 @@ test("bookmarks page: pull syncs server data to local via YouTube tab", async ({
   await setupDb({ seed: true });
 
   // Open YouTube tab so tab RPC works
-  const ytPage = await openYouTubeTab(context);
+  const ytPage = await openYouTubeTab(context, SEED_VIDEO_ID);
 
   await gotoBookmarks(page, extensionId);
   await page.bringToFront();
@@ -352,27 +289,20 @@ test("bookmarks page: pull syncs server data to local via YouTube tab", async ({
   await expect(badge).toHaveAttribute("data-sync-status", "pull");
 
   // Click pull — should sync from server and show synced
+  const checkpoint = createCheckpoint();
   await badge.click();
-  await expect(badge).toHaveAttribute("data-sync-status", "synced", {
-    timeout: 10000,
-  });
+  await expect(badge).toHaveAttribute("data-sync-status", "synced");
+  checkpoint("pull synced");
 
   // Verify pulled data shows bookmark count
   const card = page.getByTestId(`video-card-${SEED_VIDEO_ID}`);
   await expect(card.getByTestId("video-card-badge")).toHaveText("15 bookmarks");
 
-  // Verify session was saved to youtube.com's IndexedDB
-  const session = await ytPage.evaluate((videoId) => {
-    return new Promise<unknown>((resolve, reject) => {
-      const req = indexedDB.open("zamak", 1);
-      req.onsuccess = () => {
-        const tx = req.result.transaction("caption-sessions", "readonly");
-        const get = tx.objectStore("caption-sessions").get(videoId);
-        get.onsuccess = () => resolve(get.result);
-        get.onerror = () => reject(get.error);
-      };
-      req.onerror = () => reject(req.error);
-    });
-  }, SEED_VIDEO_ID);
-  expect(session).toBeTruthy();
+  // The content script loads the pulled session
+  await ytPage.reload();
+  const host = ytPage.locator("#zamak-host");
+  await host.getByTestId("caption-fab").click();
+  await expect(
+    host.getByRole("button", { name: "Bookmarks (15)" }),
+  ).toBeVisible();
 });
