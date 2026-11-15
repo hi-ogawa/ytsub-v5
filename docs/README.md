@@ -2,7 +2,9 @@
 
 ## Architecture
 
-- [Architecture overview](architecture.md): the problem, the core workflow, the extension, server, and web app layers, how the extension fetches subtitles, the UI surfaces and their `/dev` mirrors, and the data model.
+- [Architecture overview](architecture.md): the extension, server, and web app, why only the extension can fetch subtitles, the shared UI and its `/dev` mirrors, and the AI workflow.
+- [Extension runtime](extension-runtime.md): the content script, relay, background, and bookmarks page, the channels between them, and why the background goes through a YouTube tab.
+- [Data and sync](data-and-sync.md): caption sessions and the video index in each origin's storage, how sync status is decided, what push and pull replace, and where copies drift apart.
 
 ## Concepts
 

@@ -15,7 +15,7 @@
 
 ## Key Docs
 
-Read the [architecture overview](docs/architecture.md) before implementing features. It also lists the UI surfaces and the `/dev` routes that mirror the extension. [docs/README.md](docs/README.md) indexes the rest of the docs.
+Read the [architecture overview](docs/architecture.md) before implementing features. It also lists the UI surfaces and the `/dev` routes that mirror the extension. Read [extension runtime](docs/extension-runtime.md) and [data and sync](docs/data-and-sync.md) before changing extension messaging or storage. [docs/README.md](docs/README.md) indexes the rest of the docs.
 
 ## Conventions
 
@@ -37,6 +37,7 @@ Read the [architecture overview](docs/architecture.md) before implementing featu
 - Shape arguments the way a reader expects from the operation. Take a value positionally when the operation conventionally takes just that value. Use an options object when a call site would be ambiguous without names
 - Use braces for every `switch` case body (`case "x": { ... }`, `default: { ... }`)
 - Write docs, code comments, commit messages, and PR descriptions naturally for a first-time reader, without the awkward or defensive tone that builds up when text is revised alongside code changes
+- Docs: follow the writing conventions in [docs/AGENTS.md](docs/AGENTS.md)
 
 ## Tests
 
