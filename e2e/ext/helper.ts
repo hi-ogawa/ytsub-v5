@@ -42,23 +42,29 @@ export const test = baseTest.extend<{
 
 /** Navigate to bookmarks page with server URL override */
 export async function gotoBookmarks(page: Page, extensionId: string) {
-  // surface client errors on playwright cli console
-  page.on("console", (msg) => {
-    if (msg.type() === "error") {
-      console.log(`[browser:console.error] ${msg.text()}`);
-    }
-  });
-  page.on("pageerror", (err) => {
-    console.log(`[browser:pageerror] ${err}`);
-  });
-  page.on("requestfailed", (req) => {
-    console.log(
-      `[browser:requestfailed] ${req.url()} ${req.failure()?.errorText}`,
-    );
-  });
-  // Override server URL for via chrome.storage.local
-  await seedChromeStorage(page.context(), { serverUrl: SERVER_URL });
-  await page.goto(`chrome-extension://${extensionId}/bookmarks.html`);
+  await test.step(
+    "Go to bookmarks",
+    async () => {
+      // surface client errors on playwright cli console
+      page.on("console", (msg) => {
+        if (msg.type() === "error") {
+          console.log(`[browser:console.error] ${msg.text()}`);
+        }
+      });
+      page.on("pageerror", (err) => {
+        console.log(`[browser:pageerror] ${err}`);
+      });
+      page.on("requestfailed", (req) => {
+        console.log(
+          `[browser:requestfailed] ${req.url()} ${req.failure()?.errorText}`,
+        );
+      });
+      // Override server URL for via chrome.storage.local
+      await seedChromeStorage(page.context(), { serverUrl: SERVER_URL });
+      await page.goto(`chrome-extension://${extensionId}/bookmarks.html`);
+    },
+    { box: true },
+  );
 }
 
 /** Seed chrome.storage.local via the extension's service worker */
@@ -78,10 +84,18 @@ export async function seedChromeStorage(
  * Waits for #zamak-host to confirm content script is ready.
  */
 export async function openYouTubeTab(context: BrowserContext): Promise<Page> {
-  const ytPage = await context.newPage();
-  await ytPage.goto("https://www.youtube.com/watch?v=not-found");
-  await expect(ytPage.locator("#zamak-host")).toBeAttached({ timeout: 15_000 });
-  return ytPage;
+  return await test.step(
+    "Open YouTube tab",
+    async () => {
+      const ytPage = await context.newPage();
+      await ytPage.goto("https://www.youtube.com/watch?v=not-found");
+      await expect(ytPage.locator("#zamak-host")).toBeAttached({
+        timeout: 15_000,
+      });
+      return ytPage;
+    },
+    { box: true },
+  );
 }
 
 /**
@@ -113,10 +127,16 @@ export async function seedYouTubeIdb(
 
 /** Log in via the extension bookmarks page UI */
 export async function login(page: Page, options?: { username?: string }) {
-  const username = options?.username ?? "dev";
-  await page.getByTestId("sign-in").click();
-  await page.getByPlaceholder("Username").fill(username);
-  await page.getByPlaceholder("Password").fill("devpassword");
-  await page.getByTestId("login-submit").click();
-  await expect(page.getByTestId("auth-username")).toHaveText(username);
+  await test.step(
+    "Log in",
+    async () => {
+      const username = options?.username ?? "dev";
+      await page.getByTestId("sign-in").click();
+      await page.getByPlaceholder("Username").fill(username);
+      await page.getByPlaceholder("Password").fill("devpassword");
+      await page.getByTestId("login-submit").click();
+      await expect(page.getByTestId("auth-username")).toHaveText(username);
+    },
+    { box: true },
+  );
 }

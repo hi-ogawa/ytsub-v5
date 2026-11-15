@@ -1,7 +1,7 @@
 import { exec } from "node:child_process";
 import { globSync, statSync } from "node:fs";
 import { promisify } from "node:util";
-import { expect, type Page } from "@playwright/test";
+import { expect, type Page, test } from "@playwright/test";
 
 export const execAsync = promisify(exec);
 
@@ -30,20 +30,32 @@ export async function bumpServerUpdatedAt(youtubeId: string) {
 
 /** Log in as a seed user (requires setupDb({ seed: true }) beforehand). */
 export async function login(page: Page, options?: { username?: string }) {
-  await page.goto("/login");
-  await page.getByPlaceholder("Username").fill(options?.username ?? "dev");
-  await page.getByPlaceholder("Password").fill("devpassword");
-  await page.getByRole("button", { name: "Login" }).click();
-  await expect(page).toHaveURL("/");
+  await test.step(
+    "Log in",
+    async () => {
+      await page.goto("/login");
+      await page.getByPlaceholder("Username").fill(options?.username ?? "dev");
+      await page.getByPlaceholder("Password").fill("devpassword");
+      await page.getByRole("button", { name: "Login" }).click();
+      await expect(page).toHaveURL("/");
+    },
+    { box: true },
+  );
 }
 
 /** Open panel and select ko/en tracks so caption rows appear */
 export async function openPanelWithTracks(page: Page) {
-  await page.getByTitle("Show captions").click();
-  const selects = page.locator("select");
-  await selects.nth(0).selectOption(".ko");
-  await selects.nth(1).selectOption(".en");
-  await expect(page.locator("[data-index='0']")).toBeVisible();
+  await test.step(
+    "Open panel with tracks",
+    async () => {
+      await page.getByTitle("Show captions").click();
+      const selects = page.locator("select");
+      await selects.nth(0).selectOption(".ko");
+      await selects.nth(1).selectOption(".en");
+      await expect(page.locator("[data-index='0']")).toBeVisible();
+    },
+    { box: true },
+  );
 }
 
 interface CaptionSelection {
@@ -57,23 +69,35 @@ export async function selectTextInCaption(
   page: Page,
   options: CaptionSelection,
 ) {
-  await page.evaluate(({ index, start, end }) => {
-    const sideEl = document
-      .querySelector(`[data-index='${index}']`)!
-      .querySelector("[data-side='0']")!;
-    const textSpan = sideEl.querySelector("[data-offset]")!;
-    const textNode = textSpan.firstChild!;
-    const range = document.createRange();
-    range.setStart(textNode, start);
-    range.setEnd(textNode, end);
-    const selection = document.getSelection()!;
-    selection.removeAllRanges();
-    selection.addRange(range);
-  }, options);
+  await test.step(
+    "Select caption text",
+    async () => {
+      await page.evaluate(({ index, start, end }) => {
+        const sideEl = document
+          .querySelector(`[data-index='${index}']`)!
+          .querySelector("[data-side='0']")!;
+        const textSpan = sideEl.querySelector("[data-offset]")!;
+        const textNode = textSpan.firstChild!;
+        const range = document.createRange();
+        range.setStart(textNode, start);
+        range.setEnd(textNode, end);
+        const selection = document.getSelection()!;
+        selection.removeAllRanges();
+        selection.addRange(range);
+      }, options);
+    },
+    { box: true },
+  );
 }
 
 /** Select text in a caption row and create a bookmark */
 export async function createBookmarkAt(page: Page, options: CaptionSelection) {
-  await selectTextInCaption(page, options);
-  await page.getByRole("button", { name: "Create bookmark" }).click();
+  await test.step(
+    "Create bookmark",
+    async () => {
+      await selectTextInCaption(page, options);
+      await page.getByRole("button", { name: "Create bookmark" }).click();
+    },
+    { box: true },
+  );
 }
