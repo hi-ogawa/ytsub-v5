@@ -497,15 +497,21 @@ test.describe("dev-viewer caption panel", () => {
     const cards = page.locator("[data-bookmark-id]");
 
     async function goToBookmark(index: number) {
-      await page
-        .locator(`[data-index='${index}']`)
-        .getByTestId("bookmark-highlight")
-        .first()
-        .click();
-      await page
-        .getByTestId("bookmark-popover")
-        .getByRole("button", { name: "Go to bookmark" })
-        .dispatchEvent("mousedown");
+      await test.step(
+        `Go to bookmark at caption ${index}`,
+        async () => {
+          await page
+            .locator(`[data-index='${index}']`)
+            .getByTestId("bookmark-highlight")
+            .first()
+            .click();
+          await page
+            .getByTestId("bookmark-popover")
+            .getByRole("button", { name: "Go to bookmark" })
+            .dispatchEvent("mousedown");
+        },
+        { box: true },
+      );
     }
 
     await goToBookmark(0);
