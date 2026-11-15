@@ -14,7 +14,7 @@ Browser storage belongs to an origin, so where a session lives depends on which 
 
 ## List Videos From a Small Index
 
-Opening every session just to draw the bookmarks page would be slow, so each origin also keeps a video index in localStorage. An entry holds a video's title, channel, and bookmark count, plus two timestamps for sync: when the session last changed locally, and when it was last pushed or pulled. A video gets an entry with its first bookmark, so videos you only watched stay off the bookmarks page. The entry stays after its last bookmark is deleted, so that the deletion can still be pushed.
+Opening every session just to draw the bookmarks page would be slow, so each origin also keeps a video index in localStorage. An entry holds a video's title, channel, and bookmark count, plus two timestamps for sync: when the session last changed locally, and when it was last pushed or pulled.
 
 The extension has three copies of the index, because its pieces run on two origins. YouTube tabs keep one in youtube.com localStorage, the bookmarks page keeps one in the extension's localStorage, and `chrome.storage.local` sits between them. Each side copies the index from `chrome.storage.local` when it loads, and writes its whole index back there after each change.
 
