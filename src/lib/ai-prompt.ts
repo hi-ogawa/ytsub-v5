@@ -36,7 +36,13 @@ function formatBookmarks(
   const bms = (unfilled.length > 0 ? unfilled : bookmarks).map((b) => {
     const caption = rows[b.captionIndex];
     const ctx = caption ? { text1: caption.text1, text2: caption.text2 } : null;
-    return { id: b.id, text: b.text, context: b.context, caption: ctx };
+    return {
+      id: b.id,
+      text: b.text,
+      captionIndex: b.captionIndex,
+      context: b.context,
+      caption: ctx,
+    };
   });
   return JSON.stringify(bms, null, 2);
 }

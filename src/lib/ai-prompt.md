@@ -108,6 +108,8 @@ Title: {{TITLE}}
 
 ## Bookmarks to fill
 
+Each bookmark's `captionIndex` is the [idx] of its line in the captions below. Read the lines around it before filling, because the sense, the Hanja, and any joke often depend on the scene rather than on that one line.
+
 {{BOOKMARKS}}
 
 ## Captions (for context)
