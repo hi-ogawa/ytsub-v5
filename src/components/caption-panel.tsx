@@ -47,6 +47,7 @@ import {
   extractBookmarkSelection,
 } from "../lib/extension-bookmarks.ts";
 import { createLocalStorageStore, useStore } from "../lib/external-store.ts";
+import { flashHighlight } from "../lib/flash-highlight.ts";
 import type { SyncStatus } from "../lib/sync.ts";
 import type {
   Json3File,
@@ -1034,9 +1035,7 @@ function ExtensionBookmarksList({
       ) as HTMLElement | null;
       if (el) {
         el.scrollIntoView({ behavior: "smooth", block: "center" });
-        el.classList.remove("flash-highlight");
-        void el.offsetWidth;
-        el.classList.add("flash-highlight");
+        flashHighlight(el);
       }
     },
   }));
