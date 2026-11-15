@@ -6,7 +6,7 @@ Zamak turns YouTube videos into vocabulary study. This doc explains the problem 
 
 YouTube has endless native content for a language learner. But watching alone is passive, so the words you meet slip away. To learn from a video, you need to pull out the words worth knowing, understand them, and come back to them later.
 
-Zamak was built for learning Korean. The caption panel works with any language that has captions, but the AI prompts ask for Korean vocabulary and Hanja etymology.
+Zamak was built for learning Korean. The caption panel works with any language that has captions, but the AI prompts ask for Korean vocabulary and its etymology.
 
 Existing tools mostly help one word at a time. Language Reactor and similar extensions show dual subtitles and translate a word when you click it. None of them pick out the useful vocabulary in a whole video and explain it in depth. An LLM is good at exactly that, so Zamak builds its workflow around one.
 
