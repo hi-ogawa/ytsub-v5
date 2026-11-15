@@ -54,13 +54,15 @@ Here's what a Pick & Fill result looks like:
     "captionIndex": 4,
     "text": "체중",
     "translation": "body weight",
-    "etymology": "體重"
+    "etymology": "體重",
+    "notes": "몸무게 (.syn:native)"
   },
   {
     "captionIndex": 12,
     "text": "어이없다",
     "translation": "absurd, dumbfounded",
-    "etymology": ""
+    "etymology": "",
+    "notes": ""
   }
 ]
 ```

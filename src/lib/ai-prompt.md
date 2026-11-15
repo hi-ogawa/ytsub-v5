@@ -25,6 +25,10 @@ Each entry:
 - `text`: exact substring from the Korean column
 - `translation`: contextual English meaning for this caption, not a dictionary dump. Concise.
 - `etymology`: Hanja if applicable. Empty string for native Korean words.
+- `notes`: a short usage note when it helps, otherwise an empty string. Useful notes include:
+  - the grammar pattern behind a pick that isn't a single word, such as -ㄹ수록 ("the more ...") in 조용할수록
+  - a contrast with a similar form
+  - related words, each tagged by what it is: `(.syn)` synonym, `(.ant)` antonym, `(.hon)` honorific form, `(.syn:native)` 순우리말 equivalent, `(.syn:casual)` or `(.syn:formal)` register variant. Separate multiple words with commas. Skip inflection pairs (닫히다 → 닫다) and contractions (뭐 → 무엇).
 
 ```json
 [
@@ -32,13 +36,15 @@ Each entry:
     "captionIndex": 4,
     "text": "체중",
     "translation": "body weight",
-    "etymology": "體重"
+    "etymology": "體重",
+    "notes": "몸무게 (.syn:native)"
   },
   {
     "captionIndex": 12,
     "text": "어이없다",
     "translation": "absurd, dumbfounded",
-    "etymology": ""
+    "etymology": "",
+    "notes": ""
   }
 ]
 ```
@@ -66,13 +72,18 @@ Each entry:
 - `id`: the bookmark id from above
 - `translation`: contextual English meaning for this caption, not a dictionary dump. Concise.
 - `etymology`: Hanja if applicable (e.g. "體重"). Empty string for native Korean words.
+- `notes`: a short usage note when it helps, otherwise an empty string. Useful notes include:
+  - the grammar pattern behind a pick that isn't a single word, such as -ㄹ수록 ("the more ...") in 조용할수록
+  - a contrast with a similar form
+  - related words, each tagged by what it is: `(.syn)` synonym, `(.ant)` antonym, `(.hon)` honorific form, `(.syn:native)` 순우리말 equivalent, `(.syn:casual)` or `(.syn:formal)` register variant. Separate multiple words with commas. Skip inflection pairs (닫히다 → 닫다) and contractions (뭐 → 무엇).
 
 ```json
 [
   {
     "id": "abc-123",
     "translation": "to be confused",
-    "etymology": ""
+    "etymology": "",
+    "notes": ""
   }
 ]
 ```
