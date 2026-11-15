@@ -22,7 +22,7 @@ test.describe("dev-viewer sync indicator", () => {
     await page.goto(`/dev/videos/${FIXTURE_VIDEO_ID}`);
   });
 
-  test("fresh video push with zero bookmarks, then add bookmark push again", async ({
+  test("fresh video becomes pushable with its first bookmark", async ({
     page,
   }) => {
     await openPanelWithTracks(page);
@@ -32,41 +32,37 @@ test.describe("dev-viewer sync indicator", () => {
     const indicator = page.getByTestId("sync-status");
     await expect(indicator).toBeVisible();
 
-    // Fresh video with captions loaded — in video index, pushable to server
+    // Fresh video without bookmarks — not in video index yet
+    await expect(indicator).toHaveAttribute("data-sync-state", "unknown");
+    await page.keyboard.press("Escape");
+
+    // First bookmark adds it to the video index, pushable to server
+    await createBookmarkAt(page, { index: 0, start: 0, end: 3 });
+    await page.getByTitle("Settings").click();
     await expect(indicator).toHaveAttribute("data-sync-state", "push");
 
     // Navigate to video list via sync menu item
     await indicator.click();
     await expect(page).toHaveURL("/dev");
 
-    // Video appears in list with push badge — push it (zero bookmarks)
+    // Video appears in list with push badge — push it, verify synced
     const badge = syncBadge(page, FIXTURE_VIDEO_ID);
-    await expect(badge).toHaveAttribute("data-sync-status", "push");
-    await badge.click();
-    await expect(badge).toHaveAttribute("data-sync-status", "synced");
-
-    // Go back, create a bookmark — should become push again
-    await page.goto(`/dev/videos/${FIXTURE_VIDEO_ID}`);
-    await expect(page.locator("[data-index='0']")).toBeVisible();
-    await createBookmarkAt(page, { index: 0, start: 0, end: 3 });
-
-    // Video list shows push, push it, verify synced
-    await page.goto("/dev");
     await expect(badge).toHaveAttribute("data-sync-status", "push");
     await badge.click();
     await expect(badge).toHaveAttribute("data-sync-status", "synced");
   });
 });
 
-test("dev-viewer sync › shows conflict when local captions and server data both exist", async ({
+test("dev-viewer sync › shows conflict when local bookmarks and server data both exist", async ({
   page,
 }) => {
   await setupDb({ seed: true });
   await login(page);
   await page.goto(`/dev/videos/${FIXTURE_VIDEO_ID}`);
   await openPanelWithTracks(page);
+  await createBookmarkAt(page, { index: 0, start: 0, end: 3 });
 
-  // Local captions persisted on load + server has seed data → conflict (never synced)
+  // Local bookmark + server has seed data → conflict (never synced)
   await page.getByTitle("Settings").click();
   const indicator = page.getByTestId("sync-status");
   await expect(indicator).toHaveAttribute("data-sync-state", "conflict", {
@@ -109,6 +105,18 @@ test.describe("dev-viewer video-index", () => {
         .getByTestId("video-card-badge"),
     ).toHaveText("2 bookmarks");
   });
+});
+
+test("opening a video without bookmarking keeps it off the video-list page", async ({
+  page,
+}) => {
+  await setupDb({ seed: true });
+  await login(page, { username: "dev-empty" });
+  await page.goto(`/dev/videos/${FIXTURE_VIDEO_ID}`);
+  await openPanelWithTracks(page);
+
+  await page.goto("/");
+  await expect(page.getByText("No bookmarked videos yet")).toBeVisible();
 });
 
 test.describe("video-list sync", () => {

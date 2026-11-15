@@ -6,7 +6,7 @@ import {
   saveSession,
 } from "./caption-session-db.ts";
 import type { ExtensionBookmark } from "./extension-bookmarks.ts";
-import { updateVideoIndex } from "./video-index.ts";
+import { updateVideoIndex, videoIndexStore } from "./video-index.ts";
 import {
   type YouTubeCaptionTrack,
   type YouTubeVideoData,
@@ -310,6 +310,11 @@ export class CaptionSessionManager {
   }
 
   syncVideoIndex(): void {
+    // An entry stays at 0 bookmarks so that deleting the last one can still be pushed.
+    const indexed = videoIndexStore
+      .get()
+      .some((e) => e.youtubeId === this.videoMeta.youtubeId);
+    if (this.bookmarks.length === 0 && !indexed) return;
     updateVideoIndex(
       this.videoMeta.youtubeId,
       this.videoMeta.title,
