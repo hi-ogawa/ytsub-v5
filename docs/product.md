@@ -26,5 +26,15 @@ The LLM step works through the clipboard on purpose. It works with any model and
 1. **Install the extension and open a YouTube video.** A button on the video page opens the caption panel.
 2. **Bookmark from the captions.** Captions and bookmarks are saved in the browser, so you don't need an account.
 3. **Click the extension's icon** to open the bookmarks page, which lists every video you've studied. A card takes you back to the video on YouTube.
-4. **(Optional) Sign in to sync.** Push a video to the server or pull it back, one video at a time. The bookmarks page shows which videos need a push or a pull.
-5. **(Optional) Open the web app on another device,** such as a phone. It shows your synced videos with their captions and bookmarks. It can't fetch new videos from YouTube, but it can import an `import.json` file, which the caption panel exports or [Generate import.json](generate-import-json.md) builds with yt-dlp and an LLM.
+
+## Add an Account and the Web App When You Need Them
+
+Each setup adds to the one before it:
+
+| Setup                         | What you get                                                                                                                                                                                 | What it needs    |
+| ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------- |
+| Extension only                | Study, bookmarks, the AI workflow, and the bookmarks page, all saved in the browser                                                                                                          | Nothing          |
+| Extension + account           | Push a video to the server or pull it back, one video at a time, to back it up or move it to another browser with the extension. The bookmarks page shows which videos need a push or a pull | A sign-in        |
+| Extension + account + web app | Review synced videos with their captions and bookmarks on a device without the extension, such as a phone                                                                                    | The same sign-in |
+
+The web app can't fetch new videos from YouTube. It only shows videos you pushed, or ones you import from an `import.json` file, which the caption panel exports or [Generate import.json](generate-import-json.md) builds with yt-dlp and an LLM.

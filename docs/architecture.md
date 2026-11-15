@@ -6,9 +6,9 @@ This doc explains how Zamak is built. [Product overview](product.md) explains wh
 
 The system has three parts:
 
-- **The Chrome extension** is the main client and the only part that can fetch videos from YouTube. On a YouTube video page it shows the caption panel, fetches subtitles, and keeps your captions and bookmarks in the browser. It works without an account.
-- **The server** keeps a copy of your videos, captions, and bookmarks for access from other devices. It runs as a Cloudflare Worker with a D1 (SQLite) database, and it needs a login. No page reads from it directly. Clients pull data into local storage first.
-- **The web app** shows synced data on devices without the extension, such as a phone. It always needs a login. It pulls videos from the server into its own browser storage and renders the same caption panel. It cannot fetch anything from YouTube.
+- **The Chrome extension** is the main client and the only part that can fetch videos from YouTube. It keeps captions and bookmarks in the browser and runs without the server.
+- **The server** is a Cloudflare Worker with a D1 (SQLite) database. It serves the web app's pages and the API that both clients call, and it stores each user's videos, captions, and bookmarks. No page renders from it directly. Clients pull data into their own browser storage first.
+- **The web app** is a client on its own origin, served by the server. It needs the server for every page except `/dev`, because each page checks the login first. It keeps pulled videos in its own browser storage and renders the same pages as the extension.
 
 No part calls an AI service. The LLM step goes through the user's clipboard, so the caption panel only builds the prompt and parses the answer that the user pastes back.
 
