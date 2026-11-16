@@ -16,6 +16,8 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
+    outputs:
+      artifact-url: ${{ steps.upload-extension.outputs.artifact-url }}
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-node@v6
@@ -30,7 +32,10 @@ jobs:
       - run: pnpm build-ext
         env:
           PATCH_MANIFEST: "true"
-      - run: echo "SHORT_SHA=${GITHUB_SHA::7}" >> $GITHUB_ENV
+      # On pull_request, GITHUB_SHA is a merge commit that isn't on the branch.
+      - run: echo "SHORT_SHA=${HEAD_SHA::7}" >> $GITHUB_ENV
+        env:
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
       - id: upload-extension
         uses: actions/upload-artifact@v7
         with:
@@ -38,6 +43,46 @@ jobs:
           path: dist/extension/*
       - name: Extension artifact
         run: echo "::notice title=Extension artifact::${{ steps.upload-extension.outputs.artifact-url }}"
+
+  # Keep PR write permission isolated from branch-controlled install and build code.
+  report-extension:
+    needs: build
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    steps:
+      - uses: actions/github-script@v9
+        env:
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          ARTIFACT_URL: ${{ needs.build.outputs.artifact-url }}
+        with:
+          script: |
+            const { HEAD_SHA, ARTIFACT_URL } = process.env;
+            const pull_number = context.payload.pull_request.number;
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}/attempts/${process.env.GITHUB_RUN_ATTEMPT}`;
+            const commitUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/commit/${HEAD_SHA}`;
+            const start = "<!-- extension-artifact:start -->";
+            const end = "<!-- extension-artifact:end -->";
+            const section = `${start}\n> Extension build CI: [download](${ARTIFACT_URL}) - [action run](${runUrl}) - commit [\`${HEAD_SHA.slice(0, 8)}\`](${commitUrl})\n${end}`;
+            // Read the description right before writing, because the E2E trace
+            // report edits the same description and may have just written it.
+            const { data: current } = await github.rest.pulls.get({
+              ...context.repo,
+              pull_number,
+            });
+            if (current.state !== "open" || current.head.sha !== HEAD_SHA) {
+              return;
+            }
+            const description = current.body ?? "";
+            const marker = /<!-- extension-artifact:start -->[\s\S]*?<!-- extension-artifact:end -->/;
+            await github.rest.pulls.update({
+              ...context.repo,
+              pull_number,
+              body: marker.test(description)
+                ? description.replace(marker, () => section)
+                : `${description}${description ? "\n\n" : ""}${section}`,
+            });
 
   e2e:
     runs-on: ubuntu-latest
