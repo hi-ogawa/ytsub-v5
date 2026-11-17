@@ -116,30 +116,51 @@ Each bookmark's `captionIndex` is the [idx] of its line in the captions below. R
 
 {{CAPTIONS}}
 
-# --- fix-asr ---
+# --- align-asr ---
 
-# Task: Fix Korean ASR subtitles
+# Task: Fix and align Korean ASR captions
 
-You are helping me fix auto-generated Korean subtitles. The English column is manually written and accurate — use it as your anchor.
+You are an agent with a shell and `yt-dlp`. This video's Korean captions are auto-generated (ASR). Fix the Korean and align it to an official track, so each row pairs one Korean line with its English line.
 
-Fix: misheard syllables, wrong spacing, `>>` markers, truncated words, repeated fragments.
-Do NOT fix: correct casual/informal Korean, filler words, stylistic choices.
-If unsure about a correction, skip it and mention it separately.
+## Steps
 
-## Output format
+Read this guide and follow it:
 
-Output the fixes as one JSON code block. The app reads the first fenced block, so you may add a short comment outside it.
+https://raw.githubusercontent.com/hi-ogawa/ytsub-v5/main/docs/generate-import-json.md
 
-Include only the rows that need fixing:
-
-```json
-[{ "idx": 3, "text1": "두바이 쿠키 먹어봤어?" }]
-```
+Run "Fetch and Assess" to get the tracks, then produce `captions.json` as Scenario B describes. Instead of picking bookmarks, re-anchor the existing bookmarks below to your new rows, as "Re-anchor Existing Bookmarks" describes, and keep each bookmark's `id` in `bookmarks.json`. Skip "Assemble import.json".
 
 ## Video
 
+ID: {{VIDEO_ID}}
 Title: {{TITLE}}
 
-## Captions
+## Tracks the app sees
 
-{{CAPTIONS}}
+{{TRACKS}}
+
+The app's list can miss official tracks, so check `yt-dlp --list-subs` too.
+
+## Existing bookmarks
+
+`captionIndex` points into the current rows, and `context` is the current row text, which shows where each word was before your changes. `side` is 0 for a Korean word and 1 for an English one.
+
+{{ANCHOR_BOOKMARKS}}
+
+## Output format
+
+Write the result as one JSON file, and tell me its path. I paste its contents into the app, which replaces all caption rows and moves each bookmark to its new position.
+
+```json
+{
+  "captions": [{ "begin": 1.2, "end": 3.4, "text1": "...", "text2": "..." }],
+  "bookmarks": [
+    { "id": "...", "captionIndex": 5, "offset": 3, "text": "쌍꺼풀" }
+  ]
+}
+```
+
+- `captions`: the rows of `captions.json` in order, with `begin` and `end` in seconds.
+- `bookmarks`: the validated `bookmarks.json`, one entry for each existing bookmark, with `id`, `text`, `offset`, and `captionIdx` renamed to `captionIndex`. `text` is the word as it reads now, which can differ from before when you fixed it.
+
+The app rejects the whole result if any bookmark is missing or its `text` isn't at its `offset`.
