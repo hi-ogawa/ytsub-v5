@@ -2,7 +2,6 @@
 
 import { type VideoIndexEntry, videoIndexStore } from "../lib/video-index.ts";
 import { chromeStorage } from "./lib/chrome-storage.ts";
-import { connectContentPort } from "./lib/content-ports.ts";
 import { setupRpcRelay, setupTabRpcRelay } from "./lib/extension-rpc.ts";
 
 async function main() {
@@ -14,8 +13,6 @@ async function main() {
   videoIndexStore.subscribe(() => {
     chromeStorage.set({ [videoIndexStore.key]: videoIndexStore.get() });
   });
-
-  connectContentPort();
 
   setupRpcRelay();
 

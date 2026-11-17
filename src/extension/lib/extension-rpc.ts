@@ -197,9 +197,9 @@ type TabRpcRequest = {
   params?: unknown;
 };
 
-export function createContentRpc<Handlers extends Record<string, Function>>(
-  tabId: number,
-) {
+// Tabs are looked up on every call, because Chrome stops an idle service
+// worker and anything it kept in memory is lost.
+export function createContentRpc<Handlers extends Record<string, Function>>() {
   return createRpcProxy<Handlers>(async (method, params) => {
     const request: TabRpcRequest = {
       type: "zamak-tab-rpc",
@@ -207,15 +207,33 @@ export function createContentRpc<Handlers extends Record<string, Function>>(
       method,
       params,
     };
-    const response = (await chrome.tabs.sendMessage(tabId, request)) as
-      | { result?: unknown; error?: string }
-      | undefined;
+    const response = await sendToYouTubeTab(request);
     if (response?.error) {
       console.error(`[zamak tab-rpc] ${method}:`, response.error);
       throw new Error(response.error);
     }
     return response?.result;
   });
+}
+
+async function sendToYouTubeTab(request: TabRpcRequest) {
+  const tabs = await chrome.tabs.query({
+    url: "https://www.youtube.com/*",
+    discarded: false,
+  });
+  for (const tab of tabs) {
+    if (tab.id === undefined) continue;
+    try {
+      return (await chrome.tabs.sendMessage(tab.id, request)) as
+        | { result?: unknown; error?: string }
+        | undefined;
+    } catch (err) {
+      // The tab has no relay from the current extension yet, or anymore.
+      if (String(err).includes("Receiving end does not exist")) continue;
+      throw err;
+    }
+  }
+  throw new Error("No YouTube tab open");
 }
 
 // --- MAIN world: register handlers for tab RPC calls from background ---
