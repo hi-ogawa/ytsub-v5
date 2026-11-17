@@ -100,6 +100,11 @@ function BookmarkWord({
             {bookmark.etymology}
           </span>
         )}
+        {bookmark.notes && (
+          <span className="mt-1 block max-h-24 overflow-y-auto text-[10px] text-muted-foreground">
+            {bookmark.notes}
+          </span>
+        )}
         {onGoToBookmark && (
           <button
             className="mt-1 rounded p-0.5 text-muted-foreground hover:bg-accent hover:text-foreground"

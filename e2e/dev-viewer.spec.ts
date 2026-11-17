@@ -616,5 +616,16 @@ test.describe("dev-viewer caption panel", () => {
     // Verify translation appears and unfilled badge is gone
     await expect(page.getByText("to pinch")).toBeVisible();
     await expect(page.getByText("unfilled")).not.toBeVisible();
+
+    // The caption popover shows the filled translation and notes
+    await panel.getByRole("button", { name: /Captions/ }).click();
+    await page
+      .locator("[data-index='0']")
+      .getByTestId("bookmark-highlight")
+      .first()
+      .click();
+    const popover = page.getByTestId("bookmark-popover");
+    await expect(popover.getByText("to pinch")).toBeVisible();
+    await expect(popover.getByText("Figurative use.")).toBeVisible();
   });
 });
