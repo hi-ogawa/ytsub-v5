@@ -158,7 +158,7 @@ function SyncBadge({
   if (
     displayState === "synced" ||
     displayState === "syncing" ||
-    displayState === "unknown"
+    displayState === "empty"
   ) {
     return (
       <span className="inline-flex p-1.5" title={label} {...testAttrs}>
