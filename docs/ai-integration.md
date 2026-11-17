@@ -76,5 +76,5 @@ Here's what a Pick & Fill result looks like:
 
 - **Pick & Fill** is the most common starting point — it gives you a vocabulary list without any manual bookmarking first.
 - **Fill Bookmarks** is useful when you've already highlighted specific words and just want metadata filled in.
-- **Fix & Align ASR** is for videos whose Korean is auto-generated but which have an official English track. The agent picks the tracks itself, so the tracks selected in the panel don't matter.
+- **Fix & Align ASR** is for videos whose Korean is auto-generated or machine-translated but which have an official English track. For a song, the agent takes the Korean from the official lyrics instead. The agent picks the tracks itself, so the tracks selected in the panel don't matter.
 - You can run tasks multiple times on the same video. Pick & Fill creates new bookmarks each time; Fill updates in place.

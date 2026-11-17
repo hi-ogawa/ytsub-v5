@@ -126,7 +126,7 @@ Each bookmark's `captionIndex` is the [idx] of its line in the captions below. R
 
 # Task: Fix and align Korean ASR captions
 
-You are an agent with a shell and `yt-dlp`. This video's Korean captions are auto-generated (ASR). Fix the Korean and align it to an official track, so each row pairs one Korean line with its English line.
+You are an agent with a shell and `yt-dlp`. This video has no manual Korean track, so its Korean captions are auto-generated (ASR) or machine-translated from another track. Fix the Korean and align it to an official track, so each row pairs one Korean line with its English line.
 
 ## Steps
 
@@ -134,7 +134,7 @@ Read this guide and follow it:
 
 https://raw.githubusercontent.com/hi-ogawa/ytsub-v5/main/docs/generate-import-json.md
 
-Run "Fetch and Assess" to get the tracks, then produce `captions.json` as Scenario B describes. Instead of picking bookmarks, re-anchor the existing bookmarks below to your new rows, as "Re-anchor Existing Bookmarks" describes, and keep each bookmark's `id` in `bookmarks.json`. Skip "Assemble import.json".
+Run "Fetch and Assess" to get the tracks, then produce `captions.json` as Scenario B describes. For a song with official lyrics, follow Scenario F instead. Instead of picking bookmarks, re-anchor the existing bookmarks below to your new rows, as "Re-anchor Existing Bookmarks" describes, and keep each bookmark's `id` in `bookmarks.json`. Skip "Assemble import.json".
 
 ## Video
 
