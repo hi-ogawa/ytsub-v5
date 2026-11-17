@@ -28,7 +28,7 @@ For Pick & Fill and Fill Bookmarks, the prompt contains the video title, all cap
 
 Open your preferred LLM chat and paste the prompt. The prompt asks the AI to respond with one JSON code block, optionally with a short comment around it.
 
-Any model that can follow instructions and output JSON works. Larger models tend to produce better vocabulary picks. For Fix & Align ASR, paste the prompt into an agent session instead. The agent writes the result to a file and tells you its path.
+Any model that can follow instructions and output JSON works. Larger models tend to produce better vocabulary picks. For Fix & Align ASR, paste the prompt into an agent session instead.
 
 > **Tip:** For long videos, the prompt can be large. If your model has a small context window, use the download button and attach the `.txt` file instead of pasting.
 

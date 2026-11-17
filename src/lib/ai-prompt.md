@@ -149,7 +149,7 @@ The app's list can miss official tracks, so check `yt-dlp --list-subs` too.
 
 ## Output format
 
-Write the result as one JSON file, and tell me its path. I paste its contents into the app, which replaces all caption rows and moves each bookmark to its new position.
+Output the result as one JSON code block. The app reads the first fenced block, so you may add a short comment outside it. The app replaces all caption rows with yours and moves each bookmark to its new position.
 
 ```json
 {
