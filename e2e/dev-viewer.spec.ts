@@ -553,8 +553,9 @@ test.describe("dev-viewer caption panel", () => {
 
     // Import result wrapped in markdown code fence
     const wrapped = `\`\`\`json
-[{"captionIndex": 0, "text": "꼬집어", "translation": "to pinch", "etymology": "" },
- {"captionIndex": 1, "text": "밤새", "translation": "all night", "etymology": "" }]
+{"type": "pick-fill", "entries": [
+  {"captionIndex": 0, "text": "꼬집어", "translation": "to pinch", "etymology": "" },
+  {"captionIndex": 1, "text": "밤새", "translation": "all night", "etymology": "" }]}
 \`\`\``;
     page.on("dialog", (dialog) => {
       if (dialog.type() === "prompt") dialog.accept(wrapped);
@@ -599,14 +600,17 @@ test.describe("dev-viewer caption panel", () => {
     expect(clipboard).toContain("꼬집어");
 
     // Import fill result
-    const json = JSON.stringify([
-      {
-        id: bookmarkId,
-        translation: "to pinch",
-        etymology: "",
-        notes: "Figurative use.",
-      },
-    ]);
+    const json = JSON.stringify({
+      type: "fill",
+      entries: [
+        {
+          id: bookmarkId,
+          translation: "to pinch",
+          etymology: "",
+          notes: "Figurative use.",
+        },
+      ],
+    });
     page.on("dialog", (dialog) => {
       if (dialog.type() === "prompt") dialog.accept(json);
       else dialog.accept();

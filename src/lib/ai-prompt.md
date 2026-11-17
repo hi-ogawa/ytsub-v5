@@ -17,7 +17,7 @@ If there are more than 150 captions, process ~150 at a time. After each batch, o
 
 ## Output format
 
-Output your picks as one JSON code block. The app reads the first fenced block, so you may add a short comment outside it.
+Output your picks as one JSON code block. The app reads the first fenced block, so you may add a short comment outside it. The block is an object with `"type": "pick-fill"` and your picks in `entries`.
 
 Each entry:
 
@@ -38,22 +38,25 @@ Each entry:
   - related words, each tagged by what it is: `(.syn)` synonym, `(.ant)` antonym, `(.hon)` honorific form, `(.syn:native)` 순우리말 equivalent, `(.syn:casual)` or `(.syn:formal)` register variant. Separate multiple words with commas. Skip inflection pairs (닫히다 → 닫다) and contractions (뭐 → 무엇).
 
 ```json
-[
-  {
-    "captionIndex": 4,
-    "text": "체중",
-    "translation": "body weight",
-    "etymology": "體重 / 体重",
-    "notes": "몸무게 (.syn:native)"
-  },
-  {
-    "captionIndex": 12,
-    "text": "어이없다",
-    "translation": "absurd, dumbfounded",
-    "etymology": "",
-    "notes": ""
-  }
-]
+{
+  "type": "pick-fill",
+  "entries": [
+    {
+      "captionIndex": 4,
+      "text": "체중",
+      "translation": "body weight",
+      "etymology": "體重 / 体重",
+      "notes": "몸무게 (.syn:native)"
+    },
+    {
+      "captionIndex": 12,
+      "text": "어이없다",
+      "translation": "absurd, dumbfounded",
+      "etymology": "",
+      "notes": ""
+    }
+  ]
+}
 ```
 
 ## Video
@@ -72,7 +75,7 @@ You are helping me learn Korean from a YouTube video. Fill translation and metad
 
 ## Output format
 
-Output the entries as one JSON code block. The app reads the first fenced block, so you may add a short comment outside it.
+Output the entries as one JSON code block. The app reads the first fenced block, so you may add a short comment outside it. The block is an object with `"type": "fill"` and your entries in `entries`.
 
 Each entry:
 
@@ -92,14 +95,17 @@ Each entry:
   - related words, each tagged by what it is: `(.syn)` synonym, `(.ant)` antonym, `(.hon)` honorific form, `(.syn:native)` 순우리말 equivalent, `(.syn:casual)` or `(.syn:formal)` register variant. Separate multiple words with commas. Skip inflection pairs (닫히다 → 닫다) and contractions (뭐 → 무엇).
 
 ```json
-[
-  {
-    "id": "abc-123",
-    "translation": "to be confused",
-    "etymology": "",
-    "notes": ""
-  }
-]
+{
+  "type": "fill",
+  "entries": [
+    {
+      "id": "abc-123",
+      "translation": "to be confused",
+      "etymology": "",
+      "notes": ""
+    }
+  ]
+}
 ```
 
 ## Video

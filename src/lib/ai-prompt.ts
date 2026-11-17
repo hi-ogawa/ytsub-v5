@@ -236,24 +236,24 @@ export function alignResultToSession(
 
 export function parseAiResult(raw: string): AiImportResult {
   const json = JSON.parse(extractJson(raw));
-  if (json?.type === "fix-asr") {
-    return {
-      type: "fix-asr",
-      captions: json.captions,
-      bookmarks: json.bookmarks,
-    };
+  switch (json?.type) {
+    case "pick-fill":
+    case "fill": {
+      return { type: json.type, entries: json.entries };
+    }
+    case "fix-asr": {
+      return {
+        type: "fix-asr",
+        captions: json.captions,
+        bookmarks: json.bookmarks,
+      };
+    }
+    default: {
+      throw new Error(
+        `Expected a "type" field of ${AI_TASKS.map((t) => `"${t.task}"`).join(", ")}`,
+      );
+    }
   }
-  if (!Array.isArray(json) || json.length === 0) {
-    throw new Error("Expected a non-empty JSON array or a typed result");
-  }
-  const first = json[0];
-  if ("captionIndex" in first && "text" in first) {
-    return { type: "pick-fill", entries: json };
-  }
-  if ("id" in first && "translation" in first) {
-    return { type: "fill", entries: json };
-  }
-  throw new Error("Unrecognized JSON shape");
 }
 
 export function makeAiPrompt(
