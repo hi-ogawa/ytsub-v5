@@ -33,7 +33,7 @@ test.describe("dev-viewer sync indicator", () => {
     await expect(indicator).toBeVisible();
 
     // Fresh video without bookmarks — not in video index yet
-    await expect(indicator).toHaveAttribute("data-sync-state", "unknown");
+    await expect(indicator).toHaveAttribute("data-sync-state", "empty");
     await page.keyboard.press("Escape");
 
     // First bookmark adds it to the video index, pushable to server

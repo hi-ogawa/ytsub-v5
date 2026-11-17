@@ -14,10 +14,10 @@ test(computeSyncState, () => {
   const cases = [
     // localUpdatedAt | syncedAt | serverUpdatedAt => state
     // 0 present
-    [__, __, __, "unknown",  "#1  (none)"],
+    [__, __, __, "empty",    "#1  (none)"],
     // 1 present
     [T1, __, __, "push",     "#2  local only"],
-    [__, T1, __, "unknown",  "#3  impossible: syncedAt without local"],
+    [__, T1, __, "empty",    "#3  impossible: syncedAt without local"],
     [__, __, T1, "pull",     "#4  server only, no local → pull"],
     // 2 present: local + synced (no server)
     [T1, T2, __, "push",     "#5  local < synced, server gone → re-push"],

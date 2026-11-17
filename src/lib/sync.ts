@@ -35,14 +35,14 @@ export type SyncState =
   | "conflict"
   | "syncing"
   | "error"
-  | "unknown";
+  | "empty";
 
 export type ComputedSyncState =
   | "synced"
   | "push"
   | "pull"
   | "conflict"
-  | "unknown";
+  | "empty";
 
 export function computeSyncState(params: {
   localUpdatedAt?: string;
@@ -52,7 +52,7 @@ export function computeSyncState(params: {
   const { localUpdatedAt, syncedAt, serverUpdatedAt } = params;
 
   // No local entry
-  if (!localUpdatedAt) return serverUpdatedAt ? "pull" : "unknown";
+  if (!localUpdatedAt) return serverUpdatedAt ? "pull" : "empty";
 
   // syncedAt without localUpdatedAt is structurally impossible (syncedAt lives on VideoIndexEntry)
   // but handled above. syncedAt without serverUpdatedAt is degenerate (server data deleted).

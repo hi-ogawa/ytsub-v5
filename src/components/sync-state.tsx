@@ -2,6 +2,7 @@ import {
   AlertTriangle,
   ArrowDownToLine,
   ArrowUpFromLine,
+  Bookmark,
   CheckCircle2,
   Loader2,
   LogIn,
@@ -54,10 +55,10 @@ export function syncStateDisplay(state: SyncState): {
         icon: <AlertTriangle className="size-4 text-destructive" />,
         label: "Sync error",
       };
-    case "unknown":
+    case "empty":
       return {
-        icon: <AlertTriangle className="size-4 text-destructive" />,
-        label: "Sync: unknown",
+        icon: <Bookmark className="size-4 text-muted-foreground" />,
+        label: "Bookmark to sync",
       };
     default: {
       return state satisfies never;
