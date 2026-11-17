@@ -58,7 +58,7 @@ export function syncStateDisplay(state: SyncState): {
     case "empty":
       return {
         icon: <Bookmark className="size-4 text-muted-foreground" />,
-        label: "Bookmark to sync",
+        label: "No bookmarks to sync",
       };
     default: {
       return state satisfies never;
