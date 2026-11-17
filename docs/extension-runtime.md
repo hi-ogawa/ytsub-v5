@@ -2,7 +2,7 @@
 
 The extension runs as four separate pieces of JavaScript. Each one can do things the others can't, so most features need several of them to work together. This doc explains what each piece is for and how they send messages to each other.
 
-![The content script and the relay run in every YouTube tab and share youtube.com storage. Window messages carry RPC between them, and a BroadcastChannel carries video index changes. The relay talks to the background service worker through Chrome messages and a port. The background calls the server and writes chrome.storage. The bookmarks page reads and writes chrome.storage and calls the background.](images/extension-runtime.svg)
+![The content script and the relay run in every YouTube tab and share youtube.com storage. Window messages carry RPC between them, and a BroadcastChannel carries video index changes. The relay talks to the background service worker through Chrome messages. The background calls the server and writes chrome.storage. The bookmarks page reads and writes chrome.storage and calls the background.](images/extension-runtime.svg)
 
 ## Split the Content Script Across Two Worlds
 
@@ -43,7 +43,7 @@ When the caption panel opens, the content script asks the background for the vid
 
 Captions and bookmarks live in IndexedDB on the youtube.com origin. The background service worker and the bookmarks page run on the extension's own origin, so they can't open that database. When the background needs a session, it asks a YouTube tab to read or write it.
 
-To find a tab, the background keeps a list of tabs that are ready. Each relay opens a long-lived port to the background when its tab loads. Chrome closes the port when the tab closes or navigates away, or when the extension updates, so the list only holds tabs running the current extension. The background picks any tab on the list and sends it a Chrome message. The relay passes the request to the content script through `zamak:tab-rpc`, and the content script reads or writes IndexedDB. Every YouTube tab shares the same origin storage, so any tab will do.
+To find a tab, the background asks Chrome for the open YouTube tabs on every call and sends a Chrome message to each in turn until one answers. A tab answers once its relay is running. A tab that is still loading, or that runs a script from an older version of the extension, has no relay to answer, so the background moves on to the next tab. The relay passes the request to the content script through `zamak:tab-rpc`, and the content script reads or writes IndexedDB. Every YouTube tab shares the same origin storage, so any tab will do. The background keeps no list of its own, because Chrome stops the service worker when it is idle, and anything the worker kept in memory is lost.
 
 This is why pushing and pulling from the bookmarks page needs an open YouTube tab. Without one, the call fails with "No YouTube tab open". [Data and sync](data-and-sync.md) describes what push and pull do with the data.
 

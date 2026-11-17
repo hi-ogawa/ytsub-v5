@@ -268,6 +268,32 @@ test("bookmarks page: pull shows error toast when no YouTube tab open", async ({
   await expect(errorToast).toContainText("No YouTube tab open");
 });
 
+test("bookmarks page: pull finds the YouTube tab after the service worker restarts", async ({
+  context,
+  page,
+  extensionId,
+}) => {
+  await setupDb({ seed: true });
+  await openYouTubeTab(context, SEED_VIDEO_ID);
+  await gotoBookmarks(page, extensionId);
+  await page.bringToFront();
+  await login(page);
+  const badge = page
+    .getByTestId(`video-card-${SEED_VIDEO_ID}`)
+    .getByTestId("video-sync-badge");
+  await expect(badge).toHaveAttribute("data-sync-status", "pull");
+
+  // Chrome stops an idle service worker, and the pull below starts a new one.
+  // Closing the worker's target simulates that.
+  const cdp = await context.browser()!.newBrowserCDPSession();
+  const { targetInfos } = await cdp.send("Target.getTargets");
+  const worker = targetInfos.find((t) => t.type === "service_worker");
+  await cdp.send("Target.closeTarget", { targetId: worker!.targetId });
+
+  await badge.click();
+  await expect(badge).toHaveAttribute("data-sync-status", "synced");
+});
+
 test("bookmarks page: pull syncs server data to local via YouTube tab", async ({
   context,
   page,
