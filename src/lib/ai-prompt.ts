@@ -6,7 +6,7 @@ import type { YouTubeCaptionTrack } from "./youtube.ts";
 export const AI_TASKS = [
   { label: "Pick & Fill", task: "pick-fill" },
   { label: "Fill Bookmarks", task: "fill" },
-  { label: "Fix & Align Korean ASR (agent)", task: "align-asr" },
+  { label: "Fix & Align ASR", task: "align-asr" },
 ] as const;
 
 export type AiTask = (typeof AI_TASKS)[number]["task"];
