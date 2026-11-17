@@ -38,7 +38,7 @@ Copy the AI's entire response. Zamak reads the first JSON code block and ignores
 
 Back in Zamak, open the settings menu and click **Import AI result**. Paste the JSON when prompted.
 
-Zamak auto-detects which task the result belongs to and applies it:
+Zamak reads the result's `type` field to tell which task it belongs to, and applies it:
 
 - **Pick & Fill** → creates new bookmarks with translations and etymology filled in
 - **Fill Bookmarks** → updates your existing bookmarks with the AI-provided metadata
@@ -51,22 +51,25 @@ A confirmation alert shows how many items were imported. For Pick & Fill, it als
 Here's what a Pick & Fill result looks like:
 
 ```json
-[
-  {
-    "captionIndex": 4,
-    "text": "체중",
-    "translation": "body weight",
-    "etymology": "體重 / 体重",
-    "notes": "몸무게 (.syn:native)"
-  },
-  {
-    "captionIndex": 12,
-    "text": "어이없다",
-    "translation": "absurd, dumbfounded",
-    "etymology": "",
-    "notes": ""
-  }
-]
+{
+  "type": "pick-fill",
+  "entries": [
+    {
+      "captionIndex": 4,
+      "text": "체중",
+      "translation": "body weight",
+      "etymology": "體重 / 体重",
+      "notes": "몸무게 (.syn:native)"
+    },
+    {
+      "captionIndex": 12,
+      "text": "어이없다",
+      "translation": "absurd, dumbfounded",
+      "etymology": "",
+      "notes": ""
+    }
+  ]
+}
 ```
 
 ## Tips
