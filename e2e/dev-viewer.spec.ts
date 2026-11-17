@@ -646,7 +646,7 @@ test.describe("dev-viewer caption panel", () => {
 
     // Copy align prompt
     await page.getByTitle("Settings").click();
-    await page.locator("select").last().selectOption("align-asr");
+    await page.locator("select").last().selectOption("fix-asr");
     const clipboard = await page.evaluate(() => navigator.clipboard.readText());
     expect(clipboard).toContain("Fix and align Korean ASR");
     expect(clipboard).toContain("ID: 7GU_VQfgMT0");

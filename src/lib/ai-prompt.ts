@@ -6,7 +6,7 @@ import type { YouTubeCaptionTrack } from "./youtube.ts";
 export const AI_TASKS = [
   { label: "Pick & Fill", task: "pick-fill" },
   { label: "Fill Bookmarks", task: "fill" },
-  { label: "Fix & Align ASR", task: "align-asr" },
+  { label: "Fix & Align ASR", task: "fix-asr" },
 ] as const;
 
 export type AiTask = (typeof AI_TASKS)[number]["task"];
@@ -130,7 +130,7 @@ type AiImportResult =
   | { type: "pick-fill"; entries: AiImportPickFillEntry[] }
   | { type: "fill"; entries: AiImportFillEntry[] }
   | {
-      type: "align-asr";
+      type: "fix-asr";
       captions: AiImportAlignCaption[];
       bookmarks: AiImportAlignBookmark[];
     };
@@ -238,7 +238,7 @@ export function parseAiResult(raw: string): AiImportResult {
   const json = JSON.parse(extractJson(raw));
   if (json && Array.isArray(json.captions) && Array.isArray(json.bookmarks)) {
     return {
-      type: "align-asr",
+      type: "fix-asr",
       captions: json.captions,
       bookmarks: json.bookmarks,
     };

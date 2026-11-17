@@ -314,7 +314,7 @@ function importAiResult(store: CaptionSessionManager): void {
         store.updateBookmarks(result.entries);
         alert(`Filled ${result.entries.length} bookmarks`);
         break;
-      case "align-asr": {
+      case "fix-asr": {
         const { captions, bookmarks, errors } = alignResultToSession(
           result,
           store.bookmarks,

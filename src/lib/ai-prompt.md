@@ -116,7 +116,7 @@ Each bookmark's `captionIndex` is the [idx] of its line in the captions below. R
 
 {{CAPTIONS}}
 
-# --- align-asr ---
+# --- fix-asr ---
 
 # Task: Fix and align Korean ASR captions
 
