@@ -236,7 +236,7 @@ export function alignResultToSession(
 
 export function parseAiResult(raw: string): AiImportResult {
   const json = JSON.parse(extractJson(raw));
-  if (json && Array.isArray(json.captions) && Array.isArray(json.bookmarks)) {
+  if (json?.type === "fix-asr") {
     return {
       type: "fix-asr",
       captions: json.captions,
@@ -244,9 +244,7 @@ export function parseAiResult(raw: string): AiImportResult {
     };
   }
   if (!Array.isArray(json) || json.length === 0) {
-    throw new Error(
-      "Expected a non-empty JSON array or an object with captions and bookmarks",
-    );
+    throw new Error("Expected a non-empty JSON array or a typed result");
   }
   const first = json[0];
   if ("captionIndex" in first && "text" in first) {

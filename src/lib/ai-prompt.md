@@ -153,6 +153,7 @@ Write the result as one JSON file, and tell me its path. I paste its contents in
 
 ```json
 {
+  "type": "fix-asr",
   "captions": [{ "begin": 1.2, "end": 3.4, "text1": "...", "text2": "..." }],
   "bookmarks": [
     { "id": "...", "captionIndex": 5, "offset": 3, "text": "쌍꺼풀" }
@@ -160,6 +161,7 @@ Write the result as one JSON file, and tell me its path. I paste its contents in
 }
 ```
 
+- `type`: always `"fix-asr"`.
 - `captions`: the rows of `captions.json` in order, with `begin` and `end` in seconds.
 - `bookmarks`: the validated `bookmarks.json`, one entry for each existing bookmark, with `id`, `text`, `offset`, and `captionIdx` renamed to `captionIndex`. `text` is the word as it reads now, which can differ from before when you fixed it.
 

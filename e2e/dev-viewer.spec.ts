@@ -669,6 +669,7 @@ test.describe("dev-viewer caption panel", () => {
 
     // A bookmark that isn't at its offset rejects the whole result
     answer = JSON.stringify({
+      type: "fix-asr",
       captions,
       bookmarks: [
         { id: bookmarkId, captionIndex: 1, offset: 0, text: "꼬집어" },
@@ -679,6 +680,7 @@ test.describe("dev-viewer caption panel", () => {
     await expect(page.locator("[data-index='0']")).toContainText("꼬집어 봐");
 
     answer = JSON.stringify({
+      type: "fix-asr",
       captions,
       bookmarks: [
         { id: bookmarkId, captionIndex: 1, offset: 3, text: "꼬집어" },
