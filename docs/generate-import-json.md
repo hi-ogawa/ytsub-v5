@@ -29,6 +29,8 @@ The full output is ~1000 lines (hundreds of auto-translated languages). The grep
 
 Note the exact language code of each track you need, such as `en-US` rather than `en`. When the Korean is auto-generated, also note the other manual tracks, such as `ja` and `zh`, because they help fix the Korean in Scenario B.
 
+A row such as `ko-en` (Korean from English) is YouTube's machine translation of another track, not Korean speech recognition, so it doesn't count as a Korean source. Korean songs often have this: manual `en` and `ja` tracks and no Korean track at all, which is Scenario F.
+
 ### Download Subtitles
 
 Prefer manual subs over auto-generated. Use json3 format, and pass the language code exactly as the list shows it. If the code doesn't match a track, such as `en` for a video whose English is `en-US`, yt-dlp downloads nothing and reports no error.
@@ -44,6 +46,16 @@ mv <id>.en-US.json3 en.json3
 yt-dlp --write-auto-sub --sub-lang ko --skip-download --sub-format json3 -o "%(id)s" "<URL>"
 mv <id>.ko.json3 ko.json3
 ```
+
+### Get Official Lyrics (Songs)
+
+For a song, the official lyrics beat any Korean track. Artist and label channels often post them in the video description:
+
+```bash
+yt-dlp --print description --skip-download "<URL>" > description.txt
+```
+
+If the description has none, Korean streaming services such as Melon carry them. They carry the studio version, though, and a live, solo, or remix upload can drop a verse or add a bridge. For those uploads, trust only the video's own description, or check the lyrics against the timed tracks line by line.
 
 ### Parse to JSON
 
@@ -75,8 +87,9 @@ After fetching and parsing, determine which scenario applies:
 | C: Ko manual    | manual    | —         | LLM translates ko → en                              |
 | D: Ko auto only | auto      | —         | Fix ko text, then LLM translate                     |
 | E: Neither      | —         | —         | Stop                                                |
+| F: Lyrics + En  | lyrics    | manual    | Pair lyric lines with en cues, audit en             |
 
-If auto-generated quality looks unsalvageable (common with song lyrics), flag it, because a different video may be the better choice.
+For a song with official lyrics, use Scenario F even when a Korean track exists, because fixing auto-generated lyrics only guesses at what the lyrics already say. If auto-generated quality looks unsalvageable and there are no official lyrics, flag it, because a different video may be the better choice.
 
 ## Produce captions.json
 
@@ -113,6 +126,28 @@ When fixing auto-generated Korean, watch for:
 - Truncated words at cue boundaries
 
 In Scenario B, download and parse the other manual tracks too, and use them as evidence for the fixes. Japanese follows Korean clause by clause, and its kanji confirm Sino-Korean words, so `ja` often settles a fix that the English only hints at, such as 3초째 → 3회째 from 3回目. A Chinese track can name people that the other tracks leave out. Leave a fix out when no track supports it, because a person who can hear the audio should check those spots.
+
+### Pair Official Lyrics With the Timed Track (Scenario F)
+
+Manual translation tracks for songs usually give one cue per lyric line, and the `en` and `ja` tracks tend to share timestamps. So the job is to put each lyric line on a cue, keeping the `en` timing and text. Count the lyric lines against the cues:
+
+```bash
+grep -cv '^\s*$' lyrics.txt   # after cutting description.txt down to the lyrics
+jq length en.json
+```
+
+When the counts match, zip them, and check each row against `ja`, which follows the Korean line by line:
+
+```bash
+grep -v '^\s*$' lyrics.txt | jq -R . | jq -s . > ko-lines.json
+jq --slurpfile k ko-lines.json \
+  '[to_entries[] | {idx: .key, begin: .value.begin, end: .value.end, text1: $k[0][.key], text2: .value.text}]' \
+  en.json > captions.json
+```
+
+When the counts differ, the description usually leaves out a repeated chorus line that the translator heard. Find it through `ja` and fill it in from the matching chorus, and tell the person running the task to check that spot by ear.
+
+The translators worked from the Korean and can misread it, so audit `text2` as in Scenario A. For example, both tracks of one song translated 우리 서로의 이름을 묻어요 as "let's ask each other's names", but "ask" would conjugate as 물어요, so 묻어요 means "bury". English can also reorder a few lines, so that one cue's English belongs to its neighbor's Korean. Rewrite `text2` for those rows, or merge them.
 
 ### Output Format
 
