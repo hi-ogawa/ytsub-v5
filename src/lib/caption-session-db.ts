@@ -38,17 +38,8 @@ export async function getSession(
   return new Promise((resolve, reject) => {
     const tx = db.transaction(STORE_NAME, "readonly");
     const req = tx.objectStore(STORE_NAME).get(youtubeId);
-    req.onsuccess = () => {
-      const raw = req.result as PersistedCaptionSession | undefined;
-      if (raw) {
-        // Backfill fields added after initial schema
-        raw.title ??= "";
-        raw.channelName ??= "";
-        raw.channelId ??= "";
-        raw.duration ??= 0;
-      }
-      resolve(raw);
-    };
+    req.onsuccess = () =>
+      resolve(req.result as PersistedCaptionSession | undefined);
     req.onerror = () => reject(req.error);
   });
 }
