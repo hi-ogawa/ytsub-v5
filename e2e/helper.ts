@@ -9,6 +9,7 @@ export const execAsync = promisify(exec);
 // wrangler CLI (0.15s vs 2s per call). WAL mode lets this run alongside the
 // dev server, but writers still take turns, so `.timeout` waits out a write
 // the server is still finishing instead of failing with "database is locked".
+// The timeout is only an upper bound; sqlite3 proceeds as soon as the lock frees.
 export async function setupDb(options: { seed?: boolean } = {}) {
   const sql = options.seed
     ? "scripts/db-clear.sql scripts/db-seed.sql"
