@@ -27,16 +27,18 @@ yt-dlp --list-subs --skip-download "<URL>" 2>&1 | grep -E "^\[info\]|^Language|^
 
 The full output is ~1000 lines (hundreds of auto-translated languages). The grep filter shows section headers and ko/en rows. Check which section each row falls under: `Available subtitles` (manual) vs `Available automatic captions` (auto-generated). Adjust the grep pattern if targeting other languages (e.g. `^ja|^zh`).
 
+Note the exact language code of each track you need, such as `en-US` rather than `en`. When the Korean is auto-generated, also note the other manual tracks, such as `ja` and `zh`, because they help fix the Korean in Scenario B.
+
 ### Download Subtitles
 
-Prefer manual subs over auto-generated. Use json3 format.
+Prefer manual subs over auto-generated. Use json3 format, and pass the language code exactly as the list shows it. If the code doesn't match a track, such as `en` for a video whose English is `en-US`, yt-dlp downloads nothing and reports no error.
 
 ```bash
-# Manual subs (preferred)
+# Manual subs (preferred), here with English listed as en-US
 yt-dlp --write-sub --sub-lang ko --skip-download --sub-format json3 -o "%(id)s" "<URL>"
 mv <id>.ko.json3 ko.json3
-yt-dlp --write-sub --sub-lang en --skip-download --sub-format json3 -o "%(id)s" "<URL>"
-mv <id>.en.json3 en.json3
+yt-dlp --write-sub --sub-lang en-US --skip-download --sub-format json3 -o "%(id)s" "<URL>"
+mv <id>.en-US.json3 en.json3
 
 # Auto-generated (fallback)
 yt-dlp --write-auto-sub --sub-lang ko --skip-download --sub-format json3 -o "%(id)s" "<URL>"
@@ -110,6 +112,8 @@ When fixing auto-generated Korean, watch for:
 - `>>` speaker markers, which should be removed
 - Truncated words at cue boundaries
 
+In Scenario B, download and parse the other manual tracks too, and use them as evidence for the fixes. Japanese follows Korean clause by clause, and its kanji confirm Sino-Korean words, so `ja` often settles a fix that the English only hints at, such as 3초째 → 3회째 from 3回目. A Chinese track can name people that the other tracks leave out. Leave a fix out when no track supports it, because a person who can hear the audio should check those spots.
+
 ### Output Format
 
 ```json
@@ -127,6 +131,8 @@ When fixing auto-generated Korean, watch for:
 Check that the text1/text2 pairs make sense together, and fix any misaligned rows.
 
 ## Pick Bookmarks
+
+If the video already has bookmarks, re-anchor them instead, as described in [Re-anchor Existing Bookmarks](#re-anchor-existing-bookmarks).
 
 Propose bookmark candidates (interesting vocab from the Korean captions) and save them as `bookmarks.json`.
 
@@ -177,6 +183,10 @@ node <repo>/scripts/import-json/validate-bookmarks.ts bookmarks.json captions.js
 ```
 
 The script auto-corrects offsets via `indexOf`, fixes context mismatches, and errors on bookmarks where `text` isn't found in the caption at all.
+
+### Re-anchor Existing Bookmarks
+
+When the video already has bookmarks, from an earlier export or in the app, keep them instead of picking new ones. The new rows are split differently, so each bookmark's old caption index means nothing. Find the row that now holds the bookmark's word, and write the bookmark to `bookmarks.json` with that row's `captionIdx`, its `side`, and its `text` as the row now spells it. A word you fixed changes too, such as 쌍거풀 → 쌍꺼풀. Then run `validate-bookmarks.ts` as above, which sets `offset` and `context` from the new rows. It keeps other fields, such as an `id`, as they are.
 
 ## Assemble import.json
 

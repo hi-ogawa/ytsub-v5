@@ -6,11 +6,13 @@ The flow: Zamak builds a prompt with your video's captions baked in → you past
 
 ## Available tasks
 
-| Task               | What it does                                                                                                |
-| ------------------ | ----------------------------------------------------------------------------------------------------------- |
-| **Pick & Fill**    | AI scans captions and picks ~5–60 interesting Korean vocabulary words, returning translations and etymology |
-| **Fill Bookmarks** | You bookmark words first, then AI fills in translations and etymology for them                              |
-| **Fix ASR**        | AI corrects errors in auto-generated Korean subtitles using the English captions as reference               |
+| Task                | What it does                                                                                                |
+| ------------------- | ----------------------------------------------------------------------------------------------------------- |
+| **Pick & Fill**     | AI scans captions and picks ~5–60 interesting Korean vocabulary words, returning translations and etymology |
+| **Fill Bookmarks**  | You bookmark words first, then AI fills in translations and etymology for them                              |
+| **Fix & Align ASR** | A coding agent fixes auto-generated Korean using the official tracks, and aligns it to the English          |
+
+The first two work in any chat. Fix & Align ASR needs an agent with a shell and `yt-dlp`, such as Claude Code or Codex, because the agent downloads the tracks itself. Its prompt carries only the video ID, the tracks, and your bookmarks' positions, and points the agent to [Generate import.json](generate-import-json.md) for the steps.
 
 ## Step by step
 
@@ -20,13 +22,13 @@ Open the settings menu (gear icon) in the caption panel. Under **AI prompt**, pi
 
 The prompt is automatically copied to your clipboard when you select a task. You can also use the copy button or download it as a `.txt` file.
 
-The prompt contains the video title, all captions, and (for Fill Bookmarks) your existing bookmarks — everything the AI needs in one self-contained block.
+For Pick & Fill and Fill Bookmarks, the prompt contains the video title, all captions, and (for Fill Bookmarks) your existing bookmarks — everything the AI needs in one self-contained block.
 
 ### 2. Paste into any AI chat
 
 Open your preferred LLM chat and paste the prompt. The prompt asks the AI to respond with one JSON code block, optionally with a short comment around it.
 
-Any model that can follow instructions and output JSON works. Larger models tend to produce better vocabulary picks and more accurate ASR fixes.
+Any model that can follow instructions and output JSON works. Larger models tend to produce better vocabulary picks. For Fix & Align ASR, paste the prompt into an agent session instead.
 
 > **Tip:** For long videos, the prompt can be large. If your model has a small context window, use the download button and attach the `.txt` file instead of pasting.
 
@@ -40,7 +42,7 @@ Zamak auto-detects which task the result belongs to and applies it:
 
 - **Pick & Fill** → creates new bookmarks with translations and etymology filled in
 - **Fill Bookmarks** → updates your existing bookmarks with the AI-provided metadata
-- **Fix ASR** → overwrites the corrected Korean caption lines
+- **Fix & Align ASR** → replaces all caption rows and moves each bookmark to its word in the new rows, keeping its translation and notes. If any bookmark is missing from the result or doesn't match its row, Zamak lists the problems and imports nothing
 
 A confirmation alert shows how many items were imported. For Pick & Fill, it also warns if any caption indices didn't match (e.g., if the AI hallucinated an index).
 
@@ -71,5 +73,5 @@ Here's what a Pick & Fill result looks like:
 
 - **Pick & Fill** is the most common starting point — it gives you a vocabulary list without any manual bookmarking first.
 - **Fill Bookmarks** is useful when you've already highlighted specific words and just want metadata filled in.
-- **Fix ASR** works best on auto-generated subtitles (not manually written ones). The English captions serve as the ground truth.
-- You can run tasks multiple times on the same video. Pick & Fill creates new bookmarks each time; Fill and Fix ASR update in place.
+- **Fix & Align ASR** is for videos whose Korean is auto-generated but which have an official English track. The agent picks the tracks itself, so the tracks selected in the panel don't matter.
+- You can run tasks multiple times on the same video. Pick & Fill creates new bookmarks each time; Fill updates in place.

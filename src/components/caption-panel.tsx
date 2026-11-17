@@ -25,6 +25,7 @@ import {
 import {
   type AiTask,
   AI_TASKS,
+  alignResultToSession,
   makeAiPrompt,
   parseAiResult,
   pickFillToBookmarks,
@@ -191,22 +192,26 @@ export function ResizablePanel({
 // --- AI prompt copy (inline dropdown widget) ---
 
 function AiPromptCopy({
-  rows,
-  bookmarks,
-  title,
-  youtubeId,
+  store,
+  tracks,
 }: {
-  rows: MergedCaption[] | undefined;
-  bookmarks: ExtensionBookmark[];
-  title: string;
-  youtubeId: string;
+  store: CaptionSessionManager;
+  tracks: YouTubeCaptionTrack[];
 }) {
   const [selected, setSelected] = useState<AiTask>(AI_TASKS[0].task);
   const [copied, setCopied] = useState(false);
+  const { youtubeId, title } = store.videoMeta;
 
   function getPrompt(task: AiTask) {
-    if (!rows) return "";
-    return makeAiPrompt(task, rows, bookmarks, title);
+    return makeAiPrompt(task, {
+      youtubeId,
+      title,
+      rows: store.rows,
+      bookmarks: store.bookmarks,
+      tracks,
+      vssId1: store.vssId1,
+      vssId2: store.vssId2,
+    });
   }
 
   function copyPrompt(task: AiTask) {
@@ -261,7 +266,6 @@ function AiPromptCopy({
           className="shrink-0 rounded p-0.5 text-muted-foreground hover:bg-muted"
           title="Copy prompt"
           onClick={() => copyPrompt(selected)}
-          disabled={!rows}
         >
           {copied ? (
             <Check className="size-4 text-green-500" />
@@ -274,7 +278,6 @@ function AiPromptCopy({
           className="shrink-0 rounded p-0.5 text-muted-foreground hover:bg-muted"
           title="Download prompt"
           onClick={() => downloadPrompt(selected)}
-          disabled={!rows}
         >
           <Download className="size-4" />
         </button>
@@ -311,10 +314,23 @@ function importAiResult(store: CaptionSessionManager): void {
         store.updateBookmarks(result.entries);
         alert(`Filled ${result.entries.length} bookmarks`);
         break;
-      case "fix-asr":
-        store.updateCaptions(result.entries);
-        alert(`Updated ${result.entries.length} captions`);
+      case "fix-asr": {
+        const { captions, bookmarks, errors } = alignResultToSession(
+          result,
+          store.bookmarks,
+        );
+        if (errors.length > 0) {
+          alert(
+            `Nothing imported. ${errors.length} bookmark problems:\n${errors.join("\n")}`,
+          );
+          break;
+        }
+        store.replace({ captions, bookmarks });
+        alert(
+          `Replaced captions with ${captions.length} rows and moved ${bookmarks.length} bookmarks`,
+        );
         break;
+      }
     }
   } catch (e) {
     alert(e instanceof Error ? e.message : "Invalid JSON");
@@ -627,6 +643,7 @@ function CaptionPanelWithStore({
         )}
         <SettingsDropdown
           store={store}
+          tracks={tracks}
           autoScroll={autoScroll}
           onSetAutoScroll={setAutoScroll}
           onSelectStrategy={onSelectStrategy}
@@ -655,6 +672,7 @@ function SettingsDropdownSkeleton() {
 
 function SettingsDropdown({
   store,
+  tracks,
   autoScroll,
   onSetAutoScroll,
   onSelectStrategy,
@@ -662,6 +680,7 @@ function SettingsDropdown({
   sessionOnly,
 }: {
   store: CaptionSessionManager;
+  tracks: YouTubeCaptionTrack[];
   autoScroll: boolean;
   onSetAutoScroll: (value: boolean | ((prev: boolean) => boolean)) => void;
   onSelectStrategy: (s: MergeStrategy) => void;
@@ -718,12 +737,7 @@ function SettingsDropdown({
             </select>
           </div>
         )}
-        <AiPromptCopy
-          rows={store.rows}
-          bookmarks={store.bookmarks}
-          title={store.videoMeta.title}
-          youtubeId={store.videoMeta.youtubeId}
-        />
+        <AiPromptCopy store={store} tracks={tracks} />
         <DropdownMenuItem onSelect={() => importAiResult(store)}>
           <ClipboardPaste className="mr-2 size-4" />
           Import AI result

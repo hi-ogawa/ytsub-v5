@@ -206,23 +206,6 @@ export class CaptionSessionManager {
 
   // --- Operations ---
 
-  async updateCaptions(
-    entries: { idx: number; text1?: string; text2?: string }[],
-  ): Promise<void> {
-    const updates = new Map(entries.map((e) => [e.idx, e]));
-    this.rows = this.rows.map((r) => {
-      const u = updates.get(r.idx);
-      if (!u) return r;
-      return {
-        ...r,
-        ...(u.text1 !== undefined && { text1: u.text1 }),
-        ...(u.text2 !== undefined && { text2: u.text2 }),
-      };
-    });
-    this.notify();
-    await this.persistSession();
-  }
-
   async createBookmarks(
     selections: Omit<ExtensionBookmark, "id" | "createdAt">[],
   ): Promise<void> {

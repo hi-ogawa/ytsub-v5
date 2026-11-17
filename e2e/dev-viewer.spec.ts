@@ -628,4 +628,71 @@ test.describe("dev-viewer caption panel", () => {
     await expect(popover.getByText("to pinch")).toBeVisible();
     await expect(popover.getByText("Figurative use.")).toBeVisible();
   });
+
+  test("AI align prompt: copy and import replaces rows and moves bookmarks", async ({
+    page,
+    context,
+  }) => {
+    await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+    await openPanelWithTracks(page);
+    await createBookmarkAt(page, { index: 0, start: 0, end: 3 });
+    const panel = page.getByTestId("resizable-panel");
+    await panel.getByRole("button", { name: /Bookmarks/ }).click();
+    const bookmarkId = await page
+      .locator("[data-bookmark-id]")
+      .first()
+      .getAttribute("data-bookmark-id");
+    await panel.getByRole("button", { name: /Captions/ }).click();
+
+    // Copy align prompt
+    await page.getByTitle("Settings").click();
+    await page.locator("select").last().selectOption("fix-asr");
+    const clipboard = await page.evaluate(() => navigator.clipboard.readText());
+    expect(clipboard).toContain("Fix and align Korean ASR");
+    expect(clipboard).toContain("ID: 7GU_VQfgMT0");
+    expect(clipboard).toContain("docs/generate-import-json.md");
+    expect(clipboard).toContain("`.ko`: ko, manual, current text1");
+    expect(clipboard).toContain(bookmarkId!);
+    expect(clipboard).not.toContain("밤새");
+
+    const captions = [
+      { begin: 0, end: 2, text1: "새 줄", text2: "new line" },
+      { begin: 2, end: 4, text1: "다시 꼬집어 봐", text2: "pinch again" },
+    ];
+    const dialogs: string[] = [];
+    let answer = "";
+    page.on("dialog", (dialog) => {
+      dialogs.push(dialog.message());
+      if (dialog.type() === "prompt") dialog.accept(answer);
+      else dialog.accept();
+    });
+
+    // A bookmark that isn't at its offset rejects the whole result
+    answer = JSON.stringify({
+      type: "fix-asr",
+      captions,
+      bookmarks: [
+        { id: bookmarkId, captionIndex: 1, offset: 0, text: "꼬집어" },
+      ],
+    });
+    await page.getByText("Import AI result").click();
+    await expect.poll(() => dialogs.at(-1)).toContain("Nothing imported");
+    await expect(page.locator("[data-index='0']")).toContainText("꼬집어 봐");
+
+    answer = JSON.stringify({
+      type: "fix-asr",
+      captions,
+      bookmarks: [
+        { id: bookmarkId, captionIndex: 1, offset: 3, text: "꼬집어" },
+      ],
+    });
+    await page.getByTitle("Settings").click();
+    await page.getByText("Import AI result").click();
+    await expect.poll(() => dialogs.at(-1)).toContain("Replaced captions");
+    await expect(page.locator("[data-index='2']")).toHaveCount(0);
+    await expect(page.locator("[data-index='0']")).toHaveText(/새 줄/);
+    await expect(
+      page.locator("[data-index='1']").getByTestId("bookmark-highlight"),
+    ).toHaveText("꼬집어");
+  });
 });
