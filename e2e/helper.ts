@@ -6,26 +6,28 @@ import { expect, type Page, test } from "@playwright/test";
 export const execAsync = promisify(exec);
 
 // Write to miniflare's D1 sqlite file directly instead of going through
-// wrangler CLI (0.15s vs 2s per call). WAL mode makes this safe while
-// the dev server is running.
+// wrangler CLI (0.15s vs 2s per call). WAL mode lets this run alongside the
+// dev server, but writers still take turns, so `.timeout` waits out a write
+// the server is still finishing instead of failing with "database is locked".
+// The timeout is only an upper bound; sqlite3 proceeds as soon as the lock frees.
 export async function setupDb(options: { seed?: boolean } = {}) {
-  const dbPath = globSync(
-    ".wrangler/state/e2e/v3/d1/miniflare-D1DatabaseObject/*.sqlite",
-  ).sort((a, b) => statSync(b).mtimeMs - statSync(a).mtimeMs)[0];
   const sql = options.seed
     ? "scripts/db-clear.sql scripts/db-seed.sql"
     : "scripts/db-clear.sql";
-  await execAsync(`cat ${sql} | sqlite3 ${dbPath}`);
+  await execAsync(`cat ${sql} | sqlite3 -cmd ".timeout 5000" ${findDbPath()}`);
 }
 
 /** Bump a video's updated_at to a future time, simulating a push from another device. */
 export async function bumpServerUpdatedAt(youtubeId: string) {
-  const dbPath = globSync(
+  await execAsync(
+    `sqlite3 -cmd ".timeout 5000" ${findDbPath()} "UPDATE videos SET updated_at = datetime('now', '+1 hour') WHERE youtube_id = '${youtubeId}'"`,
+  );
+}
+
+function findDbPath() {
+  return globSync(
     ".wrangler/state/e2e/v3/d1/miniflare-D1DatabaseObject/*.sqlite",
   ).sort((a, b) => statSync(b).mtimeMs - statSync(a).mtimeMs)[0];
-  await execAsync(
-    `sqlite3 ${dbPath} "UPDATE videos SET updated_at = datetime('now', '+1 hour') WHERE youtube_id = '${youtubeId}'"`,
-  );
 }
 
 /** Log in as a seed user (requires setupDb({ seed: true }) beforehand). */
