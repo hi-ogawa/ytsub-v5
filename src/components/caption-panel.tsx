@@ -325,9 +325,10 @@ function importAiResult(store: CaptionSessionManager): void {
           );
           break;
         }
+        const moved = store.bookmarks.length;
         store.replace({ captions, bookmarks });
         alert(
-          `Replaced captions with ${captions.length} rows and moved ${bookmarks.length} bookmarks`,
+          `Replaced captions with ${captions.length} rows, moved ${moved} bookmarks, and added ${bookmarks.length - moved}`,
         );
         break;
       }

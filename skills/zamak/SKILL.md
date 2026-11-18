@@ -21,7 +21,7 @@ Read the task's reference before you start. It has the steps, the data the promp
 
 Each task returns one JSON object. The user pastes it into **Import AI result** in the same settings menu, and the app reads its `type` to tell which task it belongs to.
 
-Run the task the user asks for. When they name a task without pasting its prompt, such as "pick fill next" after a fix-asr, read the data it needs as [Read the Current Rows](#read-the-current-rows) describes.
+Run the task the user asks for. When they name a task without pasting its prompt, use the data you already have. After a fix-asr, for example, "pick fill next" picks from the `captions` you returned, and each `captionIndex` is a row's position in them. Tell the user to import the fix-asr result first, because the app checks each pick against its current rows. When you don't have the data, read it as [Read the Current Rows](#read-the-current-rows) describes.
 
 ## Read the Current Rows
 
