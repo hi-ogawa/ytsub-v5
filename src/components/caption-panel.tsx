@@ -367,7 +367,7 @@ function SyncMenuItem({
   // The menu content mounts each time the menu opens, so this re-checks the
   // server then.
   useEffect(() => {
-    onRefresh?.();
+    onRefresh();
   }, []);
 
   const content = (
@@ -438,14 +438,10 @@ function getSyncMenuAction(
   const { onPush, onPull, onNavigate } = sync;
   switch (sync.state) {
     case "push": {
-      return onPush
-        ? { run: onPush, keepOpen: true }
-        : { run: onNavigate, keepOpen: false };
+      return { run: () => onPush(store), keepOpen: true };
     }
     case "pull": {
-      return onPull
-        ? { run: () => onPull(store), keepOpen: true }
-        : { run: onNavigate, keepOpen: false };
+      return { run: () => onPull(store), keepOpen: true };
     }
     case "conflict":
     case "unauthenticated": {
