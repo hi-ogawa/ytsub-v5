@@ -5,6 +5,7 @@
     "src/extension/bookmarks.tsx",
     "src/extension/background.ts",
     "src/extension/relay.ts",
-    "scripts/**/*.ts"
+    "scripts/**/*.ts",
+    "skills/*/scripts/*.ts"
   ]
 }

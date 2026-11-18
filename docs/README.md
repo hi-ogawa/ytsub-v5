@@ -21,7 +21,7 @@
 ## Agent Skill
 
 - [Zamak skill](../skills/zamak/SKILL.md): the AI tasks that the app's prompts link to, with the agent guides it points to:
-  - [Generate import.json from a YouTube video](../skills/zamak/references/generate-import-json.md): build captions and vocab bookmarks for a video with yt-dlp and an LLM, for seed fixtures or a one-off import without the extension.
+  - [Generate import.json from a YouTube video](../skills/zamak/references/generate-import-json.md): build captions and vocab bookmarks for a video with yt-dlp and an LLM for a one-off import without the extension, or for a seed fixture.
   - [Use the server API](../skills/zamak/references/server-api.md): log in, read a video, and edit its bookmarks from a script or agent, and keep the server's copy current.
 
 ## References

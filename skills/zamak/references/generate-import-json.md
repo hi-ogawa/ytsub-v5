@@ -9,7 +9,7 @@ This guide builds an `import.json` for a video from its YouTube subtitles, with 
 | `bookmarks.json` | Notable vocab items with correct offsets                              |
 | `import.json`    | Valid payload assembled from above                                    |
 
-Work in a scratch directory outside the repo, and run the scripts by their path in the repo (`<repo>` below).
+Work in a scratch directory. The scripts below are in the skill's `scripts/` directory (`<skill>` below). If you read the skill from a URL, download each script from `../scripts/<name>` relative to this file. They are TypeScript files that `node` runs directly, which needs Node 22.18 or later.
 
 ## Fetch and Assess
 
@@ -60,8 +60,8 @@ If the description has none, Korean streaming services such as Melon carry them.
 ### Parse to JSON
 
 ```bash
-node <repo>/scripts/import-json/parse-json3.ts ko.json3 ko > ko.json
-node <repo>/scripts/import-json/parse-json3.ts en.json3 en > en.json
+node <skill>/scripts/parse-json3.ts ko.json3 ko > ko.json
+node <skill>/scripts/parse-json3.ts en.json3 en > en.json
 ```
 
 The output is an array of caption cues:
@@ -100,7 +100,7 @@ The goal is clean, well-segmented text1/text2 pairs where translations correspon
 When both ko and en subs are manual, check if they're already 1:1 aligned:
 
 ```bash
-node <repo>/scripts/import-json/check-alignment.ts ko.json en.json > captions.json
+node <skill>/scripts/check-alignment.ts ko.json en.json > captions.json
 ```
 
 If this succeeds (exit 0), the cues matched within 0.5s tolerance and `captions.json` is ready, so skip to bookmarks. If it fails (count mismatch or timestamp drift), fall back to the LLM merge.
@@ -214,7 +214,7 @@ Target ~1 bookmark per 10s of video duration (e.g. 3 min → ~18, 10 min → ~60
 LLMs are unreliable at counting character offsets, so always run validation after producing bookmarks:
 
 ```bash
-node <repo>/scripts/import-json/validate-bookmarks.ts bookmarks.json captions.json > bookmarks-fixed.json && mv bookmarks-fixed.json bookmarks.json
+node <skill>/scripts/validate-bookmarks.ts bookmarks.json captions.json > bookmarks-fixed.json && mv bookmarks-fixed.json bookmarks.json
 ```
 
 The script auto-corrects offsets via `indexOf`, fixes context mismatches, and errors on bookmarks where `text` isn't found in the caption at all.
@@ -230,4 +230,4 @@ jq -n --slurpfile c captions.json --slurpfile b bookmarks.json \
   '{video: input, captions: $c[], bookmarks: $b[]}' video.json > import.json
 ```
 
-Import it through the app's upload dialog. For a seed fixture, put it at `scripts/db-seed-json/<id>/import.json` and run `pnpm db:seed-gen`.
+Import it through the app's upload dialog.
