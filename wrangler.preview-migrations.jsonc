@@ -5,7 +5,7 @@
     {
       "binding": "DB",
       "database_name": "zamak-staging",
-      "database_id": "<staging-database-id>",
+      "database_id": "7cc3f1ba-42a6-4186-96ab-65f0d756fe89",
       "migrations_dir": "src/server/migrations",
     },
   ],
