@@ -78,7 +78,11 @@ type SyncDirection = "push" | "pull";
 
 export type SyncStatus = {
   state: SyncState;
+  error?: string;
   onNavigate: () => void;
+  onRefresh?: () => void;
+  onPush?: () => void;
+  onPull?: (store: CaptionSessionManager) => void;
 };
 
 export function useSyncState({ youtubeId }: { youtubeId: string }) {

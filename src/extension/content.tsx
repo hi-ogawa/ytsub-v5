@@ -1,6 +1,10 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { useQuery } from "@tanstack/react-query";
-import { StrictMode, useEffect, useState } from "react";
+import {
+  QueryClient,
+  QueryClientProvider,
+  useMutation,
+  useQuery,
+} from "@tanstack/react-query";
+import { StrictMode, useState } from "react";
 import { createRoot } from "react-dom/client";
 import {
   CaptionFab,
@@ -12,9 +16,14 @@ import { PortalContainerProvider } from "../components/ui/portal-container.tsx";
 import type { YTPlayer } from "../components/youtube-player.tsx";
 import { getSession, saveSession } from "../lib/caption-session-db.ts";
 import type { PersistedCaptionSession } from "../lib/caption-session-db.ts";
+import type { CaptionSessionManager } from "../lib/caption-session.ts";
 import { useStore } from "../lib/external-store.ts";
-import { type SyncState, computeSyncState } from "../lib/sync.ts";
-import { videoIndexStore } from "../lib/video-index.ts";
+import {
+  type SyncState,
+  type SyncStatus,
+  computeSyncState,
+} from "../lib/sync.ts";
+import { setSyncedAt, videoIndexStore } from "../lib/video-index.ts";
 import type { YouTubeExtractionResult } from "../lib/youtube.ts";
 import { fetchPlayerApi, fetchTrackJson3 } from "../lib/youtube.ts";
 import type { bgRpcHandlers } from "./background.ts";
@@ -126,24 +135,62 @@ function ExtensionViewer({ videoId }: { videoId: string }) {
   );
 }
 
-function useExtensionSyncState(youtubeId: string): SyncState {
+type SyncAction =
+  | { direction: "push" }
+  | { direction: "pull"; store: CaptionSessionManager };
+
+function useExtensionSync(youtubeId: string): SyncStatus {
   const [videoIndex] = useStore(videoIndexStore);
-  const [serverResponse, setServerResponse] =
-    useState<Awaited<ReturnType<typeof bgRpc.getSyncState>>>();
 
-  useEffect(() => {
-    bgRpc.getSyncState({ youtubeId }).then(setServerResponse);
-  }, [youtubeId]);
-
-  if (!serverResponse) return "checking";
-  if (!serverResponse.authenticated) return "unauthenticated";
-
-  const localEntry = videoIndex.find((e) => e.youtubeId === youtubeId);
-  return computeSyncState({
-    localUpdatedAt: localEntry?.updatedAt,
-    syncedAt: localEntry?.syncedAt,
-    serverUpdatedAt: serverResponse.serverUpdatedAt,
+  const serverQuery = useQuery({
+    queryKey: ["extension-sync-state", youtubeId],
+    queryFn: () => bgRpc.getSyncState({ youtubeId }),
   });
+
+  const syncMutation = useMutation({
+    mutationFn: async (action: SyncAction) => {
+      if (action.direction === "push") {
+        await bgRpc.pushSession({ youtubeId });
+      } else {
+        const session = await bgRpc.fetchSession({ youtubeId });
+        // replace() bumps the index entry's updatedAt, so setSyncedAt must follow it.
+        await action.store.replace({
+          vssId1: session.vssId1,
+          vssId2: session.vssId2,
+          captions: session.captions,
+          bookmarks: session.bookmarks,
+        });
+      }
+      setSyncedAt(youtubeId);
+    },
+    onSuccess: () => serverQuery.refetch(),
+  });
+
+  const getState = (): SyncState => {
+    if (syncMutation.isPending) return "syncing";
+    if (serverQuery.isPending) return "checking";
+    if (serverQuery.isError) return "error";
+    if (!serverQuery.data.authenticated) return "unauthenticated";
+    const localEntry = videoIndex.find((e) => e.youtubeId === youtubeId);
+    return computeSyncState({
+      localUpdatedAt: localEntry?.updatedAt,
+      syncedAt: localEntry?.syncedAt,
+      serverUpdatedAt: serverQuery.data.serverUpdatedAt,
+    });
+  };
+
+  const { error, variables } = syncMutation;
+
+  return {
+    state: getState(),
+    error: error
+      ? `${variables?.direction === "pull" ? "Download" : "Upload"} failed: ${error.message}`
+      : undefined,
+    onNavigate: () => bgRpc.openBookmarks(),
+    onRefresh: () => serverQuery.refetch({ cancelRefetch: false }),
+    onPush: () => syncMutation.mutate({ direction: "push" }),
+    onPull: (store) => syncMutation.mutate({ direction: "pull", store }),
+  };
 }
 
 function ExtensionSession({
@@ -153,8 +200,7 @@ function ExtensionSession({
   data: YouTubeExtractionResult;
   player?: YTPlayer;
 }) {
-  const state = useExtensionSyncState(data.video.youtubeId);
-  const sync = { state, onNavigate: () => bgRpc.openBookmarks() };
+  const sync = useExtensionSync(data.video.youtubeId);
 
   return (
     <CaptionPanel

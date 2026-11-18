@@ -32,7 +32,7 @@ The sync status of a video compares three timestamps: when the local session las
 
 Push and pull always move a whole video, and the receiving side replaces its copy. A push sends the session to the server, which replaces that video's captions and bookmarks. A pull fetches the server's copy and replaces the local session. Either one then records the sync time in the index.
 
-In the extension, the caption panel only shows the status. Its sync button opens the bookmarks page, where you push or pull. The bookmarks page asks the background, which calls the server and reads or writes the session through an open YouTube tab.
+In the extension, you can push or pull from the caption panel's menu or from the bookmarks page. Both ask the background, which calls the server. A push from either one reads the session through an open YouTube tab. A pull from the bookmarks page writes the session through a YouTube tab. A pull from the panel only fetches the session, and the panel applies it to the captions and bookmarks it shows. A conflict always opens the bookmarks page, where you pick which copy to keep.
 
 In the web app, the bookmarks page pushes and pulls directly, because the sessions live on its own origin. The web app's caption panel only shows sessions that are already stored, because it can't fetch subtitles.
 
