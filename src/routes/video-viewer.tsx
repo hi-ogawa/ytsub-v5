@@ -18,8 +18,10 @@ export function VideoViewerPage() {
 
   const navigate = useNavigate();
   const { ref: playerElRef, player } = useYouTubePlayer(youtubeId);
-  const syncState = useSyncState({ youtubeId: youtubeId! });
-  const sync = { state: syncState.state, onNavigate: () => navigate("/") };
+  const sync = useSyncState({
+    youtubeId: youtubeId!,
+    onNavigate: () => navigate("/"),
+  });
 
   if (!youtubeId) {
     return (

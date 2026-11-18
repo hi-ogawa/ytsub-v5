@@ -76,8 +76,10 @@ function DevViewerSession({
     [videoId],
   );
 
-  const syncState = useSyncState({ youtubeId: videoId });
-  const sync = { state: syncState.state, onNavigate: () => navigate("/dev") };
+  const sync = useSyncState({
+    youtubeId: videoId,
+    onNavigate: () => navigate("/dev"),
+  });
 
   return (
     <CaptionPanel

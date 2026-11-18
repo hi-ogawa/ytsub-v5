@@ -37,7 +37,7 @@ The two RPC channels use window messages, because both worlds share the tab's `w
 
 The background service worker is the extension's hub. It holds no UI and no captions. It handles calls from the content script and the bookmarks page, and it talks to the server.
 
-When the caption panel opens, the content script asks the background for the video's sync status. The background reads the session token from `chrome.storage.local`, calls the server, and returns whether you're signed in and when the server last changed the video. The token stays out of the content script, which shares its world with YouTube's own scripts.
+When the caption panel opens, and again each time you open its menu, the content script asks the background for the video's sync status. The background reads the session token from `chrome.storage.local`, calls the server, and returns whether you're signed in and when the server last changed the video. The token stays out of the content script, which shares its world with YouTube's own scripts.
 
 ## Route Background Calls Through a YouTube Tab
 
@@ -45,7 +45,7 @@ Captions and bookmarks live in IndexedDB on the youtube.com origin. The backgrou
 
 To find a tab, the background asks Chrome for the open YouTube tabs on every call and sends a Chrome message to each in turn until one answers. A tab answers once its relay is running. A tab that is still loading, or that runs a script from an older version of the extension, has no relay to answer, so the background moves on to the next tab. The relay passes the request to the content script through `zamak:tab-rpc`, and the content script reads or writes IndexedDB. Every YouTube tab shares the same origin storage, so any tab will do. The background keeps no list of its own, because Chrome stops the service worker when it is idle, and anything the worker kept in memory is lost.
 
-This is why pushing and pulling from the bookmarks page needs an open YouTube tab. Without one, the call fails with "No YouTube tab open". [Data and sync](data-and-sync.md) describes what push and pull do with the data.
+This is why pushing and pulling from the bookmarks page needs an open YouTube tab. Without one, the call fails with "No YouTube tab open". The caption panel runs in a YouTube tab, so its push always finds one. Its pull doesn't go through a tab. The background only returns the fetched session, and the panel applies it to the session it holds in memory. A write to IndexedDB from outside the panel would leave it showing the old copy. [Data and sync](data-and-sync.md) describes what push and pull do with the data.
 
 ## Run the Bookmarks Page as an Extension Page
 

@@ -42,16 +42,40 @@ test.describe("dev-viewer sync indicator", () => {
     await page.getByTitle("Settings").click();
     await expect(indicator).toHaveAttribute("data-sync-state", "push");
 
-    // Navigate to video list via sync menu item
+    // Push from the sync menu item, which stays open through the push
     await indicator.click();
-    await expect(page).toHaveURL("/dev");
+    await expect(indicator).toHaveAttribute("data-sync-state", "synced");
 
-    // Video appears in list with push badge — push it, verify synced
+    // The video list shows it synced too
+    await page.getByRole("menuitem", { name: "Open bookmarks page" }).click();
+    await expect(page).toHaveURL("/dev");
     const badge = syncBadge(page, FIXTURE_VIDEO_ID);
-    await expect(badge).toHaveAttribute("data-sync-status", "push");
-    await badge.click();
     await expect(badge).toHaveAttribute("data-sync-status", "synced");
   });
+});
+
+test("dev-viewer sync › pull from the sync menu replaces captions and bookmarks in place", async ({
+  page,
+}) => {
+  await setupDb({ seed: true });
+  await login(page);
+  await page.goto(`/dev/videos/${FIXTURE_VIDEO_ID}`);
+  await openPanelWithTracks(page);
+  await expect(
+    page.getByRole("button", { name: "Bookmarks", exact: true }),
+  ).toBeVisible();
+
+  // Fresh local session, and the server has seed data
+  await page.getByTitle("Settings").click();
+  const indicator = page.getByTestId("sync-status");
+  await expect(indicator).toHaveAttribute("data-sync-state", "pull");
+  await indicator.click();
+  await expect(indicator).toHaveAttribute("data-sync-state", "synced");
+
+  await page.keyboard.press("Escape");
+  await expect(
+    page.getByRole("button", { name: "Bookmarks (15)" }),
+  ).toBeVisible();
 });
 
 test("dev-viewer sync › shows conflict when local bookmarks and server data both exist", async ({
