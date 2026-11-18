@@ -41,4 +41,4 @@ To replace a video's captions, call `videos/importVideo` with the whole video. I
 
 ## Keep the Server's Copy Current
 
-The app keeps sessions in the browser and syncs them with the server one whole video at a time, as [Data and sync](../../../docs/data-and-sync.md) explains. A change on the server marks the video as changed there, and the user then pulls it, which replaces their local copy. So before you edit a video, make sure the user has pushed their latest local changes, because a pull drops anything that never reached the server.
+The app keeps sessions in the browser and syncs them with the server one whole video at a time. A change on the server marks the video as changed there, and the user then pulls it, which replaces their local copy. So before you edit a video, make sure the user has pushed their latest local changes, because a pull drops anything that never reached the server.
