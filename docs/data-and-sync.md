@@ -36,7 +36,7 @@ In the extension, the caption panel only shows the status. Its sync button opens
 
 In the web app, the bookmarks page pushes and pulls directly, because the sessions live on its own origin. The web app's caption panel only shows sessions that are already stored, because it can't fetch subtitles.
 
-Data can also enter the web app from an `import.json` file, through Import in the header menu. Import writes a session to the web app's storage, and a push then uploads it. [Generate import.json](generate-import-json.md) describes how to build one without the extension.
+Data can also enter the web app from an `import.json` file, through Import in the header menu. Import writes a session to the web app's storage, and a push then uploads it. [Generate import.json](../skills/zamak/references/generate-import-json.md) describes how to build one without the extension.
 
 ## Know Where the Copies Drift Apart
 

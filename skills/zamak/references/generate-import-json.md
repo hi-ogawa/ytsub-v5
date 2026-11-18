@@ -9,7 +9,7 @@ This guide builds an `import.json` for a video from its YouTube subtitles, with 
 | `bookmarks.json` | Notable vocab items with correct offsets                              |
 | `import.json`    | Valid payload assembled from above                                    |
 
-Work in a scratch directory outside the repo, and run the scripts by their path in the repo (`<repo>` below).
+Work in a scratch directory.
 
 ## Fetch and Assess
 
@@ -30,6 +30,8 @@ The full output is ~1000 lines (hundreds of auto-translated languages). The grep
 Note the exact language code of each track you need, such as `en-US` rather than `en`. When the Korean is auto-generated, also note the other manual tracks, such as `ja` and `zh`, because they help fix the Korean in Scenario B.
 
 A row such as `ko-en` (Korean from English) is YouTube's machine translation of another track, not Korean speech recognition, so it doesn't count as a Korean source. Korean songs often have this: manual `en` and `ja` tracks and no Korean track at all, which is Scenario F.
+
+The automatic captions can list the Korean speech recognition as `ko-orig` next to `ko`, so check which one it is before you download it.
 
 ### Download Subtitles
 
@@ -57,24 +59,15 @@ yt-dlp --print description --skip-download "<URL>" > description.txt
 
 If the description has none, Korean streaming services such as Melon carry them. They carry the studio version, though, and a live, solo, or remix upload can drop a verse or add a bridge. For those uploads, trust only the video's own description, or check the lyrics against the timed tracks line by line.
 
-### Parse to JSON
+### Read the json3 Files
 
-```bash
-node <repo>/scripts/import-json/parse-json3.ts ko.json3 ko > ko.json
-node <repo>/scripts/import-json/parse-json3.ts en.json3 en > en.json
-```
-
-The output is an array of caption cues:
+Turn each track into a list of cues with `begin` and `end` in seconds, such as `ko.json` and `en.json`:
 
 ```json
-{
-  "language": "ko",
-  "idx": 0,
-  "begin": 25.585,
-  "end": 29.489,
-  "text": "꼬집어 봐 뜬 꿈인 것 같아"
-}
+{ "begin": 25.585, "end": 29.489, "text": "꼬집어 봐 뜬 꿈인 것 같아" }
 ```
+
+A json3 file has an `events` array. An event's text is its `segs[].utf8` joined together, and its time is `tStartMs` and `dDurationMs` in milliseconds. Skip events with no `segs` or no text. Some tracks show two lines at a time, so each event repeats the previous line before the new one, separated by `\n`. Take only the new line, because otherwise the same line lands in two cues and the rows stop pairing.
 
 ### Assess Source Quality
 
@@ -82,7 +75,7 @@ After fetching and parsing, determine which scenario applies:
 
 | Scenario        | Ko source | En source | Approach                                            |
 | --------------- | --------- | --------- | --------------------------------------------------- |
-| A: Both manual  | manual    | manual    | Try script merge; if unaligned, LLM audit           |
+| A: Both manual  | manual    | manual    | Zip if aligned; otherwise LLM audit                 |
 | B: Ko auto + En | auto      | manual    | Fix ko text using en as context, align to en timing |
 | C: Ko manual    | manual    | —         | LLM translates ko → en                              |
 | D: Ko auto only | auto      | —         | Fix ko text, then LLM translate                     |
@@ -95,15 +88,9 @@ For a song with official lyrics, use Scenario F even when a Korean track exists,
 
 The goal is clean, well-segmented text1/text2 pairs where translations correspond.
 
-### Try the Script Merge First (Scenario A)
+### Zip Aligned Tracks First (Scenario A)
 
-When both ko and en subs are manual, check if they're already 1:1 aligned:
-
-```bash
-node <repo>/scripts/import-json/check-alignment.ts ko.json en.json > captions.json
-```
-
-If this succeeds (exit 0), the cues matched within 0.5s tolerance and `captions.json` is ready, so skip to bookmarks. If it fails (count mismatch or timestamp drift), fall back to the LLM merge.
+When both tracks are manual, they are often already one to one. If their cue counts match and each pair's `begin` agrees within about 0.5s, zip them into rows with the Korean timestamps, and `captions.json` is ready. Otherwise, fall back to the LLM merge.
 
 ### Merge With an LLM (Fallback or Scenarios B/C/D)
 
@@ -126,6 +113,8 @@ When fixing auto-generated Korean, watch for:
 - Truncated words at cue boundaries
 
 In Scenario B, download and parse the other manual tracks too, and use them as evidence for the fixes. Japanese follows Korean clause by clause, and its kanji confirm Sino-Korean words, so `ja` often settles a fix that the English only hints at, such as 3초째 → 3회째 from 3回目. A Chinese track can name people that the other tracks leave out. Leave a fix out when no track supports it, because a person who can hear the audio should check those spots.
+
+On variety shows, the English track can mix speech with the editor's on-screen captions, such as `[...]` notes, name cards, title cards, and the lyrics of background music. The ASR can also miss short lines entirely, so some English rows have no Korean speech. On one such video, dropping the rows with no Korean speech worked well.
 
 ### Pair Official Lyrics With the Timed Track (Scenario F)
 
@@ -211,17 +200,11 @@ Target ~1 bookmark per 10s of video duration (e.g. 3 min → ~18, 10 min → ~60
 
 ### Validate Offsets
 
-LLMs are unreliable at counting character offsets, so always run validation after producing bookmarks:
-
-```bash
-node <repo>/scripts/import-json/validate-bookmarks.ts bookmarks.json captions.json > bookmarks-fixed.json && mv bookmarks-fixed.json bookmarks.json
-```
-
-The script auto-corrects offsets via `indexOf`, fixes context mismatches, and errors on bookmarks where `text` isn't found in the caption at all.
+Agents miscount character offsets, so check every bookmark against its row before you return it. Its `context` must be the row's text on the bookmark's `side`, and its `text` must be at its `offset` in that text. Compute the offset by searching the row for `text`, not by counting. A bookmark whose `text` isn't in its row at all points at the wrong row, so find the right one.
 
 ### Re-anchor Existing Bookmarks
 
-When the video already has bookmarks, from an earlier export or in the app, keep them instead of picking new ones. The new rows are split differently, so each bookmark's old caption index means nothing. Find the row that now holds the bookmark's word, and write the bookmark to `bookmarks.json` with that row's `captionIdx`, its `side`, and its `text` as the row now spells it. A word you fixed changes too, such as 쌍거풀 → 쌍꺼풀. Then run `validate-bookmarks.ts` as above, which sets `offset` and `context` from the new rows. It keeps other fields, such as an `id`, as they are.
+When the video already has bookmarks, from an earlier export or in the app, keep them instead of picking new ones. The new rows are split differently, so each bookmark's old caption index means nothing. Find the row that now holds the bookmark's word, and write the bookmark to `bookmarks.json` with that row's `captionIdx`, its `side`, and its `text` as the row now spells it. A word you fixed changes too, such as 쌍거풀 → 쌍꺼풀. Then set `offset` and `context` from the new rows as [Validate Offsets](#validate-offsets) describes, and keep other fields, such as an `id`, as they are.
 
 ## Assemble import.json
 
@@ -230,4 +213,4 @@ jq -n --slurpfile c captions.json --slurpfile b bookmarks.json \
   '{video: input, captions: $c[], bookmarks: $b[]}' video.json > import.json
 ```
 
-Import it through the app's upload dialog. For a seed fixture, put it at `scripts/db-seed-json/<id>/import.json` and run `pnpm db:seed-gen`.
+Import it through the app's upload dialog.
