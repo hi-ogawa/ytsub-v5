@@ -65,6 +65,33 @@ test("video page: bookmark a caption, then push it from the bookmarks page", asy
   checkpoint("push synced");
 });
 
+test("video page: clicks inside the bookmark popover don't reach the caption row", async ({
+  context,
+}) => {
+  const ytPage = await openYouTubeTab(context, SEED_VIDEO_ID);
+  await openPanelWithTracks(ytPage);
+  const host = ytPage.locator("#zamak-host");
+  await host
+    .locator("[data-index='1'] [data-side='0'] [data-offset]")
+    .selectText();
+  await host.getByRole("button", { name: "Create bookmark" }).click();
+  const video = ytPage.locator("video");
+  const isPaused = () => video.evaluate((el: HTMLVideoElement) => el.paused);
+
+  await host
+    .locator("[data-index='1']")
+    .getByTestId("bookmark-highlight")
+    .click();
+  const popover = host.getByTestId("bookmark-popover");
+  await popover.getByText("unfilled").click();
+  await expect(popover).toBeVisible();
+  expect(await isPaused()).toBe(true);
+
+  // A click on the row itself seeks and plays
+  await host.locator("[data-index='2']").click();
+  await expect.poll(isPaused).toBe(false);
+});
+
 test("bookmarks page: shows local entries without login", async ({
   context,
   page,

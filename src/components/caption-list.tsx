@@ -66,6 +66,7 @@ function BookmarkWord({
         side="top"
         avoidCollisions
         onOpenAutoFocus={(e) => e.preventDefault()}
+        onClick={(e) => e.stopPropagation()}
         onPointerDownOutside={(e) => {
           // When modal=false (extension shadow DOM), DismissableLayer closes
           // on pointerdown before the trigger's click can toggle. Prevent the
