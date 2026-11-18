@@ -2,6 +2,10 @@
 
 Full listing details for the next Chrome Web Store submission. Copy-paste into the Developer Dashboard.
 
+## Last Published
+
+Version 0.2.0, built from [`225219b`](https://github.com/hi-ogawa/ytsub-v5/commit/225219b5824889ce17f2f12496fdda613041e5e7) (#102) and live on the store since 2026-03-15. When the store approves a new version, replace this with the commit it was built from.
+
 ## Agent Workflow
 
 When preparing a new version for submission:
