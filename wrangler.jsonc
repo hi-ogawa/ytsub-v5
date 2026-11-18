@@ -16,4 +16,14 @@
       "migrations_dir": "src/server/migrations",
     },
   ],
+  // Previews of non-production branches share one staging database. See docs/deployment.md.
+  "previews": {
+    "d1_databases": [
+      {
+        "binding": "DB",
+        "database_name": "zamak-staging",
+        "database_id": "7cc3f1ba-42a6-4186-96ab-65f0d756fe89",
+      },
+    ],
+  },
 }
