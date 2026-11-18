@@ -4,7 +4,9 @@ Full listing details for the next Chrome Web Store submission. Copy-paste into t
 
 ## Last Published
 
-Version 0.2.0, built from [`ext-v0.2.0`](https://github.com/hi-ogawa/ytsub-v5/tree/ext-v0.2.0) and live on the store since 2026-03-15. When the store approves a new version, tag the commit it was built from as `ext-v<version>` and update this section.
+Version 0.2.0, built from [`ext-v0.2.0`](https://github.com/hi-ogawa/ytsub-v5/tree/ext-v0.2.0) and live on the store since 2026-03-15. It predates server sync and makes no server calls, so server deploys can't break it (see [Extension Compatibility](deployment.md#extension-compatibility)).
+
+When the store approves a new version, tag the commit it was built from as `ext-v<version>` and update this section.
 
 ## Agent Workflow
 
