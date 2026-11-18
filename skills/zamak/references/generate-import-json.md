@@ -31,6 +31,8 @@ Note the exact language code of each track you need, such as `en-US` rather than
 
 A row such as `ko-en` (Korean from English) is YouTube's machine translation of another track, not Korean speech recognition, so it doesn't count as a Korean source. Korean songs often have this: manual `en` and `ja` tracks and no Korean track at all, which is Scenario F.
 
+The automatic captions can list the Korean speech recognition as `ko-orig` next to `ko`, so check which one it is before you download it.
+
 ### Download Subtitles
 
 Prefer manual subs over auto-generated. Use json3 format, and pass the language code exactly as the list shows it. If the code doesn't match a track, such as `en` for a video whose English is `en-US`, yt-dlp downloads nothing and reports no error.
@@ -111,6 +113,8 @@ When fixing auto-generated Korean, watch for:
 - Truncated words at cue boundaries
 
 In Scenario B, download and parse the other manual tracks too, and use them as evidence for the fixes. Japanese follows Korean clause by clause, and its kanji confirm Sino-Korean words, so `ja` often settles a fix that the English only hints at, such as 3초째 → 3회째 from 3回目. A Chinese track can name people that the other tracks leave out. Leave a fix out when no track supports it, because a person who can hear the audio should check those spots.
+
+On variety shows, the English track can mix speech with the editor's on-screen captions, such as `[...]` notes, name cards, title cards, and the lyrics of background music. The ASR can also miss short lines entirely, so some English rows have no Korean speech. On one such video, dropping the rows with no Korean speech worked well.
 
 ### Pair Official Lyrics With the Timed Track (Scenario F)
 
