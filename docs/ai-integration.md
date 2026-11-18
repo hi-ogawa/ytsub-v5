@@ -1,6 +1,6 @@
 # AI Integration
 
-Zamak doesn't call any AI API directly. Instead it gives you a **copy-paste workflow** that works with any LLM — Claude, ChatGPT, Gemini, or anything else.
+Zamak doesn't call any AI API directly. Instead it gives you a **copy-paste workflow** that works with any AI chat or agent that can open links, such as Claude, ChatGPT, or Gemini.
 
 The flow: Zamak builds a prompt with your video's captions baked in → you paste it into an AI chat → you paste the AI's JSON response back into Zamak.
 
@@ -12,7 +12,7 @@ The flow: Zamak builds a prompt with your video's captions baked in → you past
 | **Fill Bookmarks**  | You bookmark words first, then AI fills in translations and etymology for them                              |
 | **Fix & Align ASR** | A coding agent fixes auto-generated Korean using the official tracks, and aligns it to the English          |
 
-The first two work in any chat. Fix & Align ASR needs an agent with a shell and `yt-dlp`, such as Claude Code or Codex, because the agent downloads the tracks itself. Its prompt carries only the video ID, the tracks, and your bookmarks' positions, and points the agent to [Generate import.json](generate-import-json.md) for the steps.
+Each prompt carries your video's data and a link to the [Zamak skill](../skills/zamak/SKILL.md), which tells the AI how to do the task. So the AI has to be able to open links. Fix & Align ASR also needs an agent with a shell and `yt-dlp`, such as Claude Code or Codex, because the agent downloads the tracks itself.
 
 ## Step by step
 
@@ -22,13 +22,13 @@ Open the settings menu (gear icon) in the caption panel. Under **AI prompt**, pi
 
 The prompt is automatically copied to your clipboard when you select a task. You can also use the copy button or download it as a `.txt` file.
 
-For Pick & Fill and Fill Bookmarks, the prompt contains the video title, all captions, and (for Fill Bookmarks) your existing bookmarks — everything the AI needs in one self-contained block.
+For Pick & Fill and Fill Bookmarks, the prompt contains the video title, all captions, and (for Fill Bookmarks) your existing bookmarks, along with the link to the skill.
 
-### 2. Paste into any AI chat
+### 2. Paste into an AI chat
 
-Open your preferred LLM chat and paste the prompt. The prompt asks the AI to respond with one JSON code block, optionally with a short comment around it.
+Open your preferred AI chat and paste the prompt.
 
-Any model that can follow instructions and output JSON works. Larger models tend to produce better vocabulary picks. For Fix & Align ASR, paste the prompt into an agent session instead.
+Any model that can open the link, follow instructions, and output JSON works. Larger models tend to produce better vocabulary picks. For Fix & Align ASR, paste the prompt into an agent session instead.
 
 > **Tip:** For long videos, the prompt can be large. If your model has a small context window, use the download button and attach the `.txt` file instead of pasting.
 
