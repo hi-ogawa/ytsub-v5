@@ -1,5 +1,5 @@
-import { expect, test } from "@playwright/test";
-import { openPanelWithTracks } from "./helper.ts";
+import { expect } from "@playwright/test";
+import { openPanelWithTracks, test } from "./helper.ts";
 
 test.use({ hasTouch: true });
 

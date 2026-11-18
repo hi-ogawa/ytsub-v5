@@ -22,6 +22,12 @@ The seed videos are the `import.json` files in `scripts/db-seed-json/<id>/`. To 
 
 Prefer `/dev` routes unless the feature needs the server.
 
+## Use the Fake YouTube Player
+
+Import `test` from `e2e/helper.ts` rather than from `@playwright/test`. Its `context` fixture replaces the YouTube IFrame API with a fake `YT.Player` from `e2e/youtube-player-mock.ts`, and it aborts every other youtube.com request, so web app tests never load the real player. The fake doesn't play anything. It records the `seekTo`, `playVideo`, and `pauseVideo` calls, and its current time is the last position passed to `seekTo`. To test what the caption panel does to the player, call `waitForPlayer(page)` before the action, because clicks do nothing until the player is ready, and then check `getPlayerCalls(page)`.
+
+The real player still runs when you open `/dev/videos/:id` with `pnpm dev`.
+
 ## Write Tests
 
 - Keep the structure flat. Don't nest `test.describe`, and call `setupDb()` and `login()` inline in each test.
@@ -39,7 +45,7 @@ Extension tests load `dist/extension/`, which `pnpm test-e2e` builds, into a rea
 - `login(page)` logs in through the extension bookmarks page. It is a different helper from the web app `login`.
 - `openYouTubeTab(context, videoId)` opens a watch page and waits for the content script. `openPanelWithTracks(ytPage)` opens the caption panel with the ko and en tracks.
 
-The tests never load the real youtube.com. The `context` fixture serves `https://www.youtube.com/**` from a route handler in `e2e/ext/youtube-mock.ts`. Chrome injects content scripts by URL, so the mocked watch page still gets them. The page has only what the content script reads, and the player API and caption tracks come from the fixtures in `scripts/youtube-json/<id>/`, so `videoId` must be one of those. Every other youtube.com request is aborted. `pnpm test-youtube` covers changes to the real page and API.
+Like the web app tests, these never load the real youtube.com. The extension's `context` fixture serves `https://www.youtube.com/**` from a route handler in `e2e/ext/youtube-mock.ts`. Chrome injects content scripts by URL, so the mocked watch page still gets them. The page has only what the content script reads, and the player API and caption tracks come from the fixtures in `scripts/youtube-json/<id>/`, so `videoId` must be one of those. Every other youtube.com request is aborted. `pnpm test-youtube` covers changes to the real page and API.
 
 Push and pull sync go through a YouTube tab (tab RPC), so open one with `openYouTubeTab` before pushing or pulling. Without a YouTube tab, tests can only check the error toasts. To give push a session, create a bookmark in the content script panel rather than writing to IndexedDB. The bookmarks page then gets the video through the same path as in real use.
 
