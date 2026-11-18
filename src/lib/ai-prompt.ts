@@ -119,11 +119,17 @@ type AiImportAlignCaption = {
   text2: string;
 };
 
+// An entry with an id moves an existing bookmark, and one without adds a new
+// bookmark.
 type AiImportAlignBookmark = {
-  id: string;
+  id?: string;
   captionIndex: number;
   offset: number;
   text: string;
+  side?: 0 | 1;
+  translation?: string;
+  etymology?: string;
+  notes?: string;
 };
 
 type AiImportResult =
@@ -196,42 +202,63 @@ export function alignResultToSession(
     text1Segments: [c.text1],
     text2Segments: [c.text2],
   }));
-  const anchors = new Map(result.bookmarks.map((a) => [a.id, a]));
-  for (const a of result.bookmarks) {
-    if (!bookmarks.some((b) => b.id === a.id)) {
-      errors.push(`Unknown bookmark id ${a.id}`);
+  function placeOnRow(a: AiImportAlignBookmark, side: number) {
+    const row = captions[a.captionIndex];
+    if (!row) {
+      errors.push(`"${a.text}": captionIndex ${a.captionIndex} out of range`);
+      return;
+    }
+    const rowText = side === 0 ? row.text1 : row.text2;
+    if (rowText.slice(a.offset, a.offset + a.text.length) !== a.text) {
+      errors.push(
+        `"${a.text}" not at offset ${a.offset} in caption ${a.captionIndex}: "${rowText}"`,
+      );
+      return;
+    }
+    return {
+      captionIndex: a.captionIndex,
+      offset: a.offset,
+      text: a.text,
+      context: rowText,
+      timestamp: row.begin,
+    };
+  }
+
+  const anchors = new Map(
+    result.bookmarks.flatMap((a) => (a.id ? [[a.id, a] as const] : [])),
+  );
+  for (const id of anchors.keys()) {
+    if (!bookmarks.some((b) => b.id === id)) {
+      errors.push(`Unknown bookmark id ${id}`);
     }
   }
-  const anchored = bookmarks.flatMap((b) => {
+  const moved = bookmarks.flatMap((b) => {
     const a = anchors.get(b.id);
     if (!a) {
       errors.push(`"${b.text}" (${b.id}) is missing`);
       return [];
     }
-    const row = captions[a.captionIndex];
-    if (!row) {
-      errors.push(`"${a.text}": captionIndex ${a.captionIndex} out of range`);
-      return [];
-    }
-    const rowText = b.side === 0 ? row.text1 : row.text2;
-    if (rowText.slice(a.offset, a.offset + a.text.length) !== a.text) {
-      errors.push(
-        `"${a.text}" not at offset ${a.offset} in caption ${a.captionIndex}: "${rowText}"`,
-      );
-      return [];
-    }
+    const placed = placeOnRow(a, b.side);
+    return placed ? [{ ...b, ...placed }] : [];
+  });
+  const added = result.bookmarks.flatMap((a) => {
+    if (a.id) return [];
+    const side = a.side ?? 0;
+    const placed = placeOnRow(a, side);
+    if (!placed) return [];
     return [
       {
-        ...b,
-        captionIndex: a.captionIndex,
-        offset: a.offset,
-        text: a.text,
-        context: rowText,
-        timestamp: row.begin,
+        ...placed,
+        id: crypto.randomUUID(),
+        side,
+        translation: a.translation,
+        etymology: a.etymology,
+        notes: a.notes,
+        createdAt: new Date().toISOString(),
       },
     ];
   });
-  return { captions, bookmarks: anchored, errors };
+  return { captions, bookmarks: [...moved, ...added], errors };
 }
 
 export function parseAiResult(raw: string): AiImportResult {

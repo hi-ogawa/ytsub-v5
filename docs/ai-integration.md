@@ -42,7 +42,7 @@ Zamak reads the result's `type` field to tell which task it belongs to, and appl
 
 - **Pick & Fill** → creates new bookmarks with translations and etymology filled in
 - **Fill Bookmarks** → updates your existing bookmarks with the AI-provided metadata
-- **Fix & Align ASR** → replaces all caption rows and moves each bookmark to its word in the new rows, keeping its translation and notes. If any bookmark is missing from the result or doesn't match its row, Zamak lists the problems and imports nothing
+- **Fix & Align ASR** → replaces all caption rows and moves each bookmark to its word in the new rows, keeping its translation and notes. It also creates any new bookmarks the agent picked. If any bookmark is missing from the result or doesn't match its row, Zamak lists the problems and imports nothing
 
 A confirmation alert shows how many items were imported. For Pick & Fill, it also warns if any caption indices didn't match (e.g., if the AI hallucinated an index).
 

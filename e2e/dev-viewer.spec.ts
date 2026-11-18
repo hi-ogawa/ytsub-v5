@@ -632,7 +632,7 @@ test.describe("dev-viewer caption panel", () => {
     await expect(popover.getByText("Figurative use.")).toBeVisible();
   });
 
-  test("AI align prompt: copy and import replaces rows and moves bookmarks", async ({
+  test("AI align prompt: copy and import replaces rows, moves bookmarks, and adds new ones", async ({
     page,
     context,
   }) => {
@@ -687,6 +687,7 @@ test.describe("dev-viewer caption panel", () => {
       captions,
       bookmarks: [
         { id: bookmarkId, captionIndex: 1, offset: 3, text: "꼬집어" },
+        { captionIndex: 0, offset: 2, text: "줄", translation: "line" },
       ],
     });
     await page.getByTitle("Settings").click();
@@ -697,5 +698,8 @@ test.describe("dev-viewer caption panel", () => {
     await expect(
       page.locator("[data-index='1']").getByTestId("bookmark-highlight"),
     ).toHaveText("꼬집어");
+    await expect(
+      page.locator("[data-index='0']").getByTestId("bookmark-highlight"),
+    ).toHaveText("줄");
   });
 });

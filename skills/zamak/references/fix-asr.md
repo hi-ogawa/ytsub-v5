@@ -15,7 +15,15 @@ Follow [Generate import.json](generate-import-json.md). Run "Fetch and Assess" t
   "type": "fix-asr",
   "captions": [{ "begin": 1.2, "end": 3.4, "text1": "...", "text2": "..." }],
   "bookmarks": [
-    { "id": "...", "captionIndex": 5, "offset": 3, "text": "쌍꺼풀" }
+    { "id": "...", "captionIndex": 5, "offset": 3, "text": "쌍꺼풀" },
+    {
+      "captionIndex": 8,
+      "offset": 0,
+      "text": "어이없다",
+      "translation": "absurd, dumbfounded",
+      "etymology": "",
+      "notes": ""
+    }
   ]
 }
 ```
@@ -23,4 +31,6 @@ Follow [Generate import.json](generate-import-json.md). Run "Fetch and Assess" t
 - `captions`: the rows of `captions.json` in order, with `begin` and `end` in seconds
 - `bookmarks`: the `bookmarks.json` that passed the offset check, one entry for each existing bookmark, with `id`, `text`, `offset`, and `captionIdx` renamed to `captionIndex`. `text` is the word as it reads now, which can differ from before when you fixed it.
 
-The app replaces all caption rows with yours and moves each bookmark to its new position. It rejects the whole result if any bookmark is missing or its `text` isn't at its `offset`.
+When the user also asks for vocabulary, pick it from your new rows as [Pick & Fill](pick-fill.md) describes, and add each pick to `bookmarks` without an `id`. A new entry has `captionIndex`, `offset`, `text`, `side` (0 for Korean, the default), and the `translation`, `etymology`, and `notes` that [Vocab Fields](vocab-fields.md) describes. Check its offset the same way as for the existing bookmarks.
+
+The app replaces all caption rows with yours, moves each existing bookmark to its new position, and adds the new ones. It rejects the whole result if any existing bookmark is missing or any entry's `text` isn't at its `offset`.

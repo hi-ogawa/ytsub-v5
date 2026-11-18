@@ -76,3 +76,47 @@ test("checks an English-side bookmark against text2", () => {
   expect(result.errors).toEqual([]);
   expect(result.bookmarks[0].context).toBe("Double eyelids");
 });
+
+test("adds a bookmark from an entry without an id", () => {
+  const result = alignResultToSession(
+    {
+      captions,
+      bookmarks: [
+        { id: "b1", captionIndex: 1, offset: 4, text: "쌍꺼풀" },
+        {
+          captionIndex: 0,
+          offset: 0,
+          text: "안녕하세요",
+          translation: "hello",
+        },
+      ],
+    },
+    [bookmark],
+  );
+  expect(result.errors).toEqual([]);
+  expect(result.bookmarks[1]).toMatchObject({
+    text: "안녕하세요",
+    side: 0,
+    offset: 0,
+    captionIndex: 0,
+    context: "안녕하세요",
+    timestamp: 1,
+    translation: "hello",
+  });
+});
+
+test("reports a new bookmark whose text isn't at its offset", () => {
+  const result = alignResultToSession(
+    {
+      captions,
+      bookmarks: [
+        { id: "b1", captionIndex: 1, offset: 4, text: "쌍꺼풀" },
+        { captionIndex: 0, offset: 2, text: "안녕" },
+      ],
+    },
+    [bookmark],
+  );
+  expect(result.errors).toEqual([
+    '"안녕" not at offset 2 in caption 0: "안녕하세요"',
+  ]);
+});
