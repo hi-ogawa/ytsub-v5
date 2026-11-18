@@ -545,11 +545,10 @@ test.describe("dev-viewer caption panel", () => {
     await expect(page.getByText("AI prompt")).toBeVisible();
     await page.getByTitle("Copy prompt").click();
     const clipboard = await page.evaluate(() => navigator.clipboard.readText());
-    expect(clipboard).toContain("Pick Korean vocabulary");
+    expect(clipboard).toContain("Zamak Task: Pick & Fill");
+    expect(clipboard).toContain("skills/zamak/SKILL.md");
     expect(clipboard).toContain("cloud palace");
     expect(clipboard).toContain("꼬집어 봐 뜬 꿈인 것 같아");
-    expect(clipboard).toContain("captionIndex");
-    expect(clipboard).toContain("```json");
 
     // Import result wrapped in markdown code fence
     const wrapped = `\`\`\`json
@@ -596,7 +595,7 @@ test.describe("dev-viewer caption panel", () => {
     const aiSelect = page.locator("select").last();
     await aiSelect.selectOption("fill");
     const clipboard = await page.evaluate(() => navigator.clipboard.readText());
-    expect(clipboard).toContain("Fill bookmark metadata");
+    expect(clipboard).toContain("Zamak Task: Fill Bookmarks");
     expect(clipboard).toContain("꼬집어");
 
     // Import fill result
@@ -633,7 +632,7 @@ test.describe("dev-viewer caption panel", () => {
     await expect(popover.getByText("Figurative use.")).toBeVisible();
   });
 
-  test("AI align prompt: copy and import replaces rows and moves bookmarks", async ({
+  test("AI align prompt: copy and import replaces rows, moves bookmarks, and adds new ones", async ({
     page,
     context,
   }) => {
@@ -652,9 +651,9 @@ test.describe("dev-viewer caption panel", () => {
     await page.getByTitle("Settings").click();
     await page.locator("select").last().selectOption("fix-asr");
     const clipboard = await page.evaluate(() => navigator.clipboard.readText());
-    expect(clipboard).toContain("Fix and align Korean ASR");
+    expect(clipboard).toContain("Zamak Task: Fix & Align ASR");
     expect(clipboard).toContain("ID: 7GU_VQfgMT0");
-    expect(clipboard).toContain("docs/generate-import-json.md");
+    expect(clipboard).toContain("skills/zamak/SKILL.md");
     expect(clipboard).toContain("`.ko`: ko, manual, current text1");
     expect(clipboard).toContain(bookmarkId!);
     expect(clipboard).not.toContain("밤새");
@@ -688,6 +687,7 @@ test.describe("dev-viewer caption panel", () => {
       captions,
       bookmarks: [
         { id: bookmarkId, captionIndex: 1, offset: 3, text: "꼬집어" },
+        { captionIndex: 0, offset: 2, text: "줄", translation: "line" },
       ],
     });
     await page.getByTitle("Settings").click();
@@ -698,5 +698,8 @@ test.describe("dev-viewer caption panel", () => {
     await expect(
       page.locator("[data-index='1']").getByTestId("bookmark-highlight"),
     ).toHaveText("꼬집어");
+    await expect(
+      page.locator("[data-index='0']").getByTestId("bookmark-highlight"),
+    ).toHaveText("줄");
   });
 });
