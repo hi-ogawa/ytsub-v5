@@ -37,4 +37,6 @@ If there are more than 150 captions, process ~150 at a time. After each batch, r
 - `text`: an exact substring of that line's Korean
 - `translation`, `etymology`, `notes`: as [Vocab Fields](vocab-fields.md) describes
 
+Before you return, check that each `text` is in the Korean of its `captionIndex` row, because an index that is off by one is easy to make and nothing else catches it.
+
 The app creates a bookmark for each entry. It skips an entry whose `captionIndex` is out of range or whose `text` isn't in that row's Korean, and lists the skipped entries.

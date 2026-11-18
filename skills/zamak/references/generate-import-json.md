@@ -9,7 +9,7 @@ This guide builds an `import.json` for a video from its YouTube subtitles, with 
 | `bookmarks.json` | Notable vocab items with correct offsets                              |
 | `import.json`    | Valid payload assembled from above                                    |
 
-Work in a scratch directory. The scripts below are in the skill's `scripts/` directory (`<skill>` below). If you read the skill from a URL, download each script from `../scripts/<name>` relative to this file. They are TypeScript files that `node` runs directly, which needs Node 22.18 or later.
+Work in a scratch directory.
 
 ## Fetch and Assess
 
@@ -57,24 +57,15 @@ yt-dlp --print description --skip-download "<URL>" > description.txt
 
 If the description has none, Korean streaming services such as Melon carry them. They carry the studio version, though, and a live, solo, or remix upload can drop a verse or add a bridge. For those uploads, trust only the video's own description, or check the lyrics against the timed tracks line by line.
 
-### Parse to JSON
+### Read the json3 Files
 
-```bash
-node <skill>/scripts/parse-json3.ts ko.json3 ko > ko.json
-node <skill>/scripts/parse-json3.ts en.json3 en > en.json
-```
-
-The output is an array of caption cues:
+Turn each track into a list of cues with `begin` and `end` in seconds, such as `ko.json` and `en.json`:
 
 ```json
-{
-  "language": "ko",
-  "idx": 0,
-  "begin": 25.585,
-  "end": 29.489,
-  "text": "꼬집어 봐 뜬 꿈인 것 같아"
-}
+{ "begin": 25.585, "end": 29.489, "text": "꼬집어 봐 뜬 꿈인 것 같아" }
 ```
+
+A json3 file has an `events` array. An event's text is its `segs[].utf8` joined together, and its time is `tStartMs` and `dDurationMs` in milliseconds. Skip events with no `segs` or no text. Some tracks show two lines at a time, so each event repeats the previous line before the new one, separated by `\n`. Take only the new line, because otherwise the same line lands in two cues and the rows stop pairing.
 
 ### Assess Source Quality
 
@@ -82,7 +73,7 @@ After fetching and parsing, determine which scenario applies:
 
 | Scenario        | Ko source | En source | Approach                                            |
 | --------------- | --------- | --------- | --------------------------------------------------- |
-| A: Both manual  | manual    | manual    | Try script merge; if unaligned, LLM audit           |
+| A: Both manual  | manual    | manual    | Zip if aligned; otherwise LLM audit                 |
 | B: Ko auto + En | auto      | manual    | Fix ko text using en as context, align to en timing |
 | C: Ko manual    | manual    | —         | LLM translates ko → en                              |
 | D: Ko auto only | auto      | —         | Fix ko text, then LLM translate                     |
@@ -95,15 +86,9 @@ For a song with official lyrics, use Scenario F even when a Korean track exists,
 
 The goal is clean, well-segmented text1/text2 pairs where translations correspond.
 
-### Try the Script Merge First (Scenario A)
+### Zip Aligned Tracks First (Scenario A)
 
-When both ko and en subs are manual, check if they're already 1:1 aligned:
-
-```bash
-node <skill>/scripts/check-alignment.ts ko.json en.json > captions.json
-```
-
-If this succeeds (exit 0), the cues matched within 0.5s tolerance and `captions.json` is ready, so skip to bookmarks. If it fails (count mismatch or timestamp drift), fall back to the LLM merge.
+When both tracks are manual, they are often already one to one. If their cue counts match and each pair's `begin` agrees within about 0.5s, zip them into rows with the Korean timestamps, and `captions.json` is ready. Otherwise, fall back to the LLM merge.
 
 ### Merge With an LLM (Fallback or Scenarios B/C/D)
 
@@ -211,17 +196,11 @@ Target ~1 bookmark per 10s of video duration (e.g. 3 min → ~18, 10 min → ~60
 
 ### Validate Offsets
 
-LLMs are unreliable at counting character offsets, so always run validation after producing bookmarks:
-
-```bash
-node <skill>/scripts/validate-bookmarks.ts bookmarks.json captions.json > bookmarks-fixed.json && mv bookmarks-fixed.json bookmarks.json
-```
-
-The script auto-corrects offsets via `indexOf`, fixes context mismatches, and errors on bookmarks where `text` isn't found in the caption at all.
+Agents miscount character offsets, so check every bookmark against its row before you return it. Its `context` must be the row's text on the bookmark's `side`, and its `text` must be at its `offset` in that text. Compute the offset by searching the row for `text`, not by counting. A bookmark whose `text` isn't in its row at all points at the wrong row, so find the right one.
 
 ### Re-anchor Existing Bookmarks
 
-When the video already has bookmarks, from an earlier export or in the app, keep them instead of picking new ones. The new rows are split differently, so each bookmark's old caption index means nothing. Find the row that now holds the bookmark's word, and write the bookmark to `bookmarks.json` with that row's `captionIdx`, its `side`, and its `text` as the row now spells it. A word you fixed changes too, such as 쌍거풀 → 쌍꺼풀. Then run `validate-bookmarks.ts` as above, which sets `offset` and `context` from the new rows. It keeps other fields, such as an `id`, as they are.
+When the video already has bookmarks, from an earlier export or in the app, keep them instead of picking new ones. The new rows are split differently, so each bookmark's old caption index means nothing. Find the row that now holds the bookmark's word, and write the bookmark to `bookmarks.json` with that row's `captionIdx`, its `side`, and its `text` as the row now spells it. A word you fixed changes too, such as 쌍거풀 → 쌍꺼풀. Then set `offset` and `context` from the new rows as [Validate Offsets](#validate-offsets) describes, and keep other fields, such as an `id`, as they are.
 
 ## Assemble import.json
 

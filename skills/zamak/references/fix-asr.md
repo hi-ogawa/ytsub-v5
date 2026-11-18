@@ -21,6 +21,6 @@ Follow [Generate import.json](generate-import-json.md). Run "Fetch and Assess" t
 ```
 
 - `captions`: the rows of `captions.json` in order, with `begin` and `end` in seconds
-- `bookmarks`: the validated `bookmarks.json`, one entry for each existing bookmark, with `id`, `text`, `offset`, and `captionIdx` renamed to `captionIndex`. `text` is the word as it reads now, which can differ from before when you fixed it.
+- `bookmarks`: the `bookmarks.json` that passed the offset check, one entry for each existing bookmark, with `id`, `text`, `offset`, and `captionIdx` renamed to `captionIndex`. `text` is the word as it reads now, which can differ from before when you fixed it.
 
 The app replaces all caption rows with yours and moves each bookmark to its new position. It rejects the whole result if any bookmark is missing or its `text` isn't at its `offset`.
