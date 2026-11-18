@@ -36,6 +36,12 @@ pnpm release
 
 Check the app loads and the new feature works on the production URL.
 
+## Extension Compatibility
+
+The extension on the Chrome Web Store is version 0.2.0. It predates server sync and makes no server calls, so a deploy only needs to work with extension builds made from the repo.
+
+This changes once a version with sign-in is published. From then on, every deploy must keep the API compatible with the published extension, because users get extension updates only after store review, while the server changes on every deploy.
+
 ## Adding a New Migration
 
 1. Create `src/server/migrations/NNNN_description.sql` (next sequential number)

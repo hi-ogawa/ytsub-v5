@@ -10,7 +10,8 @@ When preparing a new version for submission:
 2. **Review merged PRs since the last submission** — identify shipped features that aren't reflected in the store description
 3. **Update this doc** — bump version, add new features to the description, fix any stale info
 4. **Update the manifest** — bump `version` in `src/extension/public/manifest.json`, sync `description` with the store summary
-5. **Commit and PR** — the user handles screenshots, build, upload, and submission manually
+5. **Update [Extension Compatibility](deployment.md#extension-compatibility)** — record the version being submitted. If it is the first version that calls the server, the section must now say that deploys keep the API compatible with it
+6. **Commit and PR** — the user handles screenshots, build, upload, and submission manually
 
 ## Build & Package
 
