@@ -1,6 +1,6 @@
 import path from "node:path";
-import { expect, test } from "@playwright/test";
-import { login, setupDb } from "./helper.ts";
+import { expect } from "@playwright/test";
+import { login, setupDb, test } from "./helper.ts";
 
 test("video card shows thumbnail and channel, clicking navigates to viewer", async ({
   page,

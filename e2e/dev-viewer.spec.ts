@@ -1,9 +1,11 @@
-import { expect, test } from "@playwright/test";
+import { expect } from "@playwright/test";
 import {
   createBookmarkAt,
   openPanelWithTracks,
   selectTextInCaption,
+  test,
 } from "./helper.ts";
+import { getPlayerCalls, waitForPlayer } from "./youtube-player-mock.ts";
 
 test.describe("dev-viewer caption panel", () => {
   test.beforeEach(async ({ page }) => {
@@ -353,7 +355,7 @@ test.describe("dev-viewer caption panel", () => {
     ).toBeVisible();
   });
 
-  test("prev/next bookmark buttons appear when bookmarks exist", async ({
+  test("prev/next bookmark buttons enable with bookmarks and seek between them", async ({
     page,
   }) => {
     await openPanelWithTracks(page);
@@ -366,11 +368,31 @@ test.describe("dev-viewer caption panel", () => {
     await expect(nextBtn).toBeVisible();
     await expect(nextBtn).toBeDisabled();
 
-    await createBookmarkAt(page, { index: 0, start: 0, end: 3 });
+    await createBookmarkAt(page, { index: 1, start: 0, end: 3 });
+    await createBookmarkAt(page, { index: 3, start: 0, end: 3 });
 
     // Enabled after bookmark created
     await expect(prevBtn).toBeEnabled();
     await expect(nextBtn).toBeEnabled();
+
+    // Each button seeks to the bookmark after or before the current time and
+    // wraps around at the ends
+    await waitForPlayer(page);
+    const seekAndPlay = async (button: typeof nextBtn) => {
+      const count = (await getPlayerCalls(page)).length;
+      await button.click();
+      await expect
+        .poll(async () => (await getPlayerCalls(page)).length)
+        .toBe(count + 2);
+      const [seek, play] = (await getPlayerCalls(page)).slice(count);
+      expect(play).toEqual({ method: "playVideo" });
+      return seek.method === "seekTo" ? seek.seconds : undefined;
+    };
+    const first = await seekAndPlay(nextBtn);
+    const second = await seekAndPlay(nextBtn);
+    expect(second).toBeGreaterThan(first!);
+    expect(await seekAndPlay(nextBtn)).toBe(first);
+    expect(await seekAndPlay(prevBtn)).toBe(second);
   });
 
   test("go-to-caption button switches from bookmarks to captions tab", async ({
@@ -485,6 +507,45 @@ test.describe("dev-viewer caption panel", () => {
     // Click the highlight again to close the popover
     await highlight.click();
     await expect(popover).not.toBeVisible();
+  });
+
+  test("row clicks seek and play, popover clicks don't", async ({ page }) => {
+    await openPanelWithTracks(page);
+    await createBookmarkAt(page, { index: 1, start: 0, end: 3 });
+    await waitForPlayer(page);
+
+    await page
+      .locator("[data-index='1']")
+      .getByTestId("bookmark-highlight")
+      .click();
+    const popover = page.getByTestId("bookmark-popover");
+    await popover.getByText("unfilled").click();
+    await expect(popover).toBeVisible();
+    expect(await getPlayerCalls(page)).toEqual([]);
+
+    const row = page.locator("[data-index='2']");
+    const [m, s] = (await row.getByText(/^\d+:\d{2} –/).textContent())!
+      .split(" ")[0]
+      .split(":")
+      .map(Number);
+    await row.click();
+    await expect
+      .poll(() => getPlayerCalls(page))
+      .toEqual([
+        { method: "seekTo", seconds: expect.any(Number) },
+        { method: "playVideo" },
+      ]);
+    const [seek] = await getPlayerCalls(page);
+    expect(seek.method === "seekTo" && Math.floor(seek.seconds)).toBe(
+      m * 60 + s,
+    );
+
+    // The playing row is the current one, so clicking it again pauses
+    await expect(row).toHaveClass(/ring-2/);
+    await row.click();
+    await expect
+      .poll(async () => (await getPlayerCalls(page)).at(-1))
+      .toEqual({ method: "pauseVideo" });
   });
 
   test("popover go-to-bookmark switches to bookmarks tab with flash-highlight", async ({

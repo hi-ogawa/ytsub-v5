@@ -1,10 +1,11 @@
-import { expect, type Page, test } from "@playwright/test";
+import { expect, type Page } from "@playwright/test";
 import {
   bumpServerUpdatedAt,
   createBookmarkAt,
   login,
   openPanelWithTracks,
   setupDb,
+  test,
 } from "./helper.ts";
 
 const FIXTURE_VIDEO_ID = "7GU_VQfgMT0";

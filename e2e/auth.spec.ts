@@ -1,5 +1,5 @@
-import { expect, test } from "@playwright/test";
-import { setupDb } from "./helper.ts";
+import { expect } from "@playwright/test";
+import { setupDb, test } from "./helper.ts";
 
 test.beforeAll(async () => {
   await setupDb();

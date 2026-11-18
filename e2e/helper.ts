@@ -1,7 +1,15 @@
 import { exec } from "node:child_process";
 import { globSync, statSync } from "node:fs";
 import { promisify } from "node:util";
-import { expect, type Page, test } from "@playwright/test";
+import { test as baseTest, expect, type Page } from "@playwright/test";
+import { mockYouTubePlayer } from "./youtube-player-mock.ts";
+
+export const test = baseTest.extend({
+  context: async ({ context }, use) => {
+    await mockYouTubePlayer(context);
+    await use(context);
+  },
+});
 
 export const execAsync = promisify(exec);
 
