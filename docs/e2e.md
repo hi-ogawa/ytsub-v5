@@ -18,6 +18,8 @@ The `/dev` routes render the shared UI with fixture data, so their tests need no
 
 Tests that hit `/`, `/videos/:id`, or the server APIs need a user in the database. Call `setupDb({ seed: true })` and then `login(page)`, because login needs the seed user. `setupDb()` writes to SQLite directly and takes about 0.15s.
 
+The seed videos are the `import.json` files in `scripts/db-seed-json/<id>/`. To add one, build its `import.json` as the Zamak skill's [Generate import.json](../skills/zamak/references/generate-import-json.md) describes, put it there, and run `pnpm db:seed-gen`.
+
 Prefer `/dev` routes unless the feature needs the server.
 
 ## Write Tests
