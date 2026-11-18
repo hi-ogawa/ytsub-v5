@@ -270,7 +270,9 @@ export function makeAiPrompt(
 ): string {
   const template = sections[task];
   if (!template) return "";
-  return template
+  const label = AI_TASKS.find((t) => t.task === task)!.label;
+  return `${sections.header}\n\n${template}`
+    .replace(/\{\{TASK\}\}/g, label)
     .replace(/\{\{VIDEO_ID\}\}/g, session.youtubeId)
     .replace(/\{\{TITLE\}\}/g, session.title)
     .replace(/\{\{TRACKS\}\}/g, formatTracks(session))

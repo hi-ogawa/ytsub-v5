@@ -1,6 +1,6 @@
 # Vocab Fields
 
-Pick & Fill and Fill both return these three fields for each word.
+Pick & Fill and Fill Bookmarks both return these three fields for each word.
 
 ## translation
 

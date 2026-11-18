@@ -1,10 +1,12 @@
-# --- pick-fill ---
+# --- header ---
 
-# Zamak Task: Pick & Fill
+# Zamak Task: {{TASK}}
 
-Read the Zamak skill and run its Pick & Fill task on the video below:
+Read the Zamak skill and run its {{TASK}} task on the data below:
 
 https://raw.githubusercontent.com/hi-ogawa/ytsub-v5/main/skills/zamak/SKILL.md
+
+# --- pick-fill ---
 
 ## Video
 
@@ -15,12 +17,6 @@ Title: {{TITLE}}
 {{CAPTIONS}}
 
 # --- fill ---
-
-# Zamak Task: Fill
-
-Read the Zamak skill and run its Fill task on the bookmarks below:
-
-https://raw.githubusercontent.com/hi-ogawa/ytsub-v5/main/skills/zamak/SKILL.md
 
 ## Video
 
@@ -35,12 +31,6 @@ Title: {{TITLE}}
 {{CAPTIONS}}
 
 # --- fix-asr ---
-
-# Zamak Task: Fix & Align ASR
-
-Read the Zamak skill and run its Fix & Align ASR task on the video below:
-
-https://raw.githubusercontent.com/hi-ogawa/ytsub-v5/main/skills/zamak/SKILL.md
 
 ## Video
 

@@ -1,6 +1,6 @@
 ---
 name: zamak
-description: Work on Zamak, an app for learning Korean from YouTube subtitles. Use when a Zamak AI prompt arrives, when the user asks for one of its tasks (Pick & Fill, Fill, or Fix & Align ASR), or to read or change their Zamak videos and bookmarks.
+description: Work on Zamak, an app for learning Korean from YouTube subtitles. Use when a Zamak AI prompt arrives, when the user asks for one of its tasks (Pick & Fill, Fill Bookmarks, or Fix & Align ASR), or to read or change their Zamak videos and bookmarks.
 ---
 
 # Zamak
@@ -14,7 +14,7 @@ The app hands a task to the AI through a prompt that the user copies into a chat
 | Task            | What it does                                                   | Result `type` |
 | --------------- | -------------------------------------------------------------- | ------------- |
 | Pick & Fill     | Picks vocabulary from the captions and fills it in             | `pick-fill`   |
-| Fill            | Fills in the bookmarks the user made                           | `fill`        |
+| Fill Bookmarks  | Fills in the bookmarks the user made                           | `fill`        |
 | Fix & Align ASR | Fixes auto-generated Korean and aligns it to an official track | `fix-asr`     |
 
 Each task returns one JSON object of the shape shown below. The user imports it in the app, which reads its `type` to tell which task it belongs to.
@@ -62,7 +62,7 @@ If there are more than 150 captions, process ~150 at a time. After each batch, r
 
 The app creates a bookmark for each entry. It skips an entry whose `captionIndex` is out of range or whose `text` isn't in that row's Korean, and lists the skipped entries.
 
-### Fill
+### Fill Bookmarks
 
 The prompt carries the video title, the bookmarks to fill, and the captions in the same format as Pick & Fill. Each bookmark has its `id`, its `text`, the `captionIndex` of its line, and that line's text.
 
@@ -118,4 +118,4 @@ The app replaces all caption rows with yours and moves each bookmark to its new 
 
 A task without its prompt reads the video from the server with `videos/getFullSession`, as [Use the Server API](references/server-api.md) describes. Each caption's `idx` is its `captionIndex`. The server has the user's latest rows only after they push, so ask them to push first. After a fix-asr, for example, the new rows reach the server only once the user imports the result and pushes.
 
-The server's bookmark ids differ from the app's, so a Fill result built from them doesn't import in the app. Apply it through the server API with `bookmarks/updateBookmark` instead, and tell the user to pull when you are done.
+The server's bookmark ids differ from the app's, so a Fill Bookmarks result built from them doesn't import in the app. Apply it through the server API with `bookmarks/updateBookmark` instead, and tell the user to pull when you are done.

@@ -595,7 +595,7 @@ test.describe("dev-viewer caption panel", () => {
     const aiSelect = page.locator("select").last();
     await aiSelect.selectOption("fill");
     const clipboard = await page.evaluate(() => navigator.clipboard.readText());
-    expect(clipboard).toContain("Zamak Task: Fill");
+    expect(clipboard).toContain("Zamak Task: Fill Bookmarks");
     expect(clipboard).toContain("꼬집어");
 
     // Import fill result
