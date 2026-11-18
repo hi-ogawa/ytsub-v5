@@ -93,4 +93,10 @@ In the Cloudflare dashboard, open the `zamak` Worker, then go to Settings > Buil
 1. Connect the `hi-ogawa/ytsub-v5` repository, with `main` as the production branch
 2. Set the build command to `pnpm build`
 3. Set the deploy command to `pnpm release`
-4. Enable builds for non-production branches, and set the preview command to `pnpm release-preview`
+4. Enable Previews, and set the preview command to `pnpm release-preview`
+
+If the dashboard sets up non-production branch builds instead, Previews still get created, but the PR comment has no Preview URL. Switch the Worker to Previews with the [`cf` CLI](https://developers.cloudflare.com/cf/get-started/), taking the Worker's ID from `cf workers scripts search --name zamak`:
+
+```sh
+cf workers-builds workers migrate-to-previews <worker-id> --deploy-command "pnpm release-preview"
+```
