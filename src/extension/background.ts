@@ -34,10 +34,15 @@ export const bgRpcHandlers = {
     await orpc.videos.importVideo.call(exportData);
   },
 
-  async pullSession({ youtubeId }: { youtubeId: string }) {
+  // The caption panel pulls with this. docs/extension-runtime.md explains why.
+  async fetchSession({ youtubeId }: { youtubeId: string }) {
     const data = await orpc.videos.getFullSession.call({ youtubeId });
     if (!data) throw new Error("Video not found on server");
-    const session = serverSessionToLocal(data);
+    return serverSessionToLocal(data);
+  },
+
+  async pullSession({ youtubeId }: { youtubeId: string }) {
+    const session = await bgRpcHandlers.fetchSession({ youtubeId });
     await contentRpc.saveSession({ session });
     return {
       title: session.title,

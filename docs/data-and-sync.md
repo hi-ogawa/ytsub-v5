@@ -32,9 +32,11 @@ The sync status of a video compares three timestamps: when the local session las
 
 Push and pull always move a whole video, and the receiving side replaces its copy. A push sends the session to the server, which replaces that video's captions and bookmarks. A pull fetches the server's copy and replaces the local session. Either one then records the sync time in the index.
 
-In the extension, the caption panel only shows the status. Its sync button opens the bookmarks page, where you push or pull. The bookmarks page asks the background, which calls the server and reads or writes the session through an open YouTube tab.
+In the extension, you can push or pull from the caption panel's menu or from the bookmarks page. Both ask the background, which calls the server. A push from either one reads the session through an open YouTube tab. A pull from the bookmarks page writes the session through a YouTube tab. A pull from the panel only fetches the session, and the panel applies it itself.
 
-In the web app, the bookmarks page pushes and pulls directly, because the sessions live on its own origin. The web app's caption panel only shows sessions that are already stored, because it can't fetch subtitles.
+In the web app, the bookmarks page and the caption panel push and pull directly, because the sessions live on its own origin. The web app's caption panel only shows sessions that are already stored, because it can't fetch subtitles.
+
+In both clients, a pull from the caption panel replaces the captions and bookmarks it shows, so you see the pulled copy without a reload. A conflict in the panel opens the bookmarks page, where you pick which copy to keep.
 
 Data can also enter the web app from an `import.json` file, through Import in the header menu. Import writes a session to the web app's storage, and a push then uploads it. [Generate import.json](../skills/zamak/references/generate-import-json.md) describes how to build one without the extension.
 

@@ -1,6 +1,6 @@
 import type { InferRouterOutputs } from "@orpc/server";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { useState } from "react";
 import { toast } from "sonner";
 import { orpc } from "../rpc.ts";
 import type { Router } from "../server/rpc.ts";
@@ -74,17 +74,22 @@ export function computeSyncState(params: {
   return "conflict";
 }
 
-type SyncDirection = "push" | "pull";
-
 export type SyncStatus = {
   state: SyncState;
+  error?: string;
   onNavigate: () => void;
+  onRefresh: () => void;
+  onPush: (store: CaptionSessionManager) => void;
+  onPull: (store: CaptionSessionManager) => void;
 };
 
-export function useSyncState({ youtubeId }: { youtubeId: string }) {
-  const queryClient = useQueryClient();
-  const [syncVersion, setSyncVersion] = useState(0);
-
+export function useSyncState({
+  youtubeId,
+  onNavigate,
+}: {
+  youtubeId: string;
+  onNavigate: () => void;
+}): SyncStatus {
   const [videoIndex] = useStore(videoIndexStore);
 
   const authQuery = useQuery(orpc.auth.check.queryOptions());
@@ -97,79 +102,58 @@ export function useSyncState({ youtubeId }: { youtubeId: string }) {
     enabled: authenticated,
   });
 
-  const computedState = useMemo((): SyncState => {
+  const syncMutation = useMutation({
+    mutationFn: async (action: {
+      direction: "push" | "pull";
+      store: CaptionSessionManager;
+    }) => {
+      if (action.direction === "push") {
+        await orpc.videos.importVideo.call(action.store.toExportData());
+      } else {
+        const data = await orpc.videos.getFullSession.call({ youtubeId });
+        if (!data) throw new Error("Video not found on server");
+        const session = serverSessionToLocal(data);
+        // replace() bumps the index entry's updatedAt, so setSyncedAt must follow it.
+        await action.store.replace({
+          vssId1: session.vssId1,
+          vssId2: session.vssId2,
+          captions: session.captions,
+          bookmarks: session.bookmarks,
+        });
+      }
+      setSyncedAt(youtubeId);
+    },
+    onSuccess: () => serverQuery.refetch(),
+  });
+
+  const getState = (): SyncState => {
+    if (syncMutation.isPending) return "syncing";
     if (authQuery.isFetching) return "checking";
     if (!authenticated) return "unauthenticated";
     if (serverQuery.isLoading) return "checking";
     if (serverQuery.isError) return "error";
-
     const localEntry = videoIndex.find((e) => e.youtubeId === youtubeId);
     return computeSyncState({
       localUpdatedAt: localEntry?.updatedAt,
       syncedAt: localEntry?.syncedAt,
       serverUpdatedAt: serverQuery.data?.updatedAt ?? undefined,
     });
-  }, [
-    youtubeId,
-    authQuery.isFetching,
-    authenticated,
-    serverQuery.isLoading,
-    serverQuery.isError,
-    serverQuery.data,
-    videoIndex,
-    syncVersion,
-  ]);
-
-  const pushMutation = useMutation(
-    orpc.videos.importVideo.mutationOptions({
-      onSuccess: () => {
-        setSyncedAt(youtubeId);
-        setSyncVersion((v) => v + 1);
-        serverQuery.refetch();
-      },
-    }),
-  );
-
-  const pullMutation = useMutation({
-    mutationFn: async (store: CaptionSessionManager) => {
-      const data = await queryClient.fetchQuery(
-        orpc.videos.getFullSession.queryOptions({
-          input: { youtubeId },
-        }),
-      );
-      if (!data) return;
-      const session = serverSessionToLocal(data);
-      await store.replace({
-        vssId1: session.vssId1,
-        vssId2: session.vssId2,
-        captions: session.captions,
-        bookmarks: session.bookmarks,
-      });
-      setSyncedAt(youtubeId);
-      setSyncVersion((v) => v + 1);
-      serverQuery.refetch();
-    },
-  });
-
-  const isSyncing = pushMutation.isPending || pullMutation.isPending;
-
-  const onSync = (options: {
-    direction?: SyncDirection;
-    store: CaptionSessionManager;
-  }) => {
-    if (isSyncing) return;
-    const action = options.direction ?? computedState;
-    if (action === "push" || action === "conflict") {
-      pushMutation.mutate(options.store.toExportData());
-    } else if (action === "pull") {
-      pullMutation.mutate(options.store);
-    }
   };
 
-  const state: SyncState = isSyncing ? "syncing" : computedState;
-  const error = pushMutation.error ?? pullMutation.error ?? undefined;
+  const { error, variables } = syncMutation;
 
-  return { state, onSync, error };
+  return {
+    state: getState(),
+    error: error
+      ? `${variables?.direction === "pull" ? "Download" : "Upload"} failed: ${error.message}`
+      : undefined,
+    onNavigate,
+    onRefresh: () => {
+      if (authenticated) serverQuery.refetch({ cancelRefetch: false });
+    },
+    onPush: (store) => syncMutation.mutate({ direction: "push", store }),
+    onPull: (store) => syncMutation.mutate({ direction: "pull", store }),
+  };
 }
 
 export type VideoSyncEntry = VideoIndexEntry & {
