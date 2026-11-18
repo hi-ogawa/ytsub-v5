@@ -237,7 +237,7 @@ function AiPromptCopy({
       <label className="mb-1 block text-sm text-muted-foreground flex items-center gap-1">
         AI prompt{" "}
         <a
-          href="https://github.com/hi-ogawa/ytsub-v5/blob/main/docs/ai-integration.md"
+          href="https://github.com/hi-ogawa/ytsub-v5/blob/main/skills/zamak/SKILL.md"
           target="_blank"
           rel="noopener noreferrer"
           className="inline-flex align-middle text-muted-foreground/70 hover:text-foreground"
@@ -325,9 +325,10 @@ function importAiResult(store: CaptionSessionManager): void {
           );
           break;
         }
+        const moved = store.bookmarks.length;
         store.replace({ captions, bookmarks });
         alert(
-          `Replaced captions with ${captions.length} rows and moved ${bookmarks.length} bookmarks`,
+          `Replaced captions with ${captions.length} rows, moved ${moved} bookmarks, and added ${bookmarks.length - moved}`,
         );
         break;
       }

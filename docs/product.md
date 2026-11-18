@@ -19,7 +19,7 @@ Zamak is the fifth version of this project. Earlier versions stopped working whe
 3. **Fill with an LLM.** Zamak builds a prompt with the captions and your bookmarks in it. You paste it into any LLM chat, such as Claude, ChatGPT, or Gemini, and paste the JSON answer back. The LLM adds a translation, the etymology, and usage notes to each bookmark. It can also fix errors in auto-generated captions.
 4. **Review** your bookmarks in the panel's bookmark list. Each bookmark keeps the caption it came from, and you can jump back to that moment in the video.
 
-The LLM step works through the clipboard on purpose. It works with any model and any chat app, you can read the whole prompt before you send it, and Zamak needs no API key and no AI service of its own. [AI integration](ai-integration.md) walks through the steps.
+The LLM step works through the clipboard on purpose. It works with any model and chat app that can open links, you can read the whole prompt before you send it, and Zamak needs no API key and no AI service of its own. The [Zamak skill](../skills/zamak/SKILL.md) describes the tasks.
 
 ## Start in the Extension, Continue Anywhere
 
@@ -37,4 +37,4 @@ Each setup adds to the one before it:
 | Extension + account           | Push a video to the server or pull it back, one video at a time, to back it up or move it to another browser with the extension. The bookmarks page shows which videos need a push or a pull | A sign-in        |
 | Extension + account + web app | Review synced videos with their captions and bookmarks on a device without the extension, such as a phone                                                                                    | The same sign-in |
 
-The web app can't fetch new videos from YouTube. It only shows videos you pushed, or ones you import from an `import.json` file, which the caption panel exports or [Generate import.json](generate-import-json.md) builds with yt-dlp and an LLM.
+The web app can't fetch new videos from YouTube. It only shows videos you pushed, or ones you import from an `import.json` file, which the caption panel exports or [Generate import.json](../skills/zamak/references/generate-import-json.md) builds with yt-dlp and an LLM.
