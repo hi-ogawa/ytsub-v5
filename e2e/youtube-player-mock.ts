@@ -28,7 +28,7 @@ const TRANSPARENT_GIF = Buffer.from(
   "base64",
 );
 
-export type PlayerCall =
+type PlayerCall =
   | { method: "playVideo" | "pauseVideo" }
   | { method: "seekTo"; seconds: number };
 
