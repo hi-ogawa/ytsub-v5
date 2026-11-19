@@ -37,7 +37,17 @@ The response also sets a `session` cookie with the same token, but URL-encoded. 
 
 Take the ids from `getFullSession`, not from an AI prompt the app copied. The app's ids are local, and the server recreates its bookmarks under new ids on every push, so the two rarely match. Match the AI result to the server's bookmarks by `text` and row instead.
 
-To replace a video's captions, call `videos/importVideo` with the whole video. It takes the same `{ video, captions, bookmarks }` shape as [`import.json`](generate-import-json.md), and it replaces all of the video's captions and bookmarks. Its `video` also needs `vssId1` and `vssId2`, so copy them from `getFullSession`.
+## Replace or Create a Video
+
+To replace a video's captions, call `videos/importVideo` with the whole video. It takes the same `{ video, captions, bookmarks }` shape as [`import.json`](generate-import-json.md), and it replaces all of the video's captions and bookmarks. When the server doesn't have the video, `importVideo` creates it, so a new video doesn't need a push from the app first.
+
+Its `video` also needs `vssId1` and `vssId2`, the ids of the YouTube caption tracks that `text1` and `text2` come from. For a video on the server, copy them from `getFullSession`. For a new video, write them for the tracks you built the rows from. The app looks a track up by its exact id, so write the id YouTube gives that track:
+
+- `.<lang>` is a manual track, such as `.en` or `.en-US`.
+- `a.<lang>` is an auto-generated (ASR) track, such as `a.ko`.
+- `<source>.t.<lang>` is a machine translation of the track `<source>`, such as `a.ko.t.en`.
+
+`<lang>` is the language code as YouTube lists it, region included. Set `language1` and `language2` to the code at the end of each id, because the app derives them that way when it saves the video.
 
 ## Keep the Server's Copy Current
 
