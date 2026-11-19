@@ -21,7 +21,7 @@ Leave it empty for native words with no analyzable structure (가다, 좋다), o
 
 ## notes
 
-A short usage note when it helps, otherwise an empty string. The app shows each bookmark with its caption row and the row's translation, so don't restate them in the note. Translate a phrase only when the translation shows what the construction means beyond the row's translation, as the 지킨다는 example below does.
+A short usage note when it helps, otherwise an empty string. The app shows each bookmark with its caption row, both the Korean and the English, so don't restate the row in the note. A literal translation of a phrase still helps when it shows how a construction works, as in the 지킨다는 example below.
 
 An inflected word is a stem (어간) plus endings (어미). When the pick carries an ending beyond the basics a learner at this level knows (-아/어요, -았/었-, -고, -는), or a construction made of several pieces, start the note with its breakdown: the stem, each ending or construction, and what it does. A contracted construction can look like a different ending, so expand it to its full form. For example:
 
