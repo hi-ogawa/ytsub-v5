@@ -148,6 +148,8 @@ When fixing auto-generated Korean, watch for:
 
 In Scenario B, download and parse the other manual tracks too, and use them as evidence for the fixes. Japanese follows Korean clause by clause, and its kanji confirm Sino-Korean words, so `ja` often settles a fix that the English only hints at, such as 3초째 → 3회째 from 3回目. A Chinese track can name people that the other tracks leave out. Leave a fix out when no track supports it, because a person who can hear the audio should check those spots.
 
+Watch also for a word the ASR doesn't know, because it can come back across the whole video, garbled differently each time. On one variety video, the slang 남찍사 came out as 남직, 남사, and 남택사 in four places, and fixing them row by row left two of them as 남찍. The ASR can also get such a word right once and garble it elsewhere, as with 추구미 in one line and 죽음미 in two others. Names, unit names, and recent slang are the usual cases. So before you fix row by row, look through the whole ASR for words like these, settle each one once from the other tracks or its clean spot, and spell it the same way in every row.
+
 On variety shows, the English track can mix speech with the editor's on-screen captions, such as `[...]` notes, name cards, title cards, and the lyrics of background music. The ASR can also miss short lines entirely, so some English rows have no Korean speech. On one such video, dropping the rows with no Korean speech worked well.
 
 ### Pair Official Lyrics With the Timed Track (Scenario F)
