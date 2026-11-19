@@ -26,7 +26,7 @@ Skip:
 - Transparent loanwords, English or Japanese
 - Slang the learner can work out from its parts. Other slang gets the same test as any word, so pick it when it is likely to come up again
 
-Aim for about 1-2 picks per minute of video, going by the `m:ss` timestamps, and more in dense talk. A missed word costs the learner more than an extra one, because deleting a pick takes a second, while a missing word has to be noticed and added by hand.
+Pick every word that passes this test, with no target count. A missed word costs the learner more than an extra one, because deleting a pick takes a second, while a missing word has to be noticed and added by hand.
 
 ## Return the Picks
 
