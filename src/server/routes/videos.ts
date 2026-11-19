@@ -1,7 +1,12 @@
 import { and, count, desc, eq, sql } from "drizzle-orm";
 import z from "zod";
 import { authed } from "../auth.ts";
-import { BOOKMARK_BATCH_SIZE, CAPTION_BATCH_SIZE, db } from "../db.ts";
+import {
+  BOOKMARK_BATCH_SIZE,
+  CAPTION_BATCH_SIZE,
+  db,
+  touchVideo,
+} from "../db.ts";
 import { bookmarks, captions, videos } from "../schema.ts";
 
 export const videosRouter = authed.router({
@@ -102,6 +107,38 @@ export const videosRouter = authed.router({
         .from(captions)
         .where(eq(captions.videoId, input.videoId))
         .orderBy(captions.idx);
+    }),
+
+  updateCaption: authed
+    .input(
+      z.object({
+        videoId: z.number().int(),
+        idx: z.number().int(),
+        text1: z.string().optional(),
+        text2: z.string().optional(),
+      }),
+    )
+    .handler(async ({ input, context }) => {
+      const { videoId, idx, ...updates } = input;
+      const video = await db
+        .select({ id: videos.id })
+        .from(videos)
+        .where(and(eq(videos.id, videoId), eq(videos.userId, context.userId)))
+        .get();
+      if (!video) throw new Error(`Video ${videoId} not found`);
+      if (Object.values(updates).every((v) => v === undefined)) {
+        throw new Error("No fields to update");
+      }
+      const [row] = await db
+        .update(captions)
+        .set(updates)
+        .where(and(eq(captions.videoId, videoId), eq(captions.idx, idx)))
+        .returning();
+      if (!row) {
+        throw new Error(`Caption ${idx} of video ${videoId} not found`);
+      }
+      await touchVideo(videoId);
+      return row;
     }),
 
   listVideos: authed

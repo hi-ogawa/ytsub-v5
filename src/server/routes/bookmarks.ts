@@ -1,8 +1,8 @@
 import { and, count, desc, eq, sql } from "drizzle-orm";
 import z from "zod";
 import { authed } from "../auth.ts";
-import { BOOKMARK_BATCH_SIZE, db } from "../db.ts";
-import { bookmarks, videos } from "../schema.ts";
+import { BOOKMARK_BATCH_SIZE, db, touchVideo } from "../db.ts";
+import { bookmarks, captions, videos } from "../schema.ts";
 
 /** Verify video belongs to the authenticated user */
 async function assertVideoOwner(videoId: number, userId: number) {
@@ -23,13 +23,6 @@ async function assertBookmarkOwner(bookmarkId: number, userId: number) {
     .where(and(eq(bookmarks.id, bookmarkId), eq(videos.userId, userId)))
     .get();
   if (!row) throw new Error(`Bookmark ${bookmarkId} not found`);
-}
-
-async function touchVideo(videoId: number) {
-  await db
-    .update(videos)
-    .set({ updatedAt: sql`datetime('now')` })
-    .where(eq(videos.id, videoId));
 }
 
 export const bookmarksRouter = authed.router({
@@ -133,26 +126,43 @@ export const bookmarksRouter = authed.router({
     .input(
       z.object({
         id: z.number().int(),
+        text: z.string().optional(),
+        offset: z.number().int().optional(),
+        context: z.string().optional(),
         translation: z.string().optional(),
         etymology: z.string().optional(),
         notes: z.string().optional(),
       }),
     )
     .handler(async ({ input, context }) => {
-      await assertBookmarkOwner(input.id, context.userId);
       const { id, ...updates } = input;
-      const setValues: Record<string, string> = {};
-      if (updates.translation !== undefined)
-        setValues.translation = updates.translation;
-      if (updates.etymology !== undefined)
-        setValues.etymology = updates.etymology;
-      if (updates.notes !== undefined) setValues.notes = updates.notes;
-      if (Object.keys(setValues).length === 0) {
+      const current = await db
+        .select({
+          side: bookmarks.side,
+          text: bookmarks.text,
+          offset: bookmarks.offset,
+          text1: captions.text1,
+          text2: captions.text2,
+        })
+        .from(bookmarks)
+        .innerJoin(videos, eq(bookmarks.videoId, videos.id))
+        .leftJoin(captions, eq(bookmarks.captionId, captions.id))
+        .where(and(eq(bookmarks.id, id), eq(videos.userId, context.userId)))
+        .get();
+      if (!current) throw new Error(`Bookmark ${id} not found`);
+      if (Object.values(updates).every((v) => v === undefined)) {
         throw new Error("No fields to update");
+      }
+      if (updates.text !== undefined || updates.offset !== undefined) {
+        assertTextAtOffset({
+          rowText: current.side === 1 ? current.text2 : current.text1,
+          text: updates.text ?? current.text,
+          offset: updates.offset ?? current.offset,
+        });
       }
       const [row] = await db
         .update(bookmarks)
-        .set(setValues)
+        .set(updates)
         .where(eq(bookmarks.id, id))
         .returning();
       if (!row) {
@@ -177,3 +187,23 @@ export const bookmarksRouter = authed.router({
       return row;
     }),
 });
+
+/** Reject a bookmark text that doesn't sit at its offset in its caption row */
+function assertTextAtOffset({
+  rowText,
+  text,
+  offset,
+}: {
+  rowText: string | null;
+  text: string;
+  offset: number;
+}) {
+  if (rowText === null) {
+    throw new Error("Bookmark has no caption to check its text against");
+  }
+  if (rowText.slice(offset, offset + text.length) !== text) {
+    throw new Error(
+      `"${text}" not at offset ${offset} in caption: "${rowText}"`,
+    );
+  }
+}

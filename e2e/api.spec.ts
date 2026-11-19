@@ -148,6 +148,44 @@ test.describe("videos API", () => {
     const got = await json(getRes);
     expect(got.captionCount).toBe(2);
   });
+
+  test("update one caption row", async ({ request }) => {
+    const { videoId } = await json(
+      await rpc(request, "videos/importVideo", {
+        video: {
+          youtubeId: `update-cap-${uid()}`,
+          title: "V",
+          ...defaultTrackFields,
+        },
+        captions: [
+          { idx: 0, begin: 0, end: 1, text1: "안녕하세요", text2: "Hello" },
+          { idx: 1, begin: 1, end: 2, text1: "감사함니다", text2: "Thank you" },
+        ],
+      }),
+    );
+
+    const res = await rpc(request, "videos/updateCaption", {
+      videoId,
+      idx: 1,
+      text1: "감사합니다",
+    });
+    expect(res.ok()).toBe(true);
+
+    const caps = await json(
+      await rpc(request, "videos/listCaptions", { videoId }),
+    );
+    expect(caps.map((c: any) => [c.text1, c.text2])).toEqual([
+      ["안녕하세요", "Hello"],
+      ["감사합니다", "Thank you"],
+    ]);
+
+    const missing = await rpc(request, "videos/updateCaption", {
+      videoId,
+      idx: 2,
+      text1: "없음",
+    });
+    expect(missing.ok()).toBe(false);
+  });
 });
 
 test.describe("importVideo API", () => {
@@ -384,5 +422,101 @@ test.describe("bookmarks API", () => {
       await rpc(request, "bookmarks/listBookmarks", { videoId: video.id }),
     );
     expect(after.total).toBe(0);
+  });
+
+  test("update bookmark text and offset within its caption", async ({
+    request,
+  }) => {
+    const { videoId } = await json(
+      await rpc(request, "videos/importVideo", {
+        video: {
+          youtubeId: `bm-text-${uid()}`,
+          title: "V",
+          ...defaultTrackFields,
+        },
+        captions: [
+          {
+            idx: 0,
+            begin: 0,
+            end: 1,
+            text1: "오늘 쌍거풀",
+            text2: "today eyelid",
+          },
+        ],
+        bookmarks: [
+          { text: "쌍거풀", captionIdx: 0, offset: 3, context: "오늘 쌍거풀" },
+          { text: "eyelid", captionIdx: 0, side: 1, offset: 6 },
+        ],
+      }),
+    );
+    await rpc(request, "videos/updateCaption", {
+      videoId,
+      idx: 0,
+      text1: "오늘 쌍꺼풀이",
+      text2: "double eyelid today",
+    });
+    const { items } = await json(
+      await rpc(request, "bookmarks/listBookmarks", { videoId }),
+    );
+    const side0 = items.find((b: any) => b.side === 0);
+    const side1 = items.find((b: any) => b.side === 1);
+
+    const res = await rpc(request, "bookmarks/updateBookmark", {
+      id: side0.id,
+      text: "쌍꺼풀",
+      context: "오늘 쌍꺼풀이",
+    });
+    expect(res.ok()).toBe(true);
+    const updated = await json(res);
+    expect(updated.text).toBe("쌍꺼풀");
+    expect(updated.offset).toBe(3);
+    expect(updated.context).toBe("오늘 쌍꺼풀이");
+
+    // Side 1 is checked against text2
+    const side1Res = await rpc(request, "bookmarks/updateBookmark", {
+      id: side1.id,
+      offset: 7,
+    });
+    expect(side1Res.ok()).toBe(true);
+
+    const misplaced = await rpc(request, "bookmarks/updateBookmark", {
+      id: side0.id,
+      offset: 0,
+    });
+    expect(misplaced.ok()).toBe(false);
+    const after = await json(
+      await rpc(request, "bookmarks/listBookmarks", { videoId }),
+    );
+    expect(after.items.find((b: any) => b.id === side0.id).offset).toBe(3);
+  });
+
+  test("reject text changes on a bookmark without a caption", async ({
+    request,
+  }) => {
+    const video = await json(
+      await rpc(request, "videos/createVideo", {
+        youtubeId: `bm-nocap-${uid()}`,
+        title: "V",
+        ...defaultTrackFields,
+      }),
+    );
+    await rpc(request, "bookmarks/createBookmarks", {
+      bookmarks: [{ videoId: video.id, text: "단어" }],
+    });
+    const { items } = await json(
+      await rpc(request, "bookmarks/listBookmarks", { videoId: video.id }),
+    );
+
+    const textRes = await rpc(request, "bookmarks/updateBookmark", {
+      id: items[0].id,
+      text: "단어들",
+    });
+    expect(textRes.ok()).toBe(false);
+
+    const notesRes = await rpc(request, "bookmarks/updateBookmark", {
+      id: items[0].id,
+      notes: "still editable",
+    });
+    expect(notesRes.ok()).toBe(true);
   });
 });
