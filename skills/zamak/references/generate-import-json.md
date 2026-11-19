@@ -192,29 +192,7 @@ Check that the text1/text2 pairs make sense together, and fix any misaligned row
 
 If the video already has bookmarks, re-anchor them instead, as described in [Re-anchor Existing Bookmarks](#re-anchor-existing-bookmarks).
 
-Propose bookmark candidates (interesting vocab from the Korean captions) and save them as `bookmarks.json`.
-
-### What Counts as Notable Vocab
-
-- Intermediate level or above (skip basic greetings, particles, ultra-common verbs like 하다/가다/오다)
-- Slang, colloquial expressions, internet-speak that textbooks don't teach
-- Hanja-based words where etymology aids memorization (populate the `etymology` field with hanja characters and breakdowns)
-
-Target ~1 bookmark per 10s of video duration (e.g. 3 min → ~18, 10 min → ~60). Err on the side of over-bookmarking, because the app has quick deletion for curation.
-
-### Bookmark Fields
-
-| Field       | Description                                                                    |
-| ----------- | ------------------------------------------------------------------------------ |
-| text        | Korean word as it appears in the subtitle                                      |
-| translation | English meaning                                                                |
-| captionIdx  | Index into merged captions (for timestamp/captionId)                           |
-| side        | 0 = primary (ko), 1 = secondary (en)                                           |
-| offset      | Character offset of the word within caption text                               |
-| context     | The full caption line containing the word                                      |
-| etymology   | Hanja/etymology (e.g. `迷路` or `非現實的; 비(non) + 현실(reality) + 적(adj)`) |
-| notes       | Optional notes                                                                 |
-| status      | "pending" or "learned"                                                         |
+Pick vocabulary from the Korean captions as [Pick & Fill](pick-fill.md) describes, fill in each word as [Vocab Fields](vocab-fields.md) describes, and save the picks as `bookmarks.json`:
 
 ```json
 [
@@ -226,11 +204,17 @@ Target ~1 bookmark per 10s of video duration (e.g. 3 min → ~18, 10 min → ~60
     "offset": 5,
     "context": "아직 좀 헷갈리기는 해",
     "etymology": "",
-    "notes": "",
-    "status": "pending"
+    "notes": ""
   }
 ]
 ```
+
+| Field        | Description                                                  |
+| ------------ | ------------------------------------------------------------ |
+| `captionIdx` | The `idx` of the row in `captions.json`                      |
+| `side`       | 0 for a word in `text1` (Korean), 1 for a word in `text2`    |
+| `offset`     | Character offset of `text` within the row's text on its side |
+| `context`    | The row's text on the bookmark's side                        |
 
 ### Validate Offsets
 
