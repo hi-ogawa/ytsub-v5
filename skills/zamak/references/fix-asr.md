@@ -37,7 +37,7 @@ The app replaces all caption rows with yours, moves each existing bookmark to it
 
 ## Write the Result to the Server
 
-When the user asks you to apply the result yourself instead of returning it, write the whole video with `videos/importVideo`, as [Use the Server API](server-api.md#replace-or-create-a-video) describes. `importVideo` recreates the bookmarks, so give each one its `captionIdx` and the rest of its fields rather than an `id`.
+When the user asks you to apply the result yourself instead of returning it, write the whole video with `videos/importVideo`, as [Use the Server API](server-api.md#replace-or-create-a-video) describes. Send `captions.json` rather than the result's `captions`, because `importVideo` needs each row's `idx`. It also recreates the bookmarks, so send `bookmarks.json`, with each bookmark's `captionIdx` and the rest of its fields rather than an `id`.
 
 - When the server has the video, ask the user to push first, so the server holds their latest bookmarks. Take each bookmark's `translation`, `etymology`, and `notes` from `getFullSession`, and keep the video's `vssId1` and `vssId2`.
 - When it doesn't, create it. If the prompt lists bookmarks, though, ask the user to push first instead, because the prompt leaves out their translations and the pull would replace them with your copy. Take the metadata from "Download Metadata" in [Generate import.json](generate-import-json.md), and `vssId1` and `vssId2` from the prompt's track list, or from the track id patterns when there is no prompt. For Scenario B, those are the ASR Korean track and the official English track, such as `a.ko` and `.en`.
