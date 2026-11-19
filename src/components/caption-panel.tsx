@@ -886,13 +886,11 @@ function CaptionPanelContent({
     for (let i = sortedBookmarks.length - 1; i >= 0; i--) {
       if (sortedBookmarks[i].timestamp < time - 1) {
         player.seekTo(sortedBookmarks[i].timestamp);
-        player.playVideo();
         return;
       }
     }
     const last = sortedBookmarks[sortedBookmarks.length - 1];
     player.seekTo(last.timestamp);
-    player.playVideo();
   }
 
   function onNextBookmark() {
@@ -901,12 +899,10 @@ function CaptionPanelContent({
     for (const bm of sortedBookmarks) {
       if (bm.timestamp > time + 0.5) {
         player.seekTo(bm.timestamp);
-        player.playVideo();
         return;
       }
     }
     player.seekTo(sortedBookmarks[0].timestamp);
-    player.playVideo();
   }
 
   // --- Cross-tab navigation ---
