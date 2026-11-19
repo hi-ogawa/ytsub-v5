@@ -17,21 +17,21 @@ The word's origin or structure when it helps learning, otherwise an empty string
 - loanwords, with the borrowing path: `computer`, `アルバイト / Arbeit`
 - contractions: the full form, such as `아이` for 애
 
-Leave it empty for native words with no analyzable structure (가다, 좋다), obvious splits (숨소리 is 숨 + 소리), and origins that aren't established. Don't guess a folk etymology. This field is about the word itself, so the grammar of an ending goes in `notes`.
+Leave it empty for native words with no analyzable structure (가다, 좋다), obvious splits (숨소리 is 숨 + 소리), and origins that aren't established. Don't guess a folk etymology. This field is about the word itself, so the grammar of its inflection goes in `notes`.
 
 ## notes
 
 A short usage note when it helps, otherwise an empty string.
 
-When the pick carries an ending or pattern beyond the basics a learner at this level knows (-아/어요, -았/었-, -고, -는), start the note with its construction: the stem plus the ending, and what the ending does. Expand a contracted ending to its full form, because a contraction can look like a different ending. For example:
+An inflected word is a stem (어간) plus endings (어미). When the pick carries an ending beyond the basics a learner at this level knows (-아/어요, -았/었-, -고, -는), or a construction made of several pieces, start the note with its breakdown: the stem, each ending or construction, and what it does. A contracted construction can look like a different ending, so expand it to its full form. For example:
 
 - 헤매듯: `헤매- + -듯 (as if)`
 - 떠나던: `떠나- + -던 (recalls an action in progress in the past)`
 - 조용할수록: `조용하- + -ㄹ수록 (the more ...)`
-- 지킨다는 약속: `지킨다는 = 지킨다고 하는: a promise that says "I'll protect it"`
+- 지킨다는 약속: `지킨- + -다는 (= -다고 하는) + 약속: a promise that says "I'll protect it"`
 - 고백하래: `고백하- + -래 (= -라고 해: says to)`, not -ㄹ래 ("want to")
 
-Other useful notes, after the construction:
+Other useful notes, after the breakdown:
 
 - a contrast with a similar form
 - related words, each tagged by what it is: `(.syn)` synonym, `(.ant)` antonym, `(.hon)` honorific form, `(.syn:native)` 순우리말 equivalent, `(.syn:casual)` or `(.syn:formal)` register variant. Separate multiple words with commas. Skip inflection pairs (닫히다 → 닫다) and contractions (뭐 → 무엇).
