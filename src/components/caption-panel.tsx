@@ -875,7 +875,10 @@ function CaptionPanelContent({
   );
 
   const sortedBookmarks = useMemo(
-    () => [...store.bookmarks].sort((a, b) => a.timestamp - b.timestamp),
+    () =>
+      [...store.bookmarks].sort(
+        (a, b) => a.timestamp - b.timestamp || a.offset - b.offset,
+      ),
     [store.bookmarks],
   );
 

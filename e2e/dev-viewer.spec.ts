@@ -353,6 +353,21 @@ test.describe("dev-viewer caption panel", () => {
     ).toBeVisible();
   });
 
+  test("bookmarks tab orders bookmarks in one row by offset", async ({
+    page,
+  }) => {
+    await openPanelWithTracks(page);
+    const panel = page.getByTestId("resizable-panel");
+
+    // Create the later word first
+    await createBookmarkAt(page, { index: 0, start: 8, end: 10 });
+    await createBookmarkAt(page, { index: 0, start: 0, end: 3 });
+
+    await panel.getByRole("button", { name: "Bookmarks (2)" }).click();
+    const cards = page.locator("[data-bookmark-id] .font-medium");
+    await expect(cards).toHaveText(["꼬집어", "꿈인"]);
+  });
+
   test("prev/next bookmark buttons appear when bookmarks exist", async ({
     page,
   }) => {
