@@ -33,6 +33,40 @@ A row such as `ko-en` (Korean from English) is YouTube's machine translation of 
 
 The automatic captions can list the Korean speech recognition as `ko-orig` next to `ko`, so check which one it is before you download it.
 
+### Find Each Track's vssId
+
+The app names a caption track by its `vssId`, and creating a video through the [server API](server-api.md#replace-or-create-a-video) needs the ids of its two tracks. yt-dlp doesn't print them, but each track's URL carries the parts an id is made from: `kind=asr` adds the `a.` prefix, `lang` is the language code, and `tlang` marks a machine translation of that track into another language.
+
+| URL parameters              | vssId       |
+| --------------------------- | ----------- |
+| `lang=en`                   | `.en`       |
+| `kind=asr&lang=ko`          | `a.ko`      |
+| `kind=asr&lang=ko&tlang=en` | `a.ko.t.en` |
+
+This prints each track's yt-dlp code next to its vssId:
+
+```bash
+yt-dlp -J --skip-download "<URL>" | jq -r '
+  def param($k): (capture("[?&]\($k)=(?<v>[^&]*)").v) // null;
+  [.subtitles, .automatic_captions][] | to_entries[] | .key as $key | .value[]
+  | select(.ext == "json3") | .url
+  | (if param("kind") == "asr" then "a." else "." end) + param("lang")
+    + (if param("tlang") then ".t.\(param("tlang"))" else "" end)
+  | "\($key)\t\(.)"' | grep -E "^(ko|en)"
+```
+
+For a Korean video with manual English subtitles, the output includes:
+
+```
+en	.en
+en	a.ko.t.en
+ko	a.ko
+ko	a.en.t.ko
+ko-orig	a.ko
+```
+
+A yt-dlp code can stand for several tracks. Here `ko` covers the Korean ASR track and the translation of the English track into Korean, so read the id off the URL rather than the code.
+
 ### Download Subtitles
 
 Prefer manual subs over auto-generated. Use json3 format, and pass the language code exactly as the list shows it. If the code doesn't match a track, such as `en` for a video whose English is `en-US`, yt-dlp downloads nothing and reports no error.
