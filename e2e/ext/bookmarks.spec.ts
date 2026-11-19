@@ -92,6 +92,32 @@ test("video page: clicks inside the bookmark popover don't reach the caption row
   await expect.poll(isPaused).toBe(false);
 });
 
+test("video page: bookmark arrows keep the play state", async ({ context }) => {
+  const ytPage = await openYouTubeTab(context, SEED_VIDEO_ID);
+  await openPanelWithTracks(ytPage);
+  const host = ytPage.locator("#zamak-host");
+  await host
+    .locator("[data-index='1'] [data-side='0'] [data-offset]")
+    .selectText();
+  await host.getByRole("button", { name: "Create bookmark" }).click();
+  const video = ytPage.locator("video");
+  const isPaused = () => video.evaluate((el: HTMLVideoElement) => el.paused);
+  const getCurrentTime = () =>
+    video.evaluate((el: HTMLVideoElement) => el.currentTime);
+
+  // A paused video stays paused at the bookmark
+  expect(await isPaused()).toBe(true);
+  await host.getByRole("button", { name: "Next bookmark" }).click();
+  await expect.poll(getCurrentTime).toBeGreaterThan(0);
+  expect(await isPaused()).toBe(true);
+
+  // A playing video keeps playing
+  await host.locator("[data-index='2']").click();
+  await expect.poll(isPaused).toBe(false);
+  await host.getByRole("button", { name: "Previous bookmark" }).click();
+  expect(await isPaused()).toBe(false);
+});
+
 test("bookmarks page: shows local entries without login", async ({
   context,
   page,
