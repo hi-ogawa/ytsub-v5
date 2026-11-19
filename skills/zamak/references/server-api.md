@@ -37,7 +37,13 @@ The response also sets a `session` cookie with the same token, but URL-encoded. 
 
 Take the ids from `getFullSession`, not from an AI prompt the app copied. The app's ids are local, and the server recreates its bookmarks under new ids on every push, so the two rarely match. Match the AI result to the server's bookmarks by `text` and row instead.
 
-To replace a video's captions, call `videos/importVideo` with the whole video. It takes the same `{ video, captions, bookmarks }` shape as [`import.json`](generate-import-json.md), and it replaces all of the video's captions and bookmarks. Its `video` also needs `vssId1` and `vssId2`, so copy them from `getFullSession`.
+## Replace or Create a Video
+
+To replace a video's captions, call `videos/importVideo` with the whole video. It takes the same `{ video, captions, bookmarks }` shape as [`import.json`](generate-import-json.md), and it replaces all of the video's captions and bookmarks. When the server doesn't have the video, `importVideo` creates it, so a new video doesn't need a push from the app first.
+
+Its `video` also needs `vssId1` and `vssId2`, the ids of the YouTube caption tracks that `text1` and `text2` come from. For a video on the server, copy them from `getFullSession`. For a new video, take the ids of the tracks you built the rows from, as [Find Each Track's vssId](generate-import-json.md#find-each-tracks-vssid) describes. The app looks a track up by its exact id, so it can't match a guessed id to any of the video's tracks.
+
+Set `language1` and `language2` to the language code at the end of each id, such as `en-US` for `.en-US`, because the app derives them that way when it saves the video.
 
 ## Keep the Server's Copy Current
 

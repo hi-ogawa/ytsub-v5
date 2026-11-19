@@ -34,3 +34,12 @@ Follow [Generate import.json](generate-import-json.md). Run "Fetch and Assess" t
 When the user also asks for vocabulary, pick it from your new rows as [Pick & Fill](pick-fill.md) describes, and add each pick to `bookmarks` without an `id`. A new entry has `captionIndex`, `offset`, `text`, `side` (0 for Korean, the default), and the `translation`, `etymology`, and `notes` that [Vocab Fields](vocab-fields.md) describes. Check its offset the same way as for the existing bookmarks.
 
 The app replaces all caption rows with yours, moves each existing bookmark to its new position, and adds the new ones. It rejects the whole result if any existing bookmark is missing or any entry's `text` isn't at its `offset`.
+
+## Write the Result to the Server
+
+When the user asks you to apply the result yourself instead of returning it, write the whole video with `videos/importVideo`, as [Use the Server API](server-api.md#replace-or-create-a-video) describes. Send `captions.json` rather than the result's `captions`, because `importVideo` needs each row's `idx`. It also recreates the bookmarks, so send `bookmarks.json`, with each bookmark's `captionIdx` and the rest of its fields rather than an `id`.
+
+- When the server has the video, ask the user to push first, so the server holds their latest bookmarks. Take each bookmark's `translation`, `etymology`, and `notes` from `getFullSession`, and keep the video's `vssId1` and `vssId2`.
+- When it doesn't, create it. If the prompt lists bookmarks, though, ask the user to push first instead, because the prompt leaves out their translations and the pull would replace them with your copy. Take the metadata from "Download Metadata" in [Generate import.json](generate-import-json.md), and `vssId1` and `vssId2` from "Find Each Track's vssId" there.
+
+Either way, tell the user to pull when you're done.
