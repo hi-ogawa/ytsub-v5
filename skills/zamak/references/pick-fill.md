@@ -5,7 +5,8 @@ The prompt carries the video title and its captions. Each caption line reads `[i
 Scan the captions and pick vocabulary worth learning:
 
 - Words a Korean learner is unlikely to already know (from upper intermediate to TOPIK2 class vocabulary)
-- Prefer single words over phrases. Pick the word itself, not the surrounding expression
+- Grammar constructions a learner at that level is unlikely to know, such as a contracted quote (고백하래) or -다는 + noun (지킨다는 약속)
+- Pick the word itself, not the surrounding expression. Pick a short phrase only when the construction spans it, as -다는 + noun does
 - Skip beginner vocabulary, basic and common words (하다, 가다, 있다, particles, greetings), and transparent English loanwords (포인트, 스타일)
 - Aim for 5-10 picks per ~150 captions. Prefer fewer quality picks over padding
 
@@ -28,6 +29,13 @@ If there are more than 150 captions, process ~150 at a time. After each batch, r
       "translation": "absurd, dumbfounded",
       "etymology": "",
       "notes": ""
+    },
+    {
+      "captionIndex": 20,
+      "text": "헤매듯",
+      "translation": "as if wandering lost (헤매다)",
+      "etymology": "",
+      "notes": "헤매- + -듯 (as if). Also figurative: struggle, be at a loss"
     }
   ]
 }
