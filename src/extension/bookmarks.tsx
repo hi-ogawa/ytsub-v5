@@ -168,7 +168,7 @@ function ExtensionBookmarksPage() {
   };
 
   return (
-    <div className="flex h-screen flex-col">
+    <div className="flex h-dvh flex-col">
       <header className="flex h-10 flex-none items-center justify-between border-b px-3">
         <span className="flex items-center gap-1.5 text-sm font-semibold">
           Zamak
