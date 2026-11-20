@@ -27,4 +27,6 @@ Run the task the user asks for. When they name a task without pasting its prompt
 
 A task without its prompt reads the video from the server with `videos/getFullSession`, as [Use the Server API](references/server-api.md) describes. Each caption's `idx` is its `captionIndex`. The server has the user's latest rows only after they push, so ask them to push first. After a fix-asr, for example, the new rows reach the server only once the user imports the result and pushes.
 
+The video's `vssId1` and `vssId2` name the YouTube tracks its rows started from, not what the rows are now. After a fix-asr, or after the rows are rebuilt from burned-in captions, they still say `a.ko`. So judge the rows by reading them, and flag a word as misheard only when its row reads wrong in context. A field that records where the rows came from is planned in [#274](https://github.com/hi-ogawa/ytsub-v5/issues/274).
+
 The server's bookmark ids differ from the app's, so a Fill Bookmarks result built from them doesn't import in the app. Apply it through the server API with `bookmarks/updateBookmark` instead, and tell the user to pull when you are done.
