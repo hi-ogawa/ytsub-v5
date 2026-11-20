@@ -29,7 +29,7 @@ The response also sets a `session` cookie with the same token, but URL-encoded. 
 
 ## Edit a Video's Captions and Bookmarks
 
-1. Read the video with `videos/getFullSession { youtubeId }`. It returns `{ video, captions, bookmarks }`, or `null` when the server doesn't have the video. A bookmark points at its row by `captionId`, the row's server id, and a row's position is its `idx`.
+1. Read the video with `videos/getFullSession { youtubeId }`. It returns `{ video, captions, bookmarks }`, or `null` when the server doesn't have the video. A bookmark points at its row by `captionId`, the row's server id, and a row's position is its `idx`. The video's `vssId1` and `vssId2` name the tracks the rows were first built from, and a rewrite such as fix-asr keeps them.
 2. Fix a row with `videos/updateCaption { videoId, idx, text1?, text2? }`.
 3. Change bookmarks by their server `id`:
    - `bookmarks/updateBookmark { id, text?, offset?, context?, translation?, etymology?, notes? }`

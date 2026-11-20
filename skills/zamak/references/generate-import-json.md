@@ -35,7 +35,7 @@ The automatic captions can list the Korean speech recognition as `ko-orig` next 
 
 ### Caption Track IDs (vssId)
 
-A `vssId` names a YouTube caption track, and a video's `vssId1` and `vssId2` name the tracks its rows were built from. A task that rewrites the rows, such as fix-asr, leaves them unchanged.
+A `vssId` names a YouTube caption track, and a video's `vssId1` and `vssId2` name the tracks its rows were built from.
 
 Creating a video through the [server API](server-api.md#replace-or-create-a-video) needs both ids. yt-dlp doesn't print them, but each track's URL carries the parts an id is made from: `kind=asr` adds the `a.` prefix, `lang` is the language code, and `tlang` marks a machine translation of that track into another language.
 
