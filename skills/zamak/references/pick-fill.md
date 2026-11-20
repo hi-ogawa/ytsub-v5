@@ -4,7 +4,7 @@ The prompt carries the video title and its captions. Each caption line reads `[i
 
 ## Pick What Is Useful to the Learner
 
-Scan the captions and pick each word [the learner](../SKILL.md#who-the-learner-is) is likely to meet again and doesn't own yet:
+The learner is an intermediate Korean learner whose first language is Japanese. Scan the captions and pick each word they are likely to meet again and don't own yet:
 
 - Common words of everyday speech that they half know
 - Endings and constructions beyond the beginner basics

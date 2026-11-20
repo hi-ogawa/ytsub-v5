@@ -9,12 +9,6 @@ Zamak is an app for learning Korean from YouTube videos. It shows a video's Kore
 
 The app hands a task to the AI through a prompt that the user copies from the caption panel's settings menu into a chat or an agent session. The prompt names the task, carries the video's data, and links to this skill, which describes the task. So the AI has to be able to open links. Links are relative to the file they appear in, so resolve them against the URL you read that file from.
 
-## Who the Learner Is
-
-The learner is a native Japanese speaker who reads English well and is at an intermediate level in Korean. They know the vocabulary and grammar of a beginner textbook and can follow everyday talk with the English line beside it. But much of the Korean they hear is only half known: common words of everyday speech, captions, and news, and endings beyond the basics, which they understand in context without being able to recall or use them. They watch variety shows, vlogs, and music to learn the Korean that native speakers actually use, and they come back to their picks later to study them.
-
-Japanese shapes what is easy for them. Japanese loanwords are as transparent as English ones. They can often guess a Sino-Korean word's meaning from its kanji, while its Korean reading is still new, and the Hanja ties that reading to kanji they know and to other words that share it.
-
 ## Tasks
 
 Read the task's reference before you start. It has the steps, the data the prompt carries, and the result shape.
