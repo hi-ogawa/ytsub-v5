@@ -33,9 +33,11 @@ A row such as `ko-en` (Korean from English) is YouTube's machine translation of 
 
 The automatic captions can list the Korean speech recognition as `ko-orig` next to `ko`, so check which one it is before you download it.
 
-### Find Each Track's vssId
+### Caption Track IDs (vssId)
 
-The app names a caption track by its `vssId`, and creating a video through the [server API](server-api.md#replace-or-create-a-video) needs the ids of its two tracks. yt-dlp doesn't print them, but each track's URL carries the parts an id is made from: `kind=asr` adds the `a.` prefix, `lang` is the language code, and `tlang` marks a machine translation of that track into another language.
+A `vssId` names a YouTube caption track, and a video's `vssId1` and `vssId2` name the tracks its rows were built from. A task that rewrites the rows, such as fix-asr, leaves them unchanged.
+
+Creating a video through the [server API](server-api.md#replace-or-create-a-video) needs both ids. yt-dlp doesn't print them, but each track's URL carries the parts an id is made from: `kind=asr` adds the `a.` prefix, `lang` is the language code, and `tlang` marks a machine translation of that track into another language.
 
 | URL parameters              | vssId       |
 | --------------------------- | ----------- |
