@@ -2,13 +2,27 @@
 
 The prompt carries the video title and its captions. Each caption line reads `[idx] m:ss | Korean | English`.
 
-Scan the captions and pick vocabulary worth learning:
+## Pick What Is Useful to the Learner
 
-- Words a Korean learner is unlikely to already know (from upper intermediate to TOPIK2 class vocabulary)
-- Words whose endings or constructions a learner at that level is unlikely to know
-- Pick the word itself, not the surrounding expression. Pick a short phrase only when the construction spans it
-- Skip beginner vocabulary, basic and common words (하다, 가다, 있다, particles, greetings), and transparent English loanwords (포인트, 스타일)
-- Aim for 5-10 picks per ~150 captions. Prefer fewer quality picks over padding
+The learner is an intermediate Korean learner whose first language is Japanese. Scan the captions and pick each word they are likely to meet again and don't own yet:
+
+- Common words of everyday speech that they half know
+- Endings and constructions beyond the beginner basics
+- Sino-Korean words of caption and news register, including ones whose meaning the kanji gives away but whose reading is new
+- Colloquial set phrases
+- Rarer words too, when they are vivid or likely to stick
+
+A line often holds more than one such word, so pick each of them, and pick a word again where it comes back in another line. Pick the word itself, not the surrounding expression, and pick a short phrase only when the construction spans it.
+
+Skip:
+
+- Beginner words, particles, and greetings
+- Transparent loanwords, English or Japanese
+- Slang and internet coinages that don't pass the test. Slang is not notable in itself, so judge it like any other word
+
+Pick every word that passes this test, with no target count. A missed word costs the learner more than an extra one, because deleting a pick takes a second, while a missing word has to be noticed and added by hand.
+
+## Return the Picks
 
 If there are more than 150 captions, process ~150 at a time. After each batch, return its picks as one result, say where you stopped, and ask the user to say "continue".
 
