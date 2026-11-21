@@ -46,7 +46,9 @@ function mergeLegacyIndexes(a: VideoIndexEntry[], b: VideoIndexEntry[]) {
 
 // Newer local change first, then the more recent sync.
 function compareEntries(a: VideoIndexEntry, b: VideoIndexEntry) {
-  if (a.updatedAt !== b.updatedAt) return a.updatedAt > b.updatedAt ? 1 : -1;
+  if (a.updatedAt !== b.updatedAt) {
+    return a.updatedAt > b.updatedAt ? 1 : -1;
+  }
   return (a.syncedAt ?? "") > (b.syncedAt ?? "") ? 1 : -1;
 }
 
@@ -55,19 +57,25 @@ function postToPage(message: BridgeMessage) {
 }
 
 window.addEventListener("message", async (e) => {
-  if (e.source !== window.parent || e.origin !== YOUTUBE_ORIGIN) return;
+  if (e.source !== window.parent || e.origin !== YOUTUBE_ORIGIN) {
+    return;
+  }
   const message = e.data as BridgeMessage;
   if (message?.type === "zamak-storage:hello") {
     postToPage({ type: "zamak-storage:ready" });
     return;
   }
-  if (message?.type !== "zamak-storage:request") return;
+  if (message?.type !== "zamak-storage:request") {
+    return;
+  }
   const { id, method, params } = message;
   const handler = Object.hasOwn(handlers, method)
     ? handlers[method]
     : undefined;
   try {
-    if (!handler) throw new Error(`Unknown storage method: ${method}`);
+    if (!handler) {
+      throw new Error(`Unknown storage method: ${method}`);
+    }
     const result = await handler(...params);
     postToPage({ type: "zamak-storage:response", id, result });
   } catch (err) {

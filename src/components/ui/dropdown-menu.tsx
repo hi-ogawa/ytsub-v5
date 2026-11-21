@@ -52,11 +52,15 @@ function DropdownMenuTrigger({
         onPointerDown?.(event);
         pointerTypeRef.current = event.pointerType;
         // Radix skips its toggle when the event is already default-prevented.
-        if (event.pointerType !== "mouse") event.preventDefault();
+        if (event.pointerType !== "mouse") {
+          event.preventDefault();
+        }
       }}
       onClick={(event) => {
         onClick?.(event);
-        if (pointerTypeRef.current !== "mouse") setOpen(!open);
+        if (pointerTypeRef.current !== "mouse") {
+          setOpen(!open);
+        }
       }}
       {...props}
     />

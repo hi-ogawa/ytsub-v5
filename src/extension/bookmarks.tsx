@@ -47,7 +47,9 @@ declare const __DEV_EXT__: boolean;
 const LEGACY_INDEX_KEY = "zamak:video-index";
 
 async function checkMigrationPending() {
-  if (await captionStorage.isLegacyImported("youtube")) return false;
+  if (await captionStorage.isLegacyImported("youtube")) {
+    return false;
+  }
   const legacyIndex =
     await chromeStorage.get<VideoIndexEntry[]>(LEGACY_INDEX_KEY);
   return !!legacyIndex?.length;
@@ -136,7 +138,9 @@ function ExtensionBookmarksPage() {
   const { refetch: refetchMigration } = migrationQuery;
   useEffect(() => {
     return captionStorage.subscribe((notice) => {
-      if (notice.type === "index") refetchMigration();
+      if (notice.type === "index") {
+        refetchMigration();
+      }
     });
   }, [refetchMigration]);
   const [showLogin, setShowLogin] = useState(false);

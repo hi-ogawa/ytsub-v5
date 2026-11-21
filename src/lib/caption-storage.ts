@@ -60,7 +60,9 @@ export function setCaptionStorage(storage: CaptionStorage) {
 
 function subscribeIndex(storage: CaptionStorage) {
   return storage.subscribe((notice) => {
-    if (notice.type === "index") videoIndexStore.set(notice.entries);
+    if (notice.type === "index") {
+      videoIndexStore.set(notice.entries);
+    }
   });
 }
 

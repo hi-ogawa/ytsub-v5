@@ -1,20 +1,24 @@
 import { defineConfig } from "vite-plus";
 
 export default defineConfig({
-  test: {
-    dir: "./src",
-  },
   fmt: {
     printWidth: 80,
-    experimentalSortPackageJson: true,
-    experimentalSortImports: {
+    sortImports: {
       newlinesBetween: false,
       partitionByNewline: true,
       groups: [["builtin"], ["external"]],
     },
     ignorePatterns: ["worker-configuration.d.ts", "scripts/**/*.json"],
   },
+  lint: {
+    categories: {
+      correctness: "off",
+    },
+    rules: {
+      curly: "error",
+    },
+  },
   staged: {
-    "*": "vp fmt --no-error-on-unmatched-pattern",
+    "*": "vp check --fix",
   },
 });

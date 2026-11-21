@@ -47,8 +47,12 @@ function listenWorldMessage(
     "message",
     (e) => {
       const message = e.data as WorldMessage | undefined;
-      if (e.source !== window) return;
-      if (message?.channel !== channel || message.kind !== kind) return;
+      if (e.source !== window) {
+        return;
+      }
+      if (message?.channel !== channel || message.kind !== kind) {
+        return;
+      }
       listener(message.data);
     },
     options,
@@ -97,10 +101,15 @@ export function createRuntimeRelayRpc<
         RPC_CHANNEL,
         "response",
         (response: RpcResponse) => {
-          if (response.id !== id) return;
+          if (response.id !== id) {
+            return;
+          }
           ac.abort();
-          if (response.error) reject(new Error(response.error));
-          else resolve(response.result);
+          if (response.error) {
+            reject(new Error(response.error));
+          } else {
+            resolve(response.result);
+          }
         },
         { signal: ac.signal },
       );
@@ -134,7 +143,9 @@ export function setupRpcRelay() {
 
 export function registerRpcHandlers(handlers: Record<string, Function>) {
   chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
-    if (msg?.type !== "zamak-rpc") return;
+    if (msg?.type !== "zamak-rpc") {
+      return;
+    }
     const { method, params } = msg as RpcRequest;
     const handler = handlers[method];
     if (!handler) {

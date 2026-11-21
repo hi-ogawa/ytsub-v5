@@ -137,17 +137,20 @@ function highlightText(
   onGoToBookmark: (bookmarkId: string) => void,
   onPopoverOpenChange: (open: boolean) => void,
 ) {
-  if (marks.length === 0) return <span data-offset={0}>{text}</span>;
+  if (marks.length === 0) {
+    return <span data-offset={0}>{text}</span>;
+  }
   const sorted = [...marks].sort((a, b) => a.offset - b.offset);
   const parts: React.ReactNode[] = [];
   let cursor = 0;
   for (const m of sorted) {
-    if (m.offset > cursor)
+    if (m.offset > cursor) {
       parts.push(
         <span key={`t${cursor}`} data-offset={cursor}>
           {text.slice(cursor, m.offset)}
         </span>,
       );
+    }
     const end = m.offset + m.length;
     if (m.bookmark) {
       parts.push(
@@ -175,12 +178,13 @@ function highlightText(
     }
     cursor = end;
   }
-  if (cursor < text.length)
+  if (cursor < text.length) {
     parts.push(
       <span key={`t${cursor}`} data-offset={cursor}>
         {text.slice(cursor)}
       </span>,
     );
+  }
   return <>{parts}</>;
 }
 
@@ -218,8 +222,11 @@ export function CaptionList({
       const bm = bookmarks[i];
       numberById.set(bm.id, i + 1);
       const list = byIndex.get(bm.captionIndex);
-      if (list) list.push(bm);
-      else byIndex.set(bm.captionIndex, [bm]);
+      if (list) {
+        list.push(bm);
+      } else {
+        byIndex.set(bm.captionIndex, [bm]);
+      }
     }
     return { bookmarksByIndex: byIndex, bookmarkNumberById: numberById };
   }, [bookmarks]);
@@ -259,18 +266,27 @@ export function CaptionList({
 
   // Auto-scroll with threshold + manual scroll pause
   useEffect(() => {
-    if (currentIndex === undefined || currentIndex === prevScrollIndex.current)
+    if (
+      currentIndex === undefined ||
+      currentIndex === prevScrollIndex.current
+    ) {
       return;
+    }
     prevScrollIndex.current = currentIndex;
 
-    if (!autoScroll || isManualScrollRef.current || isPopoverOpenRef.current)
+    if (!autoScroll || isManualScrollRef.current || isPopoverOpenRef.current) {
       return;
+    }
 
     const scrollEl = scrollRef.current;
-    if (!scrollEl) return;
+    if (!scrollEl) {
+      return;
+    }
 
     const el = scrollEl.querySelector(`[data-index="${currentIndex}"]`);
-    if (!el) return;
+    if (!el) {
+      return;
+    }
 
     // Only scroll if item is far from viewport center
     const { scrollTop, clientHeight } = scrollEl;
@@ -285,7 +301,9 @@ export function CaptionList({
   }, [currentIndex]);
 
   function onClickRow(index: number) {
-    if (!player) return;
+    if (!player) {
+      return;
+    }
     const root = scrollRef.current?.getRootNode();
     const sel =
       root && "getSelection" in root
@@ -293,7 +311,9 @@ export function CaptionList({
             root as unknown as { getSelection(): Selection | null }
           ).getSelection()
         : document.getSelection();
-    if (sel?.toString()) return;
+    if (sel?.toString()) {
+      return;
+    }
     isManualScrollRef.current = false;
     if (index === currentIndex) {
       isPlaying ? player.pauseVideo() : player.playVideo();

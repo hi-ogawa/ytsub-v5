@@ -118,7 +118,9 @@ function getPanelWidth(): number {
     const stored = localStorage.getItem(WIDTH_KEY);
     if (stored) {
       const n = Number(stored);
-      if (n >= MIN_WIDTH && n <= MAX_WIDTH) return n;
+      if (n >= MIN_WIDTH && n <= MAX_WIDTH) {
+        return n;
+      }
     }
   } catch {}
   return DEFAULT_WIDTH;
@@ -149,7 +151,9 @@ export function ResizablePanel({
     // A cross-origin iframe (the YouTube player) can take the pointer events
     // when the drag passes over it, even with pointer capture.
     const iframes = [...document.querySelectorAll("iframe")];
-    for (const iframe of iframes) iframe.style.pointerEvents = "none";
+    for (const iframe of iframes) {
+      iframe.style.pointerEvents = "none";
+    }
 
     const onPointerMove = (e: PointerEvent) => {
       // Dragging left = wider (panel is right-aligned)
@@ -162,7 +166,9 @@ export function ResizablePanel({
 
     const onPointerUp = () => {
       target.releasePointerCapture(e.pointerId);
-      for (const iframe of iframes) iframe.style.pointerEvents = "";
+      for (const iframe of iframes) {
+        iframe.style.pointerEvents = "";
+      }
       target.removeEventListener("pointermove", onPointerMove);
       target.removeEventListener("pointerup", onPointerUp);
       localStorage.setItem(WIDTH_KEY, String(widthRef.current));
@@ -222,7 +228,9 @@ function AiPromptCopy({
 
   function downloadPrompt(task: AiTask) {
     const text = getPrompt(task);
-    if (!text) return;
+    if (!text) {
+      return;
+    }
     const blob = new Blob([text], { type: "text/plain" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -290,7 +298,9 @@ function AiPromptCopy({
 
 function importAiResult(store: CaptionSessionManager): void {
   const raw = window.prompt("Paste AI result JSON");
-  if (!raw) return;
+  if (!raw) {
+    return;
+  }
   try {
     const result = parseAiResult(raw);
     switch (result.type) {
@@ -389,7 +399,9 @@ function SyncMenuItem({
           <DropdownMenuItem
             className="min-w-0 flex-1"
             onSelect={(e) => {
-              if (action.keepOpen) e.preventDefault();
+              if (action.keepOpen) {
+                e.preventDefault();
+              }
               action.run();
             }}
             {...testAttrs}
@@ -487,7 +499,9 @@ export function CaptionPanel(props: CaptionPanelProps) {
     queryKey: ["caption-session", youtubeId, reloadCount],
     queryFn: async () => {
       const session = await captionStorage.getSession(youtubeId);
-      if (!session) return null;
+      if (!session) {
+        return null;
+      }
       return new CaptionSessionManager({
         videoMeta: props.videoMeta,
         vssId1: session.vssId1,
@@ -899,32 +913,32 @@ function CaptionPanelContent({
 
   // --- Bookmark navigation ---
   function onPrevBookmark() {
-    if (!player || sortedBookmarks.length === 0) return;
-    const time = player.getCurrentTime();
-    for (let i = sortedBookmarks.length - 1; i >= 0; i--) {
-      if (sortedBookmarks[i].timestamp < time - 1) {
-        player.seekTo(sortedBookmarks[i].timestamp);
-        return;
-      }
+    if (!player || sortedBookmarks.length === 0) {
+      return;
     }
-    const last = sortedBookmarks[sortedBookmarks.length - 1];
-    player.seekTo(last.timestamp);
+    const time = player.getCurrentTime();
+    const prev = sortedBookmarks.findLast((bm) => bm.timestamp < time - 1);
+    goToBookmarkCaption(prev ?? sortedBookmarks[sortedBookmarks.length - 1]);
   }
 
   function onNextBookmark() {
-    if (!player || sortedBookmarks.length === 0) return;
-    const time = player.getCurrentTime();
-    for (const bm of sortedBookmarks) {
-      if (bm.timestamp > time + 0.5) {
-        player.seekTo(bm.timestamp);
-        return;
-      }
+    if (!player || sortedBookmarks.length === 0) {
+      return;
     }
-    player.seekTo(sortedBookmarks[0].timestamp);
+    const time = player.getCurrentTime();
+    const next = sortedBookmarks.find((bm) => bm.timestamp > time + 0.5);
+    goToBookmarkCaption(next ?? sortedBookmarks[0]);
+  }
+
+  function goToBookmarkCaption(bookmark: ExtensionBookmark) {
+    player?.seekTo(bookmark.timestamp);
+    // The playback loop only follows the player while it plays, so a paused
+    // seek would otherwise leave the list on the old caption.
+    captionListRef.current?.showCaption(bookmark.captionIndex);
   }
 
   // --- Cross-tab navigation ---
-  const captionListRef = useRef<CaptionListHandle>(null);
+  const captionListRef = useRef<CaptionViewerHandle>(null);
   const bookmarksListRef = useRef<BookmarksListHandle>(null);
 
   function onGoToCaption(captionIndex: number) {
@@ -974,10 +988,14 @@ function CaptionPanelContent({
   }, [getSelection]);
 
   function onClickBookmark() {
-    if (!bookmarkSelection) return;
+    if (!bookmarkSelection) {
+      return;
+    }
     const rows = store.rows;
     const row = rows[bookmarkSelection.captionIndex];
-    if (!row) return;
+    if (!row) {
+      return;
+    }
     setIsCreating(true);
     store.createBookmarks([
       {
@@ -1161,7 +1179,9 @@ function ExtensionBookmarksList({
             data-bookmark-id={bm.id}
             className="flex cursor-pointer flex-col gap-1 border border-border p-2 hover:bg-muted"
             onClick={() => {
-              if (!player) return;
+              if (!player) {
+                return;
+              }
               player.seekTo(bm.timestamp);
               player.playVideo();
             }}
@@ -1253,6 +1273,10 @@ function ExtensionBookmarksList({
 
 // --- CaptionViewer: playback-synced caption list ---
 
+type CaptionViewerHandle = CaptionListHandle & {
+  showCaption: (index: number) => void;
+};
+
 function CaptionViewer({
   ref,
   rows,
@@ -1262,7 +1286,7 @@ function CaptionViewer({
   onGoToBookmark,
   onPopoverOpenChange,
 }: {
-  ref: React.Ref<CaptionListHandle>;
+  ref: React.Ref<CaptionViewerHandle>;
   rows: MergedCaption[];
   player?: YTPlayer;
   autoScroll: boolean;
@@ -1272,9 +1296,20 @@ function CaptionViewer({
 }) {
   const [currentIndex, setCurrentIndex] = useState<number>();
   const [isPlaying, setIsPlaying] = useState(false);
+  const listRef = useRef<CaptionListHandle>(null);
+
+  useImperativeHandle(ref, () => ({
+    scrollToIndex: (index) => listRef.current?.scrollToIndex(index),
+    showCaption: (index) => {
+      setCurrentIndex(index);
+      listRef.current?.scrollToIndex(index);
+    },
+  }));
 
   useEffect(() => {
-    if (!player || rows.length === 0) return;
+    if (!player || rows.length === 0) {
+      return;
+    }
     let rafId: number;
 
     const loop = () => {
@@ -1297,7 +1332,7 @@ function CaptionViewer({
 
   return (
     <CaptionList
-      ref={ref}
+      ref={listRef}
       rows={rows}
       currentIndex={currentIndex}
       isPlaying={isPlaying}

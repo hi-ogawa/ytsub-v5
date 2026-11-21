@@ -50,10 +50,16 @@ export function createBridgeStorage(): CaptionStorage {
   function connect() {
     connection ??= waitForFrame().then((conn) => {
       window.addEventListener("message", (e) => {
-        if (e.source !== conn.frame || e.origin !== conn.origin) return;
+        if (e.source !== conn.frame || e.origin !== conn.origin) {
+          return;
+        }
         const message = e.data as BridgeMessage;
-        if (message?.type !== "zamak-storage:notice") return;
-        for (const l of listeners) l(message.notice, message.own);
+        if (message?.type !== "zamak-storage:notice") {
+          return;
+        }
+        for (const l of listeners) {
+          l(message.notice, message.own);
+        }
       });
       return conn;
     });
@@ -72,14 +78,23 @@ export function createBridgeStorage(): CaptionStorage {
       window.addEventListener(
         "message",
         (e) => {
-          if (e.source !== frame || e.origin !== origin) return;
+          if (e.source !== frame || e.origin !== origin) {
+            return;
+          }
           const message = e.data as BridgeMessage;
-          if (message?.type !== "zamak-storage:response") return;
-          if (message.id !== id) return;
+          if (message?.type !== "zamak-storage:response") {
+            return;
+          }
+          if (message.id !== id) {
+            return;
+          }
           clearTimeout(timer);
           ac.abort();
-          if (message.error) reject(new Error(message.error));
-          else resolve(message.result);
+          if (message.error) {
+            reject(new Error(message.error));
+          } else {
+            resolve(message.result);
+          }
         },
         { signal: ac.signal },
       );
@@ -129,8 +144,12 @@ function waitForFrame(): Promise<Connection> {
       "message",
       (e) => {
         const message = e.data as BridgeMessage;
-        if (message?.type !== "zamak-storage:ready") return;
-        if (!e.origin.startsWith("chrome-extension://")) return;
+        if (message?.type !== "zamak-storage:ready") {
+          return;
+        }
+        if (!e.origin.startsWith("chrome-extension://")) {
+          return;
+        }
         const frame = document.getElementById(STORAGE_FRAME_ID);
         if (
           !(frame instanceof HTMLIFrameElement) ||

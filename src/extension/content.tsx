@@ -62,7 +62,9 @@ console.log(`[zamak] build: ${__BUILD_TIME__} (${__GIT_REV__})`);
 // Adapter: wrap the page's <video> element as YTPlayer
 function getVideoPlayer(): YTPlayer | undefined {
   const video = document.querySelector("video");
-  if (!video) return undefined;
+  if (!video) {
+    return undefined;
+  }
   return {
     playVideo: () => void video.play(),
     pauseVideo: () => video.pause(),
@@ -105,8 +107,12 @@ function getUserLangs(): string[] {
     const pref = localStorage.getItem("zamak:preferred-langs");
     if (pref) {
       const { lang1, lang2 } = JSON.parse(pref);
-      if (lang1 && !langs.includes(lang1)) langs.push(lang1);
-      if (lang2 && !langs.includes(lang2)) langs.push(lang2);
+      if (lang1 && !langs.includes(lang1)) {
+        langs.push(lang1);
+      }
+      if (lang2 && !langs.includes(lang2)) {
+        langs.push(lang2);
+      }
     }
   } catch {}
   return langs;
@@ -188,10 +194,18 @@ function useExtensionSync(youtubeId: string): SyncStatus {
   });
 
   const getState = (): SyncState => {
-    if (syncMutation.isPending) return "syncing";
-    if (serverQuery.isPending) return "checking";
-    if (serverQuery.isError) return "error";
-    if (!serverQuery.data.authenticated) return "unauthenticated";
+    if (syncMutation.isPending) {
+      return "syncing";
+    }
+    if (serverQuery.isPending) {
+      return "checking";
+    }
+    if (serverQuery.isError) {
+      return "error";
+    }
+    if (!serverQuery.data.authenticated) {
+      return "unauthenticated";
+    }
     const localEntry = videoIndex.find((e) => e.youtubeId === youtubeId);
     return computeSyncState({
       localUpdatedAt: localEntry?.updatedAt,
@@ -294,10 +308,14 @@ function applyTheme(host: HTMLElement, container: HTMLElement) {
 let themeObserver: MutationObserver | undefined;
 
 function inject() {
-  if (document.getElementById("zamak-host")) return;
+  if (document.getElementById("zamak-host")) {
+    return;
+  }
 
   const videoId = getVideoId();
-  if (!videoId) return;
+  if (!videoId) {
+    return;
+  }
 
   prepareStorage().catch(() => {});
 
@@ -352,11 +370,15 @@ function remove() {
 
 // YouTube SPA navigation
 function init() {
-  if (isWatchPage()) inject();
+  if (isWatchPage()) {
+    inject();
+  }
 
   document.addEventListener("yt-navigate-start", remove);
   document.addEventListener("yt-navigate-finish", () => {
-    if (isWatchPage()) inject();
+    if (isWatchPage()) {
+      inject();
+    }
   });
 }
 

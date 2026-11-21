@@ -22,14 +22,18 @@ function getChannel() {
   if (!channel) {
     channel = new BroadcastChannel(CHANNEL_NAME);
     channel.addEventListener("message", (e: MessageEvent<StorageNotice>) => {
-      for (const l of listeners) l(e.data, false);
+      for (const l of listeners) {
+        l(e.data, false);
+      }
     });
   }
   return channel;
 }
 
 function notify(notice: StorageNotice) {
-  for (const l of listeners) l(notice, true);
+  for (const l of listeners) {
+    l(notice, true);
+  }
   getChannel().postMessage(notice);
 }
 
@@ -68,7 +72,9 @@ export const idbCaptionStorage: CaptionStorage = {
       },
     );
     notify({ type: "session-saved", youtubeId: session.youtubeId });
-    if (entries) notify({ type: "index", entries });
+    if (entries) {
+      notify({ type: "index", entries });
+    }
   },
 
   async deleteVideo(youtubeId) {
@@ -119,7 +125,9 @@ export const idbCaptionStorage: CaptionStorage = {
       async (tx) => {
         const meta = tx.objectStore(META);
         const marker = await requestResult(meta.get(importMarkerKey(source)));
-        if (marker !== undefined) return undefined;
+        if (marker !== undefined) {
+          return undefined;
+        }
 
         const index = tx.objectStore(INDEX);
         const sessions = tx.objectStore(SESSIONS);
@@ -138,13 +146,17 @@ export const idbCaptionStorage: CaptionStorage = {
             winners.has(session.youtubeId) ||
             (await requestResult(sessions.getKey(session.youtubeId))) ===
               undefined;
-          if (keep) sessions.put(session);
+          if (keep) {
+            sessions.put(session);
+          }
         }
         meta.put(new Date().toISOString(), importMarkerKey(source));
         return await requestResult<VideoIndexEntry[]>(index.getAll());
       },
     );
-    if (entries) notify({ type: "index", entries });
+    if (entries) {
+      notify({ type: "index", entries });
+    }
   },
 
   async isLegacyImported(source) {

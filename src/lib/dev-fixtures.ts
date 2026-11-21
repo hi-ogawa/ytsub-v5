@@ -21,11 +21,15 @@ export async function bootstrapFixtures() {
     const tracks = meta.captionTracks;
     const track1 = pickBestTrack(tracks, "ko");
     const track2 = pickBestTrack(tracks, "en");
-    if (!track1 || !track2) continue;
+    if (!track1 || !track2) {
+      continue;
+    }
 
     const loader1 = fixtureTracks[`${dir}/track-${track1.vssId}.json`];
     const loader2 = fixtureTracks[`${dir}/track-${track2.vssId}.json`];
-    if (!loader1 || !loader2) continue;
+    if (!loader1 || !loader2) {
+      continue;
+    }
 
     const [mod1, mod2] = await Promise.all([loader1(), loader2()]);
     const { strategy, captions } = mergeCaptions(

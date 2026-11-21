@@ -2,14 +2,14 @@
 
 ## Quick Reference
 
-| Command                 | When                                                      |
-| ----------------------- | --------------------------------------------------------- |
-| `pnpm tsc && pnpm lint` | After changes (`pnpm lint` formats .ts, .tsx, .md, .json) |
-| `pnpm build`            | Verify the build                                          |
-| `pnpm test`             | Unit tests (src/, vitest)                                 |
-| `pnpm test-e2e`         | Web app and extension e2e tests against a build           |
-| `pnpm build-ext`        | Build the Chrome extension                                |
-| `pnpm test-youtube`     | Subtitle extraction tests against real YouTube pages      |
+| Command                 | When                                                                          |
+| ----------------------- | ----------------------------------------------------------------------------- |
+| `pnpm tsc && pnpm lint` | After changes (`pnpm lint` formats .ts, .tsx, .md, .json and lints .ts, .tsx) |
+| `pnpm build`            | Verify the build                                                              |
+| `pnpm test`             | Unit tests (src/, vitest)                                                     |
+| `pnpm test-e2e`         | Web app and extension e2e tests against a build                               |
+| `pnpm build-ext`        | Build the Chrome extension                                                    |
+| `pnpm test-youtube`     | Subtitle extraction tests against real YouTube pages                          |
 
 ## Key Docs
 

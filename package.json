@@ -14,10 +14,10 @@
     "build-full": "pnpm build && pnpm build-ext",
     "generate-extension-key": "node scripts/generate-extension-key.ts",
     "tsc": "tsc -b",
-    "lint": "vp fmt && pnpm lint-dead-code",
-    "lint-check": "vp fmt --check && pnpm lint-dead-code",
+    "lint": "vp check --fix && pnpm lint-dead-code",
+    "lint-check": "vp check && pnpm lint-dead-code",
     "lint-dead-code": "fallow dead-code --unused-exports --unused-types",
-    "test": "vp test",
+    "test": "vitest",
     "test-e2e": "pnpm build-ext && playwright test",
     "test-e2e-trace": "E2E_TRACE=1 pnpm test-e2e",
     "test-youtube": "playwright test --config playwright.youtube.config.ts",
@@ -46,24 +46,29 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@cloudflare/vite-plugin": "1.70.0",
+    "@cloudflare/vite-plugin": "1.70.1",
     "@cloudflare/workers-types": "^4.20260317.1",
     "@hiogawa/playwright-trace-pack": "https://pkg.pr.new/hi-ogawa/playwright-trace-pack/@hiogawa/playwright-trace-pack@df95343",
     "@playwright/test": "^1.65.0",
-    "@tailwindcss/vite": "^4.2.2",
+    "@tailwindcss/vite": "^4.3.5",
     "@types/chrome": "^0.1.38",
     "@types/node": "^25.5.0",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
-    "@vitejs/plugin-react": "6.0.1",
+    "@vitejs/plugin-react": "6.3.0",
     "fallow": "^3.41.0",
     "sharp": "^0.34.5",
-    "tailwindcss": "^4.2.2",
+    "tailwindcss": "^4.3.5",
     "typescript": "^6.0.2",
-    "vite": "^8.0.1",
-    "vite-plus": "latest",
-    "vitest": "npm:@voidzero-dev/vite-plus-test@^0.1.13",
+    "vite": "^8.3.8",
+    "vite-plus": "^1.7.0",
+    "vitest": "5.1.0",
     "wrangler": "4.164.0"
   },
-  "packageManager": "pnpm@10.32.1+sha512.a706938f0e89ac1456b6563eab4edf1d1faf3368d1191fc5c59790e96dc918e4456ab2e67d613de1043d2e8c81f87303e6b40d4ffeca9df15ef1ad567348f2be"
+  "packageManager": "pnpm@10.32.1+sha512.a706938f0e89ac1456b6563eab4edf1d1faf3368d1191fc5c59790e96dc918e4456ab2e67d613de1043d2e8c81f87303e6b40d4ffeca9df15ef1ad567348f2be",
+  "pnpm": {
+    "overrides": {
+      "vitest": "$vitest"
+    }
+  }
 }

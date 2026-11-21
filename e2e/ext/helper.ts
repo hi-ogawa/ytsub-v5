@@ -75,7 +75,9 @@ export async function seedChromeStorage(
   data: Record<string, unknown>,
 ) {
   let [sw] = context.serviceWorkers();
-  if (!sw) sw = await context.waitForEvent("serviceworker");
+  if (!sw) {
+    sw = await context.waitForEvent("serviceworker");
+  }
   await sw.evaluate((items) => chrome.storage.local.set(items), data);
 }
 
@@ -92,7 +94,9 @@ export async function seedVideoIndex(page: Page, entries: object[]) {
     });
     await new Promise<void>((resolve, reject) => {
       const tx = db.transaction("video-index", "readwrite");
-      for (const entry of entries) tx.objectStore("video-index").put(entry);
+      for (const entry of entries) {
+        tx.objectStore("video-index").put(entry);
+      }
       tx.oncomplete = () => resolve();
       tx.onerror = () => reject(tx.error);
     });

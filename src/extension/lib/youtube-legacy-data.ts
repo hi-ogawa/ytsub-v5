@@ -21,7 +21,9 @@ export async function readYouTubeLegacyData(): Promise<LegacyData> {
 async function readSessions(): Promise<PersistedCaptionSession[]> {
   // Opening a database that doesn't exist would create an empty one.
   const databases = await indexedDB.databases();
-  if (!databases.some((d) => d.name === DB_NAME)) return [];
+  if (!databases.some((d) => d.name === DB_NAME)) {
+    return [];
+  }
 
   const db = await new Promise<IDBDatabase>((resolve, reject) => {
     const req = indexedDB.open(DB_NAME);
@@ -29,7 +31,9 @@ async function readSessions(): Promise<PersistedCaptionSession[]> {
     req.onerror = () => reject(req.error);
   });
   try {
-    if (!db.objectStoreNames.contains(SESSIONS)) return [];
+    if (!db.objectStoreNames.contains(SESSIONS)) {
+      return [];
+    }
     return await new Promise((resolve, reject) => {
       const req = db
         .transaction(SESSIONS, "readonly")

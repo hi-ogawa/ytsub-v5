@@ -48,18 +48,24 @@ export function computeSyncState(params: {
     params;
 
   // No local entry
-  if (!localUpdatedAt) return serverUpdatedAt ? "pull" : "empty";
+  if (!localUpdatedAt) {
+    return serverUpdatedAt ? "pull" : "empty";
+  }
 
   // syncedAt without localUpdatedAt is structurally impossible (syncedAt lives on VideoIndexEntry)
   // but handled above. syncedAt without serverUpdatedAt is degenerate (server data deleted).
 
   if (!syncedAt) {
-    if (!serverUpdatedAt) return "push";
+    if (!serverUpdatedAt) {
+      return "push";
+    }
     return "conflict";
   }
 
   // Server data gone after a previous sync — need to re-push
-  if (!serverUpdatedAt) return "push";
+  if (!serverUpdatedAt) {
+    return "push";
+  }
 
   // Each comparison stays within one clock, because the client and server
   // clocks can disagree. Entries synced before syncedServerUpdatedAt existed
@@ -67,9 +73,15 @@ export function computeSyncState(params: {
   const localChanged = localUpdatedAt > syncedAt;
   const serverChanged = serverUpdatedAt > (syncedServerUpdatedAt ?? syncedAt);
 
-  if (!localChanged && !serverChanged) return "synced";
-  if (localChanged && !serverChanged) return "push";
-  if (!localChanged && serverChanged) return "pull";
+  if (!localChanged && !serverChanged) {
+    return "synced";
+  }
+  if (localChanged && !serverChanged) {
+    return "push";
+  }
+  if (!localChanged && serverChanged) {
+    return "pull";
+  }
   return "conflict";
 }
 
@@ -113,7 +125,9 @@ export function useSyncState({
         await captionStorage.setSyncedAt(youtubeId, result.updatedAt);
       } else {
         const data = await orpc.videos.getFullSession.call({ youtubeId });
-        if (!data) throw new Error("Video not found on server");
+        if (!data) {
+          throw new Error("Video not found on server");
+        }
         const session = serverSessionToLocal(data);
         // replace() bumps the index entry's updatedAt, so setSyncedAt must follow it.
         await action.store.replace({
@@ -129,11 +143,21 @@ export function useSyncState({
   });
 
   const getState = (): SyncState => {
-    if (syncMutation.isPending) return "syncing";
-    if (authQuery.isFetching) return "checking";
-    if (!authenticated) return "unauthenticated";
-    if (serverQuery.isLoading) return "checking";
-    if (serverQuery.isError) return "error";
+    if (syncMutation.isPending) {
+      return "syncing";
+    }
+    if (authQuery.isFetching) {
+      return "checking";
+    }
+    if (!authenticated) {
+      return "unauthenticated";
+    }
+    if (serverQuery.isLoading) {
+      return "checking";
+    }
+    if (serverQuery.isError) {
+      return "error";
+    }
     const localEntry = videoIndex.find((e) => e.youtubeId === youtubeId);
     return computeSyncState({
       localUpdatedAt: localEntry?.updatedAt,
@@ -152,7 +176,9 @@ export function useSyncState({
       : undefined,
     onNavigate,
     onRefresh: () => {
-      if (authenticated) serverQuery.refetch({ cancelRefetch: false });
+      if (authenticated) {
+        serverQuery.refetch({ cancelRefetch: false });
+      }
     },
     onPush: (store) => syncMutation.mutate({ direction: "push", store }),
     onPull: (store) => syncMutation.mutate({ direction: "pull", store }),
@@ -242,7 +268,9 @@ export function useVideoSync() {
   const onPush = async (youtubeId: string) => {
     await withSyncing(youtubeId, async () => {
       const session = await captionStorage.getSession(youtubeId);
-      if (!session) throw new Error("No local session found");
+      if (!session) {
+        throw new Error("No local session found");
+      }
       const result = await orpc.videos.importVideo.call(
         sessionToExportData(session),
       );
@@ -253,7 +281,9 @@ export function useVideoSync() {
   const onPull = async (youtubeId: string) => {
     await withSyncing(youtubeId, async () => {
       const data = await orpc.videos.getFullSession.call({ youtubeId });
-      if (!data) throw new Error("Video not found on server");
+      if (!data) {
+        throw new Error("Video not found on server");
+      }
       await captionStorage.saveSession(serverSessionToLocal(data), {
         forceIndex: true,
       });

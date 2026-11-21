@@ -15,7 +15,9 @@ export function createAppQueryClient(
           { toastOnError?: boolean } | undefined
         >(true);
 
-        if (mutation.meta?.toastOnError === false) return;
+        if (mutation.meta?.toastOnError === false) {
+          return;
+        }
         toast.error(error.message || "Something went wrong");
       },
     }),

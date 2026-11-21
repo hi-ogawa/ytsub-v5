@@ -4,7 +4,9 @@ import { fixtureMetadata } from "../lib/dev-fixtures.ts";
 const fixtures = Object.values(fixtureMetadata);
 
 function formatDuration(seconds: number): string {
-  if (seconds <= 0) return "—";
+  if (seconds <= 0) {
+    return "—";
+  }
   const m = Math.floor(seconds / 60);
   const s = seconds % 60;
   return `${m}:${String(s).padStart(2, "0")}`;
