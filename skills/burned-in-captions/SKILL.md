@@ -1,6 +1,6 @@
 ---
 name: burned-in-captions
-description: Read the captions burned into a video's picture into a timed caption track. Use when a task needs a video's on-screen captions, such as Fix & Align ASR in the Zamak skill for a Korean video with burned-in captions (자막).
+description: Read the captions burned into a video's picture into a timed caption track. Use when the user asks to read a video's burned-in captions (자막), such as for Fix & Align ASR in the Zamak skill.
 ---
 
 # Burned-In Captions

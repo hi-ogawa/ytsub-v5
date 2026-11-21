@@ -8,7 +8,7 @@ The prompt carries:
 - the tracks the app sees, each with its `vssId`, language, source (manual, ASR, or translated), and whether it is the current `text1` or `text2`. The app's list can miss official tracks, so check `yt-dlp --list-subs` too.
 - the existing bookmarks. `captionIndex` points into the current rows, and `context` is the current row text, which shows where each word was before your changes. `side` is 0 for a Korean word and 1 for an English one.
 
-Follow [Generate import.json](generate-import-json.md). Run "Fetch and Assess" to get the tracks, then produce `captions.json` as Scenario B describes. For a song with official lyrics, follow Scenario F instead. When the picture has burned-in Korean captions, read them too, as [Burned-In Captions](#burned-in-captions) describes. Instead of picking bookmarks, re-anchor the existing bookmarks to your new rows, as "Re-anchor Existing Bookmarks" describes, and keep each bookmark's `id` in `bookmarks.json`. Skip "Assemble import.json".
+Follow [Generate import.json](generate-import-json.md). Run "Fetch and Assess" to get the tracks, then produce `captions.json` as Scenario B describes. For a song with official lyrics, follow Scenario F instead. When the user asks to use the captions burned into the picture, read them too, as [Burned-In Captions](#burned-in-captions) describes. Instead of picking bookmarks, re-anchor the existing bookmarks to your new rows, as "Re-anchor Existing Bookmarks" describes, and keep each bookmark's `id` in `bookmarks.json`. Skip "Assemble import.json".
 
 ```json
 {
@@ -37,7 +37,7 @@ The app replaces all caption rows with yours, moves each existing bookmark to it
 
 ## Burned-In Captions
 
-Many Korean videos with only ASR burn captions into the picture. Read them with the [burned-in captions skill](../../burned-in-captions/SKILL.md), which also needs `ffmpeg` and `uv`, and use the track as one more source, or on some shows as the Korean text itself.
+Many Korean videos with only ASR burn captions into the picture. When the user asks for it, read them with the [burned-in captions skill](../../burned-in-captions/SKILL.md), which also needs `ffmpeg` and `uv`, and use the track as one more source, or on some shows as the Korean text itself. Don't read them on your own, because a run reads many frames with vision and costs far more than the rest of the task.
 
 1. **Read the captions.** After Fetch and Assess, run the burned-in captions skill with the video and its ASR. The ASR helps it plan reads and find misses, and its readers keep the caption's text wherever it differs from the ASR.
 2. **Decide how to use them.** Measure the share of ASR lines that a caption matches in time and text, or take it from the channel record, if one is available.
