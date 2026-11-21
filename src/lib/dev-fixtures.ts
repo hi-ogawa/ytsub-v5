@@ -1,6 +1,5 @@
 import { mergeCaptions } from "./caption-merge.ts";
-import { saveSession } from "./caption-session-db.ts";
-import { updateVideoIndex } from "./video-index.ts";
+import { captionStorage } from "./caption-storage.ts";
 import {
   type Json3File,
   type YouTubeExtractionResult,
@@ -34,26 +33,22 @@ export async function bootstrapFixtures() {
       { json3: mod2.default, vssId: track2.vssId },
     );
 
-    await saveSession({
-      youtubeId: meta.video.youtubeId,
-      title: meta.video.title,
-      channelName: meta.video.channelName,
-      channelId: meta.video.channelId,
-      duration: meta.video.duration,
-      vssId1: track1.vssId,
-      vssId2: track2.vssId,
-      language1: track1.languageCode,
-      language2: track2.languageCode,
-      strategy,
-      captions,
-      bookmarks: [],
-    });
-
-    updateVideoIndex(
-      meta.video.youtubeId,
-      meta.video.title,
-      meta.video.channelName,
-      0,
+    await captionStorage.saveSession(
+      {
+        youtubeId: meta.video.youtubeId,
+        title: meta.video.title,
+        channelName: meta.video.channelName,
+        channelId: meta.video.channelId,
+        duration: meta.video.duration,
+        vssId1: track1.vssId,
+        vssId2: track2.vssId,
+        language1: track1.languageCode,
+        language2: track2.languageCode,
+        strategy,
+        captions,
+        bookmarks: [],
+      },
+      { forceIndex: true },
     );
   }
 }

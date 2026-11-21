@@ -5,21 +5,15 @@ import { toast } from "sonner";
 import { orpc } from "../rpc.ts";
 import type { Router } from "../server/rpc.ts";
 import {
-  type PersistedCaptionSession,
-  getSession,
-  saveSession,
-} from "./caption-session-db.ts";
-import {
   type CaptionSessionManager,
   sessionToExportData,
 } from "./caption-session.ts";
-import { useStore } from "./external-store.ts";
 import {
-  type VideoIndexEntry,
-  setSyncedAt,
-  updateVideoIndex,
-  videoIndexStore,
-} from "./video-index.ts";
+  type PersistedCaptionSession,
+  captionStorage,
+} from "./caption-storage.ts";
+import { useStore } from "./external-store.ts";
+import { type VideoIndexEntry, videoIndexStore } from "./video-index.ts";
 
 type ListVideosOutput = InferRouterOutputs<Router>["videos"]["listVideos"];
 type GetFullSessionOutput = NonNullable<
@@ -116,7 +110,7 @@ export function useSyncState({
         const result = await orpc.videos.importVideo.call(
           action.store.toExportData(),
         );
-        setSyncedAt(youtubeId, result.updatedAt);
+        await captionStorage.setSyncedAt(youtubeId, result.updatedAt);
       } else {
         const data = await orpc.videos.getFullSession.call({ youtubeId });
         if (!data) throw new Error("Video not found on server");
@@ -128,7 +122,7 @@ export function useSyncState({
           captions: session.captions,
           bookmarks: session.bookmarks,
         });
-        setSyncedAt(youtubeId, data.video.updatedAt);
+        await captionStorage.setSyncedAt(youtubeId, data.video.updatedAt);
       }
     },
     onSuccess: () => serverQuery.refetch(),
@@ -214,37 +208,7 @@ function mergeVideoEntries(
 
 export type VideoSyncHandle = ReturnType<typeof useVideoSync>;
 
-// Both resolve with the server's updatedAt after the push or pull.
-export interface VideoSyncActions {
-  pushSession(youtubeId: string): Promise<{ serverUpdatedAt: string }>;
-  pullSession(youtubeId: string): Promise<{ serverUpdatedAt: string }>;
-}
-
-const defaultSyncActions: VideoSyncActions = {
-  async pushSession(youtubeId) {
-    const session = await getSession(youtubeId);
-    if (!session) throw new Error("No local session found");
-    const result = await orpc.videos.importVideo.call(
-      sessionToExportData(session),
-    );
-    return { serverUpdatedAt: result.updatedAt };
-  },
-  async pullSession(youtubeId) {
-    const data = await orpc.videos.getFullSession.call({ youtubeId });
-    if (!data) throw new Error("Video not found on server");
-    const session = serverSessionToLocal(data);
-    await saveSession(session);
-    updateVideoIndex(
-      session.youtubeId,
-      session.title,
-      session.channelName,
-      session.bookmarks.length,
-    );
-    return { serverUpdatedAt: data.video.updatedAt };
-  },
-};
-
-export function useVideoSync(actions: VideoSyncActions = defaultSyncActions) {
+export function useVideoSync() {
   const [videoIndex] = useStore(videoIndexStore);
 
   const authQuery = useQuery(orpc.auth.check.queryOptions());
@@ -277,15 +241,23 @@ export function useVideoSync(actions: VideoSyncActions = defaultSyncActions) {
 
   const onPush = async (youtubeId: string) => {
     await withSyncing(youtubeId, async () => {
-      const { serverUpdatedAt } = await actions.pushSession(youtubeId);
-      setSyncedAt(youtubeId, serverUpdatedAt);
+      const session = await captionStorage.getSession(youtubeId);
+      if (!session) throw new Error("No local session found");
+      const result = await orpc.videos.importVideo.call(
+        sessionToExportData(session),
+      );
+      await captionStorage.setSyncedAt(youtubeId, result.updatedAt);
     });
   };
 
   const onPull = async (youtubeId: string) => {
     await withSyncing(youtubeId, async () => {
-      const { serverUpdatedAt } = await actions.pullSession(youtubeId);
-      setSyncedAt(youtubeId, serverUpdatedAt);
+      const data = await orpc.videos.getFullSession.call({ youtubeId });
+      if (!data) throw new Error("Video not found on server");
+      await captionStorage.saveSession(serverSessionToLocal(data), {
+        forceIndex: true,
+      });
+      await captionStorage.setSyncedAt(youtubeId, data.video.updatedAt);
     });
   };
 

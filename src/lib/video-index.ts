@@ -1,4 +1,4 @@
-import { createLocalStorageStore } from "./external-store.ts";
+import { createExternalStore } from "./external-store.ts";
 
 export type VideoIndexEntry = {
   youtubeId: string;
@@ -12,54 +12,5 @@ export type VideoIndexEntry = {
   syncedServerUpdatedAt?: string;
 };
 
-const VIDEO_INDEX_KEY = "zamak:video-index";
-
-export const videoIndexStore = createLocalStorageStore<VideoIndexEntry[]>(
-  VIDEO_INDEX_KEY,
-  [],
-);
-
-export function updateVideoIndex(
-  youtubeId: string,
-  title: string,
-  channelName: string,
-  bookmarkCount: number,
-) {
-  videoIndexStore.set((entries) => {
-    const idx = entries.findIndex((e) => e.youtubeId === youtubeId);
-    const existing = idx >= 0 ? entries[idx] : undefined;
-    const entry: VideoIndexEntry = {
-      youtubeId,
-      title,
-      channelName,
-      bookmarkCount,
-      updatedAt: new Date().toISOString(),
-      syncedAt: existing?.syncedAt,
-      syncedServerUpdatedAt: existing?.syncedServerUpdatedAt,
-    };
-    const next = [...entries];
-    if (idx >= 0) next[idx] = entry;
-    else next.push(entry);
-    return next;
-  });
-}
-
-export function removeFromVideoIndex(youtubeId: string) {
-  videoIndexStore.set((entries) =>
-    entries.filter((e) => e.youtubeId !== youtubeId),
-  );
-}
-
-export function setSyncedAt(youtubeId: string, serverUpdatedAt: string) {
-  videoIndexStore.set((entries) =>
-    entries.map((e) =>
-      e.youtubeId === youtubeId
-        ? {
-            ...e,
-            syncedAt: new Date().toISOString(),
-            syncedServerUpdatedAt: serverUpdatedAt,
-          }
-        : e,
-    ),
-  );
-}
+// In-memory copy of the stored index, kept current by caption-storage.ts.
+export const videoIndexStore = createExternalStore<VideoIndexEntry[]>([]);

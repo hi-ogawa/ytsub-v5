@@ -14,38 +14,46 @@ import {
 } from "../components/caption-panel.tsx";
 import { PortalContainerProvider } from "../components/ui/portal-container.tsx";
 import type { YTPlayer } from "../components/youtube-player.tsx";
-import { getSession, saveSession } from "../lib/caption-session-db.ts";
-import type { PersistedCaptionSession } from "../lib/caption-session-db.ts";
 import type { CaptionSessionManager } from "../lib/caption-session.ts";
+import {
+  captionStorage,
+  loadVideoIndex,
+  setCaptionStorage,
+} from "../lib/caption-storage.ts";
 import { useStore } from "../lib/external-store.ts";
 import {
   type SyncState,
   type SyncStatus,
   computeSyncState,
 } from "../lib/sync.ts";
-import { setSyncedAt, videoIndexStore } from "../lib/video-index.ts";
+import { videoIndexStore } from "../lib/video-index.ts";
 import type { YouTubeExtractionResult } from "../lib/youtube.ts";
 import { fetchPlayerApi, fetchTrackJson3 } from "../lib/youtube.ts";
 import type { bgRpcHandlers } from "./background.ts";
 import contentCss from "./content.css?inline";
-import {
-  createRuntimeRelayRpc,
-  registerTabRpcHandlers,
-} from "./lib/extension-rpc.ts";
+import { createRuntimeRelayRpc } from "./lib/extension-rpc.ts";
+import { createBridgeStorage } from "./lib/storage-bridge.ts";
+import { readYouTubeLegacyData } from "./lib/youtube-legacy-data.ts";
 
 const bgRpc = createRuntimeRelayRpc<typeof bgRpcHandlers>();
 
-// The background reaches youtube.com IndexedDB through these handlers.
-// See docs/extension-runtime.md.
-export const tabRpcHandlers = {
-  async getSession({ youtubeId }: { youtubeId: string }) {
-    return await getSession(youtubeId);
-  },
-  async saveSession({ session }: { session: PersistedCaptionSession }) {
-    await saveSession(session);
-  },
-};
-registerTabRpcHandlers(tabRpcHandlers);
+setCaptionStorage(createBridgeStorage());
+
+// Copies youtube.com data into extension storage once, then loads the index.
+let storageReady: Promise<void> | undefined;
+
+function prepareStorage() {
+  storageReady ??= (async () => {
+    if (!(await captionStorage.isLegacyImported("youtube"))) {
+      await captionStorage.importLegacy(
+        "youtube",
+        await readYouTubeLegacyData(),
+      );
+    }
+    await loadVideoIndex();
+  })();
+  return storageReady;
+}
 
 declare const __BUILD_TIME__: string;
 declare const __GIT_REV__: string;
@@ -107,10 +115,20 @@ function getUserLangs(): string[] {
 function ExtensionViewer({ videoId }: { videoId: string }) {
   const [player] = useState(() => getVideoPlayer());
 
-  const { data, isLoading, error } = useQuery({
+  const metadataQuery = useQuery({
     queryKey: ["extension-metadata", videoId],
     queryFn: () => fetchPlayerApi({ videoId, userLangs: getUserLangs() }),
   });
+  // The panel reads the index synchronously, so it waits for the first load.
+  const storageQuery = useQuery({
+    queryKey: ["extension-storage"],
+    queryFn: () => prepareStorage().then(() => true),
+    staleTime: Infinity,
+    retry: false,
+  });
+  const { data } = metadataQuery;
+  const isLoading = metadataQuery.isLoading || storageQuery.isLoading;
+  const error = metadataQuery.error ?? storageQuery.error;
 
   if (isLoading) {
     return (
@@ -151,7 +169,7 @@ function useExtensionSync(youtubeId: string): SyncStatus {
     mutationFn: async (action: SyncAction) => {
       if (action.direction === "push") {
         const { serverUpdatedAt } = await bgRpc.pushSession({ youtubeId });
-        setSyncedAt(youtubeId, serverUpdatedAt);
+        await captionStorage.setSyncedAt(youtubeId, serverUpdatedAt);
       } else {
         const { session, serverUpdatedAt } = await bgRpc.fetchSession({
           youtubeId,
@@ -163,7 +181,7 @@ function useExtensionSync(youtubeId: string): SyncStatus {
           captions: session.captions,
           bookmarks: session.bookmarks,
         });
-        setSyncedAt(youtubeId, serverUpdatedAt);
+        await captionStorage.setSyncedAt(youtubeId, serverUpdatedAt);
       }
     },
     onSuccess: () => serverQuery.refetch(),
@@ -280,6 +298,8 @@ function inject() {
 
   const videoId = getVideoId();
   if (!videoId) return;
+
+  prepareStorage().catch(() => {});
 
   // Create shadow root for style isolation.
   // Inline styles here because `all: initial` resets everything and

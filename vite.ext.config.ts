@@ -71,6 +71,24 @@ export default defineConfig({
         },
       },
     },
+    storageFrame: {
+      consumer: "client",
+      build: {
+        outDir: "./dist/extension",
+        minify: false,
+        emptyOutDir: false,
+        copyPublicDir: false,
+        rolldownOptions: {
+          input: {
+            "storage-frame": "./src/extension/storage-frame.ts",
+          },
+          output: {
+            format: "iife",
+            entryFileNames: "[name].js",
+          },
+        },
+      },
+    },
     relay: {
       consumer: "client",
       build: {
@@ -108,6 +126,7 @@ export default defineConfig({
       await builder.build(builder.environments.bookmarks);
       await builder.build(builder.environments.background);
       await builder.build(builder.environments.relay);
+      await builder.build(builder.environments.storageFrame);
       const outDir = builder.environments.client.config.build.outDir;
 
       // Move html

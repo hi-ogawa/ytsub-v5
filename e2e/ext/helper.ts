@@ -80,9 +80,28 @@ export async function seedChromeStorage(
 }
 
 /**
- * Open a mocked YouTube watch page and wait for the content script.
- * The tab also gives the bookmarks page a tab for push and pull (tab RPC).
+ * Write video index entries into the extension's IndexedDB from the bookmarks
+ * page, then reload it to show them.
  */
+export async function seedVideoIndex(page: Page, entries: object[]) {
+  await page.evaluate(async (entries) => {
+    const db = await new Promise<IDBDatabase>((resolve, reject) => {
+      const req = indexedDB.open("zamak");
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+    await new Promise<void>((resolve, reject) => {
+      const tx = db.transaction("video-index", "readwrite");
+      for (const entry of entries) tx.objectStore("video-index").put(entry);
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    });
+    db.close();
+  }, entries);
+  await page.reload();
+}
+
+/** Open a mocked YouTube watch page and wait for the content script. */
 export async function openYouTubeTab(
   context: BrowserContext,
   videoId: string,

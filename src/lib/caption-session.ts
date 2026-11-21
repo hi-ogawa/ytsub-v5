@@ -3,10 +3,9 @@ import type { Router } from "../server/rpc.ts";
 import { type MergeStrategy, type MergedCaption } from "./caption-merge.ts";
 import {
   type PersistedCaptionSession,
-  saveSession,
-} from "./caption-session-db.ts";
+  captionStorage,
+} from "./caption-storage.ts";
 import type { ExtensionBookmark } from "./extension-bookmarks.ts";
-import { updateVideoIndex, videoIndexStore } from "./video-index.ts";
 import {
   type YouTubeCaptionTrack,
   type YouTubeVideoData,
@@ -111,7 +110,7 @@ export function sessionToExportData(session: {
   };
 }
 
-// --- Import (export data → IndexedDB) ---
+// --- Import (export data → local storage) ---
 
 export async function importExportData(data: ExportData): Promise<void> {
   const session: PersistedCaptionSession = {
@@ -149,15 +148,7 @@ export async function importExportData(data: ExportData): Promise<void> {
       createdAt: new Date().toISOString(),
     })),
   };
-  await saveSession(session);
-  if (session.bookmarks.length > 0) {
-    updateVideoIndex(
-      session.youtubeId,
-      session.title,
-      session.channelName,
-      session.bookmarks.length,
-    );
-  }
+  await captionStorage.saveSession(session);
 }
 
 // --- Store ---
@@ -274,7 +265,6 @@ export class CaptionSessionManager {
   }
 
   async persistSession(): Promise<void> {
-    this.syncVideoIndex();
     const session: PersistedCaptionSession = {
       youtubeId: this.videoMeta.youtubeId,
       title: this.videoMeta.title,
@@ -289,20 +279,6 @@ export class CaptionSessionManager {
       captions: this.rows,
       bookmarks: this.bookmarks,
     };
-    await saveSession(session);
-  }
-
-  syncVideoIndex(): void {
-    // An entry stays at 0 bookmarks so that deleting the last one can still be pushed.
-    const indexed = videoIndexStore
-      .get()
-      .some((e) => e.youtubeId === this.videoMeta.youtubeId);
-    if (this.bookmarks.length === 0 && !indexed) return;
-    updateVideoIndex(
-      this.videoMeta.youtubeId,
-      this.videoMeta.title,
-      this.videoMeta.channelName,
-      this.bookmarks.length,
-    );
+    await captionStorage.saveSession(session);
   }
 }

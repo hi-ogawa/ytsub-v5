@@ -1,14 +1,12 @@
 // Background service worker. docs/extension-runtime.md explains its role.
 
 import { sessionToExportData } from "../lib/caption-session.ts";
+import { captionStorage } from "../lib/caption-storage.ts";
 import { serverSessionToLocal } from "../lib/sync.ts";
 import { orpc, setRpcConfig } from "../rpc.ts";
-import type { tabRpcHandlers } from "./content.tsx";
 import { chromeStorage } from "./lib/chrome-storage.ts";
-import { createContentRpc, registerRpcHandlers } from "./lib/extension-rpc.ts";
+import { registerRpcHandlers } from "./lib/extension-rpc.ts";
 import { getServerUrl } from "./lib/server-url.ts";
-
-const contentRpc = createContentRpc<typeof tabRpcHandlers>();
 
 export const bgRpcHandlers = {
   async getSyncState({ youtubeId }: { youtubeId: string }) {
@@ -25,13 +23,13 @@ export const bgRpcHandlers = {
     chrome.tabs.create({ url: "bookmarks.html" });
   },
 
+  // The caption panel pushes with this, because the session token stays here.
   async pushSession({ youtubeId }: { youtubeId: string }) {
-    const session = await contentRpc.getSession({ youtubeId });
+    const session = await captionStorage.getSession(youtubeId);
     if (!session) throw new Error("No local session found");
-    const exportData = sessionToExportData(
-      session as Parameters<typeof sessionToExportData>[0],
+    const result = await orpc.videos.importVideo.call(
+      sessionToExportData(session),
     );
-    const result = await orpc.videos.importVideo.call(exportData);
     return { serverUpdatedAt: result.updatedAt };
   },
 
@@ -42,19 +40,6 @@ export const bgRpcHandlers = {
     return {
       session: serverSessionToLocal(data),
       serverUpdatedAt: data.video.updatedAt,
-    };
-  },
-
-  async pullSession({ youtubeId }: { youtubeId: string }) {
-    const { session, serverUpdatedAt } = await bgRpcHandlers.fetchSession({
-      youtubeId,
-    });
-    await contentRpc.saveSession({ session });
-    return {
-      title: session.title,
-      channelName: session.channelName,
-      bookmarkCount: session.bookmarks.length,
-      serverUpdatedAt,
     };
   },
 };

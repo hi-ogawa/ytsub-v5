@@ -1,22 +1,17 @@
 // ISOLATED world content script. docs/extension-runtime.md explains its role.
 
-import { type VideoIndexEntry, videoIndexStore } from "../lib/video-index.ts";
-import { chromeStorage } from "./lib/chrome-storage.ts";
-import { setupRpcRelay, setupTabRpcRelay } from "./lib/extension-rpc.ts";
+import { setupRpcRelay } from "./lib/extension-rpc.ts";
+import { STORAGE_FRAME_ID, STORAGE_FRAME_PATH } from "./lib/storage-bridge.ts";
 
-async function main() {
-  const entries = await chromeStorage.get<VideoIndexEntry[]>(
-    videoIndexStore.key,
-  );
-  videoIndexStore.setLocal(entries ?? []);
-
-  videoIndexStore.subscribe(() => {
-    chromeStorage.set({ [videoIndexStore.key]: videoIndexStore.get() });
-  });
-
-  setupRpcRelay();
-
-  setupTabRpcRelay();
+// The main world has no chrome.runtime to build the frame URL.
+function mountStorageFrame() {
+  const frame = document.createElement("iframe");
+  frame.id = STORAGE_FRAME_ID;
+  frame.src = chrome.runtime.getURL(STORAGE_FRAME_PATH);
+  frame.style.display = "none";
+  document.documentElement.appendChild(frame);
 }
 
-main();
+mountStorageFrame();
+
+setupRpcRelay();

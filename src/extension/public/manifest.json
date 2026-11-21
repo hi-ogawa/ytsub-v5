@@ -26,5 +26,11 @@
       "js": ["relay.js"],
       "run_at": "document_idle"
     }
+  ],
+  "web_accessible_resources": [
+    {
+      "matches": ["https://www.youtube.com/*"],
+      "resources": ["storage-frame.html", "storage-frame.js"]
+    }
   ]
 }

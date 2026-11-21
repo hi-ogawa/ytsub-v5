@@ -1,5 +1,5 @@
-// Typed RPC between the content script, the relay, the background, and the
-// bookmarks page. docs/extension-runtime.md explains how the calls flow.
+// Typed RPC from the content script to the background, through the relay.
+// docs/extension-runtime.md explains how the calls flow.
 
 // --- Wire format ---
 
@@ -22,7 +22,6 @@ type RpcResponse = {
 // See docs/extension-runtime.md.
 
 const RPC_CHANNEL = "zamak:rpc";
-const TAB_RPC_CHANNEL = "zamak:tab-rpc";
 
 type WorldMessage = {
   channel: string;
@@ -110,22 +109,6 @@ export function createRuntimeRelayRpc<
   });
 }
 
-// --- ISOLATED world / extension pages: call background directly ---
-
-export function createRuntimeRpc<Handlers extends Record<string, Function>>() {
-  return createRpcProxy<Handlers>(async (method, params) => {
-    const request: RpcRequest = {
-      type: "zamak-rpc",
-      id: "",
-      method,
-      params,
-    };
-    const response = await chrome.runtime.sendMessage(request);
-    if (response?.__error) throw new Error(response.__error);
-    return response;
-  });
-}
-
 // --- ISOLATED world: relay setup ---
 
 export function setupRpcRelay() {
@@ -147,29 +130,7 @@ export function setupRpcRelay() {
   });
 }
 
-export function setupTabRpcRelay() {
-  chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
-    if (msg?.type !== "zamak-tab-rpc") return;
-    const { id, method, params } = msg as TabRpcRequest;
-
-    const ac = new AbortController();
-    listenWorldMessage(
-      TAB_RPC_CHANNEL,
-      "response",
-      (response: RpcResponse) => {
-        if (response.id !== id) return;
-        ac.abort();
-        if (response.error) sendResponse({ error: response.error });
-        else sendResponse({ result: response.result });
-      },
-      { signal: ac.signal },
-    );
-    postWorldMessage(TAB_RPC_CHANNEL, "request", { id, method, params });
-    return true; // keep channel open for async response
-  });
-}
-
-// --- Background: handler registration + tab RPC client ---
+// --- Background: handler registration ---
 
 export function registerRpcHandlers(handlers: Record<string, Function>) {
   chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
@@ -188,75 +149,4 @@ export function registerRpcHandlers(handlers: Record<string, Function>) {
     });
     return true; // keep channel open for async response
   });
-}
-
-type TabRpcRequest = {
-  type: "zamak-tab-rpc";
-  id: string;
-  method: string;
-  params?: unknown;
-};
-
-// Tabs are looked up on every call, because Chrome stops an idle service
-// worker and anything it kept in memory is lost.
-export function createContentRpc<Handlers extends Record<string, Function>>() {
-  return createRpcProxy<Handlers>(async (method, params) => {
-    const request: TabRpcRequest = {
-      type: "zamak-tab-rpc",
-      id: crypto.randomUUID(),
-      method,
-      params,
-    };
-    const response = await sendToYouTubeTab(request);
-    if (response?.error) {
-      console.error(`[zamak tab-rpc] ${method}:`, response.error);
-      throw new Error(response.error);
-    }
-    return response?.result;
-  });
-}
-
-async function sendToYouTubeTab(request: TabRpcRequest) {
-  const tabs = await chrome.tabs.query({
-    url: "https://www.youtube.com/*",
-    discarded: false,
-  });
-  for (const tab of tabs) {
-    if (tab.id === undefined) continue;
-    try {
-      return (await chrome.tabs.sendMessage(tab.id, request)) as
-        | { result?: unknown; error?: string }
-        | undefined;
-    } catch (err) {
-      // The tab has no relay from the current extension yet, or anymore.
-      if (String(err).includes("Receiving end does not exist")) continue;
-      throw err;
-    }
-  }
-  throw new Error("No YouTube tab open");
-}
-
-// --- MAIN world: register handlers for tab RPC calls from background ---
-
-export function registerTabRpcHandlers(handlers: Record<string, Function>) {
-  listenWorldMessage(
-    TAB_RPC_CHANNEL,
-    "request",
-    async ({ id, method, params }) => {
-      try {
-        const handler = handlers[method];
-        const result = handler ? await handler(params) : undefined;
-        postWorldMessage(TAB_RPC_CHANNEL, "response", {
-          id,
-          result,
-        } satisfies RpcResponse);
-      } catch (err) {
-        console.error(`[zamak tab-rpc handler] ${method}:`, err);
-        postWorldMessage(TAB_RPC_CHANNEL, "response", {
-          id,
-          error: err instanceof Error ? err.message : "Unknown error",
-        } satisfies RpcResponse);
-      }
-    },
-  );
 }
