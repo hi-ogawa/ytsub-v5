@@ -34,20 +34,7 @@ The commands below shorten this to `uv run scripts/...`. Outputs go to the folde
 - `kind` is `speech` for words someone says, and `other` for anything else the editor put on screen, whatever its frame. Text filmed in the scene, such as signs, isn't a caption, so leave it out.
 - `position` is the caption's box `[x, y, w, h]` in the 1280×720 frame.
 - `text` is exactly what the picture shows, including nonstandard spelling, censored words such as ㅅㄲ, and spelled-out laughter.
-- `omitted` is set on a caption whose text a reader declined to reproduce, such as copyrighted song lyrics. Such a caption has empty `text` and keeps its time and position, so a user can fill it in by hand. Text that is only hard to read is not omitted, so mark it with `[?]` or read it again:
-
-  ```json
-  {
-    "begin": 1044.5,
-    "end": 1061.25,
-    "text": "",
-    "kind": "speech",
-    "position": [280, 563, 455, 40],
-    "omitted": "lyrics"
-  }
-  ```
-
-  Never put a label such as `[가사]` in `text` instead, because a caller would take it as the caption and replace the ASR's sung words with it.
+- `omitted` is a short reason, set on a caption whose text a reader declined to reproduce, such as copyrighted text. Its `text` is empty, and it keeps its time and position, so a user can fill it in by hand. Text that is only hard to read is not omitted, so mark it with `[?]` or read it again. Never put a placeholder label in `text` instead, because a caller would take the label as the caption.
 
 ## Read the Picture
 
@@ -138,9 +125,9 @@ Give the sheets to reader subagents, about 8 sheets each, because most of a read
 >
 > Tag each caption `speech` if it is words someone says, and `other` for anything else the editor put on screen. Skip text filmed in the scene, such as signs.
 >
-> Add a `note` to a caption whenever something about it matters for putting the track together, in your own words. For example: "faint, still fading in", "same caption as at 612.25", "end card still unfolding", "same card as the previous tile, small handwriting I can't read at this size", or "clip from another video with its own lyrics". Most captions need no note.
+> Add a `note` to a caption, in your own words, whenever something about it matters for putting the track together: the caption isn't fully shown in this frame, it is the same caption as in another tile (give that tile's time), its text is too small or unclear to read at this size, or it comes from footage other than this video's own editing. Most captions need no note.
 >
-> If you won't reproduce a caption's text, such as copyrighted song lyrics, return the caption with empty text and the reason in `omitted`, such as `{"text": "", "omitted": "lyrics", ...}`. Don't write a placeholder such as "[song lyrics omitted]" in `text`.
+> If you won't reproduce a caption's text, such as copyrighted text, return the caption with empty text and a short reason in `omitted`, rather than a placeholder in `text`.
 >
 > Return a JSON list with one entry per tile, including tiles with no caption: `{"t": <time>, "captions": [{"text": ..., "box": [x, y, w, h], "kind": "speech" | "other", "note"?: ..., "omitted"?: ...}]}`, with boxes in the tile's 480×270 pixels.
 
@@ -157,9 +144,9 @@ Assemble in two passes. Code does the bulk, because most reads need nothing more
 - Identical text read in neighboring runs becomes one caption.
 - A caption with `omitted` keeps its run's time and position like any other, and neighboring ones with the same reason in the same place become one.
 
-**Model pass.** Collect every read that has a `note` or a `[?]`, and give them to a subagent on the strongest model available. Give each read with the reads of the runs on either side, their run times, and the [cases in the catalogue](references/catalogue.md#notes-and-how-to-settle-them) as examples, with this instruction:
+**Model pass.** Collect every read that has a `note` or a `[?]`, and give them to a subagent on the strongest model available. Give each read with the reads of the runs on either side, and their run times, with this instruction:
 
-> Each flagged read below comes with its neighbors and their run times. Decide what to do with each flagged read: `merge` it into a neighbor, `keep` it as its own caption, `drop` it, or `reread` it from a later step or a closer crop. The note is the reader's own description of what it saw, so let it decide over how similar two texts look. Lines that differ by a word, such as `우리는 소인으로 해야 돼?` and `대인으로 해야 돼?`, are usually different lines. Return a JSON list: `{"t": <time>, "action": "merge" | "keep" | "drop" | "reread", "into"?: <time of the read to merge into>, "at"?: <time to read again>, "crop"?: [x, y, w, h], "reason": <one line>}`.
+> Each flagged read below comes with its neighbors and their run times. Decide what to do with each flagged read: `merge` it into a neighbor, `keep` it as its own caption, `drop` it, or `reread` it from a later step or a closer crop. A read of a caption that isn't fully shown merges into the read of the same caption once it settles. Text too small or unclear to read gets a reread from a closer crop. Text from other footage stays only if it belongs in this video's track. The note is the reader's own description of what it saw, so let it decide over how similar two texts look, because two different lines can differ by a single word. Return a JSON list: `{"t": <time>, "action": "merge" | "keep" | "drop" | "reread", "into"?: <time of the read to merge into>, "at"?: <time to read again>, "crop"?: [x, y, w, h], "reason": <one line>}`.
 
 Apply the decisions in code. A merge keeps the fuller read's text and spans both runs, so a fade-in read merged into its steady caption gives the caption the right begin. Timing always comes from the runs, never from the model. Send each `reread` to a new reader as described below, and put the new reads through both passes again. Fall back to text similarity only where neither a note nor identical text links two reads.
 
@@ -183,7 +170,7 @@ Give the extra frames to a new reader, together with the frames already read fro
 
 ### 6. Record
 
-If a channel record is available, add anything new about the channel to it: its style, how closely its captions follow the speech, what went wrong, and the windows you checked. Add new patterns, and new cases the model pass settled, to [the catalogue](references/catalogue.md). Tell the user what you changed, because the next video on the channel relies on it.
+If a channel record is available, add anything new about the channel to it: its style, how closely its captions follow the speech, what went wrong, and the windows you checked. Add new patterns to [the catalogue](references/catalogue.md). Tell the user what you changed, because the next video on the channel relies on it.
 
 ## Reading Ranges Again
 
