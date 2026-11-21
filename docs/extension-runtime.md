@@ -28,7 +28,7 @@ If the extension updates while a tab is open, the tab's frame stops answering. A
 
 ## Announce Each Write to Every Page
 
-The caption panel reads the video index synchronously as it renders, so the content script keeps a copy of the index in memory. It loads the copy through the frame before the panel opens, and keeps it current from change notices.
+The caption panel needs only this video's index entry, for its sync status. It reads the entry through the frame, and reads it again on each change notice.
 
 Every write to the database posts a notice on the `zamak:storage` BroadcastChannel, which reaches every context on the extension's origin: the frame in each YouTube tab, the bookmarks page, and the background. A notice carries the new index after an index change, or the ID of a video whose session was saved. Each frame forwards notices to its content script. A listener only updates what it shows and never writes back, so notices can't loop.
 
