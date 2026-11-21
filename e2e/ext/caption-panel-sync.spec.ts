@@ -41,7 +41,7 @@ async function createFirstBookmark(ytPage: Page) {
   );
 }
 
-test("caption panel: push from the sync menu, then open the bookmarks page", async ({
+test("push from the sync menu, then open the bookmarks page", async ({
   context,
   page,
   extensionId,
@@ -75,7 +75,7 @@ test("caption panel: push from the sync menu, then open the bookmarks page", asy
   ).toHaveAttribute("data-sync-status", "synced");
 });
 
-test("caption panel: pull from the sync menu replaces captions and bookmarks in place", async ({
+test("pull from the sync menu replaces captions and bookmarks in place", async ({
   context,
   page,
   extensionId,
@@ -104,7 +104,7 @@ test("caption panel: pull from the sync menu replaces captions and bookmarks in 
   ).toBeVisible();
 });
 
-test("caption panel: a failed push shows its error in the sync menu", async ({
+test("a failed push shows its error in the sync menu", async ({
   context,
   page,
   extensionId,
