@@ -806,12 +806,6 @@ function CaptionPanelContent({
     });
   }
 
-  // Pause auto-scroll when bookmark popover is open
-  const isPopoverOpenRef = useRef(false);
-  const onPopoverOpenChange = useCallback((open: boolean) => {
-    isPopoverOpenRef.current = open;
-  }, []);
-
   // --- Bookmark selection ---
   const [bookmarkSelection, setBookmarkSelection] =
     useState<BookmarkSelection>();
@@ -929,7 +923,6 @@ function CaptionPanelContent({
             autoScroll={autoScroll}
             bookmarks={store.bookmarks}
             onGoToBookmark={onGoToBookmark}
-            onPopoverOpenChange={onPopoverOpenChange}
           />
         </div>
 
@@ -996,7 +989,6 @@ function CaptionViewer({
   autoScroll,
   bookmarks,
   onGoToBookmark,
-  onPopoverOpenChange,
 }: {
   ref: React.Ref<CaptionViewerHandle>;
   rows: MergedCaption[];
@@ -1004,7 +996,6 @@ function CaptionViewer({
   autoScroll: boolean;
   bookmarks: ExtensionBookmark[];
   onGoToBookmark: (bookmarkId: string) => void;
-  onPopoverOpenChange: (open: boolean) => void;
 }) {
   const [currentIndex, setCurrentIndex] = useState<number>();
   const [isPlaying, setIsPlaying] = useState(false);
@@ -1052,7 +1043,6 @@ function CaptionViewer({
       autoScroll={autoScroll}
       bookmarks={bookmarks}
       onGoToBookmark={onGoToBookmark}
-      onPopoverOpenChange={onPopoverOpenChange}
     />
   );
 }

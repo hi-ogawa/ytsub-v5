@@ -25,7 +25,6 @@ export function CaptionList({
   autoScroll,
   bookmarks,
   onGoToBookmark,
-  onPopoverOpenChange,
 }: {
   ref: React.Ref<CaptionListHandle>;
   rows: MergedCaption[];
@@ -35,7 +34,6 @@ export function CaptionList({
   autoScroll: boolean;
   bookmarks: ExtensionBookmark[];
   onGoToBookmark: (bookmarkId: string) => void;
-  onPopoverOpenChange: (open: boolean) => void;
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -74,10 +72,9 @@ export function CaptionList({
     }, 2000);
   }
 
-  const wrappedPopoverOpenChange = (open: boolean) => {
+  function onPopoverOpenChange(open: boolean) {
     isPopoverOpenRef.current = open;
-    onPopoverOpenChange(open);
-  };
+  }
 
   // A jump to a row, such as from the bookmarks tab, counts as a manual
   // scroll, so auto-scroll doesn't pull the list away from it right after.
@@ -176,7 +173,7 @@ export function CaptionList({
             bookmarkNumberById={bookmarkNumberById}
             onClick={() => onClickRow(i)}
             onGoToBookmark={onGoToBookmark}
-            onPopoverOpenChange={wrappedPopoverOpenChange}
+            onPopoverOpenChange={onPopoverOpenChange}
           />
         ))}
       </div>
