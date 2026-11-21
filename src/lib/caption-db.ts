@@ -1,5 +1,6 @@
 import type {
   CaptionStorage,
+  LegacyData,
   PersistedCaptionSession,
   StorageListener,
   StorageNotice,
@@ -14,39 +15,22 @@ const META = "meta";
 
 const CHANNEL_NAME = "zamak:storage";
 
-const listeners = new Set<StorageListener>();
-let channel: BroadcastChannel | undefined;
+class IdbCaptionStorage implements CaptionStorage {
+  listeners = new Set<StorageListener>();
+  channel: BroadcastChannel | undefined;
 
-// Other contexts on this origin hear each write over the channel.
-function getChannel() {
-  if (!channel) {
-    channel = new BroadcastChannel(CHANNEL_NAME);
-    channel.addEventListener("message", (e: MessageEvent<StorageNotice>) => {
-      for (const l of listeners) {
-        l(e.data, false);
-      }
-    });
-  }
-  return channel;
-}
-
-function notify(notice: StorageNotice) {
-  for (const l of listeners) {
-    l(notice, true);
-  }
-  getChannel().postMessage(notice);
-}
-
-export const idbCaptionStorage: CaptionStorage = {
-  async getSession(youtubeId) {
+  async getSession(youtubeId: string) {
     return withTransaction([SESSIONS], "readonly", (tx) =>
       requestResult<PersistedCaptionSession | undefined>(
         tx.objectStore(SESSIONS).get(youtubeId),
       ),
     );
-  },
+  }
 
-  async saveSession(session, options) {
+  async saveSession(
+    session: PersistedCaptionSession,
+    options?: { forceIndex?: boolean },
+  ) {
     const entries = await withTransaction(
       [SESSIONS, INDEX],
       "readwrite",
@@ -71,13 +55,13 @@ export const idbCaptionStorage: CaptionStorage = {
         return await requestResult<VideoIndexEntry[]>(index.getAll());
       },
     );
-    notify({ type: "session-saved", youtubeId: session.youtubeId });
+    this.notify({ type: "session-saved", youtubeId: session.youtubeId });
     if (entries) {
-      notify({ type: "index", entries });
+      this.notify({ type: "index", entries });
     }
-  },
+  }
 
-  async deleteVideo(youtubeId) {
+  async deleteVideo(youtubeId: string) {
     const entries = await withTransaction(
       [SESSIONS, INDEX],
       "readwrite",
@@ -89,10 +73,10 @@ export const idbCaptionStorage: CaptionStorage = {
         );
       },
     );
-    notify({ type: "index", entries });
-  },
+    this.notify({ type: "index", entries });
+  }
 
-  async setSyncedAt(youtubeId, serverUpdatedAt) {
+  async setSyncedAt(youtubeId: string, serverUpdatedAt: string) {
     const entries = await withTransaction([INDEX], "readwrite", async (tx) => {
       const index = tx.objectStore(INDEX);
       const existing = await requestResult<VideoIndexEntry | undefined>(
@@ -107,18 +91,18 @@ export const idbCaptionStorage: CaptionStorage = {
       }
       return await requestResult<VideoIndexEntry[]>(index.getAll());
     });
-    notify({ type: "index", entries });
-  },
+    this.notify({ type: "index", entries });
+  }
 
   async listIndex() {
     return withTransaction([INDEX], "readonly", (tx) =>
       requestResult<VideoIndexEntry[]>(tx.objectStore(INDEX).getAll()),
     );
-  },
+  }
 
   // One transaction checks the marker and writes everything, so concurrent
   // imports run one after the other, and an interrupted one leaves nothing.
-  async importLegacy(source, data) {
+  async importLegacy(source: string, data: LegacyData) {
     const entries = await withTransaction(
       [SESSIONS, INDEX, META],
       "readwrite",
@@ -155,25 +139,50 @@ export const idbCaptionStorage: CaptionStorage = {
       },
     );
     if (entries) {
-      notify({ type: "index", entries });
+      this.notify({ type: "index", entries });
     }
-  },
+  }
 
-  async isLegacyImported(source) {
+  async isLegacyImported(source: string) {
     const marker = await withTransaction([META], "readonly", (tx) =>
       requestResult(tx.objectStore(META).get(importMarkerKey(source))),
     );
     return marker !== undefined;
-  },
+  }
 
-  subscribe(listener) {
-    getChannel();
-    listeners.add(listener);
+  subscribe(listener: StorageListener) {
+    this.getChannel();
+    this.listeners.add(listener);
     return () => {
-      listeners.delete(listener);
+      this.listeners.delete(listener);
     };
-  },
-};
+  }
+
+  notify(notice: StorageNotice) {
+    for (const l of this.listeners) {
+      l(notice, true);
+    }
+    this.getChannel().postMessage(notice);
+  }
+
+  // Other contexts on this origin hear each write over the channel.
+  getChannel() {
+    if (!this.channel) {
+      this.channel = new BroadcastChannel(CHANNEL_NAME);
+      this.channel.addEventListener(
+        "message",
+        (e: MessageEvent<StorageNotice>) => {
+          for (const l of this.listeners) {
+            l(e.data, false);
+          }
+        },
+      );
+    }
+    return this.channel;
+  }
+}
+
+export const idbCaptionStorage = new IdbCaptionStorage();
 
 function importMarkerKey(source: string) {
   return `imported:${source}`;
