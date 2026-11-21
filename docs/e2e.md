@@ -10,11 +10,11 @@ E2E_SERVER=dev pnpm test-e2e           # against the dev server
 pnpm test-youtube                      # real YouTube pages
 ```
 
-`pnpm test-e2e` builds the extension into `dist/extension/`, then runs Playwright. Playwright builds the web app and serves it with `vite preview`, so the tests run the worker that ships. Set `E2E_SERVER=dev` to serve the web app with `pnpm dev` instead, which skips the web app build. Both servers persist local state to `.wrangler/state/e2e`, separate from the dev database.
+`pnpm test-e2e` builds the extension into `dist/extension/`, then runs Playwright. Playwright builds the web app and serves it with `vite preview`, so the tests run the worker that ships. Set `E2E_SERVER=dev` to serve the web app with `pnpm dev` instead, which skips the web app build. Both servers persist local state to `.wrangler/state/e2e`, separate from the dev database. Playwright runs one test at a time (`workers: 1`), because the database tests share that state and `setupDb()` clears it.
 
 ## Choose Between `/dev` Routes and Auth-Gated Routes
 
-The `/dev` routes render the shared UI with fixture data, so their tests need no server state. Open them with `page.goto("/dev/videos/...")` and don't call `login()` or `setupDb()`. These tests are fast and run in parallel.
+The `/dev` routes render the shared UI with fixture data, so their tests need no server state. Open them with `page.goto("/dev/videos/...")` and don't call `login()` or `setupDb()`. These tests are fast.
 
 Tests that hit `/`, `/videos/:id`, or the server APIs need a user in the database. Call `setupDb({ seed: true })` and then `login(page)`, because login needs the seed user. `setupDb()` writes to SQLite directly and takes about 0.15s.
 
