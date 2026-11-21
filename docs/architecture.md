@@ -25,4 +25,18 @@ The extension and the web app render the same two pages from shared components:
 - **The caption panel** shows dual captions and handles bookmarking and the AI workflow. The extension draws it over YouTube's video page inside a shadow root. The web app shows it at `/videos/:id` next to an embedded player.
 - **The bookmarks page** lists your bookmarked videos with their sync status. The extension opens it as `bookmarks.html` in a full tab when you click its icon. The web app serves it at `/`.
 
+The pages differ where the two surfaces do. The web app can't fetch from YouTube, so its caption panel only opens a session already pulled from the server, and it has no controls for building a new one:
+
+|                                     | Extension                                  | Web app                                     |
+| ----------------------------------- | ------------------------------------------ | ------------------------------------------- |
+| Login                               | Optional, only to sync                     | Required for every page                     |
+| Captions come from                  | YouTube's caption tracks                   | A session pulled from the server            |
+| Track picker and alignment strategy | Yes                                        | No, the panel shows the session's languages |
+| Starts a new session                | Yes, from the picked tracks                | No                                          |
+| Panel layout                        | Floating over YouTube, toggled and resized | Fixed beside the player, stacked on phones  |
+| Player                              | YouTube's own video element                | An embedded YouTube player                  |
+| Runs on phones                      | No                                         | Yes                                         |
+
+Everything else works the same on both: creating and editing bookmarks, the AI prompts, exporting `import.json`, and pushing or pulling from the panel.
+
 [Extension runtime](extension-runtime.md) explains how the extension's pieces talk to each other. [Data and sync](data-and-sync.md) explains where data is stored and how it moves between the browser and the server.

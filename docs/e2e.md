@@ -14,6 +14,8 @@ pnpm test-youtube                      # real YouTube pages
 
 ## Choose Between the Extension and the Web App
 
+[Architecture overview](architecture.md#share-one-ui-across-the-extension-and-the-web-app) lists what each surface can do, which decides where a test can run.
+
 Test the caption panel and the bookmarks page in the extension project, `e2e/ext`, because desktop users run them there and bookmarks are created there. These tests need no login or server state unless they sync.
 
 Test the web app for what only it does: login and registration, the server APIs, importing, and the viewer for pulled videos that phones use. These tests need a user in the database. Call `setupDb({ seed: true })` and then `login(page)`, because login needs the seed user. `setupDb()` writes to SQLite directly and takes about 0.15s. The web viewer shows only pulled videos, so `openPulledVideo(page, youtubeId)` logs in, pulls a seed video, and opens it.
