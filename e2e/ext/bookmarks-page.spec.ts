@@ -139,7 +139,6 @@ for (const { choice, button } of [
       end: 3,
     });
 
-    // The dialog's open animation only settles in the front tab
     await page.bringToFront();
     await page.reload();
     const badge = page

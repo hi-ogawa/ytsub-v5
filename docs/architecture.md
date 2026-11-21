@@ -8,7 +8,7 @@ The system has three parts:
 
 - **The Chrome extension** is the main client and the only part that can fetch videos from YouTube. It keeps captions and bookmarks in the browser and runs without the server.
 - **The server** is a Cloudflare Worker with a D1 (SQLite) database. It serves the web app's pages and the API that both clients call, and it stores each user's videos, captions, and bookmarks. No page renders from it directly. Clients pull data into their own browser storage first.
-- **The web app** is a client on its own origin, served by the server. It needs the server for every page except `/dev`, because each page checks the login first. It keeps pulled videos in its own browser storage and renders the same pages as the extension.
+- **The web app** is a client on its own origin, served by the server. It needs the server for every page, because each page checks the login first. It keeps pulled videos in its own browser storage and renders the same pages as the extension.
 
 No part calls an AI service. The LLM step goes through the user's clipboard, so the caption panel only builds the prompt and parses the answer that the user pastes back.
 
@@ -25,6 +25,6 @@ The extension and the web app render the same two pages from shared components:
 - **The caption panel** shows dual captions and handles bookmarking and the AI workflow. The extension draws it over YouTube's video page inside a shadow root. The web app shows it at `/videos/:id` next to an embedded player.
 - **The bookmarks page** lists your bookmarked videos with their sync status. The extension opens it as `bookmarks.html` in a full tab when you click its icon. The web app serves it at `/`.
 
-Reloading an extension on every change is slow, so the web app also has `/dev` routes that render these pages without a login. `/dev/videos/:id` shows the caption panel with fixture data recorded from real videos, and `/dev` shows the bookmarks page. UI work and most e2e tests use these routes instead of YouTube and the extension runtime.
+Reloading an extension by hand on every change is slow, so UI work goes through the e2e tests instead. They load the built extension into Chromium on a mocked YouTube page with captions recorded from real videos. See [E2E tests](e2e.md).
 
 [Extension runtime](extension-runtime.md) explains how the extension's pieces talk to each other. [Data and sync](data-and-sync.md) explains where data is stored and how it moves between the browser and the server.

@@ -12,15 +12,15 @@ pnpm test-youtube                      # real YouTube pages
 
 `pnpm test-e2e` builds the extension into `dist/extension/`, then runs Playwright. Playwright builds the web app and serves it with `vite preview`, so the tests run the worker that ships. Set `E2E_SERVER=dev` to serve the web app with `pnpm dev` instead, which skips the web app build. Both servers persist local state to `.wrangler/state/e2e`, separate from the dev database. Playwright runs one test at a time (`workers: 1`), because the database tests share that state and `setupDb()` clears it.
 
-## Choose Between `/dev` Routes and Auth-Gated Routes
+## Choose Between the Extension and the Web App
 
-The `/dev` routes render the shared UI with fixture data, so their tests need no server state. Open them with `page.goto("/dev/videos/...")` and don't call `login()` or `setupDb()`. These tests are fast.
+Test the caption panel and the bookmarks page in the extension project, `e2e/ext`, because desktop users run them there and bookmarks are created there. These tests need no login or server state unless they sync.
 
-Tests that hit `/`, `/videos/:id`, or the server APIs need a user in the database. Call `setupDb({ seed: true })` and then `login(page)`, because login needs the seed user. `setupDb()` writes to SQLite directly and takes about 0.15s.
+Test the web app for what only it does: login and registration, the server APIs, importing, and the viewer for pulled videos that phones use. These tests need a user in the database. Call `setupDb({ seed: true })` and then `login(page)`, because login needs the seed user. `setupDb()` writes to SQLite directly and takes about 0.15s. The web viewer shows only pulled videos, so `openPulledVideo(page, youtubeId)` logs in, pulls a seed video, and opens it.
 
 The seed videos are the `import.json` files in `scripts/db-seed-json/<id>/`. To add one, build its `import.json` as the Zamak skill's [Generate import.json](../skills/zamak/references/generate-import-json.md) describes, put it there, and run `pnpm db:seed-gen`.
 
-Prefer `/dev` routes unless the feature needs the server.
+To check a UI change while working on it, run one extension spec, such as `pnpm test-e2e e2e/ext/caption-panel.spec.ts -g "<pattern>"`, and open its trace.
 
 ## Write Tests
 
@@ -38,6 +38,7 @@ Extension tests load `dist/extension/`, which `pnpm test-e2e` builds, into a rea
 - `seedChromeStorage(context, data)` seeds `chrome.storage.local` through the service worker.
 - `login(page)` logs in through the extension bookmarks page. It is a different helper from the web app `login`.
 - `openYouTubeTab(context, videoId)` opens a watch page and waits for the content script. `openPanelWithTracks(ytPage)` opens the caption panel with the ko and en tracks.
+- `createBookmarkAt(host, { index, start, end })` selects part of a caption inside the panel's shadow root and bookmarks it.
 
 The tests never load the real youtube.com. The `context` fixture serves `https://www.youtube.com/**` from a route handler in `e2e/ext/youtube-mock.ts`. Chrome injects content scripts by URL, so the mocked watch page still gets them. The page has only what the content script reads, and the player API and caption tracks come from the fixtures in `scripts/youtube-json/<id>/`, so `videoId` must be one of those. Every other youtube.com request is aborted. `pnpm test-youtube` covers changes to the real page and API.
 
