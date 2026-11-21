@@ -1,10 +1,5 @@
 import type { InferRouterOutputs } from "@orpc/server";
-import {
-  useIsMutating,
-  useMutation,
-  useQuery,
-  useQueryClient,
-} from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
 import { orpc } from "../rpc.ts";
@@ -111,26 +106,19 @@ export function useSyncState({
   youtubeId: string;
   onNavigate: () => void;
 }): SyncStatus {
-  const queryClient = useQueryClient();
   const [videoIndex] = useStore(videoIndexStore);
 
   const authQuery = useQuery(orpc.auth.check.queryOptions());
   const authenticated = authQuery.data?.authenticated === true;
 
-  const serverQueryOptions = orpc.videos.getVideoUpdatedAt.queryOptions({
-    input: { youtubeId },
-  });
   const serverQuery = useQuery({
-    ...serverQueryOptions,
+    ...orpc.videos.getVideoUpdatedAt.queryOptions({
+      input: { youtubeId },
+    }),
     enabled: authenticated,
   });
 
-  const mutationKey = ["sync", youtubeId];
-  // The menu may close and reopen during a push or pull, so the state comes
-  // from the mutation cache rather than this observer.
-  const isSyncing = useIsMutating({ mutationKey }) > 0;
   const syncMutation = useMutation({
-    mutationKey,
     mutationFn: async (action: {
       direction: "push" | "pull";
       store: CaptionSessionManager;
@@ -156,12 +144,11 @@ export function useSyncState({
         setSyncedAt(youtubeId, data.video.updatedAt);
       }
     },
-    onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: serverQueryOptions.queryKey }),
+    onSuccess: () => serverQuery.refetch(),
   });
 
   const getState = (): SyncState => {
-    if (isSyncing) {
+    if (syncMutation.isPending) {
       return "syncing";
     }
     if (authQuery.isFetching) {
