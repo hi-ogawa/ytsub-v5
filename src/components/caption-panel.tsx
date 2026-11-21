@@ -1263,15 +1263,12 @@ function CaptionViewer({
     let rafId: number;
 
     const loop = () => {
-      const playing = player.getPlayerState() === 1;
-      setIsPlaying(playing);
-      if (playing) {
-        const time = player.getCurrentTime();
-        for (let i = rows.length - 1; i >= 0; i--) {
-          if (rows[i].begin <= time) {
-            setCurrentIndex(i);
-            break;
-          }
+      setIsPlaying(player.getPlayerState() === 1);
+      const time = player.getCurrentTime();
+      for (let i = rows.length - 1; i >= 0; i--) {
+        if (rows[i].begin <= time) {
+          setCurrentIndex(i);
+          break;
         }
       }
       rafId = requestAnimationFrame(loop);
