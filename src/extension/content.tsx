@@ -51,9 +51,10 @@ function mountOverlay(videoId: string) {
     },
   });
 
-  const unsubscribeTheme = subscribeYouTubeTheme((dark) =>
-    applyTheme(host, container, dark),
-  );
+  const unsubscribeTheme = subscribeYouTubeTheme((dark) => {
+    container.classList.toggle("dark", dark);
+    host.classList.toggle("dark", dark);
+  });
 
   createRoot(container).render(
     <StrictMode>
@@ -69,11 +70,6 @@ function mountOverlay(videoId: string) {
     unsubscribeTheme();
     host.remove();
   };
-}
-
-function applyTheme(host: HTMLElement, container: HTMLElement, dark: boolean) {
-  container.classList.toggle("dark", dark);
-  host.classList.toggle("dark", dark);
 }
 
 main();
