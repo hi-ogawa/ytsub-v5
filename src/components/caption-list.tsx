@@ -39,6 +39,8 @@ export function CaptionList({
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  // Groups bookmarks by caption row for the row highlights, and numbers them
+  // for the "#n" label in each highlight.
   const { bookmarksByIndex, bookmarkNumberById } = useMemo(() => {
     const byIndex = new Map<number, ExtensionBookmark[]>();
     const numberById = new Map<string, number>();
@@ -55,27 +57,11 @@ export function CaptionList({
     return { bookmarksByIndex: byIndex, bookmarkNumberById: numberById };
   }, [bookmarks]);
 
-  useImperativeHandle(ref, () => ({
-    scrollToIndex: (index: number) => {
-      const el = scrollRef.current?.querySelector(
-        `[data-index="${index}"]`,
-      ) as HTMLElement | null;
-      if (el) {
-        el.scrollIntoView({ behavior: "smooth", block: "center" });
-        flashHighlight(el);
-      }
-      onManualScroll();
-    },
-  }));
-  const prevScrollIndex = useRef<number | undefined>(undefined);
+  // Auto-scroll pauses for 2 seconds after the user scrolls or jumps to a
+  // row, and while a bookmark popover is open.
   const isManualScrollRef = useRef(false);
   const isPopoverOpenRef = useRef(false);
   const manualScrollTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
-
-  const wrappedPopoverOpenChange = (open: boolean) => {
-    isPopoverOpenRef.current = open;
-    onPopoverOpenChange(open);
-  };
 
   function onManualScroll() {
     isManualScrollRef.current = true;
@@ -88,7 +74,29 @@ export function CaptionList({
     }, 2000);
   }
 
-  // Auto-scroll with threshold + manual scroll pause
+  const wrappedPopoverOpenChange = (open: boolean) => {
+    isPopoverOpenRef.current = open;
+    onPopoverOpenChange(open);
+  };
+
+  // A jump to a row, such as from the bookmarks tab, counts as a manual
+  // scroll, so auto-scroll doesn't pull the list away from it right after.
+  useImperativeHandle(ref, () => ({
+    scrollToIndex: (index: number) => {
+      const el = scrollRef.current?.querySelector(
+        `[data-index="${index}"]`,
+      ) as HTMLElement | null;
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+        flashHighlight(el);
+      }
+      onManualScroll();
+    },
+  }));
+
+  // Follows the current caption, scrolling only when it drifts more than a
+  // sixth of the viewport from the center.
+  const prevScrollIndex = useRef<number | undefined>(undefined);
   useEffect(() => {
     if (
       currentIndex === undefined ||
@@ -112,7 +120,6 @@ export function CaptionList({
       return;
     }
 
-    // Only scroll if item is far from viewport center
     const { scrollTop, clientHeight } = scrollEl;
     const currentCenter = scrollTop + clientHeight / 2;
     const itemRect =
@@ -124,6 +131,9 @@ export function CaptionList({
     }
   }, [currentIndex]);
 
+  // A click that ends a text selection is for bookmarking, not playback.
+  // Clicking the current row toggles play, any other row seeks to it, and
+  // either click resumes auto-scroll.
   function onClickRow(index: number) {
     if (!player) {
       return;
