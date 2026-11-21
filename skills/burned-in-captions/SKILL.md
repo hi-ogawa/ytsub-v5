@@ -173,7 +173,7 @@ Ask for more frames where something is off:
 - an ASR line, or a cue of another subtitle track such as `en`, that no caption matches in time, on a show whose captions follow the speech
 - readers who disagree on a caption's text
 
-Stop when a round of corrections finds little that's new, and list the doubts that remain in your report instead of chasing each one. The report also lists each omitted range with its reason, and each judgment with its reason.
+Stop when a round of corrections finds little that's new, and list the doubts that remain in your report instead of chasing each one. The report also lists each omitted range, each judgment, and each correction, with its time and its reason, so that a later [review](references/review.md) can find them.
 
 For small or unclear text, crop the frames to the caption's area. With `--crop`, `frames.py` tiles only that box, at a scale of 0.75 unless `--scale` says otherwise:
 
@@ -190,6 +190,10 @@ If a channel record is available, add anything new about the channel to it: its 
 ## Reading Ranges Again
 
 The user or the Zamak skill can pass time ranges where it suspects a miss, such as Fix & Align ASR passing the times of ASR lines that no caption matches. Read every other step in each range, put the new reads through [Assemble and correct](#5-assemble-and-correct), and add the new captions to the track.
+
+## Reviewing a Run
+
+When the user wants to look back over a finished run, mostly to find what this skill should do better, follow [Review](references/review.md).
 
 ## Features
 

@@ -1,0 +1,1027 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <title>Caption Review</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&family=Space+Grotesk:wght@500;700&display=swap"
+    />
+    <style>
+      html,
+      body {
+        margin: 0;
+      }
+      img {
+        max-width: 100%;
+      }
+      [hidden] {
+        display: none !important;
+      }
+      /* Layout: one review column; each item is frames on top, track vs ASR side by side, verdict bar at the foot */
+      :root {
+        --bg: #f4f5f3;
+        --surface: #ffffff;
+        --ink: #1d2124;
+        --muted: #5f676d;
+        --line: #dde1dd;
+        --accent: #b88400;
+        --accent-soft: #fbf1d4;
+        --ok: #2f7d4f;
+        --ok-soft: #e1f2e7;
+        --bad: #b4382f;
+        --bad-soft: #f9e2df;
+        --chip-speech: #e4ecf6;
+        --chip-speech-ink: #24507f;
+        --chip-other: #efe6f6;
+        --chip-other-ink: #66397f;
+        --display: "Space Grotesk", "Noto Sans KR", system-ui, sans-serif;
+        --body: "Noto Sans KR", system-ui, -apple-system, sans-serif;
+        --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root:not([data-theme="light"]) {
+          --bg: #15181a;
+          --surface: #1e2225;
+          --ink: #e7eaec;
+          --muted: #9aa3a9;
+          --line: #30363a;
+          --accent: #f2c14e;
+          --accent-soft: #3a3220;
+          --ok: #6cc890;
+          --ok-soft: #1f3529;
+          --bad: #f08a80;
+          --bad-soft: #3d2422;
+          --chip-speech: #1f3044;
+          --chip-speech-ink: #9cc3ef;
+          --chip-other: #33263d;
+          --chip-other-ink: #d3b0ea;
+          color-scheme: dark;
+        }
+      }
+      :root[data-theme="dark"] {
+        --bg: #15181a;
+        --surface: #1e2225;
+        --ink: #e7eaec;
+        --muted: #9aa3a9;
+        --line: #30363a;
+        --accent: #f2c14e;
+        --accent-soft: #3a3220;
+        --ok: #6cc890;
+        --ok-soft: #1f3529;
+        --bad: #f08a80;
+        --bad-soft: #3d2422;
+        --chip-speech: #1f3044;
+        --chip-speech-ink: #9cc3ef;
+        --chip-other: #33263d;
+        --chip-other-ink: #d3b0ea;
+        color-scheme: dark;
+      }
+      body {
+        background: var(--bg);
+        color: var(--ink);
+        font-family: var(--body);
+        font-size: 15px;
+        line-height: 1.55;
+      }
+      .wrap {
+        max-width: 1120px;
+        margin: 0 auto;
+        padding-block: 28px 80px;
+        padding-left: max(16px, env(safe-area-inset-left, 0px));
+        padding-right: max(16px, env(safe-area-inset-right, 0px));
+        display: grid;
+        gap: 36px;
+      }
+      header {
+        display: grid;
+        gap: 14px;
+      }
+      h1 {
+        font-family: var(--display);
+        font-size: clamp(24px, 4vw, 34px);
+        line-height: 1.15;
+        margin: 0;
+        text-wrap: balance;
+      }
+      h1 .id {
+        font-family: var(--mono);
+        font-weight: 500;
+        color: var(--accent);
+      }
+      .lede {
+        margin: 0;
+        color: var(--muted);
+        max-width: 68ch;
+      }
+      .stats {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px 18px;
+        font-family: var(--mono);
+        font-size: 13px;
+        color: var(--muted);
+      }
+      .stats b {
+        color: var(--ink);
+        font-weight: 500;
+      }
+      .toolbar {
+        position: sticky;
+        top: env(safe-area-inset-top, 0px);
+        z-index: 5;
+        background: var(--bg);
+        padding-block: 10px;
+        border-bottom: 1px solid var(--line);
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: center;
+      }
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0 0 auto;
+        height: env(safe-area-inset-top, 0px);
+        z-index: 10;
+        background: var(--bg);
+      }
+      .toolbar nav {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        flex: 1 1 auto;
+        min-width: 0;
+      }
+      .toolbar nav a {
+        font-size: 13px;
+        color: var(--ink);
+        text-decoration: none;
+        padding: 4px 10px;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        background: var(--surface);
+        white-space: nowrap;
+      }
+      .toolbar nav a:hover,
+      .toolbar nav a:focus-visible {
+        border-color: var(--accent);
+        outline: none;
+      }
+      .toolbar nav a .n {
+        font-family: var(--mono);
+        color: var(--muted);
+        margin-left: 4px;
+      }
+      .progress {
+        font-family: var(--mono);
+        font-size: 13px;
+        color: var(--muted);
+      }
+      button {
+        font: inherit;
+        cursor: pointer;
+      }
+      .btn {
+        font-size: 13px;
+        padding: 6px 12px;
+        border-radius: 6px;
+        border: 1px solid var(--accent);
+        background: var(--accent);
+        color: #1d1600;
+        font-weight: 500;
+      }
+      .btn.ghost {
+        background: transparent;
+        color: var(--ink);
+        border-color: var(--line);
+      }
+      .btn:focus-visible,
+      .seg button:focus-visible,
+      textarea:focus-visible,
+      label.tog:focus-within {
+        outline: 2px solid var(--accent);
+        outline-offset: 2px;
+      }
+      label.tog {
+        font-size: 13px;
+        color: var(--muted);
+        display: inline-flex;
+        gap: 6px;
+        align-items: center;
+      }
+      section.group {
+        display: grid;
+        gap: 16px;
+        scroll-margin-top: 70px;
+      }
+      section.group > h2 {
+        font-family: var(--display);
+        font-size: 20px;
+        margin: 0;
+        display: flex;
+        gap: 10px;
+        align-items: baseline;
+      }
+      section.group > h2 .n {
+        font-family: var(--mono);
+        font-size: 14px;
+        color: var(--muted);
+        font-weight: 400;
+      }
+      section.group > p {
+        margin: -8px 0 0;
+        color: var(--muted);
+        max-width: 72ch;
+      }
+      .item {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 16px;
+        display: grid;
+        gap: 14px;
+        scroll-margin-top: 70px;
+      }
+      .item[data-verdict="ok"] {
+        border-color: var(--ok);
+      }
+      .item[data-verdict="fix"] {
+        border-color: var(--bad);
+      }
+      .ihead {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px 14px;
+        align-items: center;
+      }
+      .range {
+        font-family: var(--mono);
+        font-size: 15px;
+        font-weight: 500;
+        color: var(--ink);
+        text-decoration: none;
+        background: none;
+        border: 0;
+        padding: 0;
+        cursor: pointer;
+      }
+      .ytlink {
+        font-size: 12px;
+        color: var(--muted);
+        text-decoration: none;
+      }
+      .ytlink:hover {
+        color: var(--accent);
+      }
+      .range:hover {
+        color: var(--accent);
+      }
+      .range small {
+        color: var(--muted);
+        font-weight: 400;
+      }
+      .inote {
+        color: var(--muted);
+      }
+      .frames {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
+        gap: 10px;
+      }
+      @media (max-width: 520px) {
+        .frames {
+          grid-template-columns: 1fr;
+        }
+      }
+      figure {
+        margin: 0;
+        display: grid;
+        gap: 4px;
+        min-width: 0;
+      }
+      .shot {
+        position: relative;
+        aspect-ratio: 16 / 9;
+        max-width: 100%;
+        background: #000;
+        border-radius: 6px;
+        overflow: hidden;
+        cursor: zoom-in;
+        border: 0;
+        padding: 0;
+        display: block;
+        width: 100%;
+      }
+      .shot img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        display: block;
+      }
+      .box {
+        position: absolute;
+        border: 2px solid var(--accent);
+        border-radius: 2px;
+        pointer-events: none;
+        box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.5);
+      }
+      .box span {
+        position: absolute;
+        left: -2px;
+        top: -18px;
+        font: 500 11px/16px var(--mono);
+        background: var(--accent);
+        color: #1d1600;
+        padding: 0 4px;
+        border-radius: 2px;
+        white-space: nowrap;
+      }
+      body.noboxes .box {
+        display: none;
+      }
+      .dock {
+        position: fixed;
+        z-index: 15;
+        right: max(12px, env(safe-area-inset-right, 0px));
+        bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+        width: min(480px, calc(100vw - 24px));
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        box-shadow: 0 8px 28px rgba(0, 0, 0, 0.25);
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        overflow: hidden;
+      }
+      .dock .bar {
+        min-width: 0;
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        padding: 6px 10px;
+        font-size: 13px;
+      }
+      .dock .bar .now {
+        font-family: var(--mono);
+        color: var(--muted);
+        flex: 1;
+        min-width: 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .dock.min .stage {
+        display: none;
+      }
+      .stage {
+        position: relative;
+        aspect-ratio: 16 / 9;
+        width: 100%;
+        overflow: hidden;
+        background: #000;
+      }
+      .ytbox {
+        position: absolute;
+        inset: 0;
+      }
+      .ytbox iframe {
+        position: absolute;
+        inset: 0;
+        width: 100% !important;
+        height: 100% !important;
+        border: 0;
+      }
+      .stage .live {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+      }
+      .stage .subs {
+        position: absolute;
+        left: 4%;
+        right: 4%;
+        top: 3%;
+        display: grid;
+        gap: 3px;
+        justify-items: center;
+        pointer-events: none;
+      }
+      .stage .subs div {
+        background: rgba(0, 0, 0, 0.75);
+        color: #fff;
+        font-size: 13px;
+        line-height: 1.4;
+        padding: 1px 7px;
+        border-radius: 4px;
+        text-align: center;
+      }
+      .stage .subs div.other {
+        color: #e6c8ff;
+      }
+      body.noboxes .stage .live,
+      body.nosubs .stage .subs {
+        display: none;
+      }
+      .playctl {
+        margin-left: auto;
+        display: inline-flex;
+        gap: 8px;
+        align-items: center;
+      }
+      .btn[data-act="loop"][aria-pressed="true"] {
+        border-color: var(--accent);
+        background: var(--accent-soft);
+      }
+      .item.playing {
+        box-shadow: 0 0 0 2px var(--accent);
+      }
+      .lines .t.seek {
+        cursor: pointer;
+        text-decoration: underline dotted;
+        text-underline-offset: 3px;
+        background: none;
+        border: 0;
+        padding: 0;
+        text-align: left;
+      }
+      .lines .t.seek:hover {
+        color: var(--accent);
+      }
+      .wrap {
+        padding-bottom: 320px;
+      }
+      figcaption {
+        font-family: var(--mono);
+        font-size: 12px;
+        color: var(--muted);
+      }
+      .cols {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+      }
+      @media (max-width: 720px) {
+        .cols {
+          grid-template-columns: 1fr;
+        }
+      }
+      .col {
+        min-width: 0;
+        display: grid;
+        gap: 6px;
+        align-content: start;
+      }
+      .col h3 {
+        margin: 0;
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--muted);
+        font-weight: 500;
+      }
+      .lines {
+        display: grid;
+        gap: 4px;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+      }
+      .lines li {
+        display: grid;
+        grid-template-columns: 9.5em auto 1fr;
+        gap: 8px;
+        align-items: baseline;
+        font-size: 14px;
+      }
+      .lines.asr li {
+        grid-template-columns: 9.5em 1fr;
+        color: var(--muted);
+      }
+      .lines .t {
+        font-family: var(--mono);
+        font-size: 12px;
+        color: var(--muted);
+        font-variant-numeric: tabular-nums;
+      }
+      .lines .tx {
+        min-width: 0;
+        overflow-wrap: anywhere;
+      }
+      .lines .tx mark {
+        background: var(--accent-soft);
+        color: inherit;
+        border-radius: 3px;
+        padding: 0 2px;
+      }
+      .chip {
+        font: 500 11px/18px var(--mono);
+        padding: 0 6px;
+        border-radius: 4px;
+      }
+      .chip.speech {
+        background: var(--chip-speech);
+        color: var(--chip-speech-ink);
+      }
+      .chip.other {
+        background: var(--chip-other);
+        color: var(--chip-other-ink);
+      }
+      .empty {
+        color: var(--muted);
+        font-size: 13px;
+        font-style: italic;
+      }
+      .verdict {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: flex-start;
+        border-top: 1px solid var(--line);
+        padding-top: 12px;
+      }
+      .seg {
+        display: inline-flex;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        overflow: hidden;
+        flex: none;
+      }
+      .seg button {
+        border: 0;
+        background: transparent;
+        color: var(--ink);
+        font-size: 13px;
+        padding: 6px 12px;
+      }
+      .seg button + button {
+        border-left: 1px solid var(--line);
+      }
+      .seg button[aria-pressed="true"][data-v="ok"] {
+        background: var(--ok-soft);
+        color: var(--ok);
+        font-weight: 500;
+      }
+      .seg button[aria-pressed="true"][data-v="fix"] {
+        background: var(--bad-soft);
+        color: var(--bad);
+        font-weight: 500;
+      }
+      .verdict textarea {
+        flex: 1 1 260px;
+        min-width: 0;
+        min-height: 34px;
+        resize: vertical;
+        font: inherit;
+        font-size: 14px;
+        padding: 6px 10px;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        background: var(--bg);
+        color: var(--ink);
+      }
+      dialog {
+        border: 0;
+        padding: 0;
+        background: transparent;
+        max-width: 96vw;
+        max-height: 94vh;
+      }
+      dialog::backdrop {
+        background: rgba(0, 0, 0, 0.85);
+      }
+      dialog img {
+        display: block;
+        max-width: 96vw;
+        max-height: 90vh;
+      }
+      dialog .cap {
+        font-family: var(--mono);
+        font-size: 13px;
+        color: #ddd;
+        padding-top: 6px;
+      }
+      .toast {
+        position: fixed;
+        left: 50%;
+        transform: translateX(-50%);
+        bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+        background: var(--ink);
+        color: var(--bg);
+        padding: 8px 14px;
+        border-radius: 6px;
+        font-size: 14px;
+        z-index: 20;
+      }
+      #copybox {
+        width: 100%;
+        min-height: 140px;
+        font: 13px/1.5 var(--mono);
+        background: var(--surface);
+        color: var(--ink);
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        padding: 10px;
+      }
+      @media (prefers-reduced-motion: no-preference) {
+        html {
+          scroll-behavior: smooth;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header>
+        <h1>Burned-in captions review <span class="id" id="vid"></span></h1>
+        <p class="lede">
+          These are the parts of <code>captions.json</code> the run wasn't sure
+          of. Each item shows still frames with the track's caption boxes drawn
+          on, the captions in the track for that range, and the auto-generated
+          ASR. Play, or the card's time range, plays the range with a second
+          either side in the YouTube player at the bottom right, with the
+          track's captions overlaid. Any other time seeks the player there
+          without starting it. Mark each one and copy the review back into the
+          session.
+        </p>
+        <div class="stats" id="stats"></div>
+      </header>
+      <div class="toolbar">
+        <nav id="nav" aria-label="Groups"></nav>
+        <label class="tog"
+          ><input type="checkbox" id="boxes" checked /> Caption boxes</label
+        >
+        <span class="progress" id="progress"></span>
+        <button class="btn" id="copy" type="button">Copy review</button>
+      </div>
+      <div id="copywrap" hidden>
+        <textarea id="copybox" readonly aria-label="Review text"></textarea>
+      </div>
+      <main id="main" style="display: grid; gap: 40px"></main>
+    </div>
+    <aside class="dock" id="dock" aria-label="YouTube player">
+      <div class="bar">
+        <span class="now" id="now" aria-live="off">0:00.00</span
+        ><label class="tog"
+          ><input type="checkbox" id="subs" checked /> Track text</label
+        ><button class="btn ghost" type="button" id="min" aria-pressed="false">
+          Hide
+        </button>
+      </div>
+      <div class="stage">
+        <div class="ytbox"><div id="yt"></div></div>
+        <div class="live" id="live"></div>
+        <div class="subs" id="subsbox"></div>
+      </div>
+    </aside>
+    <dialog id="zoom">
+      <img alt="" />
+      <div class="cap"></div>
+    </dialog>
+
+    <script id="data" type="application/json">
+      __DATA__
+    </script>
+    <script>
+      const DATA = JSON.parse(document.getElementById("data").textContent);
+      const VIDEO = DATA.videoId;
+      const KEY = "review-" + VIDEO;
+      document.title = `${VIDEO} Caption Review`;
+      document.getElementById("vid").textContent = VIDEO;
+      let state = {};
+      try {
+        state = JSON.parse(localStorage.getItem(KEY) || "{}");
+      } catch (e) {
+        state = {};
+      }
+      const save = () => {
+        try {
+          localStorage.setItem(KEY, JSON.stringify(state));
+        } catch (e) {}
+      };
+      const fmt = (s) => {
+        const m = Math.floor(s / 60),
+          r = s - m * 60;
+        return `${m}:${r.toFixed(2).padStart(5, "0")}`;
+      };
+      const esc = (s) =>
+        s.replace(
+          /[&<>"]/g,
+          (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c],
+        );
+      const markQ = (s) => esc(s).replace(/\[\?\]/g, "<mark>[?]</mark>");
+      const yt = (t) =>
+        `https://www.youtube.com/watch?v=${VIDEO}&t=${Math.max(0, Math.floor(t) - 1)}s`;
+
+      const count = (kind) => DATA.all.filter((c) => c.kind === kind).length;
+      document.getElementById("stats").innerHTML = [
+        `<b>${DATA.all.length}</b> captions`,
+        `<b>${count("speech")}</b> speech`,
+        `<b>${count("other")}</b> other`,
+        `<b>${DATA.items.length}</b> items to review`,
+      ]
+        .map((x) => `<span>${x}</span>`)
+        .join("");
+
+      const main = document.getElementById("main");
+      const nav = document.getElementById("nav");
+      for (const g of DATA.groups) {
+        const its = DATA.items.filter((i) => i.group === g.id);
+        if (!its.length) continue;
+        nav.insertAdjacentHTML(
+          "beforeend",
+          `<a href="#${g.id}">${esc(g.title)}<span class="n">${its.length}</span></a>`,
+        );
+        const sec = document.createElement("section");
+        sec.className = "group";
+        sec.id = g.id;
+        sec.innerHTML = `<h2>${esc(g.title)} <span class="n">${its.length}</span></h2><p>${esc(g.help).replace(/`([^`]+)`/g, "<code>$1</code>")}</p>`;
+        for (const it of its) sec.appendChild(renderItem(it));
+        main.appendChild(sec);
+      }
+
+      function renderItem(it) {
+        const el = document.createElement("article");
+        el.className = "item";
+        el.id = "i-" + it.id.replace(/[^\w-]/g, "_");
+        const frames = it.frames
+          .map((f) => {
+            const vis = it.captions.filter(
+              (c) => c.begin <= f.t && c.end > f.t,
+            );
+            const boxes = vis
+              .map((c) => {
+                const [x, y, w, h] = c.pos;
+                return `<div class="box" style="left:${x / 12.8}%;top:${y / 7.2}%;width:${w / 12.8}%;height:${h / 7.2}%"><span>${c.kind}</span></div>`;
+              })
+              .join("");
+            return `<figure><button class="shot" type="button" data-t="${f.t}" aria-label="Enlarge frame at ${fmt(f.t)}"><img src="${f.src}" alt="Frame at ${fmt(f.t)}" loading="lazy">${boxes}</button><figcaption><button type="button" class="t seek" data-seek="${f.t}" style="font:inherit;color:inherit">${fmt(f.t)}</button></figcaption></figure>`;
+          })
+          .join("");
+        const caps = it.captions.length
+          ? `<ul class="lines">${it.captions.map((c) => `<li><button type="button" class="t seek" data-seek="${c.begin}">${fmt(c.begin)}–${fmt(c.end)}</button><span class="chip ${c.kind}">${c.kind}</span><span class="tx">${markQ(c.text)}</span></li>`).join("")}</ul>`
+          : '<span class="empty">No captions in the track here.</span>';
+        const asr = it.asr.length
+          ? `<ul class="lines asr">${it.asr.map((a) => `<li><button type="button" class="t seek" data-seek="${a.begin}">${fmt(a.begin)}–${fmt(a.end)}</button><span class="tx">${esc(a.text)}</span></li>`).join("")}</ul>`
+          : '<span class="empty">No ASR lines here.</span>';
+        const st = state[it.id] || {};
+        el.dataset.verdict = st.v || "";
+        el.innerHTML = `
+    <div class="ihead"><button class="range" type="button" data-act="play" title="Play this range">${fmt(it.begin)}–${fmt(it.end)}</button><a class="ytlink" href="${yt(it.begin)}" target="_blank" rel="noopener">↗ YouTube</a><span class="inote">${esc(it.reason)}</span><span class="playctl"><button class="btn" type="button" data-act="play" title="Plays ${fmt(Math.max(0, it.begin - 1))}–${fmt(it.end + 1)}, a second either side">▶ Play</button><button class="btn ghost" type="button" data-act="loop" aria-pressed="false">Loop</button></span></div>
+    <div class="frames">${frames}</div>
+    <div class="cols"><div class="col"><h3>In the track</h3>${caps}</div><div class="col"><h3>ASR</h3>${asr}</div></div>
+    <div class="verdict">
+      <div class="seg" role="group" aria-label="Verdict">
+        <button type="button" data-v="ok" aria-pressed="${st.v === "ok"}">Looks right</button>
+        <button type="button" data-v="fix" aria-pressed="${st.v === "fix"}">Needs a fix</button>
+      </div>
+      <textarea id="note-${el.id}" placeholder="What's wrong, or the correct text" aria-label="Note">${esc(st.n || "")}</textarea>
+    </div>`;
+        el.querySelectorAll(".seg button").forEach((b) =>
+          b.addEventListener("click", () => {
+            const s = state[it.id] || (state[it.id] = {});
+            s.v = s.v === b.dataset.v ? "" : b.dataset.v;
+            el.dataset.verdict = s.v;
+            el.querySelectorAll(".seg button").forEach((x) =>
+              x.setAttribute("aria-pressed", String(x.dataset.v === s.v)),
+            );
+            save();
+            progress();
+          }),
+        );
+        el.querySelector("textarea").addEventListener("input", (e) => {
+          (state[it.id] || (state[it.id] = {})).n = e.target.value;
+          save();
+          progress();
+        });
+        el.querySelectorAll('[data-act="play"]').forEach((b) =>
+          b.addEventListener("click", () => playRange(it, el, false)),
+        );
+        el.querySelector('[data-act="loop"]').addEventListener("click", (e) => {
+          const on = e.currentTarget.getAttribute("aria-pressed") !== "true";
+          e.currentTarget.setAttribute("aria-pressed", String(on));
+          if (on) playRange(it, el, true);
+          else if (cur && cur.it === it) cur.loop = false;
+        });
+        el.querySelectorAll("[data-seek]").forEach((b) =>
+          b.addEventListener("click", () => seekTo(+b.dataset.seek, it, el)),
+        );
+        el.querySelectorAll(".shot").forEach((b) =>
+          b.addEventListener("click", () => {
+            const d = document.getElementById("zoom");
+            d.querySelector("img").src = b.querySelector("img").src;
+            d.querySelector(".cap").textContent =
+              `${fmt(+b.dataset.t)}  ·  click or Esc to close`;
+            d.showModal();
+          }),
+        );
+        return el;
+      }
+
+      const zoom = document.getElementById("zoom");
+      zoom.addEventListener("click", () => zoom.close());
+
+      function progress() {
+        const n = DATA.items.filter(
+          (i) => state[i.id] && (state[i.id].v || (state[i.id].n || "").trim()),
+        ).length;
+        document.getElementById("progress").textContent =
+          `${n} / ${DATA.items.length} reviewed`;
+      }
+      progress();
+
+      document
+        .getElementById("boxes")
+        .addEventListener("change", (e) =>
+          document.body.classList.toggle("noboxes", !e.target.checked),
+        );
+
+      function reviewText() {
+        const out = [`Review of ${VIDEO} captions.json`, ""];
+        for (const g of DATA.groups) {
+          const rows = DATA.items.filter(
+            (i) =>
+              i.group === g.id &&
+              state[i.id] &&
+              (state[i.id].v || (state[i.id].n || "").trim()),
+          );
+          if (!rows.length) continue;
+          out.push(`## ${g.title}`);
+          for (const i of rows) {
+            const s = state[i.id];
+            const v =
+              s.v === "ok"
+                ? "looks right"
+                : s.v === "fix"
+                  ? "needs a fix"
+                  : "note";
+            out.push(
+              `- ${fmt(i.begin)}–${fmt(i.end)} (${i.begin}–${i.end} s) ${i.reason}: ${v}${(s.n || "").trim() ? " — " + s.n.trim() : ""}`,
+            );
+          }
+          out.push("");
+        }
+        if (out.length === 2) out.push("(nothing marked yet)");
+        return out.join("\n");
+      }
+      let toastT;
+      function toast(msg) {
+        let t = document.querySelector(".toast");
+        if (!t) {
+          t = document.createElement("div");
+          t.className = "toast";
+          t.setAttribute("role", "status");
+          document.body.appendChild(t);
+        }
+        t.textContent = msg;
+        t.hidden = false;
+        clearTimeout(toastT);
+        toastT = setTimeout(() => (t.hidden = true), 2200);
+      }
+      document.getElementById("copy").addEventListener("click", () => {
+        const text = reviewText();
+        const box = document.getElementById("copybox");
+        box.value = text;
+        const p =
+          navigator.clipboard && navigator.clipboard.writeText
+            ? navigator.clipboard.writeText(text)
+            : Promise.reject();
+        p.then(() => toast("Review copied")).catch(() => {
+          document.getElementById("copywrap").hidden = false;
+          box.focus();
+          box.select();
+          toast("Copy the selected text");
+        });
+      });
+      // YouTube player dock: one shared player; a 100 ms poll mirrors its time onto the overlay and enforces the item's range
+      const ALL = DATA.all;
+      let player,
+        ready = false,
+        pending,
+        cur,
+        poll,
+        holdAfterSeek = false;
+      window.onYouTubeIframeAPIReady = () => {
+        player = new YT.Player("yt", {
+          videoId: VIDEO,
+          width: "100%",
+          height: "100%",
+          playerVars: {
+            rel: 0,
+            playsinline: 1,
+            cc_load_policy: 0,
+            iv_load_policy: 3,
+            origin: location.origin,
+          },
+          events: {
+            onReady: () => {
+              ready = true;
+              if (pending) {
+                pending();
+                pending = undefined;
+              }
+              tick();
+            },
+            onStateChange: (e) => {
+              if (e.data === YT.PlayerState.PLAYING && holdAfterSeek) {
+                holdAfterSeek = false;
+                player.pauseVideo();
+              }
+              clearInterval(poll);
+              if (e.data === YT.PlayerState.PLAYING)
+                poll = setInterval(tick, 100);
+              tick();
+            },
+          },
+        });
+      };
+      const yts = document.createElement("script");
+      yts.src = "https://www.youtube.com/iframe_api";
+      document.head.appendChild(yts);
+      function whenReady(f) {
+        if (ready) f();
+        else pending = f;
+      }
+      function mark(el) {
+        document
+          .querySelectorAll(".item.playing")
+          .forEach((x) => x.classList.remove("playing"));
+        if (el) el.classList.add("playing");
+      }
+      function playRange(it, el, loop) {
+        cur = {
+          it,
+          el,
+          a: Math.max(0, it.begin - 1),
+          b: it.end + 1,
+          loop,
+          stop: true,
+        };
+        mark(el);
+        document.getElementById("dock").classList.remove("min");
+        document.getElementById("min").setAttribute("aria-pressed", "false");
+        document.getElementById("min").textContent = "Hide";
+        whenReady(() => {
+          player.seekTo(cur.a, true);
+          player.playVideo();
+        });
+      }
+      function seekTo(t, it, el) {
+        // seek only: a paused or unstarted player stays paused on that frame (seekTo starts an unstarted video, so pause it once it does)
+        cur = { it, el, a: t, b: Infinity, loop: false, stop: false };
+        mark(el);
+        whenReady(() => {
+          const playing = player.getPlayerState() === YT.PlayerState.PLAYING;
+          holdAfterSeek = !playing;
+          player.seekTo(t, true);
+          setTimeout(tick, 300);
+        });
+      }
+      let shown = "";
+      function tick() {
+        if (!ready) return;
+        const t = player.getCurrentTime() || 0;
+        document.getElementById("now").textContent =
+          cur && cur.b !== Infinity && (cur.loop || cur.stop)
+            ? `${fmt(t)} / ${fmt(cur.b)}`
+            : fmt(t);
+        if (cur && t >= cur.b) {
+          if (cur.loop) player.seekTo(cur.a, true);
+          else if (cur.stop) {
+            player.pauseVideo();
+            cur.stop = false;
+          }
+        }
+        const vis = ALL.filter((c) => c.begin <= t && c.end > t);
+        const key = vis.map((c) => c.begin + c.text).join("|");
+        if (key === shown) return;
+        shown = key;
+        document.getElementById("live").innerHTML = vis
+          .map((c) => {
+            const [x, y, w, h] = c.pos;
+            return `<div class="box" style="left:${x / 12.8}%;top:${y / 7.2}%;width:${w / 12.8}%;height:${h / 7.2}%"><span>${c.kind}</span></div>`;
+          })
+          .join("");
+        document.getElementById("subsbox").innerHTML = vis
+          .map((c) => `<div class="${c.kind}">${esc(c.text)}</div>`)
+          .join("");
+      }
+      document
+        .getElementById("subs")
+        .addEventListener("change", (e) =>
+          document.body.classList.toggle("nosubs", !e.target.checked),
+        );
+      document.getElementById("min").addEventListener("click", (e) => {
+        const d = document.getElementById("dock");
+        const m = d.classList.toggle("min");
+        e.currentTarget.setAttribute("aria-pressed", String(m));
+        e.currentTarget.textContent = m ? "Show" : "Hide";
+      });
+    </script>
+  </body>
+</html>
