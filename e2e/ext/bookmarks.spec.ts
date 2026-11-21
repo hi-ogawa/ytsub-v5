@@ -131,7 +131,15 @@ test("video page: bookmark arrows show the caption while paused", async ({
   await expect(row).not.toBeInViewport();
 
   await host.getByRole("button", { name: "Next bookmark" }).click();
-  await expect(row).toBeInViewport();
+  const getOffsetFromCenter = () =>
+    row.evaluate((el) => {
+      const list = el.closest(".overflow-y-auto")!.getBoundingClientRect();
+      const rect = el.getBoundingClientRect();
+      return Math.abs(
+        rect.top + rect.height / 2 - (list.top + list.height / 2),
+      );
+    });
+  await expect.poll(getOffsetFromCenter).toBeLessThan(2);
   await expect(row).toHaveClass(/border-ring/);
 });
 
