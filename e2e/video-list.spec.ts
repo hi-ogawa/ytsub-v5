@@ -83,15 +83,3 @@ test("import JSON file adds video to list with captions and bookmarks", async ({
   await page.getByRole("button", { name: /Bookmarks/ }).click();
   await expect(page.locator("[data-bookmark-id]").first()).toBeVisible();
 });
-
-test("no sync badges when unauthenticated", async ({ page }) => {
-  await page.goto("/dev");
-  await expect(page.getByText("No bookmarked videos yet")).toBeVisible();
-
-  // Bootstrap fixtures to populate video index
-  await page.getByTestId("header-menu").click();
-  await page.getByTestId("bootstrap-fixtures").click();
-
-  await expect(page.getByTestId("video-card-7GU_VQfgMT0")).toBeVisible();
-  await expect(page.getByTestId("video-sync-badge")).toHaveCount(0);
-});

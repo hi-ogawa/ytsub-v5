@@ -52,9 +52,14 @@ test("push from the sync menu, then open the bookmarks page", async ({
 
   const ytPage = await openYouTubeTab(context, SEED_VIDEO_ID);
   await openPanelWithTracks(ytPage);
-  await createFirstBookmark(ytPage);
 
-  const status = await openSyncMenu(ytPage);
+  // A video without bookmarks isn't in the video index yet
+  let status = await openSyncMenu(ytPage);
+  await expect(status).toHaveAttribute("data-sync-state", "empty");
+  await ytPage.keyboard.press("Escape");
+
+  await createFirstBookmark(ytPage);
+  status = await openSyncMenu(ytPage);
   await expect(status).toHaveAttribute("data-sync-state", "push");
   const checkpoint = createCheckpoint();
   await status.click();
@@ -102,6 +107,23 @@ test("pull from the sync menu replaces captions and bookmarks in place", async (
   await expect(
     host.getByRole("button", { name: "Bookmarks (15)" }),
   ).toBeVisible();
+});
+
+test("shows conflict when local bookmarks and server data both exist", async ({
+  context,
+  page,
+  extensionId,
+}) => {
+  await setupDb({ seed: true });
+  await gotoBookmarks(page, extensionId);
+  await login(page);
+
+  const ytPage = await openYouTubeTab(context, SEED_VIDEO_ID);
+  await openPanelWithTracks(ytPage);
+  await createFirstBookmark(ytPage);
+
+  const status = await openSyncMenu(ytPage);
+  await expect(status).toHaveAttribute("data-sync-state", "conflict");
 });
 
 test("a failed push shows its error in the sync menu", async ({

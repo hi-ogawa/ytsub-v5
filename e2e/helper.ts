@@ -45,60 +45,23 @@ export async function login(page: Page, options?: { username?: string }) {
   );
 }
 
-/** Open panel and select ko/en tracks so caption rows appear */
-export async function openPanelWithTracks(page: Page) {
+/**
+ * Log in as the seed user, pull the seed video from its sync badge, and open
+ * it in the viewer. Requires setupDb({ seed: true }) beforehand.
+ */
+export async function openPulledVideo(page: Page, youtubeId: string) {
   await test.step(
-    "Open panel with tracks",
+    "Open pulled video",
     async () => {
-      await page.getByTitle("Show captions").click();
-      const selects = page.locator("select");
-      await selects.nth(0).selectOption(".ko");
-      await selects.nth(1).selectOption(".en");
-      await expect(page.locator("[data-index='0']")).toBeVisible();
-    },
-    { box: true },
-  );
-}
-
-interface CaptionSelection {
-  index: number;
-  start: number;
-  end: number;
-}
-
-/** Select text in a caption row (shows FAB but doesn't click) */
-export async function selectTextInCaption(
-  page: Page,
-  options: CaptionSelection,
-) {
-  await test.step(
-    "Select caption text",
-    async () => {
-      await page.evaluate(({ index, start, end }) => {
-        const sideEl = document
-          .querySelector(`[data-index='${index}']`)!
-          .querySelector("[data-side='0']")!;
-        const textSpan = sideEl.querySelector("[data-offset]")!;
-        const textNode = textSpan.firstChild!;
-        const range = document.createRange();
-        range.setStart(textNode, start);
-        range.setEnd(textNode, end);
-        const selection = document.getSelection()!;
-        selection.removeAllRanges();
-        selection.addRange(range);
-      }, options);
-    },
-    { box: true },
-  );
-}
-
-/** Select text in a caption row and create a bookmark */
-export async function createBookmarkAt(page: Page, options: CaptionSelection) {
-  await test.step(
-    "Create bookmark",
-    async () => {
-      await selectTextInCaption(page, options);
-      await page.getByRole("button", { name: "Create bookmark" }).click();
+      // No test checks playback, so keep the YouTube player off the network
+      await page.route("https://www.youtube.com/**", (route) => route.abort());
+      await login(page);
+      const card = page.getByTestId(`video-card-${youtubeId}`);
+      const badge = card.getByTestId("video-sync-badge");
+      await badge.click();
+      await expect(badge).toHaveAttribute("data-sync-status", "synced");
+      await card.click();
+      await expect(page).toHaveURL(`/videos/${youtubeId}`);
     },
     { box: true },
   );
