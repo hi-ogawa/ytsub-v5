@@ -94,6 +94,8 @@ export type SyncStatus = {
   onPull: (store: CaptionSessionManager) => void;
 };
 
+export type UseSync = (youtubeId: string) => SyncStatus;
+
 export function useIndexEntry(youtubeId: string) {
   const queryClient = useQueryClient();
   const query = useQuery({
