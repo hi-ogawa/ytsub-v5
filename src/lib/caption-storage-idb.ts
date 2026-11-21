@@ -62,7 +62,7 @@ class IdbCaptionStorage implements CaptionStorage {
       },
     );
     if (entries) {
-      this.notify({ type: "index", entries });
+      this.notify({ type: "videoIndex", entries });
     }
   };
 
@@ -76,7 +76,7 @@ class IdbCaptionStorage implements CaptionStorage {
         return videos.getAll();
       },
     );
-    this.notify({ type: "index", entries });
+    this.notify({ type: "videoIndex", entries });
   };
 
   setSyncedAt: CaptionStorage["setSyncedAt"] = async (
@@ -98,13 +98,13 @@ class IdbCaptionStorage implements CaptionStorage {
         return videos.getAll();
       },
     );
-    this.notify({ type: "index", entries });
+    this.notify({ type: "videoIndex", entries });
   };
 
-  getIndexEntry: CaptionStorage["getIndexEntry"] = (youtubeId) =>
+  getVideoIndexEntry: CaptionStorage["getVideoIndexEntry"] = (youtubeId) =>
     transact(["videos"], "readonly", ({ videos }) => videos.get(youtubeId));
 
-  listIndex: CaptionStorage["listIndex"] = () =>
+  listVideoIndex: CaptionStorage["listVideoIndex"] = () =>
     transact(["videos"], "readonly", ({ videos }) => videos.getAll());
 
   subscribe: CaptionStorage["subscribe"] = (listener) => {

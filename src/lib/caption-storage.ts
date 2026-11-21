@@ -29,7 +29,7 @@ export type VideoIndexEntry = {
   syncedServerUpdatedAt?: string;
 };
 
-export type StorageNotice = { type: "index"; entries: VideoIndexEntry[] };
+export type StorageNotice = { type: "videoIndex"; entries: VideoIndexEntry[] };
 
 export type StorageListener = (notice: StorageNotice) => void;
 
@@ -43,8 +43,8 @@ export interface CaptionStorage {
   ): Promise<void>;
   deleteVideo(youtubeId: string): Promise<void>;
   setSyncedAt(youtubeId: string, serverUpdatedAt: string): Promise<void>;
-  getIndexEntry(youtubeId: string): Promise<VideoIndexEntry | undefined>;
-  listIndex(): Promise<VideoIndexEntry[]>;
+  getVideoIndexEntry(youtubeId: string): Promise<VideoIndexEntry | undefined>;
+  listVideoIndex(): Promise<VideoIndexEntry[]>;
   subscribe(listener: StorageListener): () => void;
 }
 
@@ -60,12 +60,12 @@ export const videoIndexStore = createExternalStore<VideoIndexEntry[]>([]);
 export function initCaptionStorage(storage: CaptionStorage) {
   captionStorage = storage;
   storage.subscribe((notice) => {
-    if (notice.type === "index") {
+    if (notice.type === "videoIndex") {
       videoIndexStore.set(notice.entries);
     }
   });
 }
 
 export async function loadVideoIndex() {
-  videoIndexStore.set(await captionStorage.listIndex());
+  videoIndexStore.set(await captionStorage.listVideoIndex());
 }
