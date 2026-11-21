@@ -49,7 +49,7 @@ import {
 } from "../lib/extension-bookmarks.ts";
 import { createLocalStorageStore, useStore } from "../lib/external-store.ts";
 import { flashHighlight } from "../lib/flash-highlight.ts";
-import type { SyncStatus } from "../lib/sync.ts";
+import type { SyncStatus, UseSync } from "../lib/sync.ts";
 import type {
   Json3File,
   YouTubeCaptionTrack,
@@ -363,22 +363,19 @@ function formatTimestamp(seconds: number): string {
   return `${m}:${String(s).padStart(2, "0")}`;
 }
 
+// The menu content mounts each time the menu opens, so the sync hook's
+// queries refetch then.
 function SyncMenuItem({
-  sync,
+  useSync,
   store,
 }: {
-  sync: SyncStatus;
+  useSync: UseSync;
   store: CaptionSessionManager;
 }) {
-  const { state, error, onNavigate, onRefresh } = sync;
+  const sync = useSync(store.videoMeta.youtubeId);
+  const { state, error, onNavigate } = sync;
   const { icon, label } = syncStateDisplay(state);
   const action = getSyncMenuAction(sync, store);
-
-  // The menu content mounts each time the menu opens, so this re-checks the
-  // server then.
-  useEffect(() => {
-    onRefresh();
-  }, []);
 
   const content = (
     <>
@@ -470,7 +467,8 @@ type CaptionPanelProps = {
   player?: YTPlayer;
   fetchJson3: (track: YouTubeCaptionTrack) => Promise<Json3File>;
   videoMeta: YouTubeVideoData;
-  sync: SyncStatus;
+  // Called by the sync menu each time it opens, so its queries refetch then.
+  useSync: UseSync;
   sessionOnly?: boolean;
 };
 
@@ -519,7 +517,7 @@ function CaptionPanelInner({
   player,
   fetchJson3,
   videoMeta,
-  sync,
+  useSync,
   sessionOnly,
   initialStore,
 }: CaptionPanelProps & {
@@ -585,7 +583,7 @@ function CaptionPanelInner({
         setUserStrategy(s);
         setStore(undefined);
       }}
-      sync={sync}
+      useSync={useSync}
     />
   );
 }
@@ -706,7 +704,7 @@ function CaptionPanelWithStore({
   player,
   onSelectTracks,
   onSelectStrategy,
-  sync,
+  useSync,
 }: {
   store: CaptionSessionManager;
   sessionOnly: boolean;
@@ -714,7 +712,7 @@ function CaptionPanelWithStore({
   player?: YTPlayer;
   onSelectTracks: (v1?: string, v2?: string) => void;
   onSelectStrategy: (s: MergeStrategy) => void;
-  sync: SyncStatus;
+  useSync: UseSync;
 }) {
   useSyncExternalStore(store.subscribe, () => store.version);
 
@@ -744,7 +742,7 @@ function CaptionPanelWithStore({
           autoScroll={autoScroll}
           onSetAutoScroll={setAutoScroll}
           onSelectStrategy={onSelectStrategy}
-          sync={sync}
+          useSync={useSync}
           sessionOnly={sessionOnly}
         />
       </div>
@@ -773,7 +771,7 @@ function SettingsDropdown({
   autoScroll,
   onSetAutoScroll,
   onSelectStrategy,
-  sync,
+  useSync,
   sessionOnly,
 }: {
   store: CaptionSessionManager;
@@ -781,7 +779,7 @@ function SettingsDropdown({
   autoScroll: boolean;
   onSetAutoScroll: (value: boolean | ((prev: boolean) => boolean)) => void;
   onSelectStrategy: (s: MergeStrategy) => void;
-  sync: SyncStatus;
+  useSync: UseSync;
   sessionOnly?: boolean;
 }) {
   const hasBookmarks = store.bookmarks.length > 0;
@@ -795,7 +793,7 @@ function SettingsDropdown({
         <EllipsisVertical className="size-4" />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        <SyncMenuItem sync={sync} store={store} />
+        <SyncMenuItem useSync={useSync} store={store} />
         <DropdownMenuItem
           data-checked={autoScroll}
           onSelect={(e) => {

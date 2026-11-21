@@ -95,10 +95,11 @@ export type SyncStatus = {
   state: SyncState;
   error?: string;
   onNavigate: () => void;
-  onRefresh: () => void;
   onPush: (store: CaptionSessionManager) => void;
   onPull: (store: CaptionSessionManager) => void;
 };
+
+export type UseSync = (youtubeId: string) => SyncStatus;
 
 export function useSyncState({
   youtubeId,
@@ -181,11 +182,6 @@ export function useSyncState({
       ? `${variables?.direction === "pull" ? "Download" : "Upload"} failed: ${error.message}`
       : undefined,
     onNavigate,
-    onRefresh: () => {
-      if (authenticated) {
-        serverQuery.refetch({ cancelRefetch: false });
-      }
-    },
     onPush: (store) => syncMutation.mutate({ direction: "push", store }),
     onPull: (store) => syncMutation.mutate({ direction: "pull", store }),
   };

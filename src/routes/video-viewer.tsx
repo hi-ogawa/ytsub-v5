@@ -16,12 +16,7 @@ export function VideoViewerPage() {
   const [entries] = useStore(videoIndexStore);
   const entry = entries.find((e) => e.youtubeId === youtubeId);
 
-  const navigate = useNavigate();
   const { ref: playerElRef, player } = useYouTubePlayer(youtubeId);
-  const sync = useSyncState({
-    youtubeId: youtubeId!,
-    onNavigate: () => navigate("/"),
-  });
 
   if (!youtubeId) {
     return (
@@ -60,9 +55,14 @@ export function VideoViewerPage() {
           player={player}
           fetchJson3={neverFetchJson3}
           videoMeta={videoMeta}
-          sync={sync}
+          useSync={useViewerSync}
         />
       </div>
     </div>
   );
+}
+
+function useViewerSync(youtubeId: string) {
+  const navigate = useNavigate();
+  return useSyncState({ youtubeId, onNavigate: () => navigate("/") });
 }
