@@ -3,7 +3,7 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { PortalContainerProvider } from "../components/ui/portal-container.tsx";
 import { initCaptionStorage } from "../lib/caption-storage.ts";
-import { addShadowStyle } from "../utils/shadow-style.ts";
+import { createShadowHost } from "../utils/shadow-root.ts";
 import type { bgRpcHandlers } from "./background.ts";
 import { CaptionOverlay } from "./components/caption-overlay.tsx";
 import { createUseExtensionSync } from "./components/use-extension-sync.ts";
@@ -50,29 +50,18 @@ function injectOverlay() {
     return;
   }
 
-  // Create shadow root for style isolation.
-  // Inline styles here because `all: initial` resets everything and
-  // inline styles beat :host stylesheet rules. Use :host in content.css
-  // only for CSS custom properties (unaffected by `all: initial`).
-  const host = document.createElement("div");
-  host.id = "zamak-host";
-  Object.assign(host.style, {
-    all: "initial",
-    position: "fixed",
-    inset: "0",
-    zIndex: "2147483647",
-    pointerEvents: "none",
-    fontFamily: "'Roboto', 'Arial', sans-serif",
-    fontSize: "14px",
+  const { host, container } = createShadowHost({
+    id: "zamak-host",
+    css: contentCss,
+    style: {
+      position: "fixed",
+      inset: "0",
+      zIndex: "2147483647",
+      pointerEvents: "none",
+      fontFamily: "'Roboto', 'Arial', sans-serif",
+      fontSize: "14px",
+    },
   });
-  document.body.appendChild(host);
-
-  const shadow = host.attachShadow({ mode: "open" });
-
-  addShadowStyle(shadow, contentCss);
-
-  const container = document.createElement("div");
-  shadow.appendChild(container);
 
   unsubscribeTheme = subscribeYouTubeTheme((dark) =>
     applyTheme(host, container, dark),
