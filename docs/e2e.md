@@ -41,7 +41,7 @@ Extension tests load `dist/extension/`, which `pnpm test-e2e` builds, into a rea
 
 The tests never load the real youtube.com. The `context` fixture serves `https://www.youtube.com/**` from a route handler in `e2e/ext/youtube-mock.ts`. Chrome injects content scripts by URL, so the mocked watch page still gets them. The page has only what the content script reads, and the player API and caption tracks come from the fixtures in `scripts/youtube-json/<id>/`, so `videoId` must be one of those. The home page `/` is a blank page, where the content scripts run but the caption panel doesn't. Every other youtube.com request is aborted. `pnpm test-youtube` covers changes to the real page and API.
 
-The bookmarks page pushes and pulls without a YouTube tab. To give push a session, create a bookmark in the content script panel rather than writing to IndexedDB, so the video reaches the bookmarks page through the same path as in real use. `seedVideoIndex(page, entries)` writes index entries alone, for tests about the list and its sync badges.
+A push or pull test needs only the bookmarks page. To give push a session, create a bookmark in the content script panel rather than writing to IndexedDB, so the video reaches the bookmarks page through the same path as in real use. `seedVideoIndex(page, entries)` writes index entries alone, for tests about the list and its sync badges.
 
 When a test opens a YouTube tab after the default `page`, call `page.bringToFront()` before using the bookmarks page, because clicks in a background tab can stall.
 
