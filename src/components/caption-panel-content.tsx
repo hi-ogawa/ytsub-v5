@@ -26,10 +26,7 @@ export function CaptionPanelContent({
   player?: YTPlayer;
   autoScroll: boolean;
 }) {
-  // --- Tab state ---
-  const [activeTab, setActiveTab] = useState<"captions" | "bookmarks">(
-    "captions",
-  );
+  const [activeTab, setActiveTab] = useState<Tab>("captions");
 
   const sortedBookmarks = useMemo(
     () =>
@@ -39,7 +36,6 @@ export function CaptionPanelContent({
     [store.bookmarks],
   );
 
-  // --- Bookmark navigation ---
   function onPrevBookmark() {
     if (!player || sortedBookmarks.length === 0) {
       return;
@@ -65,7 +61,6 @@ export function CaptionPanelContent({
     captionListRef.current?.showCaption(bookmark.captionIndex);
   }
 
-  // --- Cross-tab navigation ---
   const captionListRef = useRef<CaptionViewerHandle>(null);
   const bookmarksListRef = useRef<BookmarksListHandle>(null);
 
@@ -88,52 +83,13 @@ export function CaptionPanelContent({
 
   return (
     <div ref={contentRef} className="flex min-h-0 flex-[1_0_0] flex-col">
-      {/* Tab bar */}
-      <div className="flex flex-none items-center gap-1 border-b px-2 py-0.5 lg:py-1">
-        <button
-          className={[
-            "rounded px-2 py-0.5 text-sm",
-            activeTab === "captions"
-              ? "bg-muted font-medium"
-              : "text-muted-foreground hover:bg-muted",
-          ].join(" ")}
-          onClick={() => setActiveTab("captions")}
-        >
-          Captions
-        </button>
-        <button
-          className={[
-            "rounded px-2 py-0.5 text-sm",
-            activeTab === "bookmarks"
-              ? "bg-muted font-medium"
-              : "text-muted-foreground hover:bg-muted",
-          ].join(" ")}
-          onClick={() => setActiveTab("bookmarks")}
-        >
-          Bookmarks
-          {sortedBookmarks.length > 0 && ` (${sortedBookmarks.length})`}
-        </button>
-        <div className="ml-auto flex items-center gap-0.5">
-          <div className="flex gap-0.5">
-            <button
-              className={`rounded p-0.5 text-muted-foreground ${sortedBookmarks.length > 0 ? "hover:bg-muted" : "opacity-30"}`}
-              onClick={onPrevBookmark}
-              disabled={sortedBookmarks.length === 0}
-              title="Previous bookmark"
-            >
-              <ChevronLeft className="size-4" />
-            </button>
-            <button
-              className={`rounded p-0.5 text-muted-foreground ${sortedBookmarks.length > 0 ? "hover:bg-muted" : "opacity-30"}`}
-              onClick={onNextBookmark}
-              disabled={sortedBookmarks.length === 0}
-              title="Next bookmark"
-            >
-              <ChevronRight className="size-4" />
-            </button>
-          </div>
-        </div>
-      </div>
+      <TabBar
+        activeTab={activeTab}
+        bookmarkCount={sortedBookmarks.length}
+        onSelectTab={setActiveTab}
+        onPrevBookmark={onPrevBookmark}
+        onNextBookmark={onNextBookmark}
+      />
 
       <div className="relative flex min-h-0 flex-[1_0_0] flex-col">
         {/* Captions — hidden (not unmounted) to preserve scroll position */}
@@ -182,6 +138,70 @@ export function CaptionPanelContent({
             onCreate={bookmarkSelection.create}
           />
         )}
+      </div>
+    </div>
+  );
+}
+
+type Tab = "captions" | "bookmarks";
+
+function TabBar({
+  activeTab,
+  bookmarkCount,
+  onSelectTab,
+  onPrevBookmark,
+  onNextBookmark,
+}: {
+  activeTab: Tab;
+  bookmarkCount: number;
+  onSelectTab: (tab: Tab) => void;
+  onPrevBookmark: () => void;
+  onNextBookmark: () => void;
+}) {
+  return (
+    <div className="flex flex-none items-center gap-1 border-b px-2 py-0.5 lg:py-1">
+      <button
+        className={[
+          "rounded px-2 py-0.5 text-sm",
+          activeTab === "captions"
+            ? "bg-muted font-medium"
+            : "text-muted-foreground hover:bg-muted",
+        ].join(" ")}
+        onClick={() => onSelectTab("captions")}
+      >
+        Captions
+      </button>
+      <button
+        className={[
+          "rounded px-2 py-0.5 text-sm",
+          activeTab === "bookmarks"
+            ? "bg-muted font-medium"
+            : "text-muted-foreground hover:bg-muted",
+        ].join(" ")}
+        onClick={() => onSelectTab("bookmarks")}
+      >
+        Bookmarks
+        {bookmarkCount > 0 && ` (${bookmarkCount})`}
+      </button>
+      <div className="ml-auto flex items-center gap-0.5">
+        <div className="flex gap-0.5">
+          <button
+            className={`rounded p-0.5 text-muted-foreground ${bookmarkCount > 0 ? "hover:bg-muted" : "opacity-30"}`}
+            onClick={onPrevBookmark}
+            disabled={bookmarkCount === 0}
+            title="Previous bookmark"
+          >
+            <ChevronLeft className="size-4" />
+          </button>
+          <button
+            className={`rounded p-0.5 text-muted-foreground ${bookmarkCount > 0 ? "hover:bg-muted" : "opacity-30"}`}
+            onClick={onNextBookmark}
+            disabled={bookmarkCount === 0}
+            title="Next bookmark"
+          >
+            <ChevronRight className="size-4" />
+          </button>
+        </div>
       </div>
     </div>
   );
