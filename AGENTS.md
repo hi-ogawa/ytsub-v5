@@ -7,7 +7,7 @@
 | `pnpm tsc && pnpm lint` | After changes (`pnpm lint` formats .ts, .tsx, .md, .json and lints .ts, .tsx) |
 | `pnpm build`            | Verify the build                                                              |
 | `pnpm test`             | Unit tests (src/, vitest)                                                     |
-| `pnpm test-e2e`         | Web app and extension e2e tests against a build                               |
+| `pnpm test-e2e`         | Web app and extension e2e tests. CI runs them all, so run one spec locally    |
 | `pnpm build-ext`        | Build the Chrome extension                                                    |
 | `pnpm test-youtube`     | Subtitle extraction tests against real YouTube pages                          |
 
@@ -40,6 +40,7 @@ Read the [product overview](docs/product.md) and the [architecture overview](doc
 
 ## Tests
 
+- Verify a change locally with `pnpm tsc && pnpm lint`, plus `pnpm test` when unit tests cover it. Leave the full e2e suite to CI, which runs it on every push to a PR, because `pnpm test-e2e` builds the extension and the web app and runs every spec. Locally, run at most a smoke check of a few seconds, such as one targeted spec with `pnpm test-e2e "<file>" -g "<pattern>"`.
 - Before adding a test, check that the repo tests that kind of code and that a regression would be visible to a user. Don't test internal shapes, such as which fields saved data carries, when a regression would break nothing.
 - When an existing test fails, first verify from first principles whether its expectation is correct. Do not compensate in the implementation merely to preserve an incorrect test.
 - Before adding or increasing an E2E timeout, measure the relevant wait with `createCheckpoint()` from `e2e/helper.ts`. Prefer Playwright's default timeout when it comfortably covers the measured duration. If a custom timeout is needed, allow reasonable headroom and document the measured duration beside it.
