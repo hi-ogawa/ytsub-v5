@@ -16,7 +16,7 @@ GAP = 10  # seconds between requested times that start a separate decode
 
 
 def main():
-    p = argparse.ArgumentParser(description="Tile frames at the given times into sheets and print the sheets as JSON.")
+    p = argparse.ArgumentParser(description="Tile frames at the given times into sheets and print each sheet's times, scale, and crop origin as JSON.")
     p.add_argument("video")
     g = p.add_mutually_exclusive_group(required=True)
     g.add_argument("--at", type=float, nargs="+", help="times in seconds, rounded to the 0.25 s step grid")
@@ -39,7 +39,7 @@ def main():
         path = f"{a.out}/sheet-{n // per_sheet:03d}.jpg"
         part = times[n:n + per_sheet]
         cv2.imwrite(path, tile([(t, frames[t][y:y + h, x:x + w]) for t in part], tw, th, cols), [cv2.IMWRITE_JPEG_QUALITY, 90])
-        sheets.append({"sheet": path, "times": part})
+        sheets.append({"sheet": path, "times": part, "scale": scale, "origin": [x, y]})
     json.dump(sheets, sys.stdout, indent=1)
     print()
 
