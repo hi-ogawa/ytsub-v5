@@ -8,11 +8,34 @@ export type Store<T> = {
 export type StoreMap<S, K extends keyof S> = { [P in K]: Store<S[P]> };
 
 // Returns a `transact` function over a database whose object stores are
-// described by `S`, keyed by the names in `storeNames`.
+// described by `S`, keyed by the names in `storeNames`. The database opens on
+// the first transaction.
 export function createTransact<S>(options: {
-  openDb: () => Promise<IDBDatabase>;
+  name: string;
+  version: number;
   storeNames: { [K in keyof S]: string };
+  upgrade: (db: IDBDatabase, oldVersion: number) => void;
 }) {
+  let dbPromise: Promise<IDBDatabase> | undefined;
+
+  function openDb(): Promise<IDBDatabase> {
+    dbPromise ??= new Promise((resolve, reject) => {
+      const req = indexedDB.open(options.name, options.version);
+      req.onupgradeneeded = (e) => options.upgrade(req.result, e.oldVersion);
+      req.onsuccess = () => {
+        const db = req.result;
+        // Let a newer version of the app upgrade the database.
+        db.onversionchange = () => {
+          db.close();
+          dbPromise = undefined;
+        };
+        resolve(db);
+      };
+      req.onerror = () => reject(req.error);
+    });
+    return dbPromise;
+  }
+
   // Runs `fn` in one transaction and resolves after it completes. `fn` may
   // await requests on its stores, because a transaction stays active through
   // promise callbacks run from its request events.
@@ -21,7 +44,7 @@ export function createTransact<S>(options: {
     mode: IDBTransactionMode,
     fn: (stores: StoreMap<S, K>) => Promise<R>,
   ): Promise<R> {
-    const db = await options.openDb();
+    const db = await openDb();
     const tx = db.transaction(
       names.map((name) => options.storeNames[name]),
       mode,

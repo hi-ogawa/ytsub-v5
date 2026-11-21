@@ -17,7 +17,19 @@ const STORE_NAMES: { [K in keyof Stores]: string } = {
   videos: "videos",
 };
 
-const transact = createTransact<Stores>({ openDb, storeNames: STORE_NAMES });
+const transact = createTransact<Stores>({
+  name: DB_NAME,
+  version: DB_VERSION,
+  storeNames: STORE_NAMES,
+  upgrade(db, oldVersion) {
+    if (oldVersion < 1) {
+      db.createObjectStore(STORE_NAMES.sessions, { keyPath: "youtubeId" });
+    }
+    if (oldVersion < 2) {
+      db.createObjectStore(STORE_NAMES.videos, { keyPath: "youtubeId" });
+    }
+  },
+});
 
 class IdbCaptionStorage implements CaptionStorage {
   listeners = new Set<StorageListener>();
@@ -110,31 +122,3 @@ class IdbCaptionStorage implements CaptionStorage {
 }
 
 export const idbCaptionStorage = new IdbCaptionStorage();
-
-let dbPromise: Promise<IDBDatabase> | undefined;
-
-function openDb(): Promise<IDBDatabase> {
-  dbPromise ??= new Promise((resolve, reject) => {
-    const req = indexedDB.open(DB_NAME, DB_VERSION);
-    req.onupgradeneeded = (e) => {
-      const db = req.result;
-      if (e.oldVersion < 1) {
-        db.createObjectStore(STORE_NAMES.sessions, { keyPath: "youtubeId" });
-      }
-      if (e.oldVersion < 2) {
-        db.createObjectStore(STORE_NAMES.videos, { keyPath: "youtubeId" });
-      }
-    };
-    req.onsuccess = () => {
-      const db = req.result;
-      // Let a newer version of the app upgrade the database.
-      db.onversionchange = () => {
-        db.close();
-        dbPromise = undefined;
-      };
-      resolve(db);
-    };
-    req.onerror = () => reject(req.error);
-  });
-  return dbPromise;
-}
