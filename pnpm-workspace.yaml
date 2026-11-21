@@ -1,0 +1,6 @@
+allowBuilds:
+  esbuild: false
+  sharp: false
+  workerd: false
+overrides:
+  vitest: $vitest
