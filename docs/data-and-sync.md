@@ -2,7 +2,7 @@
 
 Your captions and bookmarks live in the browser first. The server keeps a copy that you push to and pull from by hand, one video at a time. This doc explains what is stored where, how push and pull move a video, and where the copies can drift apart.
 
-![The extension keeps caption sessions and the video index in IndexedDB on its own origin, where YouTube tabs reach it through a hidden frame. Earlier versions' data in youtube.com storage is copied in once. The web app keeps the same layout on its own origin. Both push to and pull from the server.](images/data-and-sync.svg)
+![The extension keeps caption sessions and the video index in IndexedDB on its own origin, where YouTube tabs reach it through a hidden frame. The web app keeps the same layout on its own origin. Both push to and pull from the server.](images/data-and-sync.svg)
 
 ## Keep Each Video as a Caption Session
 
@@ -45,14 +45,8 @@ In both clients, a pull from the caption panel replaces the captions and bookmar
 
 Data can also enter the web app from an `import.json` file, through Import in the header menu. Import writes a session to the web app's storage, and a push then uploads it. [Generate import.json](../skills/zamak/references/generate-import-json.md) describes how to build one without the extension.
 
-## Move Earlier Data Without Losing Changes
-
-Earlier versions kept the index in localStorage, and the extension kept its data in youtube.com storage. The first load after the update copies that data into the database once, and leaves the old copy in place for a downgrade.
-
-The extension's old index came in two copies, one in youtube.com localStorage and one in `chrome.storage.local`, and they could disagree. The move takes the entry with the later local change from either copy, or the later sync when both changed at the same time. A video can also be in the database already, if you pulled it on the bookmarks page before opening a YouTube tab. Then the entry with the later local change wins, together with its session, and a tie keeps the copy already in the database. A session with no index entry moves only if the database has none for that video.
-
 ## Know Where an Open Page Can Fall Behind
 
-Each page keeps the video index in memory and updates it after its own writes. Writes from other pages show up after a reload. So a second YouTube tab keeps the sync status it loaded, and an open bookmarks page doesn't show what a YouTube tab saves, such as a pull or the first move of earlier data.
+Each page keeps the video index in memory and updates it after its own writes. Writes from other pages show up after a reload. So a second YouTube tab keeps the sync status it loaded, and an open bookmarks page doesn't show what a YouTube tab saves, such as a pull.
 
 The caption panel also holds its session in memory while you work, and reads the stored copy only when it opens. If another page saves that video's session while the panel is open, such as a pull from the bookmarks page or an edit in another tab, the panel keeps showing its older copy, and its next edit saves that copy over the newer one.

@@ -2,9 +2,6 @@
 // origin for the content script. docs/extension-runtime.md explains the bridge.
 
 import { idbCaptionStorage } from "../lib/caption-db.ts";
-import type { LegacyData } from "../lib/caption-storage.ts";
-import type { VideoIndexEntry } from "../lib/video-index.ts";
-import { chromeStorage } from "./lib/chrome-storage.ts";
 import {
   type BridgeMessage,
   type BridgeMethod,
@@ -13,44 +10,12 @@ import {
 
 const storage = idbCaptionStorage;
 
-// Before the move, the extension kept a second copy of the index in
-// chrome.storage.local, and the two copies could drift apart (issue 167).
-const LEGACY_INDEX_KEY = "zamak:video-index";
-
 const handlers: Record<BridgeMethod, (...params: any[]) => Promise<unknown>> = {
   getSession: storage.getSession,
   saveSession: storage.saveSession,
   setSyncedAt: storage.setSyncedAt,
   listIndex: storage.listIndex,
-  async importLegacy(source: string, data: LegacyData) {
-    const extensionIndex =
-      (await chromeStorage.get<VideoIndexEntry[]>(LEGACY_INDEX_KEY)) ?? [];
-    await storage.importLegacy(source, {
-      ...data,
-      index: mergeLegacyIndexes(data.index, extensionIndex),
-    });
-  },
-  isLegacyImported: storage.isLegacyImported,
 };
-
-function mergeLegacyIndexes(a: VideoIndexEntry[], b: VideoIndexEntry[]) {
-  const merged = new Map(a.map((e) => [e.youtubeId, e]));
-  for (const entry of b) {
-    const other = merged.get(entry.youtubeId);
-    if (!other || compareEntries(entry, other) > 0) {
-      merged.set(entry.youtubeId, entry);
-    }
-  }
-  return [...merged.values()];
-}
-
-// Newer local change first, then the more recent sync.
-function compareEntries(a: VideoIndexEntry, b: VideoIndexEntry) {
-  if (a.updatedAt !== b.updatedAt) {
-    return a.updatedAt > b.updatedAt ? 1 : -1;
-  }
-  return (a.syncedAt ?? "") > (b.syncedAt ?? "") ? 1 : -1;
-}
 
 function postToPage(message: BridgeMessage) {
   window.parent.postMessage(message, YOUTUBE_ORIGIN);

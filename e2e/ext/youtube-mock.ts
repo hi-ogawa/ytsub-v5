@@ -13,10 +13,6 @@ export async function mockYouTube(context: BrowserContext) {
   await context.route("https://www.youtube.com/**", async (route) => {
     const url = new URL(route.request().url());
     switch (url.pathname) {
-      case "/": {
-        await route.fulfill({ contentType: "text/html", body: HOME_HTML });
-        return;
-      }
       case "/watch": {
         await route.fulfill({ contentType: "text/html", body: WATCH_HTML });
         return;
@@ -38,9 +34,6 @@ export async function mockYouTube(context: BrowserContext) {
     }
   });
 }
-
-// A page where the content scripts run, but the caption panel doesn't.
-const HOME_HTML = `<!doctype html><html><body>Mock YouTube home</body></html>`;
 
 const WATCH_HTML = `<!doctype html>
 <html>

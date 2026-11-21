@@ -13,16 +13,13 @@ export const YOUTUBE_ORIGIN = "https://www.youtube.com";
 
 const RELOAD_MESSAGE = "Zamak lost its connection to storage. Reload the page.";
 
-// Covers a migration that copies every session through the frame.
 const REQUEST_TIMEOUT_MS = 30_000;
 
 export type BridgeMethod =
   | "getSession"
   | "saveSession"
   | "setSyncedAt"
-  | "listIndex"
-  | "importLegacy"
-  | "isLegacyImported";
+  | "listIndex";
 
 export type BridgeMessage =
   | { type: "zamak-storage:hello" }
@@ -119,8 +116,6 @@ export function createBridgeStorage(): CaptionStorage {
     setSyncedAt: (youtubeId, serverUpdatedAt) =>
       call("setSyncedAt", youtubeId, serverUpdatedAt),
     listIndex: () => call("listIndex"),
-    importLegacy: (source, data) => call("importLegacy", source, data),
-    isLegacyImported: (source) => call("isLegacyImported", source),
     subscribe(listener) {
       connect().catch(() => {});
       listeners.add(listener);

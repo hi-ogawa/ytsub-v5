@@ -26,10 +26,6 @@
   <text x="170" y="190" text-anchor="middle" class="s">YouTube tabs reach it through a hidden</text>
   <text x="170" y="206" text-anchor="middle" class="s">extension frame. The bookmarks page and</text>
   <text x="170" y="222" text-anchor="middle" class="s">the background open it directly.</text>
-  <rect x="40" y="252" width="260" height="60" rx="6" class="store"/>
-  <text x="170" y="274" text-anchor="middle" class="t">youtube.com storage</text>
-  <text x="170" y="292" text-anchor="middle" class="s">earlier versions' data, copied in once</text>
-  <line x1="170" y1="248" x2="170" y2="232" class="line" marker-end="url(#a)"/>
 
   <!-- Server -->
   <rect x="360" y="70" width="280" height="90" rx="6" class="store"/>
