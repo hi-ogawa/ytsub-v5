@@ -36,12 +36,12 @@ import {
   type MergedCaption,
   mergeCaptions,
 } from "../lib/caption-merge.ts";
-import { getSession } from "../lib/caption-session-db.ts";
 import {
   CaptionSessionManager,
   getInitialTracks,
   saveSelectedTracks,
 } from "../lib/caption-session.ts";
+import { captionStorage } from "../lib/caption-storage.ts";
 import {
   type BookmarkSelection,
   type ExtensionBookmark,
@@ -482,7 +482,7 @@ export function CaptionPanel(props: CaptionPanelProps) {
   const initialStoreQuery = useQuery({
     queryKey: ["caption-session", youtubeId],
     queryFn: async () => {
-      const session = await getSession(youtubeId);
+      const session = await captionStorage.getSession(youtubeId);
       if (!session) {
         return null;
       }

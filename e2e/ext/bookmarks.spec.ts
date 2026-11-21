@@ -5,7 +5,7 @@ import {
   login,
   openPanelWithTracks,
   openYouTubeTab,
-  seedChromeStorage,
+  seedVideoIndex,
   test,
 } from "./helper";
 
@@ -144,12 +144,11 @@ test("video page: bookmark arrows show the caption while paused", async ({
 });
 
 test("bookmarks page: shows local entries without login", async ({
-  context,
   page,
   extensionId,
 }) => {
-  await seedChromeStorage(context, { "zamak:video-index": fixtureEntries });
   await gotoBookmarks(page, extensionId);
+  await seedVideoIndex(page, fixtureEntries);
 
   await expect(page.getByText("Test Video One")).toBeVisible();
   await expect(page.getByText("Test Video Two")).toBeVisible();
@@ -159,13 +158,12 @@ test("bookmarks page: shows local entries without login", async ({
 });
 
 test("bookmarks page: shows local entries with sync badges after login", async ({
-  context,
   page,
   extensionId,
 }) => {
   await setupDb({ seed: true });
-  await seedChromeStorage(context, { "zamak:video-index": fixtureEntries });
   await gotoBookmarks(page, extensionId);
+  await seedVideoIndex(page, fixtureEntries);
 
   // Entries visible before login
   await expect(page.getByText("Test Video One")).toBeVisible();
@@ -210,12 +208,11 @@ test("bookmarks page: load, login, logout", async ({ page, extensionId }) => {
 });
 
 test("bookmarks page: delete removes video from list", async ({
-  context,
   page,
   extensionId,
 }) => {
-  await seedChromeStorage(context, { "zamak:video-index": fixtureEntries });
   await gotoBookmarks(page, extensionId);
+  await seedVideoIndex(page, fixtureEntries);
 
   // Both entries visible
   await expect(page.getByText("Test Video One")).toBeVisible();
@@ -235,7 +232,6 @@ test("bookmarks page: delete removes video from list", async ({
 });
 
 test("bookmarks page: sync badges show correct states per entry", async ({
-  context,
   page,
   extensionId,
 }) => {
@@ -259,8 +255,8 @@ test("bookmarks page: sync badges show correct states per entry", async ({
       updatedAt: "2026-03-14T00:00:00.000Z",
     },
   ];
-  await seedChromeStorage(context, { "zamak:video-index": localEntries });
   await gotoBookmarks(page, extensionId);
+  await seedVideoIndex(page, localEntries);
   await login(page);
 
   // Seed video exists on both server and local → conflict
@@ -291,8 +287,7 @@ test("bookmarks page: server-only entries show pull badge", async ({
   await expect(badge).toHaveAttribute("data-sync-status", "pull");
 });
 
-test("bookmarks page: push shows error toast when no YouTube tab open", async ({
-  context,
+test("bookmarks page: push shows an error toast when the local session is missing", async ({
   page,
   extensionId,
 }) => {
@@ -308,11 +303,11 @@ test("bookmarks page: push shows error toast when no YouTube tab open", async ({
       updatedAt: "2026-03-15T00:00:00.000Z",
     },
   ];
-  await seedChromeStorage(context, { "zamak:video-index": localEntries });
   await gotoBookmarks(page, extensionId);
+  await seedVideoIndex(page, localEntries);
   await login(page);
 
-  // Click push badge — should fail with "No YouTube tab open" toast
+  // The index has an entry, but no session to push
   const badge = page
     .getByTestId("video-card-push-test-123")
     .getByTestId("video-sync-badge");
@@ -321,10 +316,10 @@ test("bookmarks page: push shows error toast when no YouTube tab open", async ({
 
   const errorToast = page.locator("[data-sonner-toast][data-type='error']");
   await expect(errorToast).toBeVisible();
-  await expect(errorToast).toContainText("No YouTube tab open");
+  await expect(errorToast).toContainText("No local session found");
 });
 
-test("bookmarks page: pull shows error toast when no YouTube tab open", async ({
+test("bookmarks page: pull works without a YouTube tab", async ({
   page,
   extensionId,
 }) => {
@@ -332,81 +327,12 @@ test("bookmarks page: pull shows error toast when no YouTube tab open", async ({
   await gotoBookmarks(page, extensionId);
   await login(page);
 
-  // Server-only seed video shows pull badge
-  const badge = page
-    .getByTestId(`video-card-${SEED_VIDEO_ID}`)
-    .getByTestId("video-sync-badge");
+  const card = page.getByTestId(`video-card-${SEED_VIDEO_ID}`);
+  const badge = card.getByTestId("video-sync-badge");
   await expect(badge).toHaveAttribute("data-sync-status", "pull");
-
-  // Click pull — should fail with "No YouTube tab open" toast
-  await badge.click();
-
-  const errorToast = page.locator("[data-sonner-toast][data-type='error']");
-  await expect(errorToast).toBeVisible();
-  await expect(errorToast).toContainText("No YouTube tab open");
-});
-
-test("bookmarks page: pull finds the YouTube tab after the service worker restarts", async ({
-  context,
-  page,
-  extensionId,
-}) => {
-  await setupDb({ seed: true });
-  await openYouTubeTab(context, SEED_VIDEO_ID);
-  await gotoBookmarks(page, extensionId);
-  await page.bringToFront();
-  await login(page);
-  const badge = page
-    .getByTestId(`video-card-${SEED_VIDEO_ID}`)
-    .getByTestId("video-sync-badge");
-  await expect(badge).toHaveAttribute("data-sync-status", "pull");
-
-  // Chrome stops an idle service worker, and the pull below starts a new one.
-  // Closing the worker's target simulates that.
-  const cdp = await context.browser()!.newBrowserCDPSession();
-  const { targetInfos } = await cdp.send("Target.getTargets");
-  const worker = targetInfos.find((t) => t.type === "service_worker");
-  await cdp.send("Target.closeTarget", { targetId: worker!.targetId });
-
-  await badge.click();
-  await expect(badge).toHaveAttribute("data-sync-status", "synced");
-});
-
-test("bookmarks page: pull syncs server data to local via YouTube tab", async ({
-  context,
-  page,
-  extensionId,
-}) => {
-  await setupDb({ seed: true });
-
-  // Open YouTube tab so tab RPC works
-  const ytPage = await openYouTubeTab(context, SEED_VIDEO_ID);
-
-  await gotoBookmarks(page, extensionId);
-  await page.bringToFront();
-  await login(page);
-
-  // Server seed video shows pull badge (no local data)
-  const badge = page
-    .getByTestId(`video-card-${SEED_VIDEO_ID}`)
-    .getByTestId("video-sync-badge");
-  await expect(badge).toHaveAttribute("data-sync-status", "pull");
-
-  // Click pull — should sync from server and show synced
   const checkpoint = createCheckpoint();
   await badge.click();
   await expect(badge).toHaveAttribute("data-sync-status", "synced");
   checkpoint("pull synced");
-
-  // Verify pulled data shows bookmark count
-  const card = page.getByTestId(`video-card-${SEED_VIDEO_ID}`);
   await expect(card.getByTestId("video-card-badge")).toHaveText("15 bookmarks");
-
-  // The content script loads the pulled session
-  await ytPage.reload();
-  const host = ytPage.locator("#zamak-host");
-  await host.getByTestId("caption-fab").click();
-  await expect(
-    host.getByRole("button", { name: "Bookmarks (15)" }),
-  ).toBeVisible();
 });

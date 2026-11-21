@@ -1,9 +1,8 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="420" viewBox="0 0 1000 420" font-family="system-ui, sans-serif" font-size="13">
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="360" viewBox="0 0 1000 360" font-family="system-ui, sans-serif" font-size="13">
   <defs>
     <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#333"/></marker>
     <marker id="g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#2a7"/></marker>
     <style>
-      .c { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 10.5px; fill: #36a; }
       .t { font-weight: bold; }
       .s { fill: #666; font-size: 11px; }
       .grp { fill: #f3f5fc; stroke: #99b; }
@@ -14,63 +13,45 @@
       .st { fill: #186; font-weight: bold; font-size: 12px; }
     </style>
   </defs>
-  <rect width="1000" height="420" fill="#fff"/>
+  <rect width="1000" height="360" fill="#fff"/>
 
-  <!-- youtube.com -->
-  <rect x="20" y="30" width="280" height="260" rx="8" class="grp"/>
-  <text x="34" y="52" class="gl">youtube.com <tspan class="s" font-weight="normal">(every YouTube tab)</tspan></text>
-  <rect x="40" y="70" width="240" height="80" rx="6" class="store"/>
-  <text x="160" y="94" text-anchor="middle" class="t">IndexedDB</text>
-  <text x="160" y="112" text-anchor="middle" class="s">caption sessions: captions and</text>
-  <text x="160" y="128" text-anchor="middle" class="s">bookmarks, one record per video</text>
-  <rect x="40" y="190" width="240" height="80" rx="6" class="store"/>
-  <text x="160" y="214" text-anchor="middle" class="t">localStorage</text>
-  <text x="160" y="232" text-anchor="middle" class="s">video index: title, bookmark count,</text>
-  <text x="160" y="248" text-anchor="middle" class="s">last change, last sync times</text>
+  <!-- Extension -->
+  <rect x="20" y="30" width="300" height="300" rx="8" class="grp"/>
+  <text x="34" y="52" class="gl">Extension <tspan class="s" font-weight="normal">(its own origin)</tspan></text>
+  <rect x="40" y="70" width="260" height="90" rx="6" class="store"/>
+  <text x="170" y="94" text-anchor="middle" class="t">IndexedDB</text>
+  <text x="170" y="112" text-anchor="middle" class="s">caption sessions: captions and bookmarks</text>
+  <text x="170" y="128" text-anchor="middle" class="s">video index: title, bookmark count,</text>
+  <text x="170" y="144" text-anchor="middle" class="s">last change, last sync times</text>
+  <text x="170" y="190" text-anchor="middle" class="s">YouTube tabs reach it through a hidden</text>
+  <text x="170" y="206" text-anchor="middle" class="s">extension frame. The bookmarks page and</text>
+  <text x="170" y="222" text-anchor="middle" class="s">the background open it directly.</text>
 
   <!-- Server -->
-  <rect x="700" y="70" width="280" height="80" rx="6" class="store"/>
-  <text x="840" y="94" text-anchor="middle" class="t">Server (D1)</text>
-  <text x="840" y="112" text-anchor="middle" class="s">videos, captions, and bookmarks per user</text>
-  <text x="840" y="128" text-anchor="middle" class="s">last change per video</text>
+  <rect x="360" y="70" width="280" height="90" rx="6" class="store"/>
+  <text x="500" y="94" text-anchor="middle" class="t">Server (D1)</text>
+  <text x="500" y="112" text-anchor="middle" class="s">videos, captions, and bookmarks per user</text>
+  <text x="500" y="128" text-anchor="middle" class="s">last change per video</text>
 
-  <!-- Extension push and pull -->
-  <line x1="284" y1="98" x2="696" y2="98" class="sync" marker-end="url(#g)"/>
-  <text x="490" y="91" text-anchor="middle" class="st">push</text>
-  <line x1="284" y1="122" x2="696" y2="122" class="sync" marker-start="url(#g)"/>
-  <text x="490" y="140" text-anchor="middle" class="st">pull</text>
-  <text x="490" y="160" text-anchor="middle" class="s">started on the bookmarks page, run by the background</text>
-  <text x="490" y="175" text-anchor="middle" class="s">through any open YouTube tab</text>
-
-  <!-- Extension origin -->
-  <rect x="380" y="200" width="240" height="200" rx="8" class="grp"/>
-  <text x="394" y="222" class="gl">Extension</text>
-  <rect x="400" y="236" width="200" height="60" rx="6" class="store"/>
-  <text x="500" y="258" text-anchor="middle" class="c">chrome.storage.local</text>
-  <text x="500" y="276" text-anchor="middle" class="s">video index, session token</text>
-  <rect x="400" y="324" width="200" height="60" rx="6" class="store"/>
-  <text x="500" y="346" text-anchor="middle" class="t">Bookmarks page</text>
-  <text x="500" y="364" text-anchor="middle" class="s">localStorage: video index</text>
-  <line x1="500" y1="300" x2="500" y2="320" class="line" marker-start="url(#a)" marker-end="url(#a)"/>
-  <path d="M 284 240 L 340 240 L 340 266 L 396 266" class="line" marker-start="url(#a)" marker-end="url(#a)"/>
+  <line x1="304" y1="98" x2="356" y2="98" class="sync" marker-end="url(#g)"/>
+  <line x1="304" y1="132" x2="356" y2="132" class="sync" marker-start="url(#g)"/>
+  <text x="330" y="90" text-anchor="middle" class="st">push</text>
+  <text x="330" y="150" text-anchor="middle" class="st">pull</text>
 
   <!-- Web app -->
-  <rect x="700" y="200" width="280" height="200" rx="8" class="grp"/>
-  <text x="714" y="222" class="gl">Web app <tspan class="s" font-weight="normal">(its own origin)</tspan></text>
-  <rect x="720" y="236" width="240" height="60" rx="6" class="store"/>
-  <text x="840" y="258" text-anchor="middle" class="t">IndexedDB</text>
-  <text x="840" y="276" text-anchor="middle" class="s">caption sessions</text>
-  <rect x="720" y="324" width="240" height="60" rx="6" class="store"/>
-  <text x="840" y="346" text-anchor="middle" class="t">localStorage</text>
-  <text x="840" y="364" text-anchor="middle" class="s">video index</text>
-  <line x1="900" y1="154" x2="900" y2="232" class="sync" marker-start="url(#g)" marker-end="url(#g)"/>
-  <text x="908" y="182" class="st">push, pull</text>
-  <text x="908" y="196" class="s">directly</text>
+  <rect x="680" y="30" width="300" height="300" rx="8" class="grp"/>
+  <text x="694" y="52" class="gl">Web app <tspan class="s" font-weight="normal">(its own origin)</tspan></text>
+  <rect x="700" y="70" width="260" height="90" rx="6" class="store"/>
+  <text x="830" y="94" text-anchor="middle" class="t">IndexedDB</text>
+  <text x="830" y="112" text-anchor="middle" class="s">caption sessions and video index,</text>
+  <text x="830" y="128" text-anchor="middle" class="s">the same layout as the extension's</text>
+  <line x1="696" y1="98" x2="644" y2="98" class="sync" marker-end="url(#g)"/>
+  <line x1="696" y1="132" x2="644" y2="132" class="sync" marker-start="url(#g)"/>
+  <text x="670" y="90" text-anchor="middle" class="st">push</text>
+  <text x="670" y="150" text-anchor="middle" class="st">pull</text>
 
   <!-- Notes -->
-  <text x="20" y="320" class="s">Black arrows: index copies. Each side reads</text>
-  <text x="20" y="336" class="s">chrome.storage.local when it loads and writes</text>
-  <text x="20" y="352" class="s">its whole index back after each change.</text>
-  <text x="20" y="378" class="s">Green arrows: push and pull replace the</text>
-  <text x="20" y="394" class="s">receiving side's copy of the whole video.</text>
+  <text x="360" y="220" class="s">Green arrows: push and pull replace the receiving side's</text>
+  <text x="360" y="236" class="s">copy of the whole video. Each origin keeps one store,</text>
+  <text x="360" y="252" class="s">so the index is never copied between pages.</text>
 </svg>

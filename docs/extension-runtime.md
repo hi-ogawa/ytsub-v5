@@ -1,54 +1,43 @@
 # Extension Runtime
 
-The extension runs as four separate pieces of JavaScript. Each one can do things the others can't, so most features need several of them to work together. This doc explains what each piece is for and how they send messages to each other.
+The extension runs as five separate pieces of JavaScript. Each one can do things the others can't, so most features need several of them to work together. This doc explains what each piece is for and how they send messages to each other.
 
-![The content script and the relay run in every YouTube tab and share youtube.com storage. Window messages carry RPC between them, and a BroadcastChannel carries video index changes. The relay talks to the background service worker through Chrome messages. The background calls the server and writes chrome.storage. The bookmarks page reads and writes chrome.storage and calls the background.](images/extension-runtime.svg)
+![Each YouTube tab runs the content script and the relay, and the relay mounts a hidden storage frame from the extension. The content script calls the background through the relay, and reads and writes storage through the frame, which sends change notices back. The frame, the bookmarks page, and the background all open the same IndexedDB on the extension's origin.](images/extension-runtime.svg)
 
 ## Split the Content Script Across Two Worlds
 
-Chrome runs content scripts in an isolated world by default. An isolated script shares the page's DOM and storage, but not its JavaScript globals. It can use the `chrome.*` extension APIs. A script in the page's main world is the opposite: it sees the page's globals, but it has no extension APIs.
+Chrome runs content scripts in an isolated world by default. An isolated script shares the page's DOM, but not its JavaScript globals. It can use the `chrome.*` extension APIs. A script in the page's main world is the opposite: it sees the page's globals, but it has no extension APIs.
 
 The extension needs both, so each YouTube tab runs two scripts:
 
-- **The content script** runs in the main world. It reads YouTube's own page config (`ytcfg`) to build subtitle requests, renders the caption panel, and keeps captions and bookmarks in youtube.com storage.
-- **The relay** runs in the isolated world. It has no UI. It passes messages between the content script and the rest of the extension, and it copies the video index into `chrome.storage.local`.
+- **The content script** runs in the main world. It reads YouTube's own page config (`ytcfg`) to build subtitle requests and renders the caption panel.
+- **The relay** runs in the isolated world. It has no UI. It forwards the content script's calls to the background, and it mounts the storage frame.
 
-The two worlds share the tab's origin, so they read and write the same IndexedDB and localStorage. They can't call each other's functions, so they send each other messages.
+The two worlds can't call each other's functions, so they send each other window messages on the `zamak:rpc` channel. The content script posts a request with an ID. The relay forwards it to the background, then posts the response, and the content script matches it by ID. A window message never leaves the tab, and each message is tagged as a request or a response, so a listener never answers a response. A BroadcastChannel would reach the relays in every YouTube tab, and their responses would reach every tab too. That was [issue #184](https://github.com/hi-ogawa/ytsub-v5/issues/184), which froze the browser with two YouTube tabs open.
 
-## Talk Between the Worlds in One Tab
+## Keep Data on the Extension's Origin
 
-Three channels connect the content script and the relay. Each one works in a single direction:
+Browser storage belongs to an origin. If the content script stored captions itself, they would land in youtube.com storage, which the bookmarks page and the background can't open. So the extension keeps sessions and the video index in IndexedDB on its own origin, and every piece reaches the same database:
 
-| Channel         | Who starts it                                       | Who answers                       | What comes back |
-| --------------- | --------------------------------------------------- | --------------------------------- | --------------- |
-| `zamak:rpc`     | The content script                                  | The background, through the relay | A response      |
-| `zamak:tab-rpc` | The background, through the relay                   | The content script                | A response      |
-| `zamak:store`   | The content script, when it changes the video index | Nobody                            | Nothing         |
+- **The bookmarks page and the background** run on the extension's origin, so they open the database directly.
+- **The content script** runs on youtube.com, so it goes through a hidden storage frame. The frame is a page from the extension, loaded in an iframe, so it runs on the extension's origin and opens the same database. Chrome gives an extension frame the same storage as the extension's own pages when the extension has host permission for the site around it.
 
-- **`zamak:rpc`** lets the content script call the background, such as to check the sync status. The content script posts a request with an ID. The relay forwards it to the background, then posts the response, and the content script matches it by ID. The background never starts a call on this channel.
-- **`zamak:tab-rpc`** is the same in reverse. The background sends a request to the relay, the relay posts it to the content script, and the content script posts the response. The content script never starts a call on this channel.
-- **`zamak:store`** is a change notice, not a call. When the content script changes the index, it posts the new index, and the relay writes it to `chrome.storage.local`. The relay never posts on it. When a tab loads, the relay copies the index from `chrome.storage.local` into localStorage without posting, and the content script reads it from there.
+The main world has no `chrome.runtime` to build the frame's URL, so the relay mounts the frame. The two load in either order. The frame announces itself when it starts, and the content script sends a hello that the frame answers, so the content script finds the frame whichever loads first. After that, the content script sends each read or write to the frame with `postMessage`, and the frame posts the result back. Both sides check the other's origin on every message. The frame answers only youtube.com and offers only the reads and writes the caption panel needs, never the session token. YouTube's own scripts share the main world, but they could already read the youtube.com storage that held this data before, so the frame exposes nothing new.
 
-The two RPC channels use window messages, because both worlds share the tab's `window` and a window message never leaves the tab. Each message is also tagged as a request or a response, so a listener never answers a response.
+If the extension updates while a tab is open, the tab's frame stops answering. A call that gets no answer fails with a message to reload the page.
 
-`zamak:store` uses a BroadcastChannel, which reaches every channel with the same name on the same origin. That includes every other open YouTube tab, so a change in one tab also updates the index in the others. It can't loop, because a listener only updates its local copy and never posts again. The RPC channels can't use one for this reason: a request would reach the relays in every tab, and their responses would reach every tab too. That was [issue #184](https://github.com/hi-ogawa/ytsub-v5/issues/184), which froze the browser with two YouTube tabs open.
+## Keep the Index Current After Each Write
+
+The caption panel needs only this video's index entry, for its sync status. It reads the entry through the frame, and reads it again on each change notice.
+
+Every write to the database posts a notice with the new index to listeners on the same page. The frame forwards its notices to its content script, so a YouTube tab's sync status follows the writes that tab makes. Other pages see the write after they reload, as [Know Where an Open Page Can Fall Behind](data-and-sync.md#know-where-an-open-page-can-fall-behind) describes.
 
 ## Keep Server Calls and Secrets in the Background
 
-The background service worker is the extension's hub. It holds no UI and no captions. It handles calls from the content script and the bookmarks page, and it talks to the server.
+The background service worker holds no UI. It handles calls from the content script and talks to the server.
 
-When the caption panel opens, and again each time you open its menu, the content script asks the background for the video's sync status. The background reads the session token from `chrome.storage.local`, calls the server, and returns whether you're signed in and when the server last changed the video. The token stays out of the content script, which shares its world with YouTube's own scripts.
-
-## Route Background Calls Through a YouTube Tab
-
-Captions and bookmarks live in IndexedDB on the youtube.com origin. The background service worker and the bookmarks page run on the extension's own origin, so they can't open that database. When the background needs a session, it asks a YouTube tab to read or write it.
-
-To find a tab, the background asks Chrome for the open YouTube tabs on every call and sends a Chrome message to each in turn until one answers. A tab answers once its relay is running. A tab that is still loading, or that runs a script from an older version of the extension, has no relay to answer, so the background moves on to the next tab. The relay passes the request to the content script through `zamak:tab-rpc`, and the content script reads or writes IndexedDB. Every YouTube tab shares the same origin storage, so any tab will do. The background keeps no list of its own, because Chrome stops the service worker when it is idle, and anything the worker kept in memory is lost.
-
-This is why pushing and pulling from the bookmarks page needs an open YouTube tab. Without one, the call fails with "No YouTube tab open". The caption panel runs in a YouTube tab, so its push always finds one. Its pull doesn't go through a tab. The background only returns the fetched session, and the panel applies it to the session it holds in memory. A write to IndexedDB from outside the panel would leave it showing the old copy. [Data and sync](data-and-sync.md) describes what push and pull do with the data.
+When the caption panel opens, and again each time you open its menu, the content script asks the background for the video's sync status. The background reads the session token from `chrome.storage.local`, calls the server, and returns whether you're signed in and when the server last changed the video. The token stays out of the content script, which shares its world with YouTube's own scripts. A push from the panel also goes through the background, which reads the session from the database and sends it to the server. A pull from the panel only fetches the session through the background, and the panel applies it to the session it holds. [Data and sync](data-and-sync.md) describes what push and pull do with the data.
 
 ## Run the Bookmarks Page as an Extension Page
 
-The bookmarks page is an extension page, so it has the `chrome.*` APIs directly and needs no relay. It calls the background with plain Chrome messages for push and pull. It calls the server itself for everything else, such as signing in, listing the server's videos, and deleting a video, and it adds the session token from `chrome.storage.local` to each request.
-
-The page runs on the extension's origin, so it has its own localStorage. It keeps its own copy of the video index there. It loads the copy from `chrome.storage.local` when it opens and writes the whole index back after each change.
+The bookmarks page is an extension page, so it has the `chrome.*` APIs and the database directly, and needs no relay. It calls the server itself for signing in, listing the server's videos, pushing, pulling, and deleting, and it adds the session token from `chrome.storage.local` to each request. A YouTube tab doesn't need to be open for any of it.

@@ -9,7 +9,7 @@ interface ExternalStore<T> {
   subscribe(listener: Listener): () => void;
 }
 
-function createExternalStore<T>(initialValue: T): ExternalStore<T> {
+export function createExternalStore<T>(initialValue: T): ExternalStore<T> {
   let current = initialValue;
   const listeners = new Set<Listener>();
 

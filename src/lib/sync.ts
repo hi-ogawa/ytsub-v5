@@ -1,25 +1,20 @@
 import type { InferRouterOutputs } from "@orpc/server";
-import { useMutation, useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { orpc } from "../rpc.ts";
 import type { Router } from "../server/rpc.ts";
 import {
-  type PersistedCaptionSession,
-  getSession,
-  saveSession,
-} from "./caption-session-db.ts";
-import {
   type CaptionSessionManager,
   sessionToExportData,
 } from "./caption-session.ts";
-import { useStore } from "./external-store.ts";
 import {
+  type PersistedCaptionSession,
+  captionStorage,
   type VideoIndexEntry,
-  setSyncedAt,
-  updateVideoIndex,
   videoIndexStore,
-} from "./video-index.ts";
+} from "./caption-storage.ts";
+import { useStore } from "./external-store.ts";
 
 type ListVideosOutput = InferRouterOutputs<Router>["videos"]["listVideos"];
 type GetFullSessionOutput = NonNullable<
@@ -101,6 +96,30 @@ export type SyncStatus = {
 
 export type UseSync = (youtubeId: string) => SyncStatus;
 
+export function useIndexEntry(youtubeId: string) {
+  const queryClient = useQueryClient();
+  const query = useQuery({
+    queryKey: ["index-entry", youtubeId],
+    // React Query rejects undefined data.
+    queryFn: async () =>
+      (await captionStorage.getIndexEntry(youtubeId)) ?? null,
+  });
+
+  useEffect(
+    () =>
+      captionStorage.subscribe((notice) => {
+        if (notice.type === "index") {
+          queryClient.invalidateQueries({
+            queryKey: ["index-entry", youtubeId],
+          });
+        }
+      }),
+    [queryClient, youtubeId],
+  );
+
+  return query;
+}
+
 export function useSyncState({
   youtubeId,
   onNavigate,
@@ -108,7 +127,7 @@ export function useSyncState({
   youtubeId: string;
   onNavigate: () => void;
 }): SyncStatus {
-  const [videoIndex] = useStore(videoIndexStore);
+  const entryQuery = useIndexEntry(youtubeId);
 
   const authQuery = useQuery(orpc.auth.check.queryOptions());
   const authenticated = authQuery.data?.authenticated === true;
@@ -129,7 +148,7 @@ export function useSyncState({
         const result = await orpc.videos.importVideo.call(
           action.store.toExportData(),
         );
-        setSyncedAt(youtubeId, result.updatedAt);
+        await captionStorage.setSyncedAt(youtubeId, result.updatedAt);
       } else {
         const data = await orpc.videos.getFullSession.call({ youtubeId });
         if (!data) {
@@ -143,7 +162,7 @@ export function useSyncState({
           captions: session.captions,
           bookmarks: session.bookmarks,
         });
-        setSyncedAt(youtubeId, data.video.updatedAt);
+        await captionStorage.setSyncedAt(youtubeId, data.video.updatedAt);
       }
     },
     onSuccess: () => serverQuery.refetch(),
@@ -165,7 +184,10 @@ export function useSyncState({
     if (serverQuery.isError) {
       return "error";
     }
-    const localEntry = videoIndex.find((e) => e.youtubeId === youtubeId);
+    if (entryQuery.isPending) {
+      return "checking";
+    }
+    const localEntry = entryQuery.data ?? undefined;
     return computeSyncState({
       localUpdatedAt: localEntry?.updatedAt,
       syncedAt: localEntry?.syncedAt,
@@ -236,41 +258,7 @@ function mergeVideoEntries(
 
 export type VideoSyncHandle = ReturnType<typeof useVideoSync>;
 
-// Both resolve with the server's updatedAt after the push or pull.
-export interface VideoSyncActions {
-  pushSession(youtubeId: string): Promise<{ serverUpdatedAt: string }>;
-  pullSession(youtubeId: string): Promise<{ serverUpdatedAt: string }>;
-}
-
-const defaultSyncActions: VideoSyncActions = {
-  async pushSession(youtubeId) {
-    const session = await getSession(youtubeId);
-    if (!session) {
-      throw new Error("No local session found");
-    }
-    const result = await orpc.videos.importVideo.call(
-      sessionToExportData(session),
-    );
-    return { serverUpdatedAt: result.updatedAt };
-  },
-  async pullSession(youtubeId) {
-    const data = await orpc.videos.getFullSession.call({ youtubeId });
-    if (!data) {
-      throw new Error("Video not found on server");
-    }
-    const session = serverSessionToLocal(data);
-    await saveSession(session);
-    updateVideoIndex(
-      session.youtubeId,
-      session.title,
-      session.channelName,
-      session.bookmarks.length,
-    );
-    return { serverUpdatedAt: data.video.updatedAt };
-  },
-};
-
-export function useVideoSync(actions: VideoSyncActions = defaultSyncActions) {
+export function useVideoSync() {
   const [videoIndex] = useStore(videoIndexStore);
 
   const authQuery = useQuery(orpc.auth.check.queryOptions());
@@ -303,15 +291,27 @@ export function useVideoSync(actions: VideoSyncActions = defaultSyncActions) {
 
   const onPush = async (youtubeId: string) => {
     await withSyncing(youtubeId, async () => {
-      const { serverUpdatedAt } = await actions.pushSession(youtubeId);
-      setSyncedAt(youtubeId, serverUpdatedAt);
+      const session = await captionStorage.getSession(youtubeId);
+      if (!session) {
+        throw new Error("No local session found");
+      }
+      const result = await orpc.videos.importVideo.call(
+        sessionToExportData(session),
+      );
+      await captionStorage.setSyncedAt(youtubeId, result.updatedAt);
     });
   };
 
   const onPull = async (youtubeId: string) => {
     await withSyncing(youtubeId, async () => {
-      const { serverUpdatedAt } = await actions.pullSession(youtubeId);
-      setSyncedAt(youtubeId, serverUpdatedAt);
+      const data = await orpc.videos.getFullSession.call({ youtubeId });
+      if (!data) {
+        throw new Error("Video not found on server");
+      }
+      await captionStorage.saveSession(serverSessionToLocal(data), {
+        forceIndex: true,
+      });
+      await captionStorage.setSyncedAt(youtubeId, data.video.updatedAt);
     });
   };
 

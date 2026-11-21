@@ -27,47 +27,23 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "../components/ui/dropdown-menu.tsx";
-import { deleteSession } from "../lib/caption-session-db.ts";
+import { idbCaptionStorage } from "../lib/caption-storage-idb.ts";
+import {
+  captionStorage,
+  initCaptionStorage,
+  loadVideoIndex,
+  videoIndexStore,
+} from "../lib/caption-storage.ts";
 import { useStore } from "../lib/external-store.ts";
 import { createAppQueryClient } from "../lib/query-client.ts";
-import {
-  type VideoSyncActions,
-  type VideoSyncEntry,
-  useVideoSync,
-} from "../lib/sync.ts";
+import { type VideoSyncEntry, useVideoSync } from "../lib/sync.ts";
 import { useTheme } from "../lib/theme.ts";
-import {
-  type VideoIndexEntry,
-  removeFromVideoIndex,
-  updateVideoIndex,
-  videoIndexStore,
-} from "../lib/video-index.ts";
 import { orpc, setRpcConfig } from "../rpc.ts";
-import type { bgRpcHandlers } from "./background.ts";
 import { chromeStorage } from "./lib/chrome-storage.ts";
-import { createRuntimeRpc } from "./lib/extension-rpc.ts";
 import { getServerUrl } from "./lib/server-url.ts";
 import "../styles.css";
 
 declare const __DEV_EXT__: boolean;
-
-const bgRpc = createRuntimeRpc<typeof bgRpcHandlers>();
-
-const extensionSyncActions: VideoSyncActions = {
-  async pushSession(youtubeId) {
-    return bgRpc.pushSession({ youtubeId });
-  },
-  async pullSession(youtubeId) {
-    const result = await bgRpc.pullSession({ youtubeId });
-    updateVideoIndex(
-      youtubeId,
-      result.title,
-      result.channelName,
-      result.bookmarkCount,
-    );
-    return { serverUpdatedAt: result.serverUpdatedAt };
-  },
-};
 
 const SERVER_PRESETS = [
   { label: "Production", url: "https://zamak.hiro18181.workers.dev" },
@@ -144,7 +120,7 @@ function ExtensionBookmarksPage() {
     chromeStorage.queryOptions<string>("username"),
   );
   const { theme, cycle, Icon } = useTheme();
-  const sync = useVideoSync(extensionSyncActions);
+  const sync = useVideoSync();
   const [showLogin, setShowLogin] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
   const deleteMutation = useMutation(
@@ -157,8 +133,7 @@ function ExtensionBookmarksPage() {
     if (entry.serverId) {
       deleteMutation.mutate({ id: entry.serverId });
     }
-    removeFromVideoIndex(entry.youtubeId);
-    await deleteSession(entry.youtubeId);
+    await captionStorage.deleteVideo(entry.youtubeId);
   }
 
   const handleLogout = async () => {
@@ -305,6 +280,8 @@ function ExtensionBookmarksPage() {
 let serverUrl = "";
 
 async function main() {
+  initCaptionStorage(idbCaptionStorage);
+  await loadVideoIndex();
   serverUrl = await getServerUrl();
 
   // Configure RPC to use extension server URL + bearer token auth
@@ -321,16 +298,6 @@ async function main() {
       }
       return fetch(request);
     },
-  });
-
-  // This page's copy of the video index. See docs/data-and-sync.md.
-  const entries = await chromeStorage.get<VideoIndexEntry[]>(
-    videoIndexStore.key,
-  );
-  videoIndexStore.setLocal(entries ?? []);
-
-  videoIndexStore.subscribe(() => {
-    chromeStorage.set({ [videoIndexStore.key]: videoIndexStore.get() });
   });
 
   createRoot(document.getElementById("root")!).render(

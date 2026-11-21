@@ -14,42 +14,25 @@ import {
 } from "../components/caption-panel.tsx";
 import { PortalContainerProvider } from "../components/ui/portal-container.tsx";
 import type { YTPlayer } from "../components/youtube-player.tsx";
-import { getSession, saveSession } from "../lib/caption-session-db.ts";
-import type { PersistedCaptionSession } from "../lib/caption-session-db.ts";
 import type { CaptionSessionManager } from "../lib/caption-session.ts";
-import { useStore } from "../lib/external-store.ts";
+import { captionStorage, initCaptionStorage } from "../lib/caption-storage.ts";
 import {
   type SyncState,
   type SyncStatus,
   computeSyncState,
+  useIndexEntry,
 } from "../lib/sync.ts";
-import { setSyncedAt, videoIndexStore } from "../lib/video-index.ts";
 import type { YouTubeExtractionResult } from "../lib/youtube.ts";
 import { fetchPlayerApi, fetchTrackJson3 } from "../lib/youtube.ts";
 import type { bgRpcHandlers } from "./background.ts";
 import contentCss from "./content.css?inline";
-import {
-  createRuntimeRelayRpc,
-  registerTabRpcHandlers,
-} from "./lib/extension-rpc.ts";
+import { createRuntimeRelayRpc } from "./lib/extension-rpc.ts";
+import { createBridgeStorage } from "./lib/storage-bridge.ts";
 
 const bgRpc = createRuntimeRelayRpc<typeof bgRpcHandlers>();
 
-// The background reaches youtube.com IndexedDB through these handlers.
-// See docs/extension-runtime.md.
-export const tabRpcHandlers = {
-  async getSession({ youtubeId }: { youtubeId: string }) {
-    return await getSession(youtubeId);
-  },
-  async saveSession({ session }: { session: PersistedCaptionSession }) {
-    await saveSession(session);
-  },
-};
-registerTabRpcHandlers(tabRpcHandlers);
-
 declare const __BUILD_TIME__: string;
 declare const __GIT_REV__: string;
-console.log(`[zamak] build: ${__BUILD_TIME__} (${__GIT_REV__})`);
 
 // Adapter: wrap the page's <video> element as YTPlayer
 function getVideoPlayer(): YTPlayer | undefined {
@@ -113,10 +96,11 @@ function getUserLangs(): string[] {
 function ExtensionViewer({ videoId }: { videoId: string }) {
   const [player] = useState(() => getVideoPlayer());
 
-  const { data, isLoading, error } = useQuery({
+  const metadataQuery = useQuery({
     queryKey: ["extension-metadata", videoId],
     queryFn: () => fetchPlayerApi({ videoId, userLangs: getUserLangs() }),
   });
+  const { data, isLoading, error } = metadataQuery;
 
   if (isLoading) {
     return (
@@ -146,7 +130,7 @@ type SyncAction =
   | { direction: "pull"; store: CaptionSessionManager };
 
 function useExtensionSync(youtubeId: string): SyncStatus {
-  const [videoIndex] = useStore(videoIndexStore);
+  const entryQuery = useIndexEntry(youtubeId);
 
   const serverQuery = useQuery({
     queryKey: ["extension-sync-state", youtubeId],
@@ -157,7 +141,7 @@ function useExtensionSync(youtubeId: string): SyncStatus {
     mutationFn: async (action: SyncAction) => {
       if (action.direction === "push") {
         const { serverUpdatedAt } = await bgRpc.pushSession({ youtubeId });
-        setSyncedAt(youtubeId, serverUpdatedAt);
+        await captionStorage.setSyncedAt(youtubeId, serverUpdatedAt);
       } else {
         const { session, serverUpdatedAt } = await bgRpc.fetchSession({
           youtubeId,
@@ -169,7 +153,7 @@ function useExtensionSync(youtubeId: string): SyncStatus {
           captions: session.captions,
           bookmarks: session.bookmarks,
         });
-        setSyncedAt(youtubeId, serverUpdatedAt);
+        await captionStorage.setSyncedAt(youtubeId, serverUpdatedAt);
       }
     },
     onSuccess: () => serverQuery.refetch(),
@@ -188,7 +172,10 @@ function useExtensionSync(youtubeId: string): SyncStatus {
     if (!serverQuery.data.authenticated) {
       return "unauthenticated";
     }
-    const localEntry = videoIndex.find((e) => e.youtubeId === youtubeId);
+    if (entryQuery.isPending) {
+      return "checking";
+    }
+    const localEntry = entryQuery.data ?? undefined;
     return computeSyncState({
       localUpdatedAt: localEntry?.updatedAt,
       syncedAt: localEntry?.syncedAt,
@@ -345,8 +332,11 @@ function remove() {
   document.getElementById("zamak-host")?.remove();
 }
 
-// YouTube SPA navigation
-function init() {
+function main() {
+  console.log(`[zamak] build: ${__BUILD_TIME__} (${__GIT_REV__})`);
+  initCaptionStorage(createBridgeStorage());
+
+  // YouTube SPA navigation
   if (isWatchPage()) {
     inject();
   }
@@ -359,4 +349,4 @@ function init() {
   });
 }
 
-init();
+main();

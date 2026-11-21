@@ -1,22 +1,23 @@
 // ISOLATED world content script. docs/extension-runtime.md explains its role.
 
-import { type VideoIndexEntry, videoIndexStore } from "../lib/video-index.ts";
-import { chromeStorage } from "./lib/chrome-storage.ts";
-import { setupRpcRelay, setupTabRpcRelay } from "./lib/extension-rpc.ts";
+import { setupRpcRelay } from "./lib/extension-rpc.ts";
+import { STORAGE_FRAME_ID, STORAGE_FRAME_PATH } from "./lib/storage-bridge.ts";
 
-async function main() {
-  const entries = await chromeStorage.get<VideoIndexEntry[]>(
-    videoIndexStore.key,
-  );
-  videoIndexStore.setLocal(entries ?? []);
-
-  videoIndexStore.subscribe(() => {
-    chromeStorage.set({ [videoIndexStore.key]: videoIndexStore.get() });
-  });
-
+function main() {
+  mountStorageFrame();
   setupRpcRelay();
+}
 
-  setupTabRpcRelay();
+// The frame is mounted here because only this world has chrome.runtime to
+// build its extension URL. The worlds share the DOM, so the main world finds
+// the frame by id and posts to it directly; this script takes no part in
+// storage calls after mounting.
+function mountStorageFrame() {
+  const frame = document.createElement("iframe");
+  frame.id = STORAGE_FRAME_ID;
+  frame.src = chrome.runtime.getURL(STORAGE_FRAME_PATH);
+  frame.style.display = "none";
+  document.documentElement.appendChild(frame);
 }
 
 main();
