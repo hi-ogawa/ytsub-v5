@@ -1,6 +1,7 @@
+import { withUseValue } from "../components/use-store-value.ts";
+import { createStore } from "../utils/store.ts";
 import type { MergeStrategy, MergedCaption } from "./caption-merge.ts";
 import type { ExtensionBookmark } from "./extension-bookmarks.ts";
-import { createExternalStore } from "./external-store.ts";
 
 export interface PersistedCaptionSession {
   youtubeId: string;
@@ -55,17 +56,19 @@ export let captionStorage: CaptionStorage;
 
 // In-memory copy of the stored index, for components that read it as they
 // render.
-export const videoIndexStore = createExternalStore<VideoIndexEntry[]>([]);
+export const videoIndexStore = withUseValue(
+  createStore<{ entries: VideoIndexEntry[] }>(() => ({ entries: [] })),
+);
 
 export function initCaptionStorage(storage: CaptionStorage) {
   captionStorage = storage;
   storage.subscribe((notice) => {
     if (notice.type === "videoIndex") {
-      videoIndexStore.set(notice.entries);
+      videoIndexStore.update({ entries: notice.entries });
     }
   });
 }
 
 export async function loadVideoIndex() {
-  videoIndexStore.set(await captionStorage.listVideoIndex());
+  videoIndexStore.update({ entries: await captionStorage.listVideoIndex() });
 }

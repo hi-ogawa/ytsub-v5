@@ -2,7 +2,6 @@ import { useNavigate, useParams } from "react-router";
 import { CaptionPanel } from "../components/caption-panel.tsx";
 import { useYouTubePlayer } from "../components/youtube-player.tsx";
 import { videoIndexStore } from "../lib/caption-storage.ts";
-import { useStore } from "../lib/external-store.ts";
 import { useSyncState } from "../lib/sync.ts";
 import type { Json3File } from "../lib/youtube.ts";
 
@@ -13,7 +12,7 @@ const neverFetchJson3 = (): Promise<Json3File> => {
 export function VideoViewerPage() {
   const { youtubeId } = useParams<"youtubeId">();
 
-  const [entries] = useStore(videoIndexStore);
+  const [entries] = videoIndexStore.useValue("entries");
   const entry = entries.find((e) => e.youtubeId === youtubeId);
 
   const { ref: playerElRef, player } = useYouTubePlayer(youtubeId);
