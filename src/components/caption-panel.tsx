@@ -8,6 +8,7 @@ import {
   saveSelectedTracks,
 } from "../lib/caption-session.ts";
 import { captionStorage } from "../lib/caption-storage.ts";
+import { preferences } from "../lib/preferences.ts";
 import type { UseSync } from "../lib/sync.ts";
 import {
   type Json3File,
@@ -16,7 +17,6 @@ import {
   langFromVssId,
 } from "../lib/youtube.ts";
 import { CaptionPanelContent } from "./caption-panel-content.tsx";
-import { useAutoScroll } from "./caption-panel-preferences.ts";
 import {
   SettingsDropdown,
   SettingsDropdownSkeleton,
@@ -250,7 +250,7 @@ function CaptionPanelWithStore({
 }) {
   useSyncExternalStore(store.subscribe, () => store.version);
 
-  const [autoScroll, setAutoScroll] = useAutoScroll();
+  const [autoScroll, setAutoScroll] = preferences.useValue("autoScroll");
 
   return (
     <div className="flex h-full flex-col">

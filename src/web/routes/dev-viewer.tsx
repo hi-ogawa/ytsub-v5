@@ -1,7 +1,6 @@
 import { useCallback } from "react";
 import { useNavigate, useParams } from "react-router";
-import { CaptionFab } from "../../components/caption-fab.tsx";
-import { useFabOpen } from "../../components/caption-panel-preferences.ts";
+import { CaptionFab, useFabOpen } from "../../components/caption-fab.tsx";
 import { CaptionPanel } from "../../components/caption-panel.tsx";
 import { ResizablePanel } from "../../components/resizable-panel.tsx";
 import { useYouTubePlayer } from "../../components/youtube-player.tsx";

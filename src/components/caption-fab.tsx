@@ -1,3 +1,12 @@
+import { preferences } from "../lib/preferences.ts";
+
+export function useFabOpen(videoId: string) {
+  const [fabOpen, setFabOpen] = preferences.useValue("fabOpen");
+  const open = fabOpen[videoId] ?? false;
+  const toggle = () => setFabOpen((prev) => ({ ...prev, [videoId]: !open }));
+  return [open, toggle] as const;
+}
+
 export function CaptionFab({
   open,
   onClick,
