@@ -1,10 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import {
-  CaptionFab,
-  CaptionPanel,
-  useFabOpen,
-} from "../../components/caption-panel.tsx";
+import { CaptionFab, useFabOpen } from "../../components/caption-fab.tsx";
+import { CaptionPanel } from "../../components/caption-panel.tsx";
 import { ResizablePanel } from "../../components/resizable-panel.tsx";
 import type { YTPlayer } from "../../components/youtube-player.tsx";
 import type { UseSync } from "../../lib/sync.ts";
