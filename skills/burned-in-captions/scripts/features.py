@@ -1,6 +1,5 @@
-# Write the per-step caption features as CSV, one row per 0.25 s step, without deciding anything.
+# Write the per-step caption features as JSON Lines, one object per 0.25 s step, without deciding anything.
 import argparse
-import csv
 import json
 import sys
 from collections import deque
@@ -13,12 +12,10 @@ from video import FPS, MIN_PIXELS, WIDEN, kept, static_map, steps
 GROUP = np.ones((15, 31), np.uint8)  # joins the letters of one caption line into a cluster
 MASKS = ("o", "b")  # outline, box
 LAGS = {"1s": FPS, "2s": 2 * FPS}  # steps back for the slow comparisons
-STEP = ("letters", "in_static", "kept", "kept_1s", "kept_2s", "gone", "new")
-REGION = ("letters", "kept", "kept_1s", "kept_2s", "gone", "new", "box")
 
 
 def main():
-    p = argparse.ArgumentParser(description="Print the per-step caption features as CSV and write the static overlay boxes as JSON.")
+    p = argparse.ArgumentParser(description="Print the per-step caption features as JSON Lines and write the static overlay boxes as JSON.")
     p.add_argument("video")
     p.add_argument("--start", type=float, help="window start in seconds")
     p.add_argument("--dur", type=float, help="window length in seconds")
@@ -28,10 +25,8 @@ def main():
     p.add_argument("--static", default="static.json", help="output path for the static overlay boxes")
     a = p.parse_args()
     regions = dict(parse_region(r) for r in a.region)
-    w = csv.DictWriter(sys.stdout, columns(regions))
-    w.writeheader()
     for row in rows(a.video, a.start, a.dur, regions, MASKS.index(a.region_mask)):
-        w.writerow(row)
+        print(json.dumps({k: v for k, v in row.items() if v is not None}, separators=(",", ":")))
     with open(a.static, "w") as f:
         json.dump({"boxes": clusters(static_map(a.video).any(axis=0).astype(np.uint8))}, f)
 
@@ -39,11 +34,6 @@ def main():
 def parse_region(s):
     name, box = s.split("=")
     return name, tuple(int(v) for v in box.split(","))
-
-
-def columns(regions):
-    return ["t", *[f"{name}_{k}" for name in STEP for k in MASKS], "scene", *[f"clusters_{k}" for k in MASKS],
-            *[f"{name}_{r}" for r in regions for name in REGION]]
 
 
 def rows(video, start=None, dur=None, regions=None, region_mask=1):
@@ -56,11 +46,11 @@ def rows(video, start=None, dur=None, regions=None, region_mask=1):
         small_prev = f.pop("small")
         row = {"t": round(s["t"], 2), "scene": num(f["scene"])}
         for j, k in enumerate(MASKS):
-            row[f"clusters_{k}"] = json.dumps(f[f"clusters_{k}"])
             for name in ("letters", "in_static", "kept", "gone", "new"):
                 row[f"{name}_{k}"] = num(f[name][j])
             for lag, n in LAGS.items():
                 row[f"kept_{lag}_{k}"] = num(kept(back[-n][j], m[j]) if len(back) >= n else None)
+        row.update({f"clusters_{k}": f[f"clusters_{k}"] for k in MASKS})
         for r, box in regions.items():
             f = region_features(m[region_mask], [b[region_mask] for b in back], box)
             row.update({f"{name}_{r}": v for name, v in f.items()})
@@ -97,10 +87,10 @@ def region_features(mask, back, box):
         "letters": int(cur.sum()),
         "kept": num(kept(prev, cur) if prev is not None else None),
         **{f"kept_{lag}": num(kept(back[-n], cur) if len(back) >= n else None) for lag, n in LAGS.items()},
-        "gone": "" if prev is None else int((prev & (1 - cv2.dilate(cur, WIDEN))).sum()),
-        "new": "" if prev is None else int((cur & (1 - cv2.dilate(prev, WIDEN))).sum()),
-        "box": "" if len(xs) < MIN_PIXELS else json.dumps(
-            [int(xs.min()) + x, int(ys.min()) + y, int(xs.max() - xs.min()) + 1, int(ys.max() - ys.min()) + 1]),
+        "gone": None if prev is None else int((prev & (1 - cv2.dilate(cur, WIDEN))).sum()),
+        "new": None if prev is None else int((cur & (1 - cv2.dilate(prev, WIDEN))).sum()),
+        "box": None if len(xs) < MIN_PIXELS else
+            [int(xs.min()) + x, int(ys.min()) + y, int(xs.max() - xs.min()) + 1, int(ys.max() - ys.min()) + 1],
     }
     return f
 
@@ -116,7 +106,7 @@ def clusters(mask):
 
 
 def num(v):
-    return "" if v is None else round(v, 3) if isinstance(v, float) else v
+    return round(v, 3) if isinstance(v, float) else v
 
 
 if __name__ == "__main__":

@@ -1,6 +1,6 @@
 # Catalogue of Caption Patterns
 
-Each pattern pairs a feature signature with a reading rule. The column names are in [Features](../SKILL.md#features). With regions set, read `kept`, `gone`, and `new` as the region's columns, and a cluster as a region. Patterns marked unconfirmed haven't turned up in a video yet.
+Each pattern pairs a feature signature with a reading rule. The keys are in [Features](../SKILL.md#features). With regions set, read `kept`, `gone`, and `new` as the region's keys, and a cluster as a region. Patterns marked unconfirmed haven't turned up in a video yet.
 
 | Pattern                                                      | Feature signature                                                                                                                                                                  | Reading rule                                                                        |
 | ------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
