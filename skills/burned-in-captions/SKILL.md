@@ -31,7 +31,7 @@ The commands below shorten this to `uv run scripts/...`. Outputs go to the folde
 }
 ```
 
-- `kind` is `speech`, `commentary` (editor comments, often in brackets), or `label` (name cards and titles).
+- `kind` is `speech` for words someone says, and `other` for anything else the editor put on screen, whatever its frame. Text filmed in the scene, such as signs, isn't a caption, so leave it out.
 - `position` is the caption's box `[x, y, w, h]` in the 1280×720 frame.
 - `text` is exactly what the picture shows, including nonstandard spelling, censored words such as ㅅㄲ, and spelled-out laughter.
 
@@ -106,7 +106,7 @@ This tiles the frames into sheets of 20 full frames at 480×270, about 3,400 ima
 
 Give the sheets to reader subagents, about 8 sheets each, because most of a reader's tokens are its own overhead. Use the strongest model available: a cheaper one added a fluent ending that wasn't on screen. Give each reader the ASR for its time range if you have it, with this instruction:
 
-> Transcribe every caption in each frame exactly as shown, including nonstandard spelling, censored words, spelled-out laughter, and emoticons such as ㅠㅠ. The ASR is there to help you understand what is said. Where a caption differs from it, write what is on screen, never the ASR's words or standard Korean. Mark unclear or partial text with `[?]`. Return a JSON list with one entry per tile, including tiles with no caption: `{"t": <time>, "captions": [{"text": ..., "box": [x, y, w, h], "kind": "speech" | "commentary" | "label"}]}`, with boxes in the tile's 480×270 pixels.
+> Transcribe every caption in each frame exactly as shown, including nonstandard spelling, censored words, spelled-out laughter, and emoticons such as ㅠㅠ. The ASR is there to help you understand what is said. Where a caption differs from it, write what is on screen, never the ASR's words or standard Korean. Mark unclear or partial text with `[?]`. Tag each caption `speech` if it is words someone says, and `other` for anything else the editor put on screen. Skip text filmed in the scene, such as signs. Return a JSON list with one entry per tile, including tiles with no caption: `{"t": <time>, "captions": [{"text": ..., "box": [x, y, w, h], "kind": "speech" | "other"}]}`, with boxes in the tile's 480×270 pixels.
 
 Without subagents, read a few sheets per turn yourself.
 

@@ -181,7 +181,11 @@ The translators worked from the Korean and can misread it, so audit `text2` as i
 
 ### Use Burned-In Captions (Scenario G)
 
-The burned-in captions skill returns the captions as the viewer sees them, with their times. Where a caption renders a spoken line, use its text as that line's Korean, because the ASR is the weaker source. Fix the other lines from the ASR as usual. Continue as in Scenario B when there is a manual English track, or as in Scenario D when there isn't, which translates each row into English for `text2`.
+The burned-in captions skill returns the captions as the viewer sees them, with their times, each tagged `speech` or `other`. Where a `speech` caption renders a spoken line, use its text as that line's Korean, because the ASR is the weaker source. Fix the remaining lines from the ASR as usual. An `other` caption becomes a row of its own, because only the picture has its Korean, and a learner can pick from it.
+
+Make each row read as what it is. A `speech` row holds only what is said, and anything else is in brackets so it doesn't read as a spoken line. Leave out rows a learner gains nothing from, and settle each case by these two rules.
+
+Continue as in Scenario B when there is a manual English track, or as in Scenario D when there isn't, which translates each row into English for `text2`.
 
 ### Output Format
 
