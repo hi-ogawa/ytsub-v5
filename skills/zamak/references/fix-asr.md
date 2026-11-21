@@ -8,7 +8,7 @@ The prompt carries:
 - the tracks the app sees, each with its `vssId`, language, source (manual, ASR, or translated), and whether it is the current `text1` or `text2`. The app's list can miss official tracks, so check `yt-dlp --list-subs` too.
 - the existing bookmarks. `captionIndex` points into the current rows, and `context` is the current row text, which shows where each word was before your changes. `side` is 0 for a Korean word and 1 for an English one.
 
-Follow [Generate import.json](generate-import-json.md). Run "Fetch and Assess" to get the tracks, then produce `captions.json` as Scenario B describes. For a song with official lyrics, follow Scenario F instead. Instead of picking bookmarks, re-anchor the existing bookmarks to your new rows, as "Re-anchor Existing Bookmarks" describes, and keep each bookmark's `id` in `bookmarks.json`. Skip "Assemble import.json".
+Follow [Generate import.json](generate-import-json.md). Run "Fetch and Assess" to get the tracks, then produce `captions.json` as Scenario B describes. For a song with official lyrics, follow Scenario F instead. When the picture has burned-in Korean captions, read them too, as [Burned-In Captions](#burned-in-captions) describes. Instead of picking bookmarks, re-anchor the existing bookmarks to your new rows, as "Re-anchor Existing Bookmarks" describes, and keep each bookmark's `id` in `bookmarks.json`. Skip "Assemble import.json".
 
 ```json
 {
@@ -34,6 +34,18 @@ Follow [Generate import.json](generate-import-json.md). Run "Fetch and Assess" t
 When the user also asks for vocabulary, pick it from your new rows as [Pick & Fill](pick-fill.md) describes, and add each pick to `bookmarks` without an `id`. A new entry has `captionIndex`, `offset`, `text`, `side` (0 for Korean, the default), and the `translation`, `etymology`, and `notes` that [Vocab Fields](vocab-fields.md) describes. Check its offset the same way as for the existing bookmarks.
 
 The app replaces all caption rows with yours, moves each existing bookmark to its new position, and adds the new ones. It rejects the whole result if any existing bookmark is missing or any entry's `text` isn't at its `offset`.
+
+## Burned-In Captions
+
+Many Korean videos with only ASR burn captions into the picture. Read them with the [burned-in captions skill](../../burned-in-captions/SKILL.md), which also needs `ffmpeg` and `uv`, and use the track as one more source, or on some shows as the Korean text itself.
+
+1. **Read the captions.** After Fetch and Assess, run the burned-in captions skill with the video and its ASR. The ASR helps it plan reads and find misses, and its readers keep the caption's text wherever it differs from the ASR.
+2. **Decide how to use them.** Measure the share of ASR lines that a caption matches in time and text, or take it from the channel record, if one is available.
+   - **Near-verbatim captions,** as on 노빠꾸탁재훈, become the Korean text and its segmentation. The ASR is evidence for lines the captions skip.
+   - **Commentary-heavy captions,** as on 조현영's vlog, are evidence for fixing the ASR, the way a `ja` track is in Scenario B. Commentary and labels aren't speech, so they never become rows of their own.
+3. **Find misses.** With near-verbatim captions, an ASR line that no caption matches in time points to a missed caption. The skill checks for these itself, and you can pass any it left as ranges to read again.
+4. **Merge,** then align, re-anchor the bookmarks, and return the result as usual. Keep the caption text as shown, including censored swears (ㅅㄲ) and spelled-out laughter, because that is what the viewer sees, and the ASR is the weaker source.
+5. **Record** whether the channel's captions are near-verbatim in the channel record, if one is available, so the next video on the channel skips the measurement.
 
 ## Write the Result to the Server
 

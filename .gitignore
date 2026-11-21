@@ -5,3 +5,7 @@ dist/
 test-results/
 e2e/.auth.json
 .dev.vars.production
+
+# Python, for the skills' scripts
+.venv/
+__pycache__/

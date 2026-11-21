@@ -17,11 +17,12 @@
 - [Deployment](deployment.md): migrations, deploys, and secrets on Cloudflare Workers and D1.
 - [Chrome Web Store submissions](chrome-store-submissions.md): the listing details and the steps for submitting a new version.
 
-## Agent Skill
+## Agent Skills
 
 - [Zamak skill](../skills/zamak/SKILL.md): the AI tasks that the app's prompts and its AI prompt help link point to, with the agent guides it links:
   - [Generate import.json from a YouTube video](../skills/zamak/references/generate-import-json.md): build captions and vocab bookmarks for a video with yt-dlp and an LLM for a one-off import without the extension, or for a seed fixture.
   - [Use the server API](../skills/zamak/references/server-api.md): log in, read a video, and edit its bookmarks from a script or agent, and keep the server's copy current.
+- [Burned-in captions skill](../skills/burned-in-captions/SKILL.md): read the captions burned into a video's picture into a timed track, for Fix & Align ASR on Korean videos that have only ASR.
 
 ## References
 
