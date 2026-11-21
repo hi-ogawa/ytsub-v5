@@ -256,6 +256,28 @@ test("bookmark numbers in popover and bookmarks tab", async ({ page }) => {
   await expect(cards.nth(1)).toContainText("#2아직");
 });
 
+test("bookmark numbers follow timestamps in both tabs", async ({ page }) => {
+  await openPanelWithTracks(page);
+  const panel = page.getByTestId("resizable-panel");
+
+  // Create the later bookmark first
+  await createBookmarkAt(page, { index: 2, start: 0, end: 1 });
+  await createBookmarkAt(page, { index: 0, start: 0, end: 3 });
+
+  await page
+    .locator("[data-index='0']")
+    .getByTestId("bookmark-highlight")
+    .first()
+    .click();
+  await expect(page.getByTestId("bookmark-popover")).toContainText("#1꼬집어");
+  await page.keyboard.press("Escape");
+
+  await panel.getByRole("button", { name: /Bookmarks/ }).click();
+  const cards = page.locator("[data-bookmark-id]");
+  await expect(cards.nth(0)).toContainText("#1꼬집어");
+  await expect(cards.nth(1)).toContainText("#2널");
+});
+
 test("bookmark highlight shows popover on click", async ({ page }) => {
   await openPanelWithTracks(page);
   await createBookmarkAt(page, { index: 0, start: 0, end: 3 });
