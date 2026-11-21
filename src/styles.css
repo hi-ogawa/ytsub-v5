@@ -30,7 +30,7 @@
 }
 
 /* Light theme tokens (YouTube light) — :root applies to web app directly,
-   and becomes :host in extension shadow DOM via addStyle() replacement. */
+   and becomes :host in extension shadow DOM via addShadowStyle() replacement. */
 :root {
   /* Page */
   --background: #fff;
