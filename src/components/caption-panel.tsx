@@ -1,17 +1,19 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
-import { type MergeStrategy, mergeCaptions } from "../lib/caption-merge.ts";
+import type { MergeStrategy } from "../lib/caption-merge.ts";
 import {
+  buildCaptionSession,
   CaptionSessionManager,
   getInitialTracks,
   saveSelectedTracks,
 } from "../lib/caption-session.ts";
 import { captionStorage } from "../lib/caption-storage.ts";
 import type { UseSync } from "../lib/sync.ts";
-import type {
-  Json3File,
-  YouTubeCaptionTrack,
-  YouTubeVideoData,
+import {
+  type Json3File,
+  type YouTubeCaptionTrack,
+  type YouTubeVideoData,
+  langFromVssId,
 } from "../lib/youtube.ts";
 import { CaptionPanelContent } from "./caption-panel-content.tsx";
 import { useAutoScroll } from "./caption-panel-preferences.ts";
@@ -148,7 +150,7 @@ function CaptionPanelInner({
   );
 }
 
-/** State B: tracks selected, fetching json3 → builds store and calls setStore */
+// Builds a new session from the selected tracks and hands it up with setStore.
 function CaptionPanelLoading({
   tracks,
   fetchJson3,
@@ -229,34 +231,6 @@ function CaptionPanelLoading({
   );
 }
 
-async function buildCaptionSession(options: {
-  track1: YouTubeCaptionTrack;
-  track2: YouTubeCaptionTrack;
-  fetchJson3: (track: YouTubeCaptionTrack) => Promise<Json3File>;
-  videoMeta: YouTubeVideoData;
-  strategy?: MergeStrategy;
-}): Promise<CaptionSessionManager> {
-  const [json3_1, json3_2] = await Promise.all([
-    options.fetchJson3(options.track1),
-    options.fetchJson3(options.track2),
-  ]);
-  const merged = mergeCaptions(
-    { json3: json3_1, vssId: options.track1.vssId },
-    { json3: json3_2, vssId: options.track2.vssId },
-    options.strategy,
-  );
-  const store = new CaptionSessionManager({
-    videoMeta: options.videoMeta,
-    vssId1: options.track1.vssId,
-    vssId2: options.track2.vssId,
-    rows: merged.captions,
-    strategy: merged.strategy,
-    bookmarks: [],
-  });
-  await store.persistSession();
-  return store;
-}
-
 function CaptionPanelWithStore({
   store,
   sessionOnly,
@@ -318,6 +292,6 @@ function CaptionPanelWithStore({
 const displayNames = new Intl.DisplayNames(["en"], { type: "language" });
 
 function langName(vssId: string): string {
-  const code = vssId.split(".").pop()!;
+  const code = langFromVssId(vssId);
   return displayNames.of(code) ?? code;
 }
