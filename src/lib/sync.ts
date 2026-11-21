@@ -2,7 +2,6 @@ import type { InferRouterOutputs } from "@orpc/server";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { orpc } from "../rpc.ts";
 import type { Router } from "../server/rpc.ts";
 import {
   type CaptionSessionManager,
@@ -14,6 +13,7 @@ import {
   type VideoIndexEntry,
   videoIndexStore,
 } from "./caption-storage.ts";
+import { orpc } from "./rpc-client.ts";
 
 type ListVideosOutput = InferRouterOutputs<Router>["videos"]["listVideos"];
 type GetFullSessionOutput = NonNullable<

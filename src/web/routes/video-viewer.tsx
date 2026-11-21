@@ -1,9 +1,9 @@
 import { useNavigate, useParams } from "react-router";
-import { CaptionPanel } from "../components/caption-panel.tsx";
-import { useYouTubePlayer } from "../components/youtube-player.tsx";
-import { videoIndexStore } from "../lib/caption-storage.ts";
-import { useSyncState } from "../lib/sync.ts";
-import type { Json3File } from "../lib/youtube.ts";
+import { CaptionPanel } from "../../components/caption-panel.tsx";
+import { useYouTubePlayer } from "../../components/youtube-player.tsx";
+import { videoIndexStore } from "../../lib/caption-storage.ts";
+import { useSyncState } from "../../lib/sync.ts";
+import type { Json3File } from "../../lib/youtube.ts";
 
 const neverFetchJson3 = (): Promise<Json3File> => {
   throw new Error("Cannot fetch captions in web viewer");
