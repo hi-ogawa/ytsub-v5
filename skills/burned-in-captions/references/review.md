@@ -1,6 +1,6 @@
 # Review
 
-A review is a look back over a finished run. A person goes over the run's doubts on a local page, which shows the picture and plays the speech at each one. A review polishes the track, but its main use is finding what the skill should do better.
+In a review, a person goes over a finished run's doubts on a local page, which shows the picture and plays the speech at each one. It finds what the skill should do better, and fixes the track along the way.
 
 ## Doubts
 
