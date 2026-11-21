@@ -55,6 +55,7 @@ import type {
   YouTubeCaptionTrack,
   YouTubeVideoData,
 } from "../lib/youtube.ts";
+import { downloadText } from "../utils/download-text.ts";
 import { getSelectionAt } from "../utils/get-selection.ts";
 import { CaptionList, type CaptionListHandle } from "./caption-list.tsx";
 import { syncStateDisplay } from "./sync-state.tsx";
@@ -139,13 +140,11 @@ function AiPromptCopy({
     if (!text) {
       return;
     }
-    const blob = new Blob([text], { type: "text/plain" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `zamak-${youtubeId}-prompt-${task}.txt`;
-    a.click();
-    URL.revokeObjectURL(url);
+    downloadText({
+      filename: `zamak-${youtubeId}-prompt-${task}.txt`,
+      text,
+      type: "text/plain",
+    });
   }
 
   return (
@@ -748,16 +747,11 @@ function SettingsDropdown({
         </DropdownMenuItem>
         <DropdownMenuItem
           onClick={() => {
-            const data = store.toExportData();
-            const blob = new Blob([JSON.stringify(data, null, 2)], {
+            downloadText({
+              filename: `import-${store.videoMeta.youtubeId}.json`,
+              text: JSON.stringify(store.toExportData(), null, 2),
               type: "application/json",
             });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement("a");
-            a.href = url;
-            a.download = `import-${store.videoMeta.youtubeId}.json`;
-            a.click();
-            URL.revokeObjectURL(url);
           }}
         >
           <Download className="mr-2 size-4" />
