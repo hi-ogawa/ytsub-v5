@@ -1,3 +1,4 @@
+import { createTransact, type StoreMap } from "../utils/idb.ts";
 import type {
   CaptionStorage,
   PersistedCaptionSession,
@@ -16,14 +17,7 @@ const STORE_NAMES: { [K in keyof Stores]: string } = {
   index: "video-index",
 };
 
-type Store<T> = {
-  get(key: string): Promise<T | undefined>;
-  getAll(): Promise<T[]>;
-  put(value: T): void;
-  delete(key: string): void;
-};
-
-type StoreMap<K extends keyof Stores> = { [P in K]: Store<Stores[P]> };
+const transact = createTransact<Stores>({ openDb, storeNames: STORE_NAMES });
 
 class IdbCaptionStorage implements CaptionStorage {
   listeners = new Set<StorageListener>();
@@ -92,7 +86,7 @@ class IdbCaptionStorage implements CaptionStorage {
   // skip the notice.
   async updateIndex<K extends keyof Stores>(
     names: K[],
-    write: (stores: StoreMap<K | "index">) => Promise<void | false>,
+    write: (stores: StoreMap<Stores, K | "index">) => Promise<void | false>,
   ) {
     const entries = await transact(
       [...names, "index"],
@@ -117,62 +111,6 @@ class IdbCaptionStorage implements CaptionStorage {
 }
 
 export const idbCaptionStorage = new IdbCaptionStorage();
-
-// --- IndexedDB helpers ---
-
-// `fn` may await requests on its stores, because a transaction stays active
-// through promise callbacks run from its request events.
-async function transact<K extends keyof Stores, R>(
-  names: K[],
-  mode: IDBTransactionMode,
-  fn: (stores: StoreMap<K>) => Promise<R>,
-): Promise<R> {
-  const db = await openDb();
-  const tx = db.transaction(
-    names.map((name) => STORE_NAMES[name]),
-    mode,
-  );
-  const done = new Promise<void>((resolve, reject) => {
-    tx.oncomplete = () => resolve();
-    tx.onerror = () => reject(tx.error);
-    tx.onabort = () => reject(tx.error ?? new Error("Transaction aborted"));
-  });
-  const stores = Object.fromEntries(
-    names.map((name) => [name, wrapStore(tx.objectStore(STORE_NAMES[name]))]),
-  ) as StoreMap<K>;
-  let result: R;
-  try {
-    result = await fn(stores);
-  } catch (err) {
-    done.catch(() => {});
-    try {
-      tx.abort();
-    } catch {}
-    throw err;
-  }
-  await done;
-  return result;
-}
-
-function wrapStore<T>(store: IDBObjectStore): Store<T> {
-  return {
-    get: (key) => requestResult(store.get(key)),
-    getAll: () => requestResult(store.getAll()),
-    put: (value) => {
-      store.put(value);
-    },
-    delete: (key) => {
-      store.delete(key);
-    },
-  };
-}
-
-function requestResult<T>(req: IDBRequest): Promise<T> {
-  return new Promise((resolve, reject) => {
-    req.onsuccess = () => resolve(req.result as T);
-    req.onerror = () => reject(req.error);
-  });
-}
 
 let dbPromise: Promise<IDBDatabase> | undefined;
 
