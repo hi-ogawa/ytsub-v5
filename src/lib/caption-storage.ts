@@ -43,6 +43,7 @@ export interface CaptionStorage {
   ): Promise<void>;
   deleteVideo(youtubeId: string): Promise<void>;
   setSyncedAt(youtubeId: string, serverUpdatedAt: string): Promise<void>;
+  getIndexEntry(youtubeId: string): Promise<VideoIndexEntry | undefined>;
   listIndex(): Promise<VideoIndexEntry[]>;
   subscribe(listener: StorageListener): () => void;
 }

@@ -15,17 +15,12 @@ import {
 import { PortalContainerProvider } from "../components/ui/portal-container.tsx";
 import type { YTPlayer } from "../components/youtube-player.tsx";
 import type { CaptionSessionManager } from "../lib/caption-session.ts";
-import {
-  captionStorage,
-  initCaptionStorage,
-  loadVideoIndex,
-  videoIndexStore,
-} from "../lib/caption-storage.ts";
-import { useStore } from "../lib/external-store.ts";
+import { captionStorage, initCaptionStorage } from "../lib/caption-storage.ts";
 import {
   type SyncState,
   type SyncStatus,
   computeSyncState,
+  useIndexEntry,
 } from "../lib/sync.ts";
 import type { YouTubeExtractionResult } from "../lib/youtube.ts";
 import { fetchPlayerApi, fetchTrackJson3 } from "../lib/youtube.ts";
@@ -105,19 +100,7 @@ function ExtensionViewer({ videoId }: { videoId: string }) {
     queryKey: ["extension-metadata", videoId],
     queryFn: () => fetchPlayerApi({ videoId, userLangs: getUserLangs() }),
   });
-  // The panel reads the index synchronously, so it waits for the first load.
-  const storageQuery = useQuery({
-    queryKey: ["extension-storage"],
-    queryFn: async () => {
-      await loadVideoIndex();
-      return true;
-    },
-    staleTime: Infinity,
-    retry: false,
-  });
-  const { data } = metadataQuery;
-  const isLoading = metadataQuery.isLoading || storageQuery.isLoading;
-  const error = metadataQuery.error ?? storageQuery.error;
+  const { data, isLoading, error } = metadataQuery;
 
   if (isLoading) {
     return (
@@ -147,7 +130,7 @@ type SyncAction =
   | { direction: "pull"; store: CaptionSessionManager };
 
 function useExtensionSync(youtubeId: string): SyncStatus {
-  const [videoIndex] = useStore(videoIndexStore);
+  const entryQuery = useIndexEntry(youtubeId);
 
   const serverQuery = useQuery({
     queryKey: ["extension-sync-state", youtubeId],
@@ -189,7 +172,10 @@ function useExtensionSync(youtubeId: string): SyncStatus {
     if (!serverQuery.data.authenticated) {
       return "unauthenticated";
     }
-    const localEntry = videoIndex.find((e) => e.youtubeId === youtubeId);
+    if (entryQuery.isPending) {
+      return "checking";
+    }
+    const localEntry = entryQuery.data ?? undefined;
     return computeSyncState({
       localUpdatedAt: localEntry?.updatedAt,
       syncedAt: localEntry?.syncedAt,

@@ -89,6 +89,9 @@ class IdbCaptionStorage implements CaptionStorage {
     this.notify({ type: "index", entries });
   };
 
+  getIndexEntry: CaptionStorage["getIndexEntry"] = (youtubeId) =>
+    transact(["index"], "readonly", ({ index }) => index.get(youtubeId));
+
   listIndex: CaptionStorage["listIndex"] = () =>
     transact(["index"], "readonly", ({ index }) => index.getAll());
 

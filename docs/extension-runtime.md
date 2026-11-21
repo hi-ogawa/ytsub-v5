@@ -28,9 +28,9 @@ If the extension updates while a tab is open, the tab's frame stops answering. A
 
 ## Keep the Index Current After Each Write
 
-The caption panel reads the video index synchronously as it renders, so the content script keeps a copy of the index in memory. It loads the copy through the frame before the panel opens, and keeps it current from change notices.
+The caption panel needs only this video's index entry, for its sync status. It reads the entry through the frame, and reads it again on each change notice.
 
-Every write to the database posts a notice with the new index to listeners on the same page. The frame forwards its notices to its content script, so a YouTube tab's index follows the writes that tab makes. Other pages see the write after they reload, as [Know Where an Open Page Can Fall Behind](data-and-sync.md#know-where-an-open-page-can-fall-behind) describes.
+Every write to the database posts a notice with the new index to listeners on the same page. The frame forwards its notices to its content script, so a YouTube tab's sync status follows the writes that tab makes. Other pages see the write after they reload, as [Know Where an Open Page Can Fall Behind](data-and-sync.md#know-where-an-open-page-can-fall-behind) describes.
 
 ## Keep Server Calls and Secrets in the Background
 

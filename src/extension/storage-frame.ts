@@ -13,6 +13,7 @@ const storageFrameHandlers = {
   getSession: storage.getSession.bind(storage),
   saveSession: storage.saveSession.bind(storage),
   setSyncedAt: storage.setSyncedAt.bind(storage),
+  getIndexEntry: storage.getIndexEntry.bind(storage),
   listIndex: storage.listIndex.bind(storage),
 };
 
