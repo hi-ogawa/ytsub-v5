@@ -27,7 +27,11 @@ export function CaptionPanelContent({
   autoScroll: boolean;
 }) {
   const [activeTab, setActiveTab] = useState<Tab>("captions");
+  const contentRef = useRef<HTMLDivElement>(null);
+  const captionListRef = useRef<CaptionViewerHandle>(null);
+  const bookmarksListRef = useRef<BookmarksListHandle>(null);
 
+  // Both tabs list and number bookmarks in playback order.
   const sortedBookmarks = useMemo(
     () =>
       [...store.bookmarks].sort(
@@ -36,6 +40,8 @@ export function CaptionPanelContent({
     [store.bookmarks],
   );
 
+  // Previous and next wrap around. Previous skips a bookmark within the last
+  // second, so pressing it right after a jump moves on instead of repeating.
   function onPrevBookmark() {
     if (!player || sortedBookmarks.length === 0) {
       return;
@@ -61,9 +67,8 @@ export function CaptionPanelContent({
     captionListRef.current?.showCaption(bookmark.captionIndex);
   }
 
-  const captionListRef = useRef<CaptionViewerHandle>(null);
-  const bookmarksListRef = useRef<BookmarksListHandle>(null);
-
+  // Switching tabs first un-hides the target list, so the scroll waits a tick
+  // until it has a layout.
   function onGoToCaption(captionIndex: number) {
     setActiveTab("captions");
     setTimeout(() => {
@@ -78,7 +83,6 @@ export function CaptionPanelContent({
     });
   }
 
-  const contentRef = useRef<HTMLDivElement>(null);
   const bookmarkSelection = useBookmarkSelection(contentRef, store);
 
   return (
