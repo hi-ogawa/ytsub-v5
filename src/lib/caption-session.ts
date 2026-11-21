@@ -1,12 +1,17 @@
 import type { InferRouterInputs } from "@orpc/server";
 import type { Router } from "../server/rpc.ts";
-import { type MergeStrategy, type MergedCaption } from "./caption-merge.ts";
+import {
+  type MergeStrategy,
+  type MergedCaption,
+  mergeCaptions,
+} from "./caption-merge.ts";
 import {
   type PersistedCaptionSession,
   captionStorage,
 } from "./caption-storage.ts";
 import type { ExtensionBookmark } from "./extension-bookmarks.ts";
 import {
+  type Json3File,
   type YouTubeCaptionTrack,
   type YouTubeVideoData,
   langFromVssId,
@@ -152,6 +157,34 @@ export async function importExportData(data: ExportData): Promise<void> {
     })),
   };
   await captionStorage.saveSession(session);
+}
+
+export async function buildCaptionSession(options: {
+  track1: YouTubeCaptionTrack;
+  track2: YouTubeCaptionTrack;
+  fetchJson3: (track: YouTubeCaptionTrack) => Promise<Json3File>;
+  videoMeta: YouTubeVideoData;
+  strategy?: MergeStrategy;
+}): Promise<CaptionSessionManager> {
+  const [json3_1, json3_2] = await Promise.all([
+    options.fetchJson3(options.track1),
+    options.fetchJson3(options.track2),
+  ]);
+  const merged = mergeCaptions(
+    { json3: json3_1, vssId: options.track1.vssId },
+    { json3: json3_2, vssId: options.track2.vssId },
+    options.strategy,
+  );
+  const store = new CaptionSessionManager({
+    videoMeta: options.videoMeta,
+    vssId1: options.track1.vssId,
+    vssId2: options.track2.vssId,
+    rows: merged.captions,
+    strategy: merged.strategy,
+    bookmarks: [],
+  });
+  await store.persistSession();
+  return store;
 }
 
 // --- Store ---
