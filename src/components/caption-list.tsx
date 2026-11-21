@@ -155,64 +155,97 @@ export function CaptionList({
       onTouchStart={onManualScroll}
     >
       <div className="flex flex-col gap-1.5 p-1.5">
-        {rows.map((row, i) => {
-          const rowBookmarks = bookmarksByIndex?.get(i);
-          const text1Marks = rowBookmarks
-            ?.filter((b) => b.side === 0)
-            .map((b) => ({
-              offset: b.offset,
-              length: b.text.length,
-              bookmark: b,
-              bookmarkNumber: bookmarkNumberById.get(b.id),
-            }));
-          const text2Marks = rowBookmarks
-            ?.filter((b) => b.side === 1)
-            .map((b) => ({
-              offset: b.offset,
-              length: b.text.length,
-              bookmark: b,
-              bookmarkNumber: bookmarkNumberById.get(b.id),
-            }));
+        {rows.map((row, i) => (
+          <CaptionRow
+            key={i}
+            row={row}
+            index={i}
+            isCurrent={i === currentIndex}
+            isPlaying={isPlaying}
+            bookmarks={bookmarksByIndex.get(i)}
+            bookmarkNumberById={bookmarkNumberById}
+            onClick={() => onClickRow(i)}
+            onGoToBookmark={onGoToBookmark}
+            onPopoverOpenChange={wrappedPopoverOpenChange}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
 
-          return (
-            <div
-              key={i}
-              data-index={i}
-              className={[
-                "flex w-full cursor-pointer flex-col gap-1 border p-1 px-2 hover:bg-muted",
-                i === currentIndex && isPlaying && "ring-2 ring-ring",
-                i === currentIndex ? "border-ring" : "border-border",
-              ]
-                .filter(Boolean)
-                .join(" ")}
-              onClick={() => onClickRow(i)}
-            >
-              <div className="text-xs text-muted-foreground">
-                <span className="ml-auto">
-                  {formatTimestamp(row.begin)} – {formatTimestamp(row.end)}
-                </span>
-              </div>
-              <div className="flex text-sm">
-                <div className="flex-1 border-r pr-2" data-side="0">
-                  {highlightText(
-                    row.text1,
-                    text1Marks ?? [],
-                    onGoToBookmark,
-                    wrappedPopoverOpenChange,
-                  )}
-                </div>
-                <div className="flex-1 pl-2" data-side="1">
-                  {highlightText(
-                    row.text2,
-                    text2Marks ?? [],
-                    onGoToBookmark,
-                    wrappedPopoverOpenChange,
-                  )}
-                </div>
-              </div>
-            </div>
-          );
-        })}
+function CaptionRow({
+  row,
+  index,
+  isCurrent,
+  isPlaying,
+  bookmarks,
+  bookmarkNumberById,
+  onClick,
+  onGoToBookmark,
+  onPopoverOpenChange,
+}: {
+  row: MergedCaption;
+  index: number;
+  isCurrent: boolean;
+  isPlaying: boolean;
+  bookmarks?: ExtensionBookmark[];
+  bookmarkNumberById: Map<string, number>;
+  onClick: () => void;
+  onGoToBookmark: (bookmarkId: string) => void;
+  onPopoverOpenChange: (open: boolean) => void;
+}) {
+  const text1Marks = bookmarks
+    ?.filter((b) => b.side === 0)
+    .map((b) => ({
+      offset: b.offset,
+      length: b.text.length,
+      bookmark: b,
+      bookmarkNumber: bookmarkNumberById.get(b.id),
+    }));
+  const text2Marks = bookmarks
+    ?.filter((b) => b.side === 1)
+    .map((b) => ({
+      offset: b.offset,
+      length: b.text.length,
+      bookmark: b,
+      bookmarkNumber: bookmarkNumberById.get(b.id),
+    }));
+
+  return (
+    <div
+      data-index={index}
+      className={[
+        "flex w-full cursor-pointer flex-col gap-1 border p-1 px-2 hover:bg-muted",
+        isCurrent && isPlaying && "ring-2 ring-ring",
+        isCurrent ? "border-ring" : "border-border",
+      ]
+        .filter(Boolean)
+        .join(" ")}
+      onClick={onClick}
+    >
+      <div className="text-xs text-muted-foreground">
+        <span className="ml-auto">
+          {formatTimestamp(row.begin)} – {formatTimestamp(row.end)}
+        </span>
+      </div>
+      <div className="flex text-sm">
+        <div className="flex-1 border-r pr-2" data-side="0">
+          {highlightText(
+            row.text1,
+            text1Marks ?? [],
+            onGoToBookmark,
+            onPopoverOpenChange,
+          )}
+        </div>
+        <div className="flex-1 pl-2" data-side="1">
+          {highlightText(
+            row.text2,
+            text2Marks ?? [],
+            onGoToBookmark,
+            onPopoverOpenChange,
+          )}
+        </div>
       </div>
     </div>
   );
