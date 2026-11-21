@@ -1,7 +1,12 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { App } from "./app.tsx";
-import { captionStorage, loadVideoIndex } from "./lib/caption-storage.ts";
+import { idbCaptionStorage } from "./lib/caption-db.ts";
+import {
+  captionStorage,
+  initCaptionStorage,
+  loadVideoIndex,
+} from "./lib/caption-storage.ts";
 import "./styles.css";
 
 // The index lived in localStorage before it moved into IndexedDB, next to the
@@ -9,6 +14,7 @@ import "./styles.css";
 const LEGACY_INDEX_KEY = "zamak:video-index";
 
 async function main() {
+  initCaptionStorage(idbCaptionStorage);
   await captionStorage.importLegacy("local-storage-index", {
     index: JSON.parse(localStorage.getItem(LEGACY_INDEX_KEY) ?? "[]"),
     sessions: [],

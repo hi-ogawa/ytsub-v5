@@ -1,4 +1,3 @@
-import { idbCaptionStorage } from "./caption-db.ts";
 import type { MergeStrategy, MergedCaption } from "./caption-merge.ts";
 import type { ExtensionBookmark } from "./extension-bookmarks.ts";
 import { type VideoIndexEntry, videoIndexStore } from "./video-index.ts";
@@ -47,19 +46,14 @@ export interface CaptionStorage {
   subscribe(listener: StorageListener): () => void;
 }
 
-let current: CaptionStorage = idbCaptionStorage;
-let unsubscribeIndex = subscribeIndex(current);
+// Each entry point calls initCaptionStorage once at startup: the watch page
+// with the extension frame bridge, every other context with IndexedDB on its
+// own origin.
+export let captionStorage: CaptionStorage;
 
-// The watch page swaps in the extension frame bridge. Every other context
-// opens IndexedDB on its own origin.
-export function setCaptionStorage(storage: CaptionStorage) {
-  unsubscribeIndex();
-  current = storage;
-  unsubscribeIndex = subscribeIndex(storage);
-}
-
-function subscribeIndex(storage: CaptionStorage) {
-  return storage.subscribe((notice) => {
+export function initCaptionStorage(storage: CaptionStorage) {
+  captionStorage = storage;
+  storage.subscribe((notice) => {
     if (notice.type === "index") {
       videoIndexStore.set(notice.entries);
     }
@@ -67,17 +61,5 @@ function subscribeIndex(storage: CaptionStorage) {
 }
 
 export async function loadVideoIndex() {
-  videoIndexStore.set(await current.listIndex());
+  videoIndexStore.set(await captionStorage.listIndex());
 }
-
-export const captionStorage: CaptionStorage = {
-  getSession: (youtubeId) => current.getSession(youtubeId),
-  saveSession: (session, options) => current.saveSession(session, options),
-  deleteVideo: (youtubeId) => current.deleteVideo(youtubeId),
-  setSyncedAt: (youtubeId, serverUpdatedAt) =>
-    current.setSyncedAt(youtubeId, serverUpdatedAt),
-  listIndex: () => current.listIndex(),
-  importLegacy: (source, data) => current.importLegacy(source, data),
-  isLegacyImported: (source) => current.isLegacyImported(source),
-  subscribe: (listener) => current.subscribe(listener),
-};

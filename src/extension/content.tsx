@@ -17,8 +17,8 @@ import type { YTPlayer } from "../components/youtube-player.tsx";
 import type { CaptionSessionManager } from "../lib/caption-session.ts";
 import {
   captionStorage,
+  initCaptionStorage,
   loadVideoIndex,
-  setCaptionStorage,
 } from "../lib/caption-storage.ts";
 import { useStore } from "../lib/external-store.ts";
 import {
@@ -37,7 +37,7 @@ import { readYouTubeLegacyData } from "./lib/youtube-legacy-data.ts";
 
 const bgRpc = createRuntimeRelayRpc<typeof bgRpcHandlers>();
 
-setCaptionStorage(createBridgeStorage());
+initCaptionStorage(createBridgeStorage());
 
 // Copies youtube.com data into extension storage once, then loads the index.
 let storageReady: Promise<void> | undefined;
