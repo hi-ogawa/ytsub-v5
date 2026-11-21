@@ -37,6 +37,22 @@ import { readYouTubeLegacyData } from "./lib/youtube-legacy-data.ts";
 
 const bgRpc = createRuntimeRelayRpc<typeof bgRpcHandlers>();
 
+// Copies youtube.com data into extension storage once, then loads the index.
+let storageReady: Promise<void> | undefined;
+
+function prepareStorage() {
+  storageReady ??= (async () => {
+    if (!(await captionStorage.isLegacyImported("youtube"))) {
+      await captionStorage.importLegacy(
+        "youtube",
+        await readYouTubeLegacyData(),
+      );
+    }
+    await loadVideoIndex();
+  })();
+  return storageReady;
+}
+
 declare const __BUILD_TIME__: string;
 declare const __GIT_REV__: string;
 
@@ -107,19 +123,9 @@ function ExtensionViewer({ videoId }: { videoId: string }) {
     queryFn: () => fetchPlayerApi({ videoId, userLangs: getUserLangs() }),
   });
   // The panel reads the index synchronously, so it waits for the first load.
-  // Before that, it copies youtube.com data into extension storage once.
   const storageQuery = useQuery({
     queryKey: ["extension-storage"],
-    queryFn: async () => {
-      if (!(await captionStorage.isLegacyImported("youtube"))) {
-        await captionStorage.importLegacy(
-          "youtube",
-          await readYouTubeLegacyData(),
-        );
-      }
-      await loadVideoIndex();
-      return true;
-    },
+    queryFn: () => prepareStorage().then(() => true),
     staleTime: Infinity,
     retry: false,
   });
@@ -304,6 +310,8 @@ function inject() {
   if (!videoId) {
     return;
   }
+
+  prepareStorage().catch(() => {});
 
   // Create shadow root for style isolation.
   // Inline styles here because `all: initial` resets everything and
