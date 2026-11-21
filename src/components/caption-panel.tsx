@@ -22,6 +22,7 @@ import {
   useState,
   useSyncExternalStore,
 } from "react";
+import { z } from "zod";
 import {
   type AiTask,
   AI_TASKS,
@@ -47,7 +48,6 @@ import {
   type ExtensionBookmark,
   extractBookmarkSelection,
 } from "../lib/extension-bookmarks.ts";
-import { createLocalStorageStore, useStore } from "../lib/external-store.ts";
 import { flashHighlight } from "../lib/flash-highlight.ts";
 import type { SyncStatus, UseSync } from "../lib/sync.ts";
 import type {
@@ -55,6 +55,7 @@ import type {
   YouTubeCaptionTrack,
   YouTubeVideoData,
 } from "../lib/youtube.ts";
+import { createLocalStorageStore } from "../utils/local-storage-store.ts";
 import { CaptionList, type CaptionListHandle } from "./caption-list.tsx";
 import { syncStateDisplay } from "./sync-state.tsx";
 import { TrackPicker } from "./track-picker.tsx";
@@ -64,18 +65,31 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu.tsx";
+import { withUseValue } from "./use-store-value.ts";
 import type { YTPlayer } from "./youtube-player.tsx";
 
-const autoScrollStore = createLocalStorageStore("zamak:auto-scroll", true);
-const fabOpenStore = createLocalStorageStore<Record<string, boolean>>(
-  "zamak:fab-open",
-  {},
+const DEFAULT_PREFERENCES = { autoScroll: true, fabOpen: {} };
+
+const preferencesSchema = z
+  .object({
+    autoScroll: z.boolean().catch(DEFAULT_PREFERENCES.autoScroll),
+    fabOpen: z
+      .record(z.string(), z.boolean())
+      .catch(DEFAULT_PREFERENCES.fabOpen),
+  })
+  .catch(DEFAULT_PREFERENCES);
+
+const preferences = withUseValue(
+  createLocalStorageStore({
+    key: "zamak:caption-panel",
+    parse: (stored) => preferencesSchema.parse(stored),
+  }),
 );
 
 export function useFabOpen(videoId: string) {
-  const [state, setState] = useStore(fabOpenStore);
-  const open = state[videoId] ?? false;
-  const toggle = () => setState((prev) => ({ ...prev, [videoId]: !open }));
+  const [fabOpen, setFabOpen] = preferences.useValue("fabOpen");
+  const open = fabOpen[videoId] ?? false;
+  const toggle = () => setFabOpen((prev) => ({ ...prev, [videoId]: !open }));
   return [open, toggle] as const;
 }
 
@@ -716,7 +730,7 @@ function CaptionPanelWithStore({
 }) {
   useSyncExternalStore(store.subscribe, () => store.version);
 
-  const [autoScroll, setAutoScroll] = useStore(autoScrollStore);
+  const [autoScroll, setAutoScroll] = preferences.useValue("autoScroll");
 
   return (
     <div className="flex h-full flex-col">

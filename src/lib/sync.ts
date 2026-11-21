@@ -14,7 +14,6 @@ import {
   type VideoIndexEntry,
   videoIndexStore,
 } from "./caption-storage.ts";
-import { useStore } from "./external-store.ts";
 
 type ListVideosOutput = InferRouterOutputs<Router>["videos"]["listVideos"];
 type GetFullSessionOutput = NonNullable<
@@ -259,7 +258,7 @@ function mergeVideoEntries(
 export type VideoSyncHandle = ReturnType<typeof useVideoSync>;
 
 export function useVideoSync() {
-  const [videoIndex] = useStore(videoIndexStore);
+  const [videoIndex] = videoIndexStore.useValue("entries");
 
   const authQuery = useQuery(orpc.auth.check.queryOptions());
   const authenticated = authQuery.data?.authenticated === true;
