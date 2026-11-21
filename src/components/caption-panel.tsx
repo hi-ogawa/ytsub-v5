@@ -886,30 +886,26 @@ function CaptionPanelContent({
   function onPrevBookmark() {
     if (!player || sortedBookmarks.length === 0) return;
     const time = player.getCurrentTime();
-    for (let i = sortedBookmarks.length - 1; i >= 0; i--) {
-      if (sortedBookmarks[i].timestamp < time - 1) {
-        player.seekTo(sortedBookmarks[i].timestamp);
-        return;
-      }
-    }
-    const last = sortedBookmarks[sortedBookmarks.length - 1];
-    player.seekTo(last.timestamp);
+    const prev = sortedBookmarks.findLast((bm) => bm.timestamp < time - 1);
+    goToBookmarkCaption(prev ?? sortedBookmarks[sortedBookmarks.length - 1]);
   }
 
   function onNextBookmark() {
     if (!player || sortedBookmarks.length === 0) return;
     const time = player.getCurrentTime();
-    for (const bm of sortedBookmarks) {
-      if (bm.timestamp > time + 0.5) {
-        player.seekTo(bm.timestamp);
-        return;
-      }
-    }
-    player.seekTo(sortedBookmarks[0].timestamp);
+    const next = sortedBookmarks.find((bm) => bm.timestamp > time + 0.5);
+    goToBookmarkCaption(next ?? sortedBookmarks[0]);
+  }
+
+  function goToBookmarkCaption(bookmark: ExtensionBookmark) {
+    player?.seekTo(bookmark.timestamp);
+    // The playback loop only follows the player while it plays, so a paused
+    // seek would otherwise leave the list on the old caption.
+    captionListRef.current?.showCaption(bookmark.captionIndex);
   }
 
   // --- Cross-tab navigation ---
-  const captionListRef = useRef<CaptionListHandle>(null);
+  const captionListRef = useRef<CaptionViewerHandle>(null);
   const bookmarksListRef = useRef<BookmarksListHandle>(null);
 
   function onGoToCaption(captionIndex: number) {
@@ -1238,6 +1234,10 @@ function ExtensionBookmarksList({
 
 // --- CaptionViewer: playback-synced caption list ---
 
+type CaptionViewerHandle = CaptionListHandle & {
+  showCaption: (index: number) => void;
+};
+
 function CaptionViewer({
   ref,
   rows,
@@ -1247,7 +1247,7 @@ function CaptionViewer({
   onGoToBookmark,
   onPopoverOpenChange,
 }: {
-  ref: React.Ref<CaptionListHandle>;
+  ref: React.Ref<CaptionViewerHandle>;
   rows: MergedCaption[];
   player?: YTPlayer;
   autoScroll: boolean;
@@ -1257,6 +1257,15 @@ function CaptionViewer({
 }) {
   const [currentIndex, setCurrentIndex] = useState<number>();
   const [isPlaying, setIsPlaying] = useState(false);
+  const listRef = useRef<CaptionListHandle>(null);
+
+  useImperativeHandle(ref, () => ({
+    scrollToIndex: (index) => listRef.current?.scrollToIndex(index),
+    showCaption: (index) => {
+      setCurrentIndex(index);
+      listRef.current?.scrollToIndex(index);
+    },
+  }));
 
   useEffect(() => {
     if (!player || rows.length === 0) return;
@@ -1282,7 +1291,7 @@ function CaptionViewer({
 
   return (
     <CaptionList
-      ref={ref}
+      ref={listRef}
       rows={rows}
       currentIndex={currentIndex}
       isPlaying={isPlaying}
