@@ -50,3 +50,26 @@ test(computeSyncState, () => {
       .toBe(expected);
   }
 });
+
+// The local check uses the client clock, and the server check uses the server
+// clock, so a skew between the two doesn't change the state.
+test("computeSyncState with a client clock behind the server", () => {
+  const syncedServerUpdatedAt = "2025-01-01T10:53:10.000Z";
+  const localUpdatedAt = "2025-01-01T10:50:00.000Z";
+  const syncedAt = "2025-01-01T10:50:01.000Z";
+  const edited = "2025-01-01T10:51:00.000Z";
+  const serverEdited = "2025-01-01T10:54:00.000Z";
+
+  const compute = (local: string, server: string) =>
+    computeSyncState({
+      localUpdatedAt: local,
+      syncedAt,
+      syncedServerUpdatedAt,
+      serverUpdatedAt: server,
+    });
+
+  expect(compute(localUpdatedAt, syncedServerUpdatedAt)).toBe("synced");
+  expect(compute(edited, syncedServerUpdatedAt)).toBe("push");
+  expect(compute(localUpdatedAt, serverEdited)).toBe("pull");
+  expect(compute(edited, serverEdited)).toBe("conflict");
+});

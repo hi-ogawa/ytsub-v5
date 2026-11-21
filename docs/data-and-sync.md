@@ -14,13 +14,18 @@ Browser storage belongs to an origin, so where a session lives depends on which 
 
 ## List Videos From a Small Index
 
-Opening every session just to draw the bookmarks page would be slow, so each origin also keeps a video index in localStorage. An entry holds a video's title, channel, and bookmark count, plus two timestamps for sync: when the session last changed locally, and when it was last pushed or pulled.
+Opening every session just to draw the bookmarks page would be slow, so each origin also keeps a video index in localStorage. An entry holds a video's title, channel, and bookmark count, plus timestamps for sync: when the session last changed locally, when it was last pushed or pulled, and the server's own timestamp for the video at that push or pull.
 
 The extension has three copies of the index, because its pieces run on two origins. YouTube tabs keep one in youtube.com localStorage, the bookmarks page keeps one in the extension's localStorage, and `chrome.storage.local` sits between them. Each side copies the index from `chrome.storage.local` when it loads, and writes its whole index back there after each change.
 
-## Decide the Sync Direction From Three Timestamps
+## Decide the Sync Direction From Two Pairs of Timestamps
 
-The sync status of a video compares three timestamps: when the local session last changed, when it was last synced, and when the server's copy last changed.
+The sync status of a video asks two questions, and each one compares timestamps from a single clock, because the browser's clock and the server's clock can disagree:
+
+- **Did the local session change?** Compare when it last changed with when it was last synced, both from the browser's clock.
+- **Did the server's copy change?** Compare when it last changed with what that time was at the last sync, both from the server's clock. A push or pull records the server's time from its own response.
+
+The answers decide the status:
 
 - If neither side changed since the last sync, the video is synced.
 - If only the local session changed, it needs a push. If only the server changed, it needs a pull.
@@ -30,7 +35,7 @@ The sync status of a video compares three timestamps: when the local session las
 
 ## Push and Pull Whole Videos
 
-Push and pull always move a whole video, and the receiving side replaces its copy. A push sends the session to the server, which replaces that video's captions and bookmarks. A pull fetches the server's copy and replaces the local session. Either one then records the sync time in the index.
+Push and pull always move a whole video, and the receiving side replaces its copy. A push sends the session to the server, which replaces that video's captions and bookmarks. A pull fetches the server's copy and replaces the local session. Either one then records the sync time and the server's timestamp in the index.
 
 In the extension, you can push or pull from the caption panel's menu or from the bookmarks page. Both ask the background, which calls the server. A push from either one reads the session through an open YouTube tab. A pull from the bookmarks page writes the session through a YouTube tab. A pull from the panel only fetches the session, and the panel applies it itself.
 

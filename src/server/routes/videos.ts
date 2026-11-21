@@ -292,6 +292,7 @@ export const videosRouter = authed.router({
 
       return {
         videoId: video.id,
+        updatedAt: video.updatedAt,
         captions: insertedCaptions,
         bookmarks: input.bookmarks.length,
       };
