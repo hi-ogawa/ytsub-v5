@@ -2,7 +2,7 @@
 
 The extension runs as five separate pieces of JavaScript. Each one can do things the others can't, so most features need several of them to work together. This doc explains what each piece is for and how they send messages to each other.
 
-![Each YouTube tab runs the content script and the relay, and the relay mounts a hidden storage frame from the extension. The content script calls the background through the relay, and reads and writes storage through the frame, which sends change notices back. The frame, the bookmarks page, and the background all open the same IndexedDB on the extension's origin. Earlier versions' data in youtube.com storage is read once to migrate it.](images/extension-runtime.svg)
+![Each YouTube tab runs the content script and the relay, and the relay mounts a hidden storage frame from the extension. The content script calls the background through the relay, and reads and writes storage through the frame, which sends change notices back. The frame, the bookmarks page, and the background all open the same IndexedDB on the extension's origin. A BroadcastChannel carries each write's notice to every page on that origin. Earlier versions' data in youtube.com storage is read once to migrate it.](images/extension-runtime.svg)
 
 ## Split the Content Script Across Two Worlds
 
