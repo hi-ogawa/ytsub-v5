@@ -198,16 +198,12 @@ function CaptionRow({
   const text1Marks = bookmarks
     ?.filter((b) => b.side === 0)
     .map((b) => ({
-      offset: b.offset,
-      length: b.text.length,
       bookmark: b,
       bookmarkNumber: bookmarkNumberById.get(b.id),
     }));
   const text2Marks = bookmarks
     ?.filter((b) => b.side === 1)
     .map((b) => ({
-      offset: b.offset,
-      length: b.text.length,
       bookmark: b,
       bookmarkNumber: bookmarkNumberById.get(b.id),
     }));
@@ -231,76 +227,66 @@ function CaptionRow({
       </div>
       <div className="flex text-sm">
         <div className="flex-1 border-r pr-2" data-side="0">
-          {highlightText(
-            row.text1,
-            text1Marks ?? [],
-            onGoToBookmark,
-            onPopoverOpenChange,
-          )}
+          <HighlightedText
+            text={row.text1}
+            marks={text1Marks ?? []}
+            onGoToBookmark={onGoToBookmark}
+            onPopoverOpenChange={onPopoverOpenChange}
+          />
         </div>
         <div className="flex-1 pl-2" data-side="1">
-          {highlightText(
-            row.text2,
-            text2Marks ?? [],
-            onGoToBookmark,
-            onPopoverOpenChange,
-          )}
+          <HighlightedText
+            text={row.text2}
+            marks={text2Marks ?? []}
+            onGoToBookmark={onGoToBookmark}
+            onPopoverOpenChange={onPopoverOpenChange}
+          />
         </div>
       </div>
     </div>
   );
 }
 
-function highlightText(
-  text: string,
-  marks: {
-    offset: number;
-    length: number;
-    bookmark?: ExtensionBookmark;
-    bookmarkNumber?: number;
-  }[],
-  onGoToBookmark: (bookmarkId: string) => void,
-  onPopoverOpenChange: (open: boolean) => void,
-) {
+function HighlightedText({
+  text,
+  marks,
+  onGoToBookmark,
+  onPopoverOpenChange,
+}: {
+  text: string;
+  marks: { bookmark: ExtensionBookmark; bookmarkNumber?: number }[];
+  onGoToBookmark: (bookmarkId: string) => void;
+  onPopoverOpenChange: (open: boolean) => void;
+}) {
   if (marks.length === 0) {
     return <span data-offset={0}>{text}</span>;
   }
-  const sorted = [...marks].sort((a, b) => a.offset - b.offset);
+  const sorted = [...marks].sort(
+    (a, b) => a.bookmark.offset - b.bookmark.offset,
+  );
   const parts: React.ReactNode[] = [];
   let cursor = 0;
-  for (const m of sorted) {
-    if (m.offset > cursor) {
+  for (const { bookmark, bookmarkNumber } of sorted) {
+    if (bookmark.offset > cursor) {
       parts.push(
         <span key={`t${cursor}`} data-offset={cursor}>
-          {text.slice(cursor, m.offset)}
+          {text.slice(cursor, bookmark.offset)}
         </span>,
       );
     }
-    const end = m.offset + m.length;
-    if (m.bookmark) {
-      parts.push(
-        <BookmarkWord
-          key={m.bookmark.id}
-          bookmark={m.bookmark}
-          bookmarkNumber={m.bookmarkNumber}
-          offset={m.offset}
-          onGoToBookmark={onGoToBookmark}
-          onPopoverOpenChange={onPopoverOpenChange}
-        >
-          {text.slice(m.offset, end)}
-        </BookmarkWord>,
-      );
-    } else {
-      parts.push(
-        <span
-          key={`h${m.offset}`}
-          data-offset={m.offset}
-          className="border-b-2 border-highlight-border bg-highlight-bg"
-        >
-          {text.slice(m.offset, end)}
-        </span>,
-      );
-    }
+    const end = bookmark.offset + bookmark.text.length;
+    parts.push(
+      <BookmarkWord
+        key={bookmark.id}
+        bookmark={bookmark}
+        bookmarkNumber={bookmarkNumber}
+        offset={bookmark.offset}
+        onGoToBookmark={onGoToBookmark}
+        onPopoverOpenChange={onPopoverOpenChange}
+      >
+        {text.slice(bookmark.offset, end)}
+      </BookmarkWord>,
+    );
     cursor = end;
   }
   if (cursor < text.length) {
