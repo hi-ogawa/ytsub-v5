@@ -37,7 +37,7 @@ The commands below shorten this to `uv run scripts/...`. Outputs go to the folde
 
 ## Read the Picture
 
-Transcribe the picture, not the speech. Where a caption differs from the ASR, keep the caption's text exactly, and flag the difference instead of resolving it. Captions are worth reading because they differ: editors spell things their own way, censor swears, and fix what the ASR misheard. Never adjust a caption toward the ASR, or toward standard Korean.
+Transcribe the picture, not the speech. Where a caption differs from the ASR, keep the caption's text exactly. Captions are worth reading because they differ: editors spell things their own way, censor swears, and fix what the ASR misheard. Never adjust a caption toward the ASR, or toward standard Korean.
 
 Use any context that helps, such as the ASR's line timings to find caption changes, or a word the ASR heard to make out a small or blurred caption. A reader that had the ASR kept every caption that differed from it, and got one right that a reader without it misread.
 
@@ -137,15 +137,6 @@ If a channel record is available, add anything new about the channel to it: its 
 ## Reading Ranges Again
 
 A caller can pass time ranges where it suspects a miss, such as Fix & Align ASR passing the times of ASR lines that no caption matches. Read every other step in each range, and add the new captions to the track.
-
-## Using the Track
-
-How to use the track depends on how closely the captions follow the speech. With the ASR, measure the share of ASR lines that a caption matches in time and text, or take it from the channel record, if one is available, and report it with the track.
-
-- **Near-verbatim captions,** as on a talk show whose captions follow the speech, can be the Korean text and its segmentation. The ASR covers the lines the captions skip.
-- **Commentary-heavy captions,** as on a vlog with mostly editor comments, are evidence for fixing the ASR, the way an official track in another language is.
-
-Where a caption and the ASR differ, the caption wins, because it is what the viewer sees, and the ASR is the weaker source. For Fix & Align ASR in the Zamak skill, the track is one more source for its rows, and the rest of that task runs as usual.
 
 ## Features
 
