@@ -1,6 +1,9 @@
 import { useCallback } from "react";
 import { useNavigate, useParams } from "react-router";
-import { CaptionFab, useFabOpen } from "../../components/caption-fab.tsx";
+import {
+  CaptionPanelFab,
+  useFabOpen,
+} from "../../components/caption-panel-fab.tsx";
 import { CaptionPanel } from "../../components/caption-panel.tsx";
 import { ResizablePanel } from "../../components/resizable-panel.tsx";
 import { useYouTubePlayer } from "../../components/youtube-player.tsx";
@@ -50,7 +53,7 @@ export function DevViewerPage() {
           <DevViewerSession videoId={videoId} meta={meta} player={player} />
         </ResizablePanel>
       )}
-      <CaptionFab open={panelOpen} onClick={togglePanel} />
+      <CaptionPanelFab open={panelOpen} onClick={togglePanel} />
     </div>
   );
 }

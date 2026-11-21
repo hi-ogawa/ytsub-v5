@@ -1,6 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { CaptionFab, useFabOpen } from "../../components/caption-fab.tsx";
+import {
+  CaptionPanelFab,
+  useFabOpen,
+} from "../../components/caption-panel-fab.tsx";
 import { CaptionPanel } from "../../components/caption-panel.tsx";
 import { ResizablePanel } from "../../components/resizable-panel.tsx";
 import type { YTPlayer } from "../../components/youtube-player.tsx";
@@ -34,7 +37,7 @@ export function CaptionOverlay({
           <ExtensionViewer videoId={videoId} useSync={useSync} />
         </ResizablePanel>
       )}
-      <CaptionFab open={open} onClick={toggleOpen} />
+      <CaptionPanelFab open={open} onClick={toggleOpen} />
     </div>
   );
 }
