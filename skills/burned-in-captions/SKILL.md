@@ -56,6 +56,8 @@ yt-dlp -f 247 -o 'video.%(ext)s' <youtube-id>
 
 Download it once, and reuse the file for reruns, follow-ups, and [Reading Ranges Again](#reading-ranges-again). Each download is a request to YouTube, and YouTube blocks a machine that sends too many with "Sign in to confirm you're not a bot". If `yt-dlp` answers with that, stop and report it, because retrying keeps the machine blocked longer.
 
+Other `yt-dlp` failures, such as HTTP 403, usually mean the installed `yt-dlp` is out of date, because YouTube changes often. Retry once with the latest release through `uvx yt-dlp@latest` before giving up.
+
 When the task needs only part of the video, download only that part:
 
 ```bash
