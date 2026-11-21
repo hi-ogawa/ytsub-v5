@@ -1,67 +1,80 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="340" viewBox="0 0 1000 340" font-family="system-ui, sans-serif" font-size="13">
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="370" viewBox="0 0 1000 370" font-family="system-ui, sans-serif" font-size="13">
   <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#557"/></marker>
+    <marker id="g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#2a7"/></marker>
     <style>
       .t { font-weight: bold; }
+      .h { font-weight: bold; font-size: 15px; }
       .s { fill: #666; font-size: 11px; }
-      .v { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12px; fill: #36a; }
+      .g { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12px; fill: #aaa; }
+      .v { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12px; fill: #36a; font-weight: bold; }
+      .m { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12px; }
       .lane { fill: #f3f5fc; stroke: #99b; }
-      .axis { stroke: #557; stroke-width: 1.5; }
-      .dot { fill: #fff; stroke: #36a; stroke-width: 2; }
-      .sync { stroke: #2a7; stroke-width: 1.5; stroke-dasharray: 5 4; }
-      .st { fill: #186; font-weight: bold; font-size: 12px; }
-      .check { fill: #fdfaf2; stroke: #a96; }
-      .bad { stroke: #c33; stroke-width: 1.5; stroke-dasharray: 4 4; fill: none; }
-      .badt { fill: #c33; font-size: 12px; }
+      .row { fill: #fafafa; stroke: #ccc; }
+      .guide { stroke: #ddd; stroke-dasharray: 3 3; }
+      .saved { fill: #fff; stroke: #36a; stroke-width: 1.5; }
+      .copy { fill: #f0faf4; stroke: #2a7; stroke-width: 1.5; }
+      .red { fill: #c33; }
+      .green { fill: #186; }
     </style>
   </defs>
-  <rect width="1000" height="340" fill="#fff"/>
+  <rect width="1000" height="370" fill="#fff"/>
 
-  <!-- Browser clock lane -->
-  <rect x="20" y="70" width="640" height="80" rx="8" class="lane"/>
-  <text x="36" y="104" class="t">Browser clock</text>
-  <text x="36" y="122" class="s">video index</text>
-  <line x1="200" y1="110" x2="640" y2="110" class="axis"/>
-  <circle cx="320" cy="110" r="6" class="dot"/>
-  <text x="320" y="94" text-anchor="middle">last sync</text>
-  <text x="320" y="134" text-anchor="middle" class="v">10:50:01</text>
-  <circle cx="540" cy="110" r="6" class="dot"/>
-  <text x="540" y="94" text-anchor="middle">last change</text>
-  <text x="540" y="134" text-anchor="middle" class="v">10:51:00</text>
+  <!-- Real time and events -->
+  <line x1="180" y1="22" x2="975" y2="22" stroke="#557" stroke-width="1.5" marker-end="url(#a)"/>
+  <text x="180" y="16" class="s">real time</text>
+  <line x1="245" y1="64" x2="245" y2="334" class="guide"/>
+  <line x1="385" y1="64" x2="385" y2="334" class="guide"/>
+  <line x1="525" y1="64" x2="525" y2="334" class="guide"/>
+  <line x1="795" y1="64" x2="795" y2="334" class="guide"/>
+  <text x="245" y="52" text-anchor="middle" class="t">① Device A pushes</text>
+  <text x="385" y="52" text-anchor="middle" class="t">② Device B pulls</text>
+  <text x="525" y="52" text-anchor="middle" class="t">③ Device B edits</text>
+  <text x="795" y="52" text-anchor="middle" class="t">④ Device B shows the status</text>
 
-  <!-- Server clock lane -->
-  <rect x="20" y="190" width="640" height="80" rx="8" class="lane"/>
-  <text x="36" y="224" class="t">Server clock</text>
-  <text x="36" y="242" class="s">server's copy (D1)</text>
-  <line x1="200" y1="230" x2="640" y2="230" class="axis"/>
-  <circle cx="320" cy="230" r="6" class="dot"/>
-  <text x="320" y="214" text-anchor="middle">last change, at sync</text>
-  <text x="320" y="254" text-anchor="middle" class="v">10:53:10</text>
-  <circle cx="540" cy="230" r="6" class="dot"/>
-  <text x="540" y="214" text-anchor="middle">last change, now</text>
-  <text x="540" y="254" text-anchor="middle" class="v">10:53:10</text>
+  <!-- Server clock -->
+  <rect x="20" y="70" width="960" height="82" rx="8" class="lane"/>
+  <text x="36" y="98" class="t">Server clock</text>
+  <rect x="195" y="80" width="100" height="24" rx="4" class="saved"/>
+  <text x="245" y="96" text-anchor="middle" class="v">10:53:10</text>
+  <text x="245" y="122" text-anchor="middle" class="s">server saves updatedAt</text>
+  <text x="385" y="96" text-anchor="middle" class="g">10:53:15</text>
+  <path d="M297,98 C320,104 320,118 333,120" fill="none" stroke="#2a7" stroke-width="1.5" marker-end="url(#g)"/>
+  <rect x="335" y="108" width="100" height="24" rx="4" class="copy"/>
+  <text x="385" y="124" text-anchor="middle" class="v">10:53:10</text>
+  <text x="385" y="145" text-anchor="middle" class="s green">device B saves it from the pull</text>
+  <text x="525" y="96" text-anchor="middle" class="g">10:54:15</text>
+  <text x="795" y="96" text-anchor="middle" class="g">10:54:20</text>
+  <text x="795" y="122" text-anchor="middle" class="s">updatedAt still 10:53:10</text>
 
-  <!-- The sync moment, recorded on both clocks -->
-  <line x1="320" y1="60" x2="320" y2="78" class="sync"/>
-  <line x1="320" y1="144" x2="320" y2="198" class="sync"/>
-  <text x="320" y="54" text-anchor="middle" class="st">push or pull records both</text>
-  <text x="312" y="174" text-anchor="end" class="s">same moment</text>
+  <!-- Device B clock -->
+  <rect x="20" y="162" width="960" height="64" rx="8" class="lane"/>
+  <text x="36" y="190" class="t">Device B clock</text>
+  <text x="36" y="208" class="s">3 minutes behind</text>
+  <text x="245" y="188" text-anchor="middle" class="g">10:50:00</text>
+  <rect x="335" y="172" width="100" height="24" rx="4" class="saved"/>
+  <text x="385" y="188" text-anchor="middle" class="v">10:50:05</text>
+  <text x="385" y="214" text-anchor="middle" class="s">saved as last sync</text>
+  <rect x="475" y="172" width="100" height="24" rx="4" class="saved"/>
+  <text x="525" y="188" text-anchor="middle" class="v">10:51:05</text>
+  <text x="525" y="214" text-anchor="middle" class="s">saved as last change</text>
+  <text x="795" y="188" text-anchor="middle" class="g">10:51:10</text>
 
-  <!-- The old cross-clock comparison -->
-  <path d="M327,114 C440,120 420,231 532,231" class="bad"/>
-  <text x="440" y="170" class="badt">✗</text>
+  <!-- Status checks -->
+  <rect x="20" y="242" width="960" height="92" rx="8" class="row"/>
+  <text x="36" y="270" class="h">Status at ④</text>
+  <text x="36" y="290" class="s">Each check compares</text>
+  <text x="36" y="305" class="s">two times from</text>
+  <text x="36" y="320" class="s">the same clock.</text>
+  <text x="200" y="284" class="red">Comparing across clocks, 10:53:10 &gt; 10:50:05 would</text>
+  <text x="200" y="302" class="red">read as a server change and show a conflict.</text>
+  <text x="626" y="270">Local changed?</text>
+  <text x="740" y="270" class="m">10:51:05 &gt; 10:50:05</text>
+  <text x="900" y="270">yes</text>
+  <text x="626" y="294">Server changed?</text>
+  <text x="740" y="294" class="m">10:53:10 &gt; 10:53:10</text>
+  <text x="900" y="294">no</text>
+  <text x="626" y="320" class="t green">→ push</text>
 
-  <!-- Checks -->
-  <rect x="690" y="70" width="290" height="80" rx="6" class="check"/>
-  <text x="706" y="96" class="t">Did the local session change?</text>
-  <text x="706" y="118" class="v">10:51:00 &gt; 10:50:01</text>
-  <text x="706" y="138">yes</text>
-  <rect x="690" y="190" width="290" height="80" rx="6" class="check"/>
-  <text x="706" y="216" class="t">Did the server's copy change?</text>
-  <text x="706" y="238" class="v">10:53:10 &gt; 10:53:10</text>
-  <text x="706" y="258">no</text>
-  <text x="835" y="174" text-anchor="middle" class="st">→ push</text>
-
-  <!-- Footer -->
-  <text x="20" y="300" class="badt">✗ Comparing across clocks reads 10:53:10 &gt; 10:50:01 as a server change, and shows a conflict.</text>
-  <text x="20" y="322" class="s">Example times for a browser clock about three minutes behind the server.</text>
+  <text x="20" y="358" class="s">Example times. Boxed values are saved, gray values are what each clock reads at that moment.</text>
 </svg>

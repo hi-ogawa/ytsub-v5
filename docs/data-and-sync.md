@@ -25,7 +25,7 @@ The sync status of a video asks two questions, and each one compares timestamps 
 - **Did the local session change?** Compare when it last changed with when it was last synced, both from the browser's clock.
 - **Did the server's copy change?** Compare when it last changed with what that time was at the last sync, both from the server's clock. A push or pull records the server's time from its own response.
 
-![The video index records the last sync on the browser clock, and the server's last change at that sync on the server clock. A later local edit compares with the last sync and shows as changed. The server's last change still equals its value at the sync, so the video needs a push. Comparing the server's last change with the browser's last sync would read a lagging browser clock as a server change and show a conflict.](images/sync-state-clocks.svg)
+![Device A pushes, and the server saves its updatedAt. Device B, whose clock is three minutes behind, pulls and saves both the server's updatedAt and its own last sync time, then edits. The local check compares the edit with the last sync on device B's clock, and the server check compares the server's updatedAt with the copy saved at the pull, so the video needs a push. Comparing the server's time with device B's last sync would read as a server change and show a conflict.](images/sync-state-clocks.svg)
 
 The answers decide the status:
 
