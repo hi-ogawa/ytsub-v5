@@ -10,6 +10,7 @@ import {
 } from "../lib/ai-prompt.ts";
 import type { CaptionSessionManager } from "../lib/caption-session.ts";
 import type { YouTubeCaptionTrack } from "../lib/youtube.ts";
+import { downloadText } from "../utils/download-text.ts";
 
 export function AiPromptCopy({
   store,
@@ -45,13 +46,11 @@ export function AiPromptCopy({
     if (!text) {
       return;
     }
-    const blob = new Blob([text], { type: "text/plain" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `zamak-${youtubeId}-prompt-${task}.txt`;
-    a.click();
-    URL.revokeObjectURL(url);
+    downloadText({
+      filename: `zamak-${youtubeId}-prompt-${task}.txt`,
+      text,
+      type: "text/plain",
+    });
   }
 
   return (

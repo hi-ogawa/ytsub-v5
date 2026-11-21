@@ -9,6 +9,7 @@ import { ALL_STRATEGIES, type MergeStrategy } from "../lib/caption-merge.ts";
 import type { CaptionSessionManager } from "../lib/caption-session.ts";
 import type { UseSync } from "../lib/sync.ts";
 import type { YouTubeCaptionTrack } from "../lib/youtube.ts";
+import { downloadText } from "../utils/download-text.ts";
 import { AiPromptCopy, importAiResult } from "./ai-prompt-menu.tsx";
 import { SyncMenuItem } from "./sync-menu-item.tsx";
 import {
@@ -92,16 +93,11 @@ export function SettingsDropdown({
         </DropdownMenuItem>
         <DropdownMenuItem
           onClick={() => {
-            const data = store.toExportData();
-            const blob = new Blob([JSON.stringify(data, null, 2)], {
+            downloadText({
+              filename: `import-${store.videoMeta.youtubeId}.json`,
+              text: JSON.stringify(store.toExportData(), null, 2),
               type: "application/json",
             });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement("a");
-            a.href = url;
-            a.download = `import-${store.videoMeta.youtubeId}.json`;
-            a.click();
-            URL.revokeObjectURL(url);
           }}
         >
           <Download className="mr-2 size-4" />
