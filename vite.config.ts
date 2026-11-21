@@ -6,8 +6,7 @@ export default defineConfig({
   },
   fmt: {
     printWidth: 80,
-    experimentalSortPackageJson: true,
-    experimentalSortImports: {
+    sortImports: {
       newlinesBetween: false,
       partitionByNewline: true,
       groups: [["builtin"], ["external"]],
