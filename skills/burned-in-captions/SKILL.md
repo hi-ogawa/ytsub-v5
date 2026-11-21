@@ -135,20 +135,21 @@ Without subagents, read a few sheets per turn yourself.
 
 ### 5. Assemble and correct
 
-Assemble in two passes. Code does the bulk, because most reads need nothing more, and a model settles the reads that code can't.
-
-**Code pass.** Turn the reads into captions with a script:
+Turn the reads into captions:
 
 - Each caption takes its text from the reads, and its begin and end from the run it was read in.
 - Take its position from the masks: the region's `box` at that step, or the `clusters_b` or `clusters_o` box that overlaps the reader's box scaled up to the frame (× 1280/480).
 - Identical text read in neighboring runs becomes one caption.
 - A caption with `omitted` keeps its run's time and position like any other, and neighboring ones with the same reason in the same place become one.
 
-**Model pass.** Collect every read that has a `note` or a `[?]`, and give them to a subagent on the strongest model available. Give each read with the reads of the runs on either side, and their run times, with this instruction:
+Reads with a `note` or a `[?]` need judgment. Judge each one together with the reads of the runs on either side: merge it into a neighbor, keep it as its own caption, drop it, or read it again from a later step or a closer crop, with a one-line reason.
 
-> Each flagged read below comes with its neighbors and their run times. Decide what to do with each flagged read: `merge` it into a neighbor, `keep` it as its own caption, `drop` it, or `reread` it from a later step or a closer crop. A read of a caption that isn't fully shown merges into the read of the same caption once it settles. Text too small or unclear to read gets a reread from a closer crop. Text from other footage stays only if it belongs in this video's track. The note is the reader's own description of what it saw, so let it decide over how similar two texts look, because two different lines can differ by a single word. Return a JSON list: `{"t": <time>, "action": "merge" | "keep" | "drop" | "reread", "into"?: <time of the read to merge into>, "at"?: <time to read again>, "crop"?: [x, y, w, h], "reason": <one line>}`.
+- A read of a caption that isn't fully shown merges into the read of the same caption once it settles.
+- Text too small or unclear to read gets read again from a closer crop.
+- Text from other footage stays only if it belongs in this video's track.
+- The note is the reader's own description of what it saw, so let it decide over how similar two texts look, because two different lines can differ by a single word. Fall back to text similarity only where neither a note nor identical text links two reads.
 
-Apply the decisions in code. A merge keeps the fuller read's text and spans both runs, so a fade-in read merged into its steady caption gives the caption the right begin. Timing always comes from the runs, never from the model. Send each `reread` to a new reader as described below, and put the new reads through both passes again. Fall back to text similarity only where neither a note nor identical text links two reads.
+A merge keeps the fuller read's text and spans both runs, so a fade-in read merged into its steady caption gets the right begin. Timing always comes from the runs, never from the judgment. Give the reads to do again to a new reader as described below, and treat the new reads the same way.
 
 Ask for more frames where something is off:
 
@@ -158,7 +159,7 @@ Ask for more frames where something is off:
 - an ASR line, or a cue of another subtitle track such as `en`, that no caption matches in time, on a show whose captions follow the speech
 - readers who disagree on a caption's text
 
-Stop when a round of corrections finds little that's new, and list the doubts that remain in your report instead of chasing each one. The report also lists each omitted range with its reason, and the model pass's decisions with their reasons.
+Stop when a round of corrections finds little that's new, and list the doubts that remain in your report instead of chasing each one. The report also lists each omitted range with its reason, and each judgment with its reason.
 
 For small or unclear text, crop the frames to the caption's area. With `--crop`, `frames.py` tiles only that box, at twice the scale of a full-frame tile:
 
