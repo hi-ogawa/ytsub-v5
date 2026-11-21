@@ -10,7 +10,11 @@ import { createUseExtensionSync } from "./components/use-extension-sync.ts";
 import contentCss from "./content.css?inline";
 import { createRuntimeRelayRpc } from "./lib/extension-rpc.ts";
 import { createBridgeStorage } from "./lib/storage-bridge.ts";
-import { getVideoId, isWatchPage, isYouTubeDark } from "./lib/youtube-page.ts";
+import {
+  getVideoId,
+  subscribeWatchPage,
+  subscribeYouTubeTheme,
+} from "./lib/youtube-page.ts";
 
 declare const __BUILD_TIME__: string;
 declare const __GIT_REV__: string;
@@ -27,23 +31,13 @@ const useSync = createUseExtensionSync(
   createRuntimeRelayRpc<typeof bgRpcHandlers>(),
 );
 
-let themeObserver: MutationObserver | undefined;
+let unsubscribeTheme: (() => void) | undefined;
 
 function main() {
   console.log(`[zamak] build: ${__BUILD_TIME__} (${__GIT_REV__})`);
   initCaptionStorage(createBridgeStorage());
 
-  // YouTube SPA navigation
-  if (isWatchPage()) {
-    injectOverlay();
-  }
-
-  document.addEventListener("yt-navigate-start", removeOverlay);
-  document.addEventListener("yt-navigate-finish", () => {
-    if (isWatchPage()) {
-      injectOverlay();
-    }
-  });
+  subscribeWatchPage({ onEnter: injectOverlay, onLeave: removeOverlay });
 }
 
 function injectOverlay() {
@@ -80,13 +74,9 @@ function injectOverlay() {
   const container = document.createElement("div");
   shadow.appendChild(container);
 
-  // Match YouTube's dark/light theme
-  applyTheme(host, container);
-  themeObserver = new MutationObserver(() => applyTheme(host, container));
-  themeObserver.observe(document.documentElement, {
-    attributes: true,
-    attributeFilter: ["dark"],
-  });
+  unsubscribeTheme = subscribeYouTubeTheme((dark) =>
+    applyTheme(host, container, dark),
+  );
 
   createRoot(container).render(
     <StrictMode>
@@ -99,15 +89,14 @@ function injectOverlay() {
   );
 }
 
-function applyTheme(host: HTMLElement, container: HTMLElement) {
-  const dark = isYouTubeDark();
+function applyTheme(host: HTMLElement, container: HTMLElement, dark: boolean) {
   container.classList.toggle("dark", dark);
   host.classList.toggle("dark", dark);
 }
 
 function removeOverlay() {
-  themeObserver?.disconnect();
-  themeObserver = undefined;
+  unsubscribeTheme?.();
+  unsubscribeTheme = undefined;
   document.getElementById("zamak-host")?.remove();
 }
 

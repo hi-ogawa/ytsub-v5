@@ -1,6 +1,26 @@
 import type { YTPlayer } from "../../components/youtube-player.tsx";
 
-export function isWatchPage() {
+// YouTube navigates as a single-page app, so the content script runs once and
+// follows its navigation events.
+export function subscribeWatchPage({
+  onEnter,
+  onLeave,
+}: {
+  onEnter: () => void;
+  onLeave: () => void;
+}) {
+  if (isWatchPage()) {
+    onEnter();
+  }
+  document.addEventListener("yt-navigate-start", onLeave);
+  document.addEventListener("yt-navigate-finish", () => {
+    if (isWatchPage()) {
+      onEnter();
+    }
+  });
+}
+
+function isWatchPage() {
   return window.location.pathname === "/watch";
 }
 
@@ -8,8 +28,16 @@ export function getVideoId() {
   return new URL(window.location.href).searchParams.get("v");
 }
 
-export function isYouTubeDark(): boolean {
-  return document.documentElement.hasAttribute("dark");
+// Calls onChange with the current theme right away, then on each change.
+export function subscribeYouTubeTheme(onChange: (dark: boolean) => void) {
+  const notify = () => onChange(document.documentElement.hasAttribute("dark"));
+  notify();
+  const observer = new MutationObserver(notify);
+  observer.observe(document.documentElement, {
+    attributes: true,
+    attributeFilter: ["dark"],
+  });
+  return () => observer.disconnect();
 }
 
 // Adapter: wrap the page's <video> element as YTPlayer
