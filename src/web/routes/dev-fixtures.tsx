@@ -1,5 +1,5 @@
-import { VideoCard } from "../components/video-card.tsx";
-import { fixtureMetadata } from "../lib/dev-fixtures.ts";
+import { VideoCard } from "../../components/video-card.tsx";
+import { fixtureMetadata } from "../../lib/dev-fixtures.ts";
 
 const fixtures = Object.values(fixtureMetadata);
 

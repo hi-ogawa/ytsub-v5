@@ -21,9 +21,9 @@ import {
   DropdownMenuTrigger,
 } from "../../components/ui/dropdown-menu.tsx";
 import { captionStorage, videoIndexStore } from "../../lib/caption-storage.ts";
+import { orpc } from "../../lib/rpc-client.ts";
 import { type VideoSyncEntry, useVideoSync } from "../../lib/sync.ts";
 import { useTheme } from "../../lib/theme.ts";
-import { orpc } from "../../rpc.ts";
 import { chromeStorage } from "../lib/chrome-storage.ts";
 
 export function ExtensionBookmarksPage({

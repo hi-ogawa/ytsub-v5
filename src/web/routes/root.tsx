@@ -14,16 +14,16 @@ import {
   useLoaderData,
   useRouteLoaderData,
 } from "react-router";
-import { ImportDialog } from "../components/import-dialog.tsx";
-import { LoginDialog } from "../components/login-dialog.tsx";
+import { ImportDialog } from "../../components/import-dialog.tsx";
+import { LoginDialog } from "../../components/login-dialog.tsx";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "../components/ui/dropdown-menu.tsx";
-import { useTheme } from "../lib/theme.ts";
-import { orpc } from "../rpc.ts";
+} from "../../components/ui/dropdown-menu.tsx";
+import { orpc } from "../../lib/rpc-client.ts";
+import { useTheme } from "../../lib/theme.ts";
 
 export async function authLoader() {
   const res = await fetch("/api/auth/check", {
@@ -241,7 +241,8 @@ function DevMenuItems() {
       <DropdownMenuItem
         data-testid="bootstrap-fixtures"
         onSelect={async () => {
-          const { bootstrapFixtures } = await import("../lib/dev-fixtures.ts");
+          const { bootstrapFixtures } =
+            await import("../../lib/dev-fixtures.ts");
           await bootstrapFixtures();
         }}
         className="gap-2"

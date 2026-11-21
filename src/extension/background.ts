@@ -3,8 +3,8 @@
 import { sessionToExportData } from "../lib/caption-session.ts";
 import { idbCaptionStorage } from "../lib/caption-storage-idb.ts";
 import { captionStorage, initCaptionStorage } from "../lib/caption-storage.ts";
+import { orpc, setRpcConfig } from "../lib/rpc-client.ts";
 import { serverSessionToLocal } from "../lib/sync.ts";
-import { orpc, setRpcConfig } from "../rpc.ts";
 import { chromeStorage } from "./lib/chrome-storage.ts";
 import { registerRpcHandlers } from "./lib/extension-rpc.ts";
 import { getServerUrl } from "./lib/server-url.ts";

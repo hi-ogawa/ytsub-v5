@@ -191,7 +191,7 @@ export function CaptionPanelContent({
             rows={store.rows}
             player={player}
             autoScroll={autoScroll}
-            bookmarks={store.bookmarks}
+            bookmarks={sortedBookmarks}
             onGoToBookmark={onGoToBookmark}
           />
         </div>

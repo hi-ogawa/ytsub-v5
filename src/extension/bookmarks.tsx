@@ -6,7 +6,7 @@ import { Toaster } from "sonner";
 import { idbCaptionStorage } from "../lib/caption-storage-idb.ts";
 import { initCaptionStorage, loadVideoIndex } from "../lib/caption-storage.ts";
 import { createAppQueryClient } from "../lib/query-client.ts";
-import { setRpcConfig } from "../rpc.ts";
+import { setRpcConfig } from "../lib/rpc-client.ts";
 import { ExtensionBookmarksPage } from "./components/bookmarks-page.tsx";
 import { chromeStorage } from "./lib/chrome-storage.ts";
 import { getServerUrl } from "./lib/server-url.ts";
