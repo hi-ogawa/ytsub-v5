@@ -48,6 +48,7 @@ export interface CaptionStorage {
   ): Promise<void>;
   deleteVideo(youtubeId: string): Promise<void>;
   setSyncedAt(youtubeId: string, serverUpdatedAt: string): Promise<void>;
+  getIndexEntry(youtubeId: string): Promise<VideoIndexEntry | undefined>;
   listIndex(): Promise<VideoIndexEntry[]>;
   // Runs once per source. docs/data-and-sync.md explains the conflict rule.
   importLegacy(source: string, data: LegacyData): Promise<void>;
