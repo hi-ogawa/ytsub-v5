@@ -88,17 +88,14 @@ test("migration: a watch page moves youtube.com data into extension storage", as
   await expect(notice).toBeVisible();
   await expect(card).toHaveCount(0);
 
-  // Loading a watch page copies the data, which the panel shows
+  // Loading a watch page copies the data, and the open bookmarks page hears it
   await ytPage.goto(`https://www.youtube.com/watch?v=${SEED_VIDEO_ID}`);
+  await expect(card.getByTestId("video-card-badge")).toHaveText("1 bookmark");
+  await expect(notice).toHaveCount(0);
+
   const host = ytPage.locator("#zamak-host");
   await host.getByTestId("caption-fab").click();
   await expect(
     host.getByRole("button", { name: "Bookmarks (1)" }),
   ).toBeVisible();
-
-  // The open bookmarks page doesn't hear other pages' writes, so it shows the
-  // moved data after a reload
-  await page.reload();
-  await expect(card.getByTestId("video-card-badge")).toHaveText("1 bookmark");
-  await expect(notice).toHaveCount(0);
 });

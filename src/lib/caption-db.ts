@@ -12,12 +12,29 @@ const SESSIONS = "caption-sessions";
 const INDEX = "video-index";
 const META = "meta";
 
+const CHANNEL_NAME = "zamak:storage";
+
 const listeners = new Set<StorageListener>();
+let channel: BroadcastChannel | undefined;
+
+// Other contexts on this origin hear each write over the channel.
+function getChannel() {
+  if (!channel) {
+    channel = new BroadcastChannel(CHANNEL_NAME);
+    channel.addEventListener("message", (e: MessageEvent<StorageNotice>) => {
+      for (const l of listeners) {
+        l(e.data);
+      }
+    });
+  }
+  return channel;
+}
 
 function notify(notice: StorageNotice) {
   for (const l of listeners) {
     l(notice);
   }
+  getChannel().postMessage(notice);
 }
 
 export const idbCaptionStorage: CaptionStorage = {
@@ -149,6 +166,7 @@ export const idbCaptionStorage: CaptionStorage = {
   },
 
   subscribe(listener) {
+    getChannel();
     listeners.add(listener);
     return () => {
       listeners.delete(listener);
