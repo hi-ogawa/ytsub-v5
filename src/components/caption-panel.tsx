@@ -55,6 +55,7 @@ import type {
   YouTubeCaptionTrack,
   YouTubeVideoData,
 } from "../lib/youtube.ts";
+import { getSelectionAt } from "../utils/get-selection.ts";
 import { createLocalStorageStore } from "../utils/local-storage-store.ts";
 import { CaptionList, type CaptionListHandle } from "./caption-list.tsx";
 import { syncStateDisplay } from "./sync-state.tsx";
@@ -952,37 +953,20 @@ function CaptionPanelContent({
     });
   }
 
-  // Pause auto-scroll when bookmark popover is open
-  const isPopoverOpenRef = useRef(false);
-  const onPopoverOpenChange = useCallback((open: boolean) => {
-    isPopoverOpenRef.current = open;
-  }, []);
-
   // --- Bookmark selection ---
   const [bookmarkSelection, setBookmarkSelection] =
     useState<BookmarkSelection>();
   const [isCreating, setIsCreating] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
 
-  // Shadow DOM requires getSelection() on the shadow root, not document
-  const getSelection = useCallback((): Selection | null => {
-    const root = contentRef.current?.getRootNode();
-    if (root && "getSelection" in root) {
-      return (
-        root as unknown as { getSelection(): Selection | null }
-      ).getSelection();
-    }
-    return document.getSelection();
-  }, []);
-
   useEffect(() => {
     const handler = () => {
-      const sel = getSelection() ?? undefined;
+      const sel = getSelectionAt(contentRef.current) ?? undefined;
       setBookmarkSelection(sel ? extractBookmarkSelection(sel) : undefined);
     };
     document.addEventListener("selectionchange", handler);
     return () => document.removeEventListener("selectionchange", handler);
-  }, [getSelection]);
+  }, []);
 
   function onClickBookmark() {
     if (!bookmarkSelection) {
@@ -1001,13 +985,13 @@ function CaptionPanelContent({
         context: bookmarkSelection.side === 0 ? row.text1 : row.text2,
       },
     ]);
-    getSelection()?.removeAllRanges();
+    getSelectionAt(contentRef.current)?.removeAllRanges();
     setBookmarkSelection(undefined);
     setIsCreating(false);
   }
 
   function onCancelBookmark() {
-    getSelection()?.removeAllRanges();
+    getSelectionAt(contentRef.current)?.removeAllRanges();
     setBookmarkSelection(undefined);
   }
 
@@ -1075,7 +1059,6 @@ function CaptionPanelContent({
             autoScroll={autoScroll}
             bookmarks={sortedBookmarks}
             onGoToBookmark={onGoToBookmark}
-            onPopoverOpenChange={onPopoverOpenChange}
           />
         </div>
 
@@ -1281,7 +1264,6 @@ function CaptionViewer({
   autoScroll,
   bookmarks,
   onGoToBookmark,
-  onPopoverOpenChange,
 }: {
   ref: React.Ref<CaptionViewerHandle>;
   rows: MergedCaption[];
@@ -1289,7 +1271,6 @@ function CaptionViewer({
   autoScroll: boolean;
   bookmarks: ExtensionBookmark[];
   onGoToBookmark: (bookmarkId: string) => void;
-  onPopoverOpenChange: (open: boolean) => void;
 }) {
   const [currentIndex, setCurrentIndex] = useState<number>();
   const [isPlaying, setIsPlaying] = useState(false);
@@ -1337,7 +1318,6 @@ function CaptionViewer({
       autoScroll={autoScroll}
       bookmarks={bookmarks}
       onGoToBookmark={onGoToBookmark}
-      onPopoverOpenChange={onPopoverOpenChange}
     />
   );
 }

@@ -7,15 +7,276 @@ import {
   useState,
 } from "react";
 import type { MergedCaption } from "../lib/caption-merge.ts";
-import type { ExtensionBookmark } from "../lib/extension-bookmarks.ts";
+import {
+  type ExtensionBookmark,
+  indexBookmarks,
+} from "../lib/extension-bookmarks.ts";
 import { flashHighlight } from "../lib/flash-highlight.ts";
+import { getSelectionAt } from "../utils/get-selection.ts";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover.tsx";
+import { useTimedFlag } from "./use-timed-flag.ts";
 import type { YTPlayer } from "./youtube-player.tsx";
 
-function formatTimestamp(seconds: number): string {
-  const m = Math.floor(seconds / 60);
-  const s = Math.floor(seconds % 60);
-  return `${m}:${String(s).padStart(2, "0")}`;
+export type CaptionListHandle = {
+  scrollToIndex: (index: number) => void;
+};
+
+export function CaptionList({
+  ref,
+  rows,
+  currentIndex,
+  isPlaying,
+  player,
+  autoScroll,
+  bookmarks,
+  onGoToBookmark,
+}: {
+  ref: React.Ref<CaptionListHandle>;
+  rows: MergedCaption[];
+  currentIndex?: number;
+  isPlaying: boolean;
+  player?: YTPlayer;
+  autoScroll: boolean;
+  bookmarks: ExtensionBookmark[];
+  onGoToBookmark: (bookmarkId: string) => void;
+}) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  const { bookmarksByIndex, bookmarkNumberById } = useMemo(
+    () => indexBookmarks(bookmarks),
+    [bookmarks],
+  );
+
+  // Auto-scroll pauses for 2 seconds after the user scrolls or jumps to a
+  // row, and while a bookmark popover is open.
+  const manualScroll = useTimedFlag(2000);
+  const isPopoverOpenRef = useRef(false);
+
+  function onPopoverOpenChange(open: boolean) {
+    isPopoverOpenRef.current = open;
+  }
+
+  // A jump to a row, such as from the bookmarks tab, counts as a manual
+  // scroll, so auto-scroll doesn't pull the list away from it right after.
+  useImperativeHandle(ref, () => ({
+    scrollToIndex: (index: number) => {
+      const el = scrollRef.current?.querySelector(
+        `[data-index="${index}"]`,
+      ) as HTMLElement | null;
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+        flashHighlight(el);
+      }
+      manualScroll.trigger();
+    },
+  }));
+
+  // Follows the current caption, scrolling only when it drifts more than a
+  // sixth of the viewport from the center.
+  const prevScrollIndex = useRef<number | undefined>(undefined);
+  useEffect(() => {
+    if (
+      currentIndex === undefined ||
+      currentIndex === prevScrollIndex.current
+    ) {
+      return;
+    }
+    prevScrollIndex.current = currentIndex;
+
+    if (!autoScroll || manualScroll.isActive() || isPopoverOpenRef.current) {
+      return;
+    }
+
+    const scrollEl = scrollRef.current;
+    if (!scrollEl) {
+      return;
+    }
+
+    const el = scrollEl.querySelector(`[data-index="${currentIndex}"]`);
+    if (!el) {
+      return;
+    }
+
+    const { scrollTop, clientHeight } = scrollEl;
+    const currentCenter = scrollTop + clientHeight / 2;
+    const itemRect =
+      (el as HTMLElement).offsetTop + (el as HTMLElement).offsetHeight / 2;
+    const threshold = clientHeight / 6;
+
+    if (Math.abs(itemRect - currentCenter) > threshold) {
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }, [currentIndex]);
+
+  // A click that ends a text selection is for bookmarking, not playback.
+  // Clicking the current row toggles play, any other row seeks to it, and
+  // either click resumes auto-scroll.
+  function onClickRow(index: number) {
+    if (!player) {
+      return;
+    }
+    if (getSelectionAt(scrollRef.current)?.toString()) {
+      return;
+    }
+    manualScroll.clear();
+    if (index === currentIndex) {
+      isPlaying ? player.pauseVideo() : player.playVideo();
+    } else {
+      player.seekTo(rows[index].begin);
+      player.playVideo();
+    }
+  }
+
+  return (
+    <div
+      className="flex-[1_0_0] overflow-y-auto"
+      ref={scrollRef}
+      onWheel={manualScroll.trigger}
+      onTouchStart={manualScroll.trigger}
+    >
+      <div className="flex flex-col gap-1.5 p-1.5">
+        {rows.map((row, i) => (
+          <CaptionRow
+            key={i}
+            row={row}
+            index={i}
+            isCurrent={i === currentIndex}
+            isPlaying={isPlaying}
+            bookmarks={bookmarksByIndex.get(i)}
+            bookmarkNumberById={bookmarkNumberById}
+            onClick={() => onClickRow(i)}
+            onGoToBookmark={onGoToBookmark}
+            onPopoverOpenChange={onPopoverOpenChange}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function CaptionRow({
+  row,
+  index,
+  isCurrent,
+  isPlaying,
+  bookmarks,
+  bookmarkNumberById,
+  onClick,
+  onGoToBookmark,
+  onPopoverOpenChange,
+}: {
+  row: MergedCaption;
+  index: number;
+  isCurrent: boolean;
+  isPlaying: boolean;
+  bookmarks?: ExtensionBookmark[];
+  bookmarkNumberById: Map<string, number>;
+  onClick: () => void;
+  onGoToBookmark: (bookmarkId: string) => void;
+  onPopoverOpenChange: (open: boolean) => void;
+}) {
+  const text1Marks = bookmarks
+    ?.filter((b) => b.side === 0)
+    .map((b) => ({
+      bookmark: b,
+      bookmarkNumber: bookmarkNumberById.get(b.id),
+    }));
+  const text2Marks = bookmarks
+    ?.filter((b) => b.side === 1)
+    .map((b) => ({
+      bookmark: b,
+      bookmarkNumber: bookmarkNumberById.get(b.id),
+    }));
+
+  return (
+    <div
+      data-index={index}
+      className={[
+        "flex w-full cursor-pointer flex-col gap-1 border p-1 px-2 hover:bg-muted",
+        isCurrent && isPlaying && "ring-2 ring-ring",
+        isCurrent ? "border-ring" : "border-border",
+      ]
+        .filter(Boolean)
+        .join(" ")}
+      onClick={onClick}
+    >
+      <div className="text-xs text-muted-foreground">
+        <span className="ml-auto">
+          {formatTimestamp(row.begin)} – {formatTimestamp(row.end)}
+        </span>
+      </div>
+      <div className="flex text-sm">
+        <div className="flex-1 border-r pr-2" data-side="0">
+          <HighlightedText
+            text={row.text1}
+            marks={text1Marks ?? []}
+            onGoToBookmark={onGoToBookmark}
+            onPopoverOpenChange={onPopoverOpenChange}
+          />
+        </div>
+        <div className="flex-1 pl-2" data-side="1">
+          <HighlightedText
+            text={row.text2}
+            marks={text2Marks ?? []}
+            onGoToBookmark={onGoToBookmark}
+            onPopoverOpenChange={onPopoverOpenChange}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function HighlightedText({
+  text,
+  marks,
+  onGoToBookmark,
+  onPopoverOpenChange,
+}: {
+  text: string;
+  marks: { bookmark: ExtensionBookmark; bookmarkNumber?: number }[];
+  onGoToBookmark: (bookmarkId: string) => void;
+  onPopoverOpenChange: (open: boolean) => void;
+}) {
+  if (marks.length === 0) {
+    return <span data-offset={0}>{text}</span>;
+  }
+  const sorted = [...marks].sort(
+    (a, b) => a.bookmark.offset - b.bookmark.offset,
+  );
+  const parts: React.ReactNode[] = [];
+  let cursor = 0;
+  for (const { bookmark, bookmarkNumber } of sorted) {
+    if (bookmark.offset > cursor) {
+      parts.push(
+        <span key={`t${cursor}`} data-offset={cursor}>
+          {text.slice(cursor, bookmark.offset)}
+        </span>,
+      );
+    }
+    const end = bookmark.offset + bookmark.text.length;
+    parts.push(
+      <BookmarkWord
+        key={bookmark.id}
+        bookmark={bookmark}
+        bookmarkNumber={bookmarkNumber}
+        offset={bookmark.offset}
+        onGoToBookmark={onGoToBookmark}
+        onPopoverOpenChange={onPopoverOpenChange}
+      >
+        {text.slice(bookmark.offset, end)}
+      </BookmarkWord>,
+    );
+    cursor = end;
+  }
+  if (cursor < text.length) {
+    parts.push(
+      <span key={`t${cursor}`} data-offset={cursor}>
+        {text.slice(cursor)}
+      </span>,
+    );
+  }
+  return <>{parts}</>;
 }
 
 function BookmarkWord({
@@ -126,270 +387,8 @@ function BookmarkWord({
   );
 }
 
-function highlightText(
-  text: string,
-  marks: {
-    offset: number;
-    length: number;
-    bookmark?: ExtensionBookmark;
-    bookmarkNumber?: number;
-  }[],
-  onGoToBookmark: (bookmarkId: string) => void,
-  onPopoverOpenChange: (open: boolean) => void,
-) {
-  if (marks.length === 0) {
-    return <span data-offset={0}>{text}</span>;
-  }
-  const sorted = [...marks].sort((a, b) => a.offset - b.offset);
-  const parts: React.ReactNode[] = [];
-  let cursor = 0;
-  for (const m of sorted) {
-    if (m.offset > cursor) {
-      parts.push(
-        <span key={`t${cursor}`} data-offset={cursor}>
-          {text.slice(cursor, m.offset)}
-        </span>,
-      );
-    }
-    const end = m.offset + m.length;
-    if (m.bookmark) {
-      parts.push(
-        <BookmarkWord
-          key={m.bookmark.id}
-          bookmark={m.bookmark}
-          bookmarkNumber={m.bookmarkNumber}
-          offset={m.offset}
-          onGoToBookmark={onGoToBookmark}
-          onPopoverOpenChange={onPopoverOpenChange}
-        >
-          {text.slice(m.offset, end)}
-        </BookmarkWord>,
-      );
-    } else {
-      parts.push(
-        <span
-          key={`h${m.offset}`}
-          data-offset={m.offset}
-          className="border-b-2 border-highlight-border bg-highlight-bg"
-        >
-          {text.slice(m.offset, end)}
-        </span>,
-      );
-    }
-    cursor = end;
-  }
-  if (cursor < text.length) {
-    parts.push(
-      <span key={`t${cursor}`} data-offset={cursor}>
-        {text.slice(cursor)}
-      </span>,
-    );
-  }
-  return <>{parts}</>;
-}
-
-export type CaptionListHandle = {
-  scrollToIndex: (index: number) => void;
-};
-
-export function CaptionList({
-  ref,
-  rows,
-  currentIndex,
-  isPlaying,
-  player,
-  autoScroll,
-  bookmarks,
-  onGoToBookmark,
-  onPopoverOpenChange,
-}: {
-  ref: React.Ref<CaptionListHandle>;
-  rows: MergedCaption[];
-  currentIndex?: number;
-  isPlaying: boolean;
-  player?: YTPlayer;
-  autoScroll: boolean;
-  bookmarks: ExtensionBookmark[];
-  onGoToBookmark: (bookmarkId: string) => void;
-  onPopoverOpenChange: (open: boolean) => void;
-}) {
-  const scrollRef = useRef<HTMLDivElement>(null);
-
-  const { bookmarksByIndex, bookmarkNumberById } = useMemo(() => {
-    const byIndex = new Map<number, ExtensionBookmark[]>();
-    const numberById = new Map<string, number>();
-    for (let i = 0; i < bookmarks.length; i++) {
-      const bm = bookmarks[i];
-      numberById.set(bm.id, i + 1);
-      const list = byIndex.get(bm.captionIndex);
-      if (list) {
-        list.push(bm);
-      } else {
-        byIndex.set(bm.captionIndex, [bm]);
-      }
-    }
-    return { bookmarksByIndex: byIndex, bookmarkNumberById: numberById };
-  }, [bookmarks]);
-
-  useImperativeHandle(ref, () => ({
-    scrollToIndex: (index: number) => {
-      const el = scrollRef.current?.querySelector(
-        `[data-index="${index}"]`,
-      ) as HTMLElement | null;
-      if (el) {
-        el.scrollIntoView({ behavior: "smooth", block: "center" });
-        flashHighlight(el);
-      }
-      onManualScroll();
-    },
-  }));
-  const prevScrollIndex = useRef<number | undefined>(undefined);
-  const isManualScrollRef = useRef(false);
-  const isPopoverOpenRef = useRef(false);
-  const manualScrollTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
-
-  const wrappedPopoverOpenChange = (open: boolean) => {
-    isPopoverOpenRef.current = open;
-    onPopoverOpenChange(open);
-  };
-
-  function onManualScroll() {
-    isManualScrollRef.current = true;
-    if (manualScrollTimer.current) {
-      clearTimeout(manualScrollTimer.current);
-    }
-    manualScrollTimer.current = setTimeout(() => {
-      isManualScrollRef.current = false;
-      manualScrollTimer.current = undefined;
-    }, 2000);
-  }
-
-  // Auto-scroll with threshold + manual scroll pause
-  useEffect(() => {
-    if (
-      currentIndex === undefined ||
-      currentIndex === prevScrollIndex.current
-    ) {
-      return;
-    }
-    prevScrollIndex.current = currentIndex;
-
-    if (!autoScroll || isManualScrollRef.current || isPopoverOpenRef.current) {
-      return;
-    }
-
-    const scrollEl = scrollRef.current;
-    if (!scrollEl) {
-      return;
-    }
-
-    const el = scrollEl.querySelector(`[data-index="${currentIndex}"]`);
-    if (!el) {
-      return;
-    }
-
-    // Only scroll if item is far from viewport center
-    const { scrollTop, clientHeight } = scrollEl;
-    const currentCenter = scrollTop + clientHeight / 2;
-    const itemRect =
-      (el as HTMLElement).offsetTop + (el as HTMLElement).offsetHeight / 2;
-    const threshold = clientHeight / 6;
-
-    if (Math.abs(itemRect - currentCenter) > threshold) {
-      el.scrollIntoView({ behavior: "smooth", block: "center" });
-    }
-  }, [currentIndex]);
-
-  function onClickRow(index: number) {
-    if (!player) {
-      return;
-    }
-    const root = scrollRef.current?.getRootNode();
-    const sel =
-      root && "getSelection" in root
-        ? (
-            root as unknown as { getSelection(): Selection | null }
-          ).getSelection()
-        : document.getSelection();
-    if (sel?.toString()) {
-      return;
-    }
-    isManualScrollRef.current = false;
-    if (index === currentIndex) {
-      isPlaying ? player.pauseVideo() : player.playVideo();
-    } else {
-      player.seekTo(rows[index].begin);
-      player.playVideo();
-    }
-  }
-
-  return (
-    <div
-      className="flex-[1_0_0] overflow-y-auto"
-      ref={scrollRef}
-      onWheel={onManualScroll}
-      onTouchStart={onManualScroll}
-    >
-      <div className="flex flex-col gap-1.5 p-1.5">
-        {rows.map((row, i) => {
-          const rowBookmarks = bookmarksByIndex?.get(i);
-          const text1Marks = rowBookmarks
-            ?.filter((b) => b.side === 0)
-            .map((b) => ({
-              offset: b.offset,
-              length: b.text.length,
-              bookmark: b,
-              bookmarkNumber: bookmarkNumberById.get(b.id),
-            }));
-          const text2Marks = rowBookmarks
-            ?.filter((b) => b.side === 1)
-            .map((b) => ({
-              offset: b.offset,
-              length: b.text.length,
-              bookmark: b,
-              bookmarkNumber: bookmarkNumberById.get(b.id),
-            }));
-
-          return (
-            <div
-              key={i}
-              data-index={i}
-              className={[
-                "flex w-full cursor-pointer flex-col gap-1 border p-1 px-2 hover:bg-muted",
-                i === currentIndex && isPlaying && "ring-2 ring-ring",
-                i === currentIndex ? "border-ring" : "border-border",
-              ]
-                .filter(Boolean)
-                .join(" ")}
-              onClick={() => onClickRow(i)}
-            >
-              <div className="text-xs text-muted-foreground">
-                <span className="ml-auto">
-                  {formatTimestamp(row.begin)} – {formatTimestamp(row.end)}
-                </span>
-              </div>
-              <div className="flex text-sm">
-                <div className="flex-1 border-r pr-2" data-side="0">
-                  {highlightText(
-                    row.text1,
-                    text1Marks ?? [],
-                    onGoToBookmark,
-                    wrappedPopoverOpenChange,
-                  )}
-                </div>
-                <div className="flex-1 pl-2" data-side="1">
-                  {highlightText(
-                    row.text2,
-                    text2Marks ?? [],
-                    onGoToBookmark,
-                    wrappedPopoverOpenChange,
-                  )}
-                </div>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
+function formatTimestamp(seconds: number): string {
+  const m = Math.floor(seconds / 60);
+  const s = Math.floor(seconds % 60);
+  return `${m}:${String(s).padStart(2, "0")}`;
 }
