@@ -36,13 +36,6 @@ import { createBridgeStorage } from "./lib/storage-bridge.ts";
 
 const bgRpc = createRuntimeRelayRpc<typeof bgRpcHandlers>();
 
-let storageReady: Promise<void> | undefined;
-
-function prepareStorage() {
-  storageReady ??= loadVideoIndex();
-  return storageReady;
-}
-
 declare const __BUILD_TIME__: string;
 declare const __GIT_REV__: string;
 
@@ -115,7 +108,10 @@ function ExtensionViewer({ videoId }: { videoId: string }) {
   // The panel reads the index synchronously, so it waits for the first load.
   const storageQuery = useQuery({
     queryKey: ["extension-storage"],
-    queryFn: () => prepareStorage().then(() => true),
+    queryFn: async () => {
+      await loadVideoIndex();
+      return true;
+    },
     staleTime: Infinity,
     retry: false,
   });
@@ -303,8 +299,6 @@ function inject() {
   if (!videoId) {
     return;
   }
-
-  prepareStorage().catch(() => {});
 
   // Create shadow root for style isolation.
   // Inline styles here because `all: initial` resets everything and
