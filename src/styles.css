@@ -1,3 +1,4 @@
+/* Scans all of src/ for classes, so this file stays at the src root. */
 @import "tailwindcss" source(".");
 
 /* Semantic token → Tailwind color bridge (shared by app + extension) */
