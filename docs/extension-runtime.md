@@ -30,9 +30,7 @@ If the extension updates while a tab is open, the tab's frame stops answering. A
 
 The caption panel reads the video index synchronously as it renders, so the content script keeps a copy of the index in memory. It loads the copy through the frame before the panel opens, and keeps it current from change notices.
 
-Every write to the database posts a notice on the `zamak:storage` BroadcastChannel, which reaches every context on the extension's origin: the frame in each YouTube tab, the bookmarks page, and the background. A notice carries the new index after an index change, or the ID of a video whose session was saved. Each frame forwards notices to its content script. A listener only updates what it shows and never writes back, so notices can't loop.
-
-The session notice keeps an open caption panel current. The panel holds its session in memory while you work, so when another context saves that video's session, such as a pull from the bookmarks page or an edit in another tab, the panel loads the saved copy again. It skips notices for its own writes.
+Every write to the database posts a notice on the `zamak:storage` BroadcastChannel, which reaches every context on the extension's origin: the frame in each YouTube tab, the bookmarks page, and the background. A notice carries the new index. Each frame forwards notices to its content script. A listener only updates what it shows and never writes back, so notices can't loop.
 
 ## Keep Server Calls and Secrets in the Background
 

@@ -88,8 +88,8 @@ window.addEventListener("message", async (e) => {
   }
 });
 
-storage.subscribe((notice, own) => {
-  postToPage({ type: "zamak-storage:notice", notice, own });
+storage.subscribe((notice) => {
+  postToPage({ type: "zamak-storage:notice", notice });
 });
 
 postToPage({ type: "zamak-storage:ready" });

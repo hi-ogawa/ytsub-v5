@@ -18,12 +18,9 @@ export interface PersistedCaptionSession {
   bookmarks: ExtensionBookmark[];
 }
 
-export type StorageNotice =
-  | { type: "index"; entries: VideoIndexEntry[] }
-  | { type: "session-saved"; youtubeId: string };
+export type StorageNotice = { type: "index"; entries: VideoIndexEntry[] };
 
-// `own` is true for a write made through this same storage instance.
-export type StorageListener = (notice: StorageNotice, own: boolean) => void;
+export type StorageListener = (notice: StorageNotice) => void;
 
 export type LegacyData = {
   index: VideoIndexEntry[];

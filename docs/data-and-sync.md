@@ -41,7 +41,7 @@ Push and pull always move a whole video, and the receiving side replaces its cop
 
 The bookmarks page pushes and pulls directly, in both the extension and the web app. The caption panel does too in the web app. In the extension, the panel asks the background, which holds the session token. A pull from the panel only fetches the session, and the panel applies it itself. The web app's caption panel only shows sessions that are already stored, because it can't fetch subtitles.
 
-In both clients, a pull from the caption panel replaces the captions and bookmarks it shows, so you see the pulled copy without a reload. A pull from the bookmarks page saves the session, and a panel open on that video loads it again. A conflict in the panel opens the bookmarks page, where you pick which copy to keep.
+In both clients, a pull from the caption panel replaces the captions and bookmarks it shows, so you see the pulled copy without a reload. A conflict in the panel opens the bookmarks page, where you pick which copy to keep.
 
 Data can also enter the web app from an `import.json` file, through Import in the header menu. Import writes a session to the web app's storage, and a push then uploads it. [Generate import.json](../skills/zamak/references/generate-import-json.md) describes how to build one without the extension.
 
@@ -50,3 +50,7 @@ Data can also enter the web app from an `import.json` file, through Import in th
 Earlier versions kept the index in localStorage, and the extension kept its data in youtube.com storage. The first load after the update copies that data into the database once, and leaves the old copy in place for a downgrade.
 
 The extension's old index came in two copies, one in youtube.com localStorage and one in `chrome.storage.local`, and they could disagree. The move takes the entry with the later local change from either copy, or the later sync when both changed at the same time. A video can also be in the database already, if you pulled it on the bookmarks page before opening a YouTube tab. Then the entry with the later local change wins, together with its session, and a tie keeps the copy already in the database. A session with no index entry moves only if the database has none for that video.
+
+## Know Where an Open Panel Can Fall Behind
+
+The caption panel holds its session in memory while you work, and reads the stored copy only when it opens. If another page saves that video's session while the panel is open, such as a pull from the bookmarks page or an edit in another tab, the panel keeps showing its older copy, and its next edit saves that copy over the newer one. The index stays current everywhere, so the panel's sync status still reflects the newer save.
