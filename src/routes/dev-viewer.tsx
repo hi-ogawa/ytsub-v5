@@ -3,9 +3,9 @@ import { useNavigate, useParams } from "react-router";
 import {
   CaptionFab,
   CaptionPanel,
-  ResizablePanel,
   useFabOpen,
 } from "../components/caption-panel.tsx";
+import { ResizablePanel } from "../components/resizable-panel.tsx";
 import { useYouTubePlayer } from "../components/youtube-player.tsx";
 import { fixtureMetadata, fixtureTracks } from "../lib/dev-fixtures.ts";
 import { useSyncState } from "../lib/sync.ts";

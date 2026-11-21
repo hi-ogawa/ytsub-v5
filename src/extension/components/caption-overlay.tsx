@@ -3,9 +3,9 @@ import { useState } from "react";
 import {
   CaptionFab,
   CaptionPanel,
-  ResizablePanel,
   useFabOpen,
 } from "../../components/caption-panel.tsx";
+import { ResizablePanel } from "../../components/resizable-panel.tsx";
 import type { YTPlayer } from "../../components/youtube-player.tsx";
 import type { UseSync } from "../../lib/sync.ts";
 import type { YouTubeExtractionResult } from "../../lib/youtube.ts";
