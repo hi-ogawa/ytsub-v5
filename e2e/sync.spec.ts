@@ -155,7 +155,7 @@ test.describe("video-list sync", () => {
     await createBookmarkAt(page, { index: 0, start: 0, end: 3 });
 
     // Go to video list — local-only with auth shows as "push"
-    await page.goto("/");
+    await page.getByRole("link", { name: "Zamak" }).click();
     const badge = syncBadge(page, FIXTURE_VIDEO_ID);
     await expect(badge).toHaveAttribute("data-sync-status", "push");
 
@@ -176,7 +176,7 @@ test.describe("video-list sync", () => {
     await page.goto(`/dev/videos/${FIXTURE_VIDEO_ID}`);
     await openPanelWithTracks(page);
     await createBookmarkAt(page, { index: 0, start: 0, end: 3 });
-    await page.goto("/");
+    await page.getByRole("link", { name: "Zamak" }).click();
     const badge = syncBadge(page, FIXTURE_VIDEO_ID);
     await expect(badge).toHaveAttribute("data-sync-status", "push");
     await badge.click();
@@ -234,7 +234,7 @@ test.describe("video-list sync", () => {
     await createBookmarkAt(page, { index: 0, start: 0, end: 3 });
 
     // Video list should show conflict badge
-    await page.goto("/");
+    await page.getByRole("link", { name: "Zamak" }).click();
     const badge = syncBadge(page, FIXTURE_VIDEO_ID);
     await expect(badge).toHaveAttribute("data-sync-status", "conflict");
 
@@ -254,7 +254,7 @@ test.describe("video-list sync", () => {
     await createBookmarkAt(page, { index: 0, start: 0, end: 3 });
 
     // Video list should show conflict badge
-    await page.goto("/");
+    await page.getByRole("link", { name: "Zamak" }).click();
     const badge = syncBadge(page, FIXTURE_VIDEO_ID);
     await expect(badge).toHaveAttribute("data-sync-status", "conflict");
 
