@@ -5,14 +5,14 @@ import {
   CaptionPanel,
   ResizablePanel,
   useFabOpen,
-} from "../components/caption-panel.tsx";
-import { useYouTubePlayer } from "../components/youtube-player.tsx";
-import { fixtureMetadata, fixtureTracks } from "../lib/dev-fixtures.ts";
-import { useSyncState } from "../lib/sync.ts";
+} from "../../components/caption-panel.tsx";
+import { useYouTubePlayer } from "../../components/youtube-player.tsx";
+import { fixtureMetadata, fixtureTracks } from "../../lib/dev-fixtures.ts";
+import { useSyncState } from "../../lib/sync.ts";
 import type {
   YouTubeCaptionTrack,
   YouTubeExtractionResult,
-} from "../lib/youtube.ts";
+} from "../../lib/youtube.ts";
 
 export function DevViewerPage() {
   const { videoId } = useParams<"videoId">();

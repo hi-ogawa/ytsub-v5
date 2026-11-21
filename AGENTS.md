@@ -23,6 +23,7 @@ Read the [product overview](docs/product.md) and the [architecture overview](doc
 - Never use `--` to pass args to pnpm scripts. pnpm doesn't need `--` and it silently breaks filtering. Write `pnpm test "filename" -t "pattern"` or `pnpm test-e2e "filename" -g "pattern"` directly.
 - Run `.ts` scripts with `node` (not `tsx`/`ts-node`), because Node natively supports TypeScript stripping
 - File names: kebab-case
+- Give each build target its own folder under `src/` (`web/`, `extension/`, `server/`), and keep code they share at the top level of `src/`
 - Put code that knows nothing about the app in `src/utils/`, so it imports nothing else from `src/`. App logic goes in `src/lib/`
 - Function names: start with a verb for the action the function performs, so a call site reads as what happens rather than what comes back. This includes class accessors, so write a `get`-prefixed method rather than a getter. Components, hooks, and other constructs with their own ecosystem naming conventions follow those instead
 - Do not add compatibility paths or handling for edge cases that do not occur in practice
