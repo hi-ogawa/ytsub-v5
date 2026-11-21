@@ -4,7 +4,7 @@ The web app and extension e2e tests are two Playwright projects, `app` and `ext`
 
 ```sh
 pnpm test-e2e                          # web app and extension
-pnpm test-e2e e2e/ext/bookmarks.spec.ts # one file
+pnpm test-e2e e2e/sync.spec.ts         # one file
 pnpm test-e2e --project=app            # one project
 E2E_SERVER=dev pnpm test-e2e           # against the dev server
 pnpm test-youtube                      # real YouTube pages
@@ -63,7 +63,7 @@ To trace existing specs that the PR does not change, or test a branch manually:
 ```sh
 gh workflow run e2e-trace.yml --ref main \
   -f ref=my-branch \
-  -f tests='e2e/sync.spec.ts e2e/ext/bookmarks.spec.ts'
+  -f tests='e2e/sync.spec.ts e2e/ext/bookmarks-page.spec.ts'
 ```
 
 Separate test file filters with spaces. A filter can match specs in both the web app and extension projects. Add `-f grep='push'` to filter by test title. You can also run **E2E trace** from the repository's Actions tab.

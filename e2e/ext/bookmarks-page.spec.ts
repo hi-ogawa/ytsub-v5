@@ -29,7 +29,7 @@ const fixtureEntries = [
 // Billlie - cloud palace (seeded on server for "dev" user)
 const SEED_VIDEO_ID = "7GU_VQfgMT0";
 
-test("video page: bookmark a caption, then push it from the bookmarks page", async ({
+test("bookmark a caption, then push it from the bookmarks page", async ({
   context,
   page,
   extensionId,
@@ -65,88 +65,7 @@ test("video page: bookmark a caption, then push it from the bookmarks page", asy
   checkpoint("push synced");
 });
 
-test("video page: clicks inside the bookmark popover don't reach the caption row", async ({
-  context,
-}) => {
-  const ytPage = await openYouTubeTab(context, SEED_VIDEO_ID);
-  await openPanelWithTracks(ytPage);
-  const host = ytPage.locator("#zamak-host");
-  await host
-    .locator("[data-index='1'] [data-side='0'] [data-offset]")
-    .selectText();
-  await host.getByRole("button", { name: "Create bookmark" }).click();
-  const video = ytPage.locator("video");
-  const isPaused = () => video.evaluate((el: HTMLVideoElement) => el.paused);
-
-  await host
-    .locator("[data-index='1']")
-    .getByTestId("bookmark-highlight")
-    .click();
-  const popover = host.getByTestId("bookmark-popover");
-  await popover.getByText("unfilled").click();
-  await expect(popover).toBeVisible();
-  expect(await isPaused()).toBe(true);
-
-  // A click on the row itself seeks and plays
-  await host.locator("[data-index='2']").click();
-  await expect.poll(isPaused).toBe(false);
-});
-
-test("video page: bookmark arrows keep the play state", async ({ context }) => {
-  const ytPage = await openYouTubeTab(context, SEED_VIDEO_ID);
-  await openPanelWithTracks(ytPage);
-  const host = ytPage.locator("#zamak-host");
-  await host
-    .locator("[data-index='1'] [data-side='0'] [data-offset]")
-    .selectText();
-  await host.getByRole("button", { name: "Create bookmark" }).click();
-  const video = ytPage.locator("video");
-  const isPaused = () => video.evaluate((el: HTMLVideoElement) => el.paused);
-  const getCurrentTime = () =>
-    video.evaluate((el: HTMLVideoElement) => el.currentTime);
-
-  // A paused video stays paused at the bookmark
-  expect(await isPaused()).toBe(true);
-  await host.getByRole("button", { name: "Next bookmark" }).click();
-  await expect.poll(getCurrentTime).toBeGreaterThan(0);
-  expect(await isPaused()).toBe(true);
-
-  // A playing video keeps playing
-  await host.locator("[data-index='2']").click();
-  await expect.poll(isPaused).toBe(false);
-  await host.getByRole("button", { name: "Previous bookmark" }).click();
-  expect(await isPaused()).toBe(false);
-});
-
-test("video page: bookmark arrows show the caption while paused", async ({
-  context,
-}) => {
-  const ytPage = await openYouTubeTab(context, SEED_VIDEO_ID);
-  await openPanelWithTracks(ytPage);
-  const host = ytPage.locator("#zamak-host");
-  const row = host.locator("[data-index='30']");
-  await row.locator("[data-side='0'] [data-offset]").selectText();
-  await host.getByRole("button", { name: "Create bookmark" }).click();
-  await host.locator("[data-index='0']").scrollIntoViewIfNeeded();
-  await expect(row).not.toBeInViewport();
-
-  await host.getByRole("button", { name: "Next bookmark" }).click();
-  const getOffsetFromCenter = () =>
-    row.evaluate((el) => {
-      const list = el.closest(".overflow-y-auto")!.getBoundingClientRect();
-      const rect = el.getBoundingClientRect();
-      return Math.abs(
-        rect.top + rect.height / 2 - (list.top + list.height / 2),
-      );
-    });
-  await expect.poll(getOffsetFromCenter).toBeLessThan(2);
-  await expect(row).toHaveClass(/border-ring/);
-});
-
-test("bookmarks page: shows local entries without login", async ({
-  page,
-  extensionId,
-}) => {
+test("shows local entries without login", async ({ page, extensionId }) => {
   await gotoBookmarks(page, extensionId);
   await seedVideoIndex(page, fixtureEntries);
 
@@ -157,7 +76,7 @@ test("bookmarks page: shows local entries without login", async ({
   await expect(page.getByTestId("video-sync-badge")).toHaveCount(0);
 });
 
-test("bookmarks page: shows local entries with sync badges after login", async ({
+test("shows local entries with sync badges after login", async ({
   page,
   extensionId,
 }) => {
@@ -178,7 +97,7 @@ test("bookmarks page: shows local entries with sync badges after login", async (
   await expect(badges).toHaveCount(5);
 });
 
-test("bookmarks page: load, login, logout", async ({ page, extensionId }) => {
+test("load, login, logout", async ({ page, extensionId }) => {
   await setupDb({ seed: true });
   await gotoBookmarks(page, extensionId);
 
@@ -207,10 +126,7 @@ test("bookmarks page: load, login, logout", async ({ page, extensionId }) => {
   await expect(page.getByTestId("sign-in")).toBeVisible();
 });
 
-test("bookmarks page: delete removes video from list", async ({
-  page,
-  extensionId,
-}) => {
+test("delete removes video from list", async ({ page, extensionId }) => {
   await gotoBookmarks(page, extensionId);
   await seedVideoIndex(page, fixtureEntries);
 
@@ -231,7 +147,7 @@ test("bookmarks page: delete removes video from list", async ({
   await expect(page.getByText("Test Video Two")).toBeVisible();
 });
 
-test("bookmarks page: sync badges show correct states per entry", async ({
+test("sync badges show correct states per entry", async ({
   page,
   extensionId,
 }) => {
@@ -272,10 +188,7 @@ test("bookmarks page: sync badges show correct states per entry", async ({
   await expect(localBadge).toHaveAttribute("data-sync-status", "push");
 });
 
-test("bookmarks page: server-only entries show pull badge", async ({
-  page,
-  extensionId,
-}) => {
+test("server-only entries show pull badge", async ({ page, extensionId }) => {
   await setupDb({ seed: true });
   await gotoBookmarks(page, extensionId);
   await login(page);
@@ -287,7 +200,7 @@ test("bookmarks page: server-only entries show pull badge", async ({
   await expect(badge).toHaveAttribute("data-sync-status", "pull");
 });
 
-test("bookmarks page: push shows an error toast when the local session is missing", async ({
+test("push shows an error toast when the local session is missing", async ({
   page,
   extensionId,
 }) => {
@@ -319,10 +232,7 @@ test("bookmarks page: push shows an error toast when the local session is missin
   await expect(errorToast).toContainText("No local session found");
 });
 
-test("bookmarks page: pull works without a YouTube tab", async ({
-  page,
-  extensionId,
-}) => {
+test("pull works without a YouTube tab", async ({ page, extensionId }) => {
   await setupDb({ seed: true });
   await gotoBookmarks(page, extensionId);
   await login(page);
