@@ -8,7 +8,7 @@ The prompt carries:
 - the tracks the app sees, each with its `vssId`, language, source (manual, ASR, or translated), and whether it is the current `text1` or `text2`. The app's list can miss official tracks, so check `yt-dlp --list-subs` too.
 - the existing bookmarks. `captionIndex` points into the current rows, and `context` is the current row text, which shows where each word was before your changes. `side` is 0 for a Korean word and 1 for an English one.
 
-Follow [Generate import.json](generate-import-json.md). Run "Fetch and Assess" to get the tracks, then produce `captions.json` as Scenario B describes. For a song with official lyrics, follow Scenario F instead. Instead of picking bookmarks, re-anchor the existing bookmarks to your new rows, as "Re-anchor Existing Bookmarks" describes, and keep each bookmark's `id` in `bookmarks.json`. Skip "Assemble import.json".
+Follow [Generate import.json](generate-import-json.md). Run "Fetch and Assess" to get the tracks, then produce `captions.json` as Scenario B describes. For a song with official lyrics, follow Scenario F instead. When the user asks to use the captions burned into the picture, follow Scenario G. Instead of picking bookmarks, re-anchor the existing bookmarks to your new rows, as "Re-anchor Existing Bookmarks" describes, and keep each bookmark's `id` in `bookmarks.json`. Skip "Assemble import.json".
 
 ```json
 {
