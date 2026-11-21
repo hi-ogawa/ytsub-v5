@@ -19,7 +19,7 @@ The commands below shorten this to `uv run scripts/...`. Outputs go to the folde
 
 **Input:** a video, as a YouTube ID or a file. Optionally, the video's ASR or other subtitle tracks, which help plan reads and check them, and a list of time ranges to read again (see [Reading Ranges Again](#reading-ranges-again)).
 
-**Output:** `captions.json`, a list of captions in time order:
+**Output:** `captions.json`, the track that Fix & Align ASR in the [Zamak skill](../zamak/SKILL.md) takes. It is a list of captions in time order:
 
 ```json
 {
@@ -31,10 +31,10 @@ The commands below shorten this to `uv run scripts/...`. Outputs go to the folde
 }
 ```
 
-- `kind` is `speech` for words someone says, and `other` for anything else the editor put on screen, whatever its frame. Fix & Align ASR in the Zamak skill uses a `speech` caption's text in place of the ASR's line at the same time, and makes an `other` caption a row of its own. So tag a caption `speech` when someone in the video says its words aloud at that time, however large or decorated it is drawn, and use the ASR at that time to check. Text filmed in the scene, such as signs, isn't a caption, so leave it out.
+- `kind` is `speech` for words someone says, and `other` for anything else the editor put on screen, whatever its frame. Fix & Align ASR uses a `speech` caption's text in place of the ASR's line at the same time, and makes an `other` caption a row of its own. So tag a caption `speech` when someone in the video says its words aloud at that time, however large or decorated it is drawn, and use the ASR at that time to check. Text filmed in the scene, such as signs, isn't a caption, so leave it out.
 - `position` is the caption's box `[x, y, w, h]` in the 1280×720 frame.
 - `text` is exactly what the picture shows, including nonstandard spelling, censored words such as ㅅㄲ, and spelled-out laughter.
-- `omitted` is a short reason, set on a caption whose text a reader declined to reproduce, such as copyrighted text. Its `text` is empty, and it keeps its time and position, so a user can fill it in by hand. Text that is only hard to read is not omitted, so mark it with `[?]` or read it again. Never put a placeholder label in `text` instead, because a caller would take the label as the caption.
+- `omitted` is a short reason, set on a caption whose text a reader declined to reproduce, such as copyrighted text. Its `text` is empty, and it keeps its time and position, so a user can fill it in by hand. Text that is only hard to read is not omitted, so mark it with `[?]` or read it again. Never put a placeholder label in `text` instead, because Fix & Align ASR would use the label as the caption's text.
 
 ## Read the Picture
 
@@ -66,7 +66,7 @@ yt-dlp -f 247 --download-sections '*600-780' --force-keyframes-at-cuts -o 'video
 
 The file starts at 0 s, so add the section's start to every time the scripts print or take. `--force-keyframes-at-cuts` makes the cut land exactly on the start, which a plain cut misses by up to a few seconds.
 
-If the caller didn't pass the subtitle tracks, fetch them as [Fetch and Assess](../zamak/references/generate-import-json.md#fetch-and-assess) describes, because planning checks against them.
+If you weren't given the subtitle tracks, fetch them as [Fetch and Assess](../zamak/references/generate-import-json.md#fetch-and-assess) describes, because planning checks against them.
 
 Look at one sheet of 20 frames spread across the whole video:
 
@@ -189,7 +189,7 @@ If a channel record is available, add anything new about the channel to it: its 
 
 ## Reading Ranges Again
 
-A caller can pass time ranges where it suspects a miss, such as Fix & Align ASR passing the times of ASR lines that no caption matches. Read every other step in each range, put the new reads through [Assemble and correct](#5-assemble-and-correct), and add the new captions to the track.
+The user or the Zamak skill can pass time ranges where it suspects a miss, such as Fix & Align ASR passing the times of ASR lines that no caption matches. Read every other step in each range, put the new reads through [Assemble and correct](#5-assemble-and-correct), and add the new captions to the track.
 
 ## Features
 
