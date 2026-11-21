@@ -34,7 +34,7 @@ function main() {
   console.log(`[zamak] build: ${__BUILD_TIME__} (${__GIT_REV__})`);
   initCaptionStorage(createBridgeStorage());
 
-  subscribeWatchPage(mountOverlay);
+  subscribeWatchPage({ onEnter: mountOverlay });
 }
 
 function mountOverlay(videoId: string) {

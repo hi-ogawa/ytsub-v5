@@ -3,7 +3,11 @@ import type { YTPlayer } from "../../components/youtube-player.tsx";
 // YouTube navigates as a single-page app, so the content script runs once and
 // follows its navigation events. onEnter returns the cleanup to run when the
 // page is left.
-export function subscribeWatchPage(onEnter: (videoId: string) => () => void) {
+export function subscribeWatchPage({
+  onEnter,
+}: {
+  onEnter: (videoId: string) => () => void;
+}) {
   let leave: (() => void) | undefined;
   const enter = () => {
     const videoId = getVideoId();
