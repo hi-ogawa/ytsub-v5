@@ -59,7 +59,7 @@
     "fallow": "^3.45.0",
     "sharp": "^0.35.5",
     "tailwindcss": "^4.3.5",
-    "typescript": "^6.0.2",
+    "typescript": "^7.0.2",
     "vite": "^8.3.8",
     "vite-plus": "^1.7.0",
     "vitest": "catalog:",
