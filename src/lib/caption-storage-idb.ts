@@ -15,13 +15,13 @@ type MetaRecord = { key: string; importedAt: string };
 
 type Stores = {
   sessions: PersistedCaptionSession;
-  index: VideoIndexEntry;
+  videos: VideoIndexEntry;
   meta: MetaRecord;
 };
 
 const STORE_NAMES: { [K in keyof Stores]: string } = {
   sessions: "caption-sessions",
-  index: "video-index",
+  videos: "videos",
   meta: "meta",
 };
 
@@ -37,15 +37,15 @@ class IdbCaptionStorage implements CaptionStorage {
 
   saveSession: CaptionStorage["saveSession"] = async (session, options) => {
     const entries = await transact(
-      ["sessions", "index"],
+      ["sessions", "videos"],
       "readwrite",
-      async ({ sessions, index }) => {
+      async ({ sessions, videos }) => {
         sessions.put(session);
-        const existing = await index.get(session.youtubeId);
+        const existing = await videos.get(session.youtubeId);
         if (!existing && !options?.forceIndex && !session.bookmarks.length) {
           return;
         }
-        index.put({
+        videos.put({
           youtubeId: session.youtubeId,
           title: session.title,
           channelName: session.channelName,
@@ -54,7 +54,7 @@ class IdbCaptionStorage implements CaptionStorage {
           syncedAt: existing?.syncedAt,
           syncedServerUpdatedAt: existing?.syncedServerUpdatedAt,
         });
-        return index.getAll();
+        return videos.getAll();
       },
     );
     if (entries) {
@@ -64,12 +64,12 @@ class IdbCaptionStorage implements CaptionStorage {
 
   deleteVideo: CaptionStorage["deleteVideo"] = async (youtubeId) => {
     const entries = await transact(
-      ["sessions", "index"],
+      ["sessions", "videos"],
       "readwrite",
-      async ({ sessions, index }) => {
+      async ({ sessions, videos }) => {
         sessions.delete(youtubeId);
-        index.delete(youtubeId);
-        return index.getAll();
+        videos.delete(youtubeId);
+        return videos.getAll();
       },
     );
     this.notify({ type: "index", entries });
@@ -80,45 +80,45 @@ class IdbCaptionStorage implements CaptionStorage {
     serverUpdatedAt,
   ) => {
     const entries = await transact(
-      ["index"],
+      ["videos"],
       "readwrite",
-      async ({ index }) => {
-        const existing = await index.get(youtubeId);
+      async ({ videos }) => {
+        const existing = await videos.get(youtubeId);
         if (existing) {
-          index.put({
+          videos.put({
             ...existing,
             syncedAt: new Date().toISOString(),
             syncedServerUpdatedAt: serverUpdatedAt,
           });
         }
-        return index.getAll();
+        return videos.getAll();
       },
     );
     this.notify({ type: "index", entries });
   };
 
   getIndexEntry: CaptionStorage["getIndexEntry"] = (youtubeId) =>
-    transact(["index"], "readonly", ({ index }) => index.get(youtubeId));
+    transact(["videos"], "readonly", ({ videos }) => videos.get(youtubeId));
 
   listIndex: CaptionStorage["listIndex"] = () =>
-    transact(["index"], "readonly", ({ index }) => index.getAll());
+    transact(["videos"], "readonly", ({ videos }) => videos.getAll());
 
   // One transaction checks the marker and writes everything, so concurrent
   // imports run one after the other, and an interrupted one leaves nothing.
   importLegacy: CaptionStorage["importLegacy"] = async (source, data) => {
     const entries = await transact(
-      ["sessions", "index", "meta"],
+      ["sessions", "videos", "meta"],
       "readwrite",
-      async ({ sessions, index, meta }) => {
+      async ({ sessions, videos, meta }) => {
         const key = importMarkerKey(source);
         if (await meta.get(key)) {
           return;
         }
         const winners = new Set<string>();
         for (const entry of data.index) {
-          const existing = await index.get(entry.youtubeId);
+          const existing = await videos.get(entry.youtubeId);
           if (!existing || entry.updatedAt > existing.updatedAt) {
-            index.put(entry);
+            videos.put(entry);
             winners.add(entry.youtubeId);
           }
         }
@@ -131,7 +131,7 @@ class IdbCaptionStorage implements CaptionStorage {
           }
         }
         meta.put({ key, importedAt: new Date().toISOString() });
-        return index.getAll();
+        return videos.getAll();
       },
     );
     if (entries) {
@@ -175,7 +175,7 @@ function openDb(): Promise<IDBDatabase> {
         db.createObjectStore(STORE_NAMES.sessions, { keyPath: "youtubeId" });
       }
       if (e.oldVersion < 2) {
-        db.createObjectStore(STORE_NAMES.index, { keyPath: "youtubeId" });
+        db.createObjectStore(STORE_NAMES.videos, { keyPath: "youtubeId" });
         db.createObjectStore(STORE_NAMES.meta, { keyPath: "key" });
       }
     };

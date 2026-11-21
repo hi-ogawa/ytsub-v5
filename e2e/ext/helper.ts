@@ -93,9 +93,9 @@ export async function seedVideoIndex(page: Page, entries: object[]) {
       req.onerror = () => reject(req.error);
     });
     await new Promise<void>((resolve, reject) => {
-      const tx = db.transaction("video-index", "readwrite");
+      const tx = db.transaction("videos", "readwrite");
       for (const entry of entries) {
-        tx.objectStore("video-index").put(entry);
+        tx.objectStore("videos").put(entry);
       }
       tx.oncomplete = () => resolve();
       tx.onerror = () => reject(tx.error);
