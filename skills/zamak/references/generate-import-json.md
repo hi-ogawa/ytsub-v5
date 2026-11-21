@@ -117,7 +117,7 @@ After fetching and parsing, determine which scenario applies:
 | D: Ko auto only | auto      | —         | Fix ko text, then LLM translate                     |
 | E: Neither      | —         | —         | Stop                                                |
 | F: Lyrics + En  | lyrics    | manual    | Pair lyric lines with en cues, audit en             |
-| G: Burned-in    | picture   | either    | Use the captions as ko text or as evidence          |
+| G: Burned-in    | picture   | either    | Captions are the ko text where they render speech   |
 
 For a song with official lyrics, use Scenario F even when a Korean track exists, because fixing auto-generated lyrics only guesses at what the lyrics already say. If auto-generated quality looks unsalvageable and there are no official lyrics, flag it, because a different video may be the better choice.
 
@@ -181,10 +181,7 @@ The translators worked from the Korean and can misread it, so audit `text2` as i
 
 ### Use Burned-In Captions (Scenario G)
 
-The burned-in captions skill returns the captions as the viewer sees them, with their times. Compare them with the ASR to see how closely they follow the speech:
-
-- **Captions that follow the speech,** as on many talk shows, are the Korean text and its segmentation, like a manual Korean track. Continue as in Scenario A when there is a manual English track, and as in Scenario C when there isn't, which translates each row into English for `text2`. The ASR covers the lines the captions skip. An ASR line that no caption matches in time can be a missed caption, so pass those times back to the skill as ranges to read again.
-- **Captions that are mostly editor comments,** as on many vlogs, are evidence for fixing the ASR, the way the other manual tracks are in Scenario B. Continue as in Scenario B, or as in Scenario D when there is no English track, which also translates.
+The burned-in captions skill returns the captions as the viewer sees them, with their times. Where a caption renders a spoken line, use its text as that line's Korean, because the ASR is the weaker source. Fix the other lines from the ASR as usual. Continue as in Scenario B when there is a manual English track, or as in Scenario D when there isn't, which translates each row into English for `text2`.
 
 ### Output Format
 
