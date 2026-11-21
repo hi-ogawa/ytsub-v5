@@ -69,271 +69,6 @@ import {
 } from "./ui/dropdown-menu.tsx";
 import type { YTPlayer } from "./youtube-player.tsx";
 
-// --- AI prompt copy (inline dropdown widget) ---
-
-function AiPromptCopy({
-  store,
-  tracks,
-}: {
-  store: CaptionSessionManager;
-  tracks: YouTubeCaptionTrack[];
-}) {
-  const [selected, setSelected] = useState<AiTask>(AI_TASKS[0].task);
-  const [copied, setCopied] = useState(false);
-  const { youtubeId, title } = store.videoMeta;
-
-  function getPrompt(task: AiTask) {
-    return makeAiPrompt(task, {
-      youtubeId,
-      title,
-      rows: store.rows,
-      bookmarks: store.bookmarks,
-      tracks,
-      vssId1: store.vssId1,
-      vssId2: store.vssId2,
-    });
-  }
-
-  function copyPrompt(task: AiTask) {
-    navigator.clipboard.writeText(getPrompt(task));
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1500);
-  }
-
-  function downloadPrompt(task: AiTask) {
-    const text = getPrompt(task);
-    if (!text) {
-      return;
-    }
-    downloadText({
-      filename: `zamak-${youtubeId}-prompt-${task}.txt`,
-      text,
-      type: "text/plain",
-    });
-  }
-
-  return (
-    <div className="px-2 py-1.5">
-      <label className="mb-1 block text-sm text-muted-foreground flex items-center gap-1">
-        AI prompt{" "}
-        <a
-          href="https://github.com/hi-ogawa/ytsub-v5/blob/main/skills/zamak/SKILL.md"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex align-middle text-muted-foreground/70 hover:text-foreground"
-          title="How to use AI prompts"
-        >
-          <ExternalLink className="size-3.5" />
-        </a>
-      </label>
-      <div className="flex gap-1">
-        <select
-          className="min-w-0 flex-1 rounded border bg-background px-1 py-0.5 text-sm"
-          value={selected}
-          onChange={(e) => {
-            setSelected(e.target.value as AiTask);
-            copyPrompt(e.target.value as AiTask);
-          }}
-        >
-          {AI_TASKS.map((p) => (
-            <option key={p.task} value={p.task}>
-              {p.label}
-            </option>
-          ))}
-        </select>
-        <button
-          type="button"
-          className="shrink-0 rounded p-0.5 text-muted-foreground hover:bg-muted"
-          title="Copy prompt"
-          onClick={() => copyPrompt(selected)}
-        >
-          {copied ? (
-            <Check className="size-4 text-green-500" />
-          ) : (
-            <Copy className="size-4" />
-          )}
-        </button>
-        <button
-          type="button"
-          className="shrink-0 rounded p-0.5 text-muted-foreground hover:bg-muted"
-          title="Download prompt"
-          onClick={() => downloadPrompt(selected)}
-        >
-          <Download className="size-4" />
-        </button>
-      </div>
-    </div>
-  );
-}
-
-// --- AI import paste ---
-
-function importAiResult(store: CaptionSessionManager): void {
-  const raw = window.prompt("Paste AI result JSON");
-  if (!raw) {
-    return;
-  }
-  try {
-    const result = parseAiResult(raw);
-    switch (result.type) {
-      case "pick-fill": {
-        const { bookmarks, warnings } = pickFillToBookmarks(
-          result.entries,
-          store.rows,
-        );
-        if (bookmarks.length > 0) {
-          store.createBookmarks(bookmarks);
-        }
-        alert(
-          `Created ${bookmarks.length} bookmarks` +
-            (warnings.length > 0
-              ? `\n\n${warnings.length} skipped:\n${warnings.join("\n")}`
-              : ""),
-        );
-        break;
-      }
-      case "fill":
-        store.updateBookmarks(result.entries);
-        alert(`Filled ${result.entries.length} bookmarks`);
-        break;
-      case "fix-asr": {
-        const { captions, bookmarks, errors } = alignResultToSession(
-          result,
-          store.bookmarks,
-        );
-        if (errors.length > 0) {
-          alert(
-            `Nothing imported. ${errors.length} bookmark problems:\n${errors.join("\n")}`,
-          );
-          break;
-        }
-        const moved = store.bookmarks.length;
-        store.replace({ captions, bookmarks });
-        alert(
-          `Replaced captions with ${captions.length} rows, moved ${moved} bookmarks, and added ${bookmarks.length - moved}`,
-        );
-        break;
-      }
-    }
-  } catch (e) {
-    alert(e instanceof Error ? e.message : "Invalid JSON");
-  }
-}
-
-// --- CaptionPanel: display component ---
-
-const displayNames = new Intl.DisplayNames(["en"], { type: "language" });
-
-function langName(vssId: string): string {
-  const code = langFromVssId(vssId);
-  return displayNames.of(code) ?? code;
-}
-
-function formatTimestamp(seconds: number): string {
-  const m = Math.floor(seconds / 60);
-  const s = Math.floor(seconds % 60);
-  return `${m}:${String(s).padStart(2, "0")}`;
-}
-
-// The menu content mounts each time the menu opens, so the sync hook's
-// queries refetch then.
-function SyncMenuItem({
-  useSync,
-  store,
-}: {
-  useSync: UseSync;
-  store: CaptionSessionManager;
-}) {
-  const sync = useSync(store.videoMeta.youtubeId);
-  const { state, error, onNavigate } = sync;
-  const { icon, label } = syncStateDisplay(state);
-  const action = getSyncMenuAction(sync, store);
-
-  const content = (
-    <>
-      <span className="mr-2 size-4">{icon}</span>
-      {label}
-    </>
-  );
-  const testAttrs = {
-    "data-testid": "sync-status",
-    "data-sync-state": state,
-  };
-
-  return (
-    <>
-      {/* min-w-52 keeps the menu from resizing as the label changes. */}
-      <div className="flex min-w-52">
-        {action ? (
-          <DropdownMenuItem
-            className="min-w-0 flex-1"
-            onSelect={(e) => {
-              if (action.keepOpen) {
-                e.preventDefault();
-              }
-              action.run();
-            }}
-            {...testAttrs}
-          >
-            {content}
-          </DropdownMenuItem>
-        ) : (
-          <div
-            className="flex min-w-0 flex-1 items-center px-2 py-1.5 text-sm"
-            {...testAttrs}
-          >
-            {content}
-          </div>
-        )}
-        <div className="shrink-0">
-          <DropdownMenuItem
-            className="px-1.5 text-muted-foreground"
-            onSelect={onNavigate}
-            title="Open bookmarks page"
-            aria-label="Open bookmarks page"
-          >
-            <ExternalLink className="size-4" />
-          </DropdownMenuItem>
-        </div>
-      </div>
-      {error && (
-        <div
-          className="w-0 min-w-full pr-2 pb-1.5 pl-8 text-xs text-destructive"
-          data-testid="sync-error"
-        >
-          {error}
-        </div>
-      )}
-      <div className="my-1 h-px bg-border" />
-    </>
-  );
-}
-
-// A row is clickable only when clicking it does something. Push and pull run
-// in place, with the menu kept open to show progress, and states whose next
-// step lives on the bookmarks page open it.
-function getSyncMenuAction(
-  sync: SyncStatus,
-  store: CaptionSessionManager,
-): { run: () => void; keepOpen: boolean } | undefined {
-  const { onPush, onPull, onNavigate } = sync;
-  switch (sync.state) {
-    case "push": {
-      return { run: () => onPush(store), keepOpen: true };
-    }
-    case "pull": {
-      return { run: () => onPull(store), keepOpen: true };
-    }
-    case "conflict":
-    case "unauthenticated": {
-      return { run: onNavigate, keepOpen: false };
-    }
-    default: {
-      return undefined;
-    }
-  }
-}
-
 type CaptionPanelProps = {
   tracks: YouTubeCaptionTrack[];
   player?: YTPlayer;
@@ -460,34 +195,6 @@ function CaptionPanelInner({
   );
 }
 
-async function buildCaptionSession(options: {
-  track1: YouTubeCaptionTrack;
-  track2: YouTubeCaptionTrack;
-  fetchJson3: (track: YouTubeCaptionTrack) => Promise<Json3File>;
-  videoMeta: YouTubeVideoData;
-  strategy?: MergeStrategy;
-}): Promise<CaptionSessionManager> {
-  const [json3_1, json3_2] = await Promise.all([
-    options.fetchJson3(options.track1),
-    options.fetchJson3(options.track2),
-  ]);
-  const merged = mergeCaptions(
-    { json3: json3_1, vssId: options.track1.vssId },
-    { json3: json3_2, vssId: options.track2.vssId },
-    options.strategy,
-  );
-  const store = new CaptionSessionManager({
-    videoMeta: options.videoMeta,
-    vssId1: options.track1.vssId,
-    vssId2: options.track2.vssId,
-    rows: merged.captions,
-    strategy: merged.strategy,
-    bookmarks: [],
-  });
-  await store.persistSession();
-  return store;
-}
-
 /** State B: tracks selected, fetching json3 → builds store and calls setStore */
 function CaptionPanelLoading({
   tracks,
@@ -569,6 +276,42 @@ function CaptionPanelLoading({
   );
 }
 
+async function buildCaptionSession(options: {
+  track1: YouTubeCaptionTrack;
+  track2: YouTubeCaptionTrack;
+  fetchJson3: (track: YouTubeCaptionTrack) => Promise<Json3File>;
+  videoMeta: YouTubeVideoData;
+  strategy?: MergeStrategy;
+}): Promise<CaptionSessionManager> {
+  const [json3_1, json3_2] = await Promise.all([
+    options.fetchJson3(options.track1),
+    options.fetchJson3(options.track2),
+  ]);
+  const merged = mergeCaptions(
+    { json3: json3_1, vssId: options.track1.vssId },
+    { json3: json3_2, vssId: options.track2.vssId },
+    options.strategy,
+  );
+  const store = new CaptionSessionManager({
+    videoMeta: options.videoMeta,
+    vssId1: options.track1.vssId,
+    vssId2: options.track2.vssId,
+    rows: merged.captions,
+    strategy: merged.strategy,
+    bookmarks: [],
+  });
+  await store.persistSession();
+  return store;
+}
+
+function SettingsDropdownSkeleton() {
+  return (
+    <div className="mr-1 shrink-0 rounded p-0.5 text-muted-foreground opacity-50">
+      <EllipsisVertical className="size-4" />
+    </div>
+  );
+}
+
 function CaptionPanelWithStore({
   store,
   sessionOnly,
@@ -624,16 +367,6 @@ function CaptionPanelWithStore({
         player={player}
         autoScroll={autoScroll}
       />
-    </div>
-  );
-}
-
-// --- SettingsDropdown ---
-
-function SettingsDropdownSkeleton() {
-  return (
-    <div className="mr-1 shrink-0 rounded p-0.5 text-muted-foreground opacity-50">
-      <EllipsisVertical className="size-4" />
     </div>
   );
 }
@@ -738,7 +471,251 @@ function SettingsDropdown({
   );
 }
 
-// --- CaptionPanelContent: store-dependent viewer ---
+// The menu content mounts each time the menu opens, so the sync hook's
+// queries refetch then.
+function SyncMenuItem({
+  useSync,
+  store,
+}: {
+  useSync: UseSync;
+  store: CaptionSessionManager;
+}) {
+  const sync = useSync(store.videoMeta.youtubeId);
+  const { state, error, onNavigate } = sync;
+  const { icon, label } = syncStateDisplay(state);
+  const action = getSyncMenuAction(sync, store);
+
+  const content = (
+    <>
+      <span className="mr-2 size-4">{icon}</span>
+      {label}
+    </>
+  );
+  const testAttrs = {
+    "data-testid": "sync-status",
+    "data-sync-state": state,
+  };
+
+  return (
+    <>
+      {/* min-w-52 keeps the menu from resizing as the label changes. */}
+      <div className="flex min-w-52">
+        {action ? (
+          <DropdownMenuItem
+            className="min-w-0 flex-1"
+            onSelect={(e) => {
+              if (action.keepOpen) {
+                e.preventDefault();
+              }
+              action.run();
+            }}
+            {...testAttrs}
+          >
+            {content}
+          </DropdownMenuItem>
+        ) : (
+          <div
+            className="flex min-w-0 flex-1 items-center px-2 py-1.5 text-sm"
+            {...testAttrs}
+          >
+            {content}
+          </div>
+        )}
+        <div className="shrink-0">
+          <DropdownMenuItem
+            className="px-1.5 text-muted-foreground"
+            onSelect={onNavigate}
+            title="Open bookmarks page"
+            aria-label="Open bookmarks page"
+          >
+            <ExternalLink className="size-4" />
+          </DropdownMenuItem>
+        </div>
+      </div>
+      {error && (
+        <div
+          className="w-0 min-w-full pr-2 pb-1.5 pl-8 text-xs text-destructive"
+          data-testid="sync-error"
+        >
+          {error}
+        </div>
+      )}
+      <div className="my-1 h-px bg-border" />
+    </>
+  );
+}
+
+// A row is clickable only when clicking it does something. Push and pull run
+// in place, with the menu kept open to show progress, and states whose next
+// step lives on the bookmarks page open it.
+function getSyncMenuAction(
+  sync: SyncStatus,
+  store: CaptionSessionManager,
+): { run: () => void; keepOpen: boolean } | undefined {
+  const { onPush, onPull, onNavigate } = sync;
+  switch (sync.state) {
+    case "push": {
+      return { run: () => onPush(store), keepOpen: true };
+    }
+    case "pull": {
+      return { run: () => onPull(store), keepOpen: true };
+    }
+    case "conflict":
+    case "unauthenticated": {
+      return { run: onNavigate, keepOpen: false };
+    }
+    default: {
+      return undefined;
+    }
+  }
+}
+
+function AiPromptCopy({
+  store,
+  tracks,
+}: {
+  store: CaptionSessionManager;
+  tracks: YouTubeCaptionTrack[];
+}) {
+  const [selected, setSelected] = useState<AiTask>(AI_TASKS[0].task);
+  const [copied, setCopied] = useState(false);
+  const { youtubeId, title } = store.videoMeta;
+
+  function getPrompt(task: AiTask) {
+    return makeAiPrompt(task, {
+      youtubeId,
+      title,
+      rows: store.rows,
+      bookmarks: store.bookmarks,
+      tracks,
+      vssId1: store.vssId1,
+      vssId2: store.vssId2,
+    });
+  }
+
+  function copyPrompt(task: AiTask) {
+    navigator.clipboard.writeText(getPrompt(task));
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  }
+
+  function downloadPrompt(task: AiTask) {
+    const text = getPrompt(task);
+    if (!text) {
+      return;
+    }
+    downloadText({
+      filename: `zamak-${youtubeId}-prompt-${task}.txt`,
+      text,
+      type: "text/plain",
+    });
+  }
+
+  return (
+    <div className="px-2 py-1.5">
+      <label className="mb-1 block text-sm text-muted-foreground flex items-center gap-1">
+        AI prompt{" "}
+        <a
+          href="https://github.com/hi-ogawa/ytsub-v5/blob/main/skills/zamak/SKILL.md"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex align-middle text-muted-foreground/70 hover:text-foreground"
+          title="How to use AI prompts"
+        >
+          <ExternalLink className="size-3.5" />
+        </a>
+      </label>
+      <div className="flex gap-1">
+        <select
+          className="min-w-0 flex-1 rounded border bg-background px-1 py-0.5 text-sm"
+          value={selected}
+          onChange={(e) => {
+            setSelected(e.target.value as AiTask);
+            copyPrompt(e.target.value as AiTask);
+          }}
+        >
+          {AI_TASKS.map((p) => (
+            <option key={p.task} value={p.task}>
+              {p.label}
+            </option>
+          ))}
+        </select>
+        <button
+          type="button"
+          className="shrink-0 rounded p-0.5 text-muted-foreground hover:bg-muted"
+          title="Copy prompt"
+          onClick={() => copyPrompt(selected)}
+        >
+          {copied ? (
+            <Check className="size-4 text-green-500" />
+          ) : (
+            <Copy className="size-4" />
+          )}
+        </button>
+        <button
+          type="button"
+          className="shrink-0 rounded p-0.5 text-muted-foreground hover:bg-muted"
+          title="Download prompt"
+          onClick={() => downloadPrompt(selected)}
+        >
+          <Download className="size-4" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function importAiResult(store: CaptionSessionManager): void {
+  const raw = window.prompt("Paste AI result JSON");
+  if (!raw) {
+    return;
+  }
+  try {
+    const result = parseAiResult(raw);
+    switch (result.type) {
+      case "pick-fill": {
+        const { bookmarks, warnings } = pickFillToBookmarks(
+          result.entries,
+          store.rows,
+        );
+        if (bookmarks.length > 0) {
+          store.createBookmarks(bookmarks);
+        }
+        alert(
+          `Created ${bookmarks.length} bookmarks` +
+            (warnings.length > 0
+              ? `\n\n${warnings.length} skipped:\n${warnings.join("\n")}`
+              : ""),
+        );
+        break;
+      }
+      case "fill":
+        store.updateBookmarks(result.entries);
+        alert(`Filled ${result.entries.length} bookmarks`);
+        break;
+      case "fix-asr": {
+        const { captions, bookmarks, errors } = alignResultToSession(
+          result,
+          store.bookmarks,
+        );
+        if (errors.length > 0) {
+          alert(
+            `Nothing imported. ${errors.length} bookmark problems:\n${errors.join("\n")}`,
+          );
+          break;
+        }
+        const moved = store.bookmarks.length;
+        store.replace({ captions, bookmarks });
+        alert(
+          `Replaced captions with ${captions.length} rows, moved ${moved} bookmarks, and added ${bookmarks.length - moved}`,
+        );
+        break;
+      }
+    }
+  } catch (e) {
+    alert(e instanceof Error ? e.message : "Invalid JSON");
+  }
+}
 
 function CaptionPanelContent({
   store,
@@ -967,7 +944,74 @@ function CaptionPanelContent({
   );
 }
 
-// --- ExtensionBookmarksList ---
+type CaptionViewerHandle = CaptionListHandle & {
+  showCaption: (index: number) => void;
+};
+
+function CaptionViewer({
+  ref,
+  rows,
+  player,
+  autoScroll,
+  bookmarks,
+  onGoToBookmark,
+}: {
+  ref: React.Ref<CaptionViewerHandle>;
+  rows: MergedCaption[];
+  player?: YTPlayer;
+  autoScroll: boolean;
+  bookmarks: ExtensionBookmark[];
+  onGoToBookmark: (bookmarkId: string) => void;
+}) {
+  const [currentIndex, setCurrentIndex] = useState<number>();
+  const [isPlaying, setIsPlaying] = useState(false);
+  const listRef = useRef<CaptionListHandle>(null);
+
+  useImperativeHandle(ref, () => ({
+    scrollToIndex: (index) => listRef.current?.scrollToIndex(index),
+    showCaption: (index) => {
+      setCurrentIndex(index);
+      listRef.current?.scrollToIndex(index);
+    },
+  }));
+
+  useEffect(() => {
+    if (!player || rows.length === 0) {
+      return;
+    }
+    let rafId: number;
+
+    const loop = () => {
+      const playing = player.getPlayerState() === 1;
+      setIsPlaying(playing);
+      if (playing) {
+        const time = player.getCurrentTime();
+        for (let i = rows.length - 1; i >= 0; i--) {
+          if (rows[i].begin <= time) {
+            setCurrentIndex(i);
+            break;
+          }
+        }
+      }
+      rafId = requestAnimationFrame(loop);
+    };
+    rafId = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(rafId);
+  }, [player, rows]);
+
+  return (
+    <CaptionList
+      ref={listRef}
+      rows={rows}
+      currentIndex={currentIndex}
+      isPlaying={isPlaying}
+      player={player}
+      autoScroll={autoScroll}
+      bookmarks={bookmarks}
+      onGoToBookmark={onGoToBookmark}
+    />
+  );
+}
 
 type BookmarksListHandle = {
   scrollToBookmark: (bookmarkId: string) => void;
@@ -1104,73 +1148,15 @@ function ExtensionBookmarksList({
   );
 }
 
-// --- CaptionViewer: playback-synced caption list ---
+const displayNames = new Intl.DisplayNames(["en"], { type: "language" });
 
-type CaptionViewerHandle = CaptionListHandle & {
-  showCaption: (index: number) => void;
-};
+function langName(vssId: string): string {
+  const code = langFromVssId(vssId);
+  return displayNames.of(code) ?? code;
+}
 
-function CaptionViewer({
-  ref,
-  rows,
-  player,
-  autoScroll,
-  bookmarks,
-  onGoToBookmark,
-}: {
-  ref: React.Ref<CaptionViewerHandle>;
-  rows: MergedCaption[];
-  player?: YTPlayer;
-  autoScroll: boolean;
-  bookmarks: ExtensionBookmark[];
-  onGoToBookmark: (bookmarkId: string) => void;
-}) {
-  const [currentIndex, setCurrentIndex] = useState<number>();
-  const [isPlaying, setIsPlaying] = useState(false);
-  const listRef = useRef<CaptionListHandle>(null);
-
-  useImperativeHandle(ref, () => ({
-    scrollToIndex: (index) => listRef.current?.scrollToIndex(index),
-    showCaption: (index) => {
-      setCurrentIndex(index);
-      listRef.current?.scrollToIndex(index);
-    },
-  }));
-
-  useEffect(() => {
-    if (!player || rows.length === 0) {
-      return;
-    }
-    let rafId: number;
-
-    const loop = () => {
-      const playing = player.getPlayerState() === 1;
-      setIsPlaying(playing);
-      if (playing) {
-        const time = player.getCurrentTime();
-        for (let i = rows.length - 1; i >= 0; i--) {
-          if (rows[i].begin <= time) {
-            setCurrentIndex(i);
-            break;
-          }
-        }
-      }
-      rafId = requestAnimationFrame(loop);
-    };
-    rafId = requestAnimationFrame(loop);
-    return () => cancelAnimationFrame(rafId);
-  }, [player, rows]);
-
-  return (
-    <CaptionList
-      ref={listRef}
-      rows={rows}
-      currentIndex={currentIndex}
-      isPlaying={isPlaying}
-      player={player}
-      autoScroll={autoScroll}
-      bookmarks={bookmarks}
-      onGoToBookmark={onGoToBookmark}
-    />
-  );
+function formatTimestamp(seconds: number): string {
+  const m = Math.floor(seconds / 60);
+  const s = Math.floor(seconds % 60);
+  return `${m}:${String(s).padStart(2, "0")}`;
 }
