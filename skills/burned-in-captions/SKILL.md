@@ -132,11 +132,20 @@ Give the extra frames to a new reader, together with the frames already read fro
 
 ### 6. Record
 
-If a channel record is available, add anything new about the channel to it: its style, what went wrong, and the windows you checked. Add new patterns to [the catalogue](references/catalogue.md). Tell the user what you changed, because the next video on the channel relies on it.
+If a channel record is available, add anything new about the channel to it: its style, how closely its captions follow the speech, what went wrong, and the windows you checked. Add new patterns to [the catalogue](references/catalogue.md). Tell the user what you changed, because the next video on the channel relies on it.
 
 ## Reading Ranges Again
 
 A caller can pass time ranges where it suspects a miss, such as Fix & Align ASR passing the times of ASR lines that no caption matches. Read every other step in each range, and add the new captions to the track.
+
+## Using the Track
+
+How to use the track depends on how closely the captions follow the speech. With the ASR, measure the share of ASR lines that a caption matches in time and text, or take it from the channel record, if one is available, and report it with the track.
+
+- **Near-verbatim captions,** as on 노빠꾸탁재훈, can be the Korean text and its segmentation. The ASR covers the lines the captions skip.
+- **Commentary-heavy captions,** as on 조현영's vlog, are evidence for fixing the ASR, the way an official track in another language is. Commentary and labels aren't speech, so they never become caption rows of their own.
+
+Where a caption and the ASR differ, the caption wins, because it is what the viewer sees, and the ASR is the weaker source. For Fix & Align ASR in the Zamak skill, the track is one more source for its rows, and the rest of that task runs as usual.
 
 ## Features
 
