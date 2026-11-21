@@ -66,3 +66,23 @@ export function extractBookmarkSelection(
     text,
   };
 }
+
+/**
+ * Groups bookmarks by the caption row they belong to, and numbers them from 1
+ * in the order given.
+ */
+export function indexBookmarks(bookmarks: ExtensionBookmark[]) {
+  const bookmarksByIndex = new Map<number, ExtensionBookmark[]>();
+  const bookmarkNumberById = new Map<string, number>();
+  for (let i = 0; i < bookmarks.length; i++) {
+    const bm = bookmarks[i];
+    bookmarkNumberById.set(bm.id, i + 1);
+    const list = bookmarksByIndex.get(bm.captionIndex);
+    if (list) {
+      list.push(bm);
+    } else {
+      bookmarksByIndex.set(bm.captionIndex, [bm]);
+    }
+  }
+  return { bookmarksByIndex, bookmarkNumberById };
+}

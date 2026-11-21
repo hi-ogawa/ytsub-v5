@@ -7,7 +7,10 @@ import {
   useState,
 } from "react";
 import type { MergedCaption } from "../lib/caption-merge.ts";
-import type { ExtensionBookmark } from "../lib/extension-bookmarks.ts";
+import {
+  type ExtensionBookmark,
+  indexBookmarks,
+} from "../lib/extension-bookmarks.ts";
 import { flashHighlight } from "../lib/flash-highlight.ts";
 import { getSelectionAt } from "../utils/get-selection.ts";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover.tsx";
@@ -39,23 +42,10 @@ export function CaptionList({
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Groups bookmarks by caption row for the row highlights, and numbers them
-  // for the "#n" label in each highlight.
-  const { bookmarksByIndex, bookmarkNumberById } = useMemo(() => {
-    const byIndex = new Map<number, ExtensionBookmark[]>();
-    const numberById = new Map<string, number>();
-    for (let i = 0; i < bookmarks.length; i++) {
-      const bm = bookmarks[i];
-      numberById.set(bm.id, i + 1);
-      const list = byIndex.get(bm.captionIndex);
-      if (list) {
-        list.push(bm);
-      } else {
-        byIndex.set(bm.captionIndex, [bm]);
-      }
-    }
-    return { bookmarksByIndex: byIndex, bookmarkNumberById: numberById };
-  }, [bookmarks]);
+  const { bookmarksByIndex, bookmarkNumberById } = useMemo(
+    () => indexBookmarks(bookmarks),
+    [bookmarks],
+  );
 
   // Auto-scroll pauses for 2 seconds after the user scrolls or jumps to a
   // row, and while a bookmark popover is open.
