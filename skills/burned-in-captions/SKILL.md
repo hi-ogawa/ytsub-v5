@@ -31,7 +31,7 @@ The commands below shorten this to `uv run scripts/...`. Outputs go to the folde
 }
 ```
 
-- `kind` is `speech` for words someone says, and `other` for anything else the editor put on screen, whatever its frame. Fix & Align ASR uses a `speech` caption's text in place of the ASR's line at the same time, and makes an `other` caption a row of its own. So tag a caption `speech` when someone in the video says its words aloud at that time, however large or decorated it is drawn, and use the ASR at that time to check. Text filmed in the scene, such as signs, isn't a caption, so leave it out.
+- `kind` is `speech` for words someone says, and `other` for anything else the editor put on screen, whatever its frame. Fix & Align ASR uses a `speech` caption's text in place of the ASR's line at the same time, and makes an `other` caption a row of its own. So tag a caption `speech` when someone in the video says its words aloud at that time, and use the ASR at that time to check. Text filmed in the scene, such as signs, isn't a caption, so leave it out.
 - `position` is the caption's box `[x, y, w, h]` in the 1280×720 frame.
 - `text` is exactly what the picture shows, including nonstandard spelling, censored words such as ㅅㄲ, and spelled-out laughter.
 - `omitted` is a short reason, set on a caption whose text a reader declined to reproduce, such as copyrighted text. Its `text` is empty, and it keeps its time and position, so a user can fill it in by hand. Text that is only hard to read is not omitted, so mark it with `[?]` or read it again. Never put a placeholder label in `text` instead, because Fix & Align ASR would use the label as the caption's text.
