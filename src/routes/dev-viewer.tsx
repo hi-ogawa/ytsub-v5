@@ -67,7 +67,6 @@ function DevViewerSession({
   meta: YouTubeExtractionResult;
   player: ReturnType<typeof useYouTubePlayer>["player"];
 }) {
-  const navigate = useNavigate();
   const fetchJson3 = useCallback(
     async (track: YouTubeCaptionTrack) => {
       const key = `/scripts/youtube-json/${videoId}/track-${track.vssId}.json`;
@@ -81,18 +80,18 @@ function DevViewerSession({
     [videoId],
   );
 
-  const sync = useSyncState({
-    youtubeId: videoId,
-    onNavigate: () => navigate("/dev"),
-  });
-
   return (
     <CaptionPanel
       tracks={meta.captionTracks}
       player={player}
       fetchJson3={fetchJson3}
       videoMeta={meta.video}
-      sync={sync}
+      useSync={useDevSync}
     />
   );
+}
+
+function useDevSync(youtubeId: string) {
+  const navigate = useNavigate();
+  return useSyncState({ youtubeId, onNavigate: () => navigate("/dev") });
 }

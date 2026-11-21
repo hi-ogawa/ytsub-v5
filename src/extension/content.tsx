@@ -206,7 +206,6 @@ function useExtensionSync(youtubeId: string): SyncStatus {
       ? `${variables?.direction === "pull" ? "Download" : "Upload"} failed: ${error.message}`
       : undefined,
     onNavigate: () => bgRpc.openBookmarks(),
-    onRefresh: () => serverQuery.refetch({ cancelRefetch: false }),
     onPush: () => syncMutation.mutate({ direction: "push" }),
     onPull: (store) => syncMutation.mutate({ direction: "pull", store }),
   };
@@ -219,15 +218,13 @@ function ExtensionSession({
   data: YouTubeExtractionResult;
   player?: YTPlayer;
 }) {
-  const sync = useExtensionSync(data.video.youtubeId);
-
   return (
     <CaptionPanel
       tracks={data.captionTracks}
       player={player}
       fetchJson3={(track) => fetchTrackJson3(track.baseUrl)}
       videoMeta={data.video}
-      sync={sync}
+      useSync={useExtensionSync}
     />
   );
 }
