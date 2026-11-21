@@ -69,7 +69,9 @@ export const authRouter = pub.router({
         input.password,
         user?.passwordHash ?? "$dummy$",
       );
-      if (!user || !valid) throw new ORPCError("UNAUTHORIZED");
+      if (!user || !valid) {
+        throw new ORPCError("UNAUTHORIZED");
+      }
 
       const token = await createSessionToken(user.id);
       setCookie(context.resHeaders, "session", token, {
@@ -87,12 +89,16 @@ export const authRouter = pub.router({
   }),
 
   check: pub.handler(async ({ context }) => {
-    if (!context.reqHeaders) return { authenticated: false };
+    if (!context.reqHeaders) {
+      return { authenticated: false };
+    }
     const cookie = getCookie(context.reqHeaders, "session");
     const auth = context.reqHeaders.get("authorization");
     const token =
       cookie ?? (auth?.startsWith("Bearer ") ? auth.slice(7) : undefined);
-    if (!token) return { authenticated: false };
+    if (!token) {
+      return { authenticated: false };
+    }
     const userId = await verifySessionToken(token);
     return { authenticated: !!userId };
   }),

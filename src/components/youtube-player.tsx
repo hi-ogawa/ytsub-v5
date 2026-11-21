@@ -28,7 +28,9 @@ export interface YTPlayer {
 let iframeApiPromise: Promise<void> | undefined;
 
 function loadYoutubeIframeApi(): Promise<void> {
-  if (iframeApiPromise) return iframeApiPromise;
+  if (iframeApiPromise) {
+    return iframeApiPromise;
+  }
   iframeApiPromise = new Promise<void>((resolve) => {
     const script = document.createElement("script");
     script.src = "https://www.youtube.com/iframe_api";
@@ -46,7 +48,9 @@ export function useYouTubePlayer(youtubeId?: string) {
   const playerRef = useRef<YTPlayer>(undefined);
 
   const ref: RefCallback<HTMLDivElement> = (el) => {
-    if (!el || !youtubeId || playerRef.current) return;
+    if (!el || !youtubeId || playerRef.current) {
+      return;
+    }
     loadYoutubeIframeApi().then(() => {
       const p = new YT.Player(el, {
         videoId: youtubeId,

@@ -43,9 +43,13 @@ export function mergeStrict(
   cues2: CaptionCue[],
   tolerance = 0.5,
 ): MergedCaption[] | undefined {
-  if (cues1.length !== cues2.length) return undefined;
+  if (cues1.length !== cues2.length) {
+    return undefined;
+  }
   for (let i = 0; i < cues1.length; i++) {
-    if (Math.abs(cues1[i].begin - cues2[i].begin) > tolerance) return undefined;
+    if (Math.abs(cues1[i].begin - cues2[i].begin) > tolerance) {
+      return undefined;
+    }
   }
   return cues1.map((c1, i) => ({
     idx: i,
@@ -100,7 +104,9 @@ export function mergeOverlap(
       overlaps.sort((a, b) => a.c2.begin - b.c2.begin);
       cue2Indices = overlaps.map((o) => o.j);
       text2Segments = overlaps.map((o) => o.c2.text);
-      for (const j of cue2Indices) assignedCue2s.add(j);
+      for (const j of cue2Indices) {
+        assignedCue2s.add(j);
+      }
     }
 
     return {
@@ -134,7 +140,9 @@ export function mergeOverlap(
     }
   }
 
-  if (orphans.length === 0) return reindex(rows);
+  if (orphans.length === 0) {
+    return reindex(rows);
+  }
 
   // Interleave orphans into rows by begin time
   const all = [...rows, ...orphans];
@@ -209,7 +217,9 @@ export function mergeBestOverlap(
     }
   }
 
-  if (orphans.length === 0) return reindex(rows);
+  if (orphans.length === 0) {
+    return reindex(rows);
+  }
 
   const all = [...rows, ...orphans];
   all.sort((a, b) => a.begin - b.begin);
@@ -245,7 +255,9 @@ export function mergePartition(
         bestD = d;
       }
     }
-    if (!assignments.has(bestD)) assignments.set(bestD, []);
+    if (!assignments.has(bestD)) {
+      assignments.set(bestD, []);
+    }
     assignments.get(bestD)!.push(f);
   }
 
@@ -296,7 +308,9 @@ export function mergeBidirectional(
   // Invert: for each cue1, collect assigned cue2s (sorted by begin time)
   const cue1ToCue2s = new Map<number, number[]>();
   for (const [j, i] of cue2ToCue1) {
-    if (!cue1ToCue2s.has(i)) cue1ToCue2s.set(i, []);
+    if (!cue1ToCue2s.has(i)) {
+      cue1ToCue2s.set(i, []);
+    }
     cue1ToCue2s.get(i)!.push(j);
   }
   for (const indices of cue1ToCue2s.values()) {
@@ -336,7 +350,9 @@ export function mergeDTW(
   const n = cues1.length;
   const m = cues2.length;
 
-  if (n === 0) return [];
+  if (n === 0) {
+    return [];
+  }
   if (m === 0) {
     return cues1.map((c, i) => ({
       idx: i,
@@ -422,13 +438,17 @@ export function mergeDTW(
     const c = choice[i][j];
     if (c === 1) {
       // diagonal: assign cue2[j] to cue1[i], advance both
-      if (!assignments.has(i)) assignments.set(i, []);
+      if (!assignments.has(i)) {
+        assignments.set(i, []);
+      }
       assignments.get(i)!.push(j);
       i++;
       j++;
     } else if (c === 2) {
       // right: assign cue2[j] to cue1[i], advance j only
-      if (!assignments.has(i)) assignments.set(i, []);
+      if (!assignments.has(i)) {
+        assignments.set(i, []);
+      }
       assignments.get(i)!.push(j);
       j++;
     } else {
@@ -538,18 +558,24 @@ export function mergeCaptions(
   // Translated pair: events share tStartMs, strict should work
   if (isTranslatedPair(track1.vssId, track2.vssId)) {
     const strict = mergeStrict(cues1, cues2, 0.5);
-    if (strict) return { strategy: "strict", captions: strict };
+    if (strict) {
+      return { strategy: "strict", captions: strict };
+    }
     // Fallback to partition if strict fails (count mismatch from dropped events)
     return { strategy: "partition", captions: mergePartition(cues1, cues2) };
   }
 
   // Try strict first
   const strict = mergeStrict(cues1, cues2);
-  if (strict) return { strategy: "strict", captions: strict };
+  if (strict) {
+    return { strategy: "strict", captions: strict };
+  }
 
   // Try relaxed strict
   const relaxed = mergeRelaxedStrict(cues1, cues2);
-  if (relaxed) return { strategy: "relaxed-strict", captions: relaxed };
+  if (relaxed) {
+    return { strategy: "relaxed-strict", captions: relaxed };
+  }
 
   // Use partition as default (100% coverage, no drops, no duplication)
   return { strategy: "partition", captions: mergePartition(cues1, cues2) };

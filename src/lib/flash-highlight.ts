@@ -7,7 +7,9 @@ export function flashHighlight(el: HTMLElement) {
     .find(
       (a) => a instanceof CSSAnimation && a.animationName === "flash-highlight",
     );
-  if (!animation) return;
+  if (!animation) {
+    return;
+  }
   animation.currentTime = 0;
   const remove = () => el.classList.remove("flash-highlight");
   animation.finished.then(remove, remove);

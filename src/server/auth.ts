@@ -15,9 +15,13 @@ export const pub = os.$context<AuthContext>();
 /** Extract token from cookie or Authorization header */
 function getToken(headers: Headers): string | undefined {
   const cookie = getCookie(headers, "session");
-  if (cookie) return cookie;
+  if (cookie) {
+    return cookie;
+  }
   const auth = headers.get("authorization");
-  if (auth?.startsWith("Bearer ")) return auth.slice(7);
+  if (auth?.startsWith("Bearer ")) {
+    return auth.slice(7);
+  }
 }
 
 /** Verify a signed session token, returning userId if valid */
@@ -25,11 +29,15 @@ export async function verifySessionToken(
   token: string,
 ): Promise<number | undefined> {
   const payload = await unsign(token, env.AUTH_SECRET);
-  if (!payload) return;
+  if (!payload) {
+    return;
+  }
   const [userIdStr, expStr] = payload.split(":");
   const userId = Number(userIdStr);
   const exp = Number(expStr);
-  if (userId && exp >= Date.now() / 1000) return userId;
+  if (userId && exp >= Date.now() / 1000) {
+    return userId;
+  }
 }
 
 /** Auth middleware — verifies session cookie or bearer token, extracts userId */
@@ -38,7 +46,9 @@ const requireAuth = pub.middleware(async ({ context, next }) => {
     const token = getToken(context.reqHeaders);
     if (token) {
       const userId = await verifySessionToken(token);
-      if (userId) return next({ context: { userId } });
+      if (userId) {
+        return next({ context: { userId } });
+      }
     }
   }
 

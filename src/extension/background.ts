@@ -13,7 +13,9 @@ const contentRpc = createContentRpc<typeof tabRpcHandlers>();
 export const bgRpcHandlers = {
   async getSyncState({ youtubeId }: { youtubeId: string }) {
     const { authenticated } = await orpc.auth.check.call({});
-    if (!authenticated) return { authenticated: false as const };
+    if (!authenticated) {
+      return { authenticated: false as const };
+    }
     const data = await orpc.videos.getVideoUpdatedAt.call({ youtubeId });
     return {
       authenticated: true as const,
@@ -27,7 +29,9 @@ export const bgRpcHandlers = {
 
   async pushSession({ youtubeId }: { youtubeId: string }) {
     const session = await contentRpc.getSession({ youtubeId });
-    if (!session) throw new Error("No local session found");
+    if (!session) {
+      throw new Error("No local session found");
+    }
     const exportData = sessionToExportData(
       session as Parameters<typeof sessionToExportData>[0],
     );
@@ -38,7 +42,9 @@ export const bgRpcHandlers = {
   // The caption panel pulls with this. docs/extension-runtime.md explains why.
   async fetchSession({ youtubeId }: { youtubeId: string }) {
     const data = await orpc.videos.getFullSession.call({ youtubeId });
-    if (!data) throw new Error("Video not found on server");
+    if (!data) {
+      throw new Error("Video not found on server");
+    }
     return {
       session: serverSessionToLocal(data),
       serverUpdatedAt: data.video.updatedAt,

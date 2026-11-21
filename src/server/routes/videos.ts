@@ -72,7 +72,9 @@ export const videosRouter = authed.router({
       if (!video) {
         throw new Error(`Video ${input.videoId} not found`);
       }
-      if (input.captions.length === 0) return { inserted: 0 };
+      if (input.captions.length === 0) {
+        return { inserted: 0 };
+      }
       const rows = input.captions.map((c) => ({
         videoId: sql.raw(`${input.videoId}`),
         idx: sql.raw(`${c.idx}`),
@@ -101,7 +103,9 @@ export const videosRouter = authed.router({
           and(eq(videos.id, input.videoId), eq(videos.userId, context.userId)),
         )
         .get();
-      if (!video) throw new Error(`Video ${input.videoId} not found`);
+      if (!video) {
+        throw new Error(`Video ${input.videoId} not found`);
+      }
       return db
         .select()
         .from(captions)
@@ -125,7 +129,9 @@ export const videosRouter = authed.router({
         .from(videos)
         .where(and(eq(videos.id, videoId), eq(videos.userId, context.userId)))
         .get();
-      if (!video) throw new Error(`Video ${videoId} not found`);
+      if (!video) {
+        throw new Error(`Video ${videoId} not found`);
+      }
       if (Object.values(updates).every((v) => v === undefined)) {
         throw new Error("No fields to update");
       }
@@ -311,7 +317,9 @@ export const videosRouter = authed.router({
           ),
         )
         .get();
-      if (!video) return null;
+      if (!video) {
+        return null;
+      }
       const videoCaptions = await db
         .select()
         .from(captions)

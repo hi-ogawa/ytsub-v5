@@ -118,7 +118,9 @@ function getPanelWidth(): number {
     const stored = localStorage.getItem(WIDTH_KEY);
     if (stored) {
       const n = Number(stored);
-      if (n >= MIN_WIDTH && n <= MAX_WIDTH) return n;
+      if (n >= MIN_WIDTH && n <= MAX_WIDTH) {
+        return n;
+      }
     }
   } catch {}
   return DEFAULT_WIDTH;
@@ -149,7 +151,9 @@ export function ResizablePanel({
     // A cross-origin iframe (the YouTube player) can take the pointer events
     // when the drag passes over it, even with pointer capture.
     const iframes = [...document.querySelectorAll("iframe")];
-    for (const iframe of iframes) iframe.style.pointerEvents = "none";
+    for (const iframe of iframes) {
+      iframe.style.pointerEvents = "none";
+    }
 
     const onPointerMove = (e: PointerEvent) => {
       // Dragging left = wider (panel is right-aligned)
@@ -162,7 +166,9 @@ export function ResizablePanel({
 
     const onPointerUp = () => {
       target.releasePointerCapture(e.pointerId);
-      for (const iframe of iframes) iframe.style.pointerEvents = "";
+      for (const iframe of iframes) {
+        iframe.style.pointerEvents = "";
+      }
       target.removeEventListener("pointermove", onPointerMove);
       target.removeEventListener("pointerup", onPointerUp);
       localStorage.setItem(WIDTH_KEY, String(widthRef.current));
@@ -222,7 +228,9 @@ function AiPromptCopy({
 
   function downloadPrompt(task: AiTask) {
     const text = getPrompt(task);
-    if (!text) return;
+    if (!text) {
+      return;
+    }
     const blob = new Blob([text], { type: "text/plain" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -290,7 +298,9 @@ function AiPromptCopy({
 
 function importAiResult(store: CaptionSessionManager): void {
   const raw = window.prompt("Paste AI result JSON");
-  if (!raw) return;
+  if (!raw) {
+    return;
+  }
   try {
     const result = parseAiResult(raw);
     switch (result.type) {
@@ -389,7 +399,9 @@ function SyncMenuItem({
           <DropdownMenuItem
             className="min-w-0 flex-1"
             onSelect={(e) => {
-              if (action.keepOpen) e.preventDefault();
+              if (action.keepOpen) {
+                e.preventDefault();
+              }
               action.run();
             }}
             {...testAttrs}
@@ -473,7 +485,9 @@ export function CaptionPanel(props: CaptionPanelProps) {
     queryKey: ["caption-session", youtubeId],
     queryFn: async () => {
       const session = await getSession(youtubeId);
-      if (!session) return null;
+      if (!session) {
+        return null;
+      }
       return new CaptionSessionManager({
         videoMeta: props.videoMeta,
         vssId1: session.vssId1,
@@ -884,14 +898,18 @@ function CaptionPanelContent({
 
   // --- Bookmark navigation ---
   function onPrevBookmark() {
-    if (!player || sortedBookmarks.length === 0) return;
+    if (!player || sortedBookmarks.length === 0) {
+      return;
+    }
     const time = player.getCurrentTime();
     const prev = sortedBookmarks.findLast((bm) => bm.timestamp < time - 1);
     goToBookmarkCaption(prev ?? sortedBookmarks[sortedBookmarks.length - 1]);
   }
 
   function onNextBookmark() {
-    if (!player || sortedBookmarks.length === 0) return;
+    if (!player || sortedBookmarks.length === 0) {
+      return;
+    }
     const time = player.getCurrentTime();
     const next = sortedBookmarks.find((bm) => bm.timestamp > time + 0.5);
     goToBookmarkCaption(next ?? sortedBookmarks[0]);
@@ -955,10 +973,14 @@ function CaptionPanelContent({
   }, [getSelection]);
 
   function onClickBookmark() {
-    if (!bookmarkSelection) return;
+    if (!bookmarkSelection) {
+      return;
+    }
     const rows = store.rows;
     const row = rows[bookmarkSelection.captionIndex];
-    if (!row) return;
+    if (!row) {
+      return;
+    }
     setIsCreating(true);
     store.createBookmarks([
       {
@@ -1142,7 +1164,9 @@ function ExtensionBookmarksList({
             data-bookmark-id={bm.id}
             className="flex cursor-pointer flex-col gap-1 border border-border p-2 hover:bg-muted"
             onClick={() => {
-              if (!player) return;
+              if (!player) {
+                return;
+              }
               player.seekTo(bm.timestamp);
               player.playVideo();
             }}
@@ -1268,7 +1292,9 @@ function CaptionViewer({
   }));
 
   useEffect(() => {
-    if (!player || rows.length === 0) return;
+    if (!player || rows.length === 0) {
+      return;
+    }
     let rafId: number;
 
     const loop = () => {

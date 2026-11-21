@@ -287,7 +287,9 @@ function mergeStats(merged: MergedCaption[], enCues: CaptionCue[]) {
   // Dropped cue2s: not assigned to any row
   const assignedCue2s = new Set<number>();
   for (const m of merged) {
-    for (const j of m.cue2Indices) assignedCue2s.add(j);
+    for (const j of m.cue2Indices) {
+      assignedCue2s.add(j);
+    }
   }
   const droppedCue2s = enCues.length - assignedCue2s.size;
 

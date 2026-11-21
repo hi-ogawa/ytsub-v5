@@ -75,7 +75,9 @@ export async function seedChromeStorage(
   data: Record<string, unknown>,
 ) {
   let [sw] = context.serviceWorkers();
-  if (!sw) sw = await context.waitForEvent("serviceworker");
+  if (!sw) {
+    sw = await context.waitForEvent("serviceworker");
+  }
   await sw.evaluate((items) => chrome.storage.local.set(items), data);
 }
 
