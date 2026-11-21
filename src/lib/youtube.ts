@@ -390,3 +390,7 @@ export function pickBestTrack(
   );
   return bestOfKind(prefix);
 }
+
+export function langFromVssId(vssId: string): string {
+  return vssId.split(".").pop()!;
+}
