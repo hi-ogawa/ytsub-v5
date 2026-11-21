@@ -18,10 +18,11 @@ const storage = idbCaptionStorage;
 const LEGACY_INDEX_KEY = "zamak:video-index";
 
 const handlers: Record<BridgeMethod, (...params: any[]) => Promise<unknown>> = {
-  getSession: storage.getSession,
-  saveSession: storage.saveSession,
-  setSyncedAt: storage.setSyncedAt,
-  listIndex: storage.listIndex,
+  getSession: (youtubeId) => storage.getSession(youtubeId),
+  saveSession: (session, options) => storage.saveSession(session, options),
+  setSyncedAt: (youtubeId, serverUpdatedAt) =>
+    storage.setSyncedAt(youtubeId, serverUpdatedAt),
+  listIndex: () => storage.listIndex(),
   async importLegacy(source: string, data: LegacyData) {
     const extensionIndex =
       (await chromeStorage.get<VideoIndexEntry[]>(LEGACY_INDEX_KEY)) ?? [];
@@ -30,7 +31,7 @@ const handlers: Record<BridgeMethod, (...params: any[]) => Promise<unknown>> = {
       index: mergeLegacyIndexes(data.index, extensionIndex),
     });
   },
-  isLegacyImported: storage.isLegacyImported,
+  isLegacyImported: (source) => storage.isLegacyImported(source),
 };
 
 function mergeLegacyIndexes(a: VideoIndexEntry[], b: VideoIndexEntry[]) {
