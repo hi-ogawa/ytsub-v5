@@ -152,7 +152,7 @@ Without subagents, read a few sheets per turn yourself.
 Turn the reads into captions:
 
 - Each caption takes its text from the reads, and its begin and end from the run it was read in.
-- Take its position from the masks: the region's `box` at that step, or the `clusters_b` or `clusters_o` box that overlaps the reader's box. Convert the reader's box to the frame with its sheet's printed `scale` and `origin`: divide by the scale, then add the origin.
+- Take its position from the reader's box, converted to the frame with its sheet's printed `scale` and `origin`: divide by the scale, then add the origin. The mask boxes can't stand in for it, because on busy scenes they stretch over scenery that passes for letters, and `position` only needs to show where the caption is.
 - Identical text read in neighboring runs becomes one caption.
 - A caption with `omitted` keeps its run's time and position like any other, and neighboring ones with the same reason in the same place become one.
 
@@ -209,6 +209,6 @@ The scripts find letters with two masks, because each caption style needs its ow
 | `scene`                                                                                                      |                 | change across the whole frame. A spike means a camera cut.                                                                      |
 | `clusters_o`, `clusters_b`                                                                                   | each            | a list of `[x, y, w, h]`, one box per group of letters, which shows positions and how many captions are on screen               |
 | `letters_<region>`, `kept_<region>`, `kept_1s_<region>`, `kept_2s_<region>`, `gone_<region>`, `new_<region>` | `--region-mask` | the same features inside a region given with `--region`                                                                         |
-| `box_<region>`                                                                                               | `--region-mask` | the box around the letters in the region, the caption's position                                                                |
+| `box_<region>`                                                                                               | `--region-mask` | the box around the letters in the region                                                                                        |
 
 A step leaves out a key that has no value, such as `kept` on the first step, or `box_<region>` when the region has no letters. Compare the masks yourself when one may be fooled by scenery, and track a cluster's box across steps to see how long it holds.
