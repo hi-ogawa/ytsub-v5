@@ -14,18 +14,14 @@ const INDEX = "video-index";
 class IdbCaptionStorage implements CaptionStorage {
   listeners = new Set<StorageListener>();
 
-  async getSession(youtubeId: string) {
-    return withTransaction([SESSIONS], "readonly", (tx) =>
+  getSession: CaptionStorage["getSession"] = (youtubeId) =>
+    withTransaction([SESSIONS], "readonly", (tx) =>
       requestResult<PersistedCaptionSession | undefined>(
         tx.objectStore(SESSIONS).get(youtubeId),
       ),
     );
-  }
 
-  async saveSession(
-    session: PersistedCaptionSession,
-    options?: { forceIndex?: boolean },
-  ) {
+  saveSession: CaptionStorage["saveSession"] = async (session, options) => {
     const entries = await withTransaction(
       [SESSIONS, INDEX],
       "readwrite",
@@ -53,9 +49,9 @@ class IdbCaptionStorage implements CaptionStorage {
     if (entries) {
       this.notify({ type: "index", entries });
     }
-  }
+  };
 
-  async deleteVideo(youtubeId: string) {
+  deleteVideo: CaptionStorage["deleteVideo"] = async (youtubeId) => {
     const entries = await withTransaction(
       [SESSIONS, INDEX],
       "readwrite",
@@ -68,9 +64,12 @@ class IdbCaptionStorage implements CaptionStorage {
       },
     );
     this.notify({ type: "index", entries });
-  }
+  };
 
-  async setSyncedAt(youtubeId: string, serverUpdatedAt: string) {
+  setSyncedAt: CaptionStorage["setSyncedAt"] = async (
+    youtubeId,
+    serverUpdatedAt,
+  ) => {
     const entries = await withTransaction([INDEX], "readwrite", async (tx) => {
       const index = tx.objectStore(INDEX);
       const existing = await requestResult<VideoIndexEntry | undefined>(
@@ -86,20 +85,19 @@ class IdbCaptionStorage implements CaptionStorage {
       return await requestResult<VideoIndexEntry[]>(index.getAll());
     });
     this.notify({ type: "index", entries });
-  }
+  };
 
-  async listIndex() {
-    return withTransaction([INDEX], "readonly", (tx) =>
+  listIndex: CaptionStorage["listIndex"] = () =>
+    withTransaction([INDEX], "readonly", (tx) =>
       requestResult<VideoIndexEntry[]>(tx.objectStore(INDEX).getAll()),
     );
-  }
 
-  subscribe(listener: StorageListener) {
+  subscribe: CaptionStorage["subscribe"] = (listener) => {
     this.listeners.add(listener);
     return () => {
       this.listeners.delete(listener);
     };
-  }
+  };
 
   notify(notice: StorageNotice) {
     for (const l of this.listeners) {
