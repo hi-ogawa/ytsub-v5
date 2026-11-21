@@ -23,6 +23,10 @@ export interface YouTubeCaptionTrack {
   vssId: string;
 }
 
+export function langFromVssId(vssId: string): string {
+  return vssId.split(".").pop()!;
+}
+
 export interface YouTubeExtractionResult {
   video: YouTubeVideoData;
   captionTracks: YouTubeCaptionTrack[];
@@ -389,8 +393,4 @@ export function pickBestTrack(
     (t) => t.languageCode === base || t.languageCode.startsWith(base + "-"),
   );
   return bestOfKind(prefix);
-}
-
-export function langFromVssId(vssId: string): string {
-  return vssId.split(".").pop()!;
 }
