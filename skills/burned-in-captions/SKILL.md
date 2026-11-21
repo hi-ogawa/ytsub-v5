@@ -26,12 +26,12 @@ The commands below shorten this to `uv run scripts/...`. Outputs go to the folde
   "begin": 12.5,
   "end": 14.25,
   "text": "진짜 몰랐어요??",
-  "kind": "transcript",
+  "kind": "speech",
   "position": [470, 600, 340, 58]
 }
 ```
 
-- `kind` is `transcript` or `editorial`, by whether the editor added meaning, not by the caption's frame. A `transcript` caption renders what happens in the scene, such as speech, sounds, and actions. An `editorial` caption is content the editor added, such as comments and cards. Text filmed in the scene, such as signs and menus, isn't a caption, so leave it out.
+- `kind` is `speech` for words someone says, and `other` for anything else the editor put on screen, whatever its frame. Text filmed in the scene, such as signs, isn't a caption, so leave it out.
 - `position` is the caption's box `[x, y, w, h]` in the 1280×720 frame.
 - `text` is exactly what the picture shows, including nonstandard spelling, censored words such as ㅅㄲ, and spelled-out laughter.
 
@@ -106,7 +106,7 @@ This tiles the frames into sheets of 20 full frames at 480×270, about 3,400 ima
 
 Give the sheets to reader subagents, about 8 sheets each, because most of a reader's tokens are its own overhead. Use the strongest model available: a cheaper one added a fluent ending that wasn't on screen. Give each reader the ASR for its time range if you have it, with this instruction:
 
-> Transcribe every caption in each frame exactly as shown, including nonstandard spelling, censored words, spelled-out laughter, and emoticons such as ㅠㅠ. The ASR is there to help you understand what is said. Where a caption differs from it, write what is on screen, never the ASR's words or standard Korean. Mark unclear or partial text with `[?]`. Tag each caption by whether the editor added meaning, not by its frame: `transcript` renders what happens in the scene, such as speech, sounds, and actions, and `editorial` is content the editor added, such as comments and cards. Skip text filmed in the scene, such as signs and menus. Return a JSON list with one entry per tile, including tiles with no caption: `{"t": <time>, "captions": [{"text": ..., "box": [x, y, w, h], "kind": "transcript" | "editorial"}]}`, with boxes in the tile's 480×270 pixels.
+> Transcribe every caption in each frame exactly as shown, including nonstandard spelling, censored words, spelled-out laughter, and emoticons such as ㅠㅠ. The ASR is there to help you understand what is said. Where a caption differs from it, write what is on screen, never the ASR's words or standard Korean. Mark unclear or partial text with `[?]`. Tag each caption `speech` if it is words someone says, and `other` for anything else the editor put on screen. Skip text filmed in the scene, such as signs. Return a JSON list with one entry per tile, including tiles with no caption: `{"t": <time>, "captions": [{"text": ..., "box": [x, y, w, h], "kind": "speech" | "other"}]}`, with boxes in the tile's 480×270 pixels.
 
 Without subagents, read a few sheets per turn yourself.
 
