@@ -171,7 +171,7 @@ Ask for more frames where something is off:
 - an ASR line, or a cue of another subtitle track such as `en`, that no caption matches in time, on a show whose captions follow the speech
 - readers who disagree on a caption's text
 
-Stop when a round of corrections finds little that's new, instead of chasing each doubt. Keep every doubt in `doubts.json` with its time range and a one-line reason, both the ones that remain and the ones you settled, such as omitted ranges, judgments on reads, `kind` calls, and corrections. A later [review](references/review.md) of the run starts from this file, because a prose report loses the time ranges. Your report summarizes it.
+Stop when a round of corrections finds little that's new, and list the doubts that remain in your report instead of chasing each one. The report also lists each omitted range, each judgment, and each correction, with its time and its reason, so that a later [review](references/review.md) can find them.
 
 For small or unclear text, crop the frames to the caption's area. With `--crop`, `frames.py` tiles only that box, at a scale of 0.75 unless `--scale` says otherwise:
 
