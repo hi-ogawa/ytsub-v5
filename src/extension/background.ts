@@ -1,7 +1,7 @@
 // Background service worker. docs/extension-runtime.md explains its role.
 
-import { idbCaptionStorage } from "../lib/caption-db.ts";
 import { sessionToExportData } from "../lib/caption-session.ts";
+import { idbCaptionStorage } from "../lib/caption-storage-idb.ts";
 import { captionStorage, initCaptionStorage } from "../lib/caption-storage.ts";
 import { serverSessionToLocal } from "../lib/sync.ts";
 import { orpc, setRpcConfig } from "../rpc.ts";

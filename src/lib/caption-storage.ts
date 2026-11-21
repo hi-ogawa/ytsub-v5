@@ -1,6 +1,6 @@
 import type { MergeStrategy, MergedCaption } from "./caption-merge.ts";
 import type { ExtensionBookmark } from "./extension-bookmarks.ts";
-import { type VideoIndexEntry, videoIndexStore } from "./video-index.ts";
+import { createExternalStore } from "./external-store.ts";
 
 export interface PersistedCaptionSession {
   youtubeId: string;
@@ -16,6 +16,18 @@ export interface PersistedCaptionSession {
   captions: MergedCaption[];
   bookmarks: ExtensionBookmark[];
 }
+
+export type VideoIndexEntry = {
+  youtubeId: string;
+  title: string;
+  channelName: string;
+  bookmarkCount: number;
+  updatedAt: string;
+  // Local clock, compared with updatedAt
+  syncedAt?: string;
+  // Server clock, the server's updatedAt at the last push or pull
+  syncedServerUpdatedAt?: string;
+};
 
 export type StorageNotice = { type: "index"; entries: VideoIndexEntry[] };
 
@@ -47,6 +59,10 @@ export interface CaptionStorage {
 // with the extension frame bridge, every other context with IndexedDB on its
 // own origin.
 export let captionStorage: CaptionStorage;
+
+// In-memory copy of the stored index, for components that read it as they
+// render.
+export const videoIndexStore = createExternalStore<VideoIndexEntry[]>([]);
 
 export function initCaptionStorage(storage: CaptionStorage) {
   captionStorage = storage;

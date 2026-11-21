@@ -27,17 +27,18 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "../components/ui/dropdown-menu.tsx";
-import { idbCaptionStorage } from "../lib/caption-db.ts";
+import { idbCaptionStorage } from "../lib/caption-storage-idb.ts";
 import {
   captionStorage,
   initCaptionStorage,
   loadVideoIndex,
+  type VideoIndexEntry,
+  videoIndexStore,
 } from "../lib/caption-storage.ts";
 import { useStore } from "../lib/external-store.ts";
 import { createAppQueryClient } from "../lib/query-client.ts";
 import { type VideoSyncEntry, useVideoSync } from "../lib/sync.ts";
 import { useTheme } from "../lib/theme.ts";
-import { type VideoIndexEntry, videoIndexStore } from "../lib/video-index.ts";
 import { orpc, setRpcConfig } from "../rpc.ts";
 import { chromeStorage } from "./lib/chrome-storage.ts";
 import { getServerUrl } from "./lib/server-url.ts";
@@ -316,6 +317,7 @@ let serverUrl = "";
 
 async function main() {
   initCaptionStorage(idbCaptionStorage);
+  await loadVideoIndex();
   serverUrl = await getServerUrl();
 
   // Configure RPC to use extension server URL + bearer token auth
@@ -333,8 +335,6 @@ async function main() {
       return fetch(request);
     },
   });
-
-  await loadVideoIndex();
 
   createRoot(document.getElementById("root")!).render(
     <StrictMode>
