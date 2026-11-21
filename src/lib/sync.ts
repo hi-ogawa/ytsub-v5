@@ -1,6 +1,6 @@
 import type { InferRouterOutputs } from "@orpc/server";
-import { useMutation, useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { orpc } from "../rpc.ts";
 import type { Router } from "../server/rpc.ts";
@@ -96,6 +96,30 @@ export type SyncStatus = {
 
 export type UseSync = (youtubeId: string) => SyncStatus;
 
+export function useIndexEntry(youtubeId: string) {
+  const queryClient = useQueryClient();
+  const query = useQuery({
+    queryKey: ["index-entry", youtubeId],
+    // React Query rejects undefined data.
+    queryFn: async () =>
+      (await captionStorage.getIndexEntry(youtubeId)) ?? null,
+  });
+
+  useEffect(
+    () =>
+      captionStorage.subscribe((notice) => {
+        if (notice.type === "index") {
+          queryClient.invalidateQueries({
+            queryKey: ["index-entry", youtubeId],
+          });
+        }
+      }),
+    [queryClient, youtubeId],
+  );
+
+  return query;
+}
+
 export function useSyncState({
   youtubeId,
   onNavigate,
@@ -103,7 +127,7 @@ export function useSyncState({
   youtubeId: string;
   onNavigate: () => void;
 }): SyncStatus {
-  const [videoIndex] = useStore(videoIndexStore);
+  const entryQuery = useIndexEntry(youtubeId);
 
   const authQuery = useQuery(orpc.auth.check.queryOptions());
   const authenticated = authQuery.data?.authenticated === true;
@@ -160,7 +184,10 @@ export function useSyncState({
     if (serverQuery.isError) {
       return "error";
     }
-    const localEntry = videoIndex.find((e) => e.youtubeId === youtubeId);
+    if (entryQuery.isPending) {
+      return "checking";
+    }
+    const localEntry = entryQuery.data ?? undefined;
     return computeSyncState({
       localUpdatedAt: localEntry?.updatedAt,
       syncedAt: localEntry?.syncedAt,

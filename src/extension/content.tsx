@@ -15,17 +15,12 @@ import {
 import { PortalContainerProvider } from "../components/ui/portal-container.tsx";
 import type { YTPlayer } from "../components/youtube-player.tsx";
 import type { CaptionSessionManager } from "../lib/caption-session.ts";
-import {
-  captionStorage,
-  initCaptionStorage,
-  loadVideoIndex,
-  videoIndexStore,
-} from "../lib/caption-storage.ts";
-import { useStore } from "../lib/external-store.ts";
+import { captionStorage, initCaptionStorage } from "../lib/caption-storage.ts";
 import {
   type SyncState,
   type SyncStatus,
   computeSyncState,
+  useIndexEntry,
 } from "../lib/sync.ts";
 import type { YouTubeExtractionResult } from "../lib/youtube.ts";
 import { fetchPlayerApi, fetchTrackJson3 } from "../lib/youtube.ts";
@@ -37,20 +32,19 @@ import { readYouTubeLegacyData } from "./lib/youtube-legacy-data.ts";
 
 const bgRpc = createRuntimeRelayRpc<typeof bgRpcHandlers>();
 
-// Copies youtube.com data into extension storage once, then loads the index.
-let storageReady: Promise<void> | undefined;
+// Copies youtube.com data into extension storage once.
+let migration: Promise<void> | undefined;
 
-function prepareStorage() {
-  storageReady ??= (async () => {
+function migrateYouTubeData() {
+  migration ??= (async () => {
     if (!(await captionStorage.isLegacyImported("youtube"))) {
       await captionStorage.importLegacy(
         "youtube",
         await readYouTubeLegacyData(),
       );
     }
-    await loadVideoIndex();
   })();
-  return storageReady;
+  return migration;
 }
 
 declare const __BUILD_TIME__: string;
@@ -122,16 +116,16 @@ function ExtensionViewer({ videoId }: { videoId: string }) {
     queryKey: ["extension-metadata", videoId],
     queryFn: () => fetchPlayerApi({ videoId, userLangs: getUserLangs() }),
   });
-  // The panel reads the index synchronously, so it waits for the first load.
-  const storageQuery = useQuery({
-    queryKey: ["extension-storage"],
-    queryFn: () => prepareStorage().then(() => true),
+  // The panel reads its session, which the move may still be copying.
+  const migrationQuery = useQuery({
+    queryKey: ["youtube-migration"],
+    queryFn: () => migrateYouTubeData().then(() => true),
     staleTime: Infinity,
     retry: false,
   });
   const { data } = metadataQuery;
-  const isLoading = metadataQuery.isLoading || storageQuery.isLoading;
-  const error = metadataQuery.error ?? storageQuery.error;
+  const isLoading = metadataQuery.isLoading || migrationQuery.isLoading;
+  const error = metadataQuery.error ?? migrationQuery.error;
 
   if (isLoading) {
     return (
@@ -161,7 +155,7 @@ type SyncAction =
   | { direction: "pull"; store: CaptionSessionManager };
 
 function useExtensionSync(youtubeId: string): SyncStatus {
-  const [videoIndex] = useStore(videoIndexStore);
+  const entryQuery = useIndexEntry(youtubeId);
 
   const serverQuery = useQuery({
     queryKey: ["extension-sync-state", youtubeId],
@@ -203,7 +197,10 @@ function useExtensionSync(youtubeId: string): SyncStatus {
     if (!serverQuery.data.authenticated) {
       return "unauthenticated";
     }
-    const localEntry = videoIndex.find((e) => e.youtubeId === youtubeId);
+    if (entryQuery.isPending) {
+      return "checking";
+    }
+    const localEntry = entryQuery.data ?? undefined;
     return computeSyncState({
       localUpdatedAt: localEntry?.updatedAt,
       syncedAt: localEntry?.syncedAt,
@@ -311,7 +308,7 @@ function inject() {
     return;
   }
 
-  prepareStorage().catch(() => {});
+  migrateYouTubeData().catch(() => {});
 
   // Create shadow root for style isolation.
   // Inline styles here because `all: initial` resets everything and
