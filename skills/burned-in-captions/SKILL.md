@@ -63,6 +63,8 @@ yt-dlp -f 247 --download-sections '*600-780' --force-keyframes-at-cuts -o 'video
 
 The file starts at 0 s, so add the section's start to every time the scripts print or take. `--force-keyframes-at-cuts` makes the cut land exactly on the start, which a plain cut misses by up to a few seconds.
 
+If the caller didn't pass the subtitle tracks, fetch them as [Fetch and Assess](../zamak/references/generate-import-json.md#fetch-and-assess) describes, because planning checks against them.
+
 Look at one sheet of 20 frames spread across the whole video:
 
 ```bash
