@@ -117,8 +117,11 @@ After fetching and parsing, determine which scenario applies:
 | D: Ko auto only | auto      | —         | Fix ko text, then LLM translate                     |
 | E: Neither      | —         | —         | Stop                                                |
 | F: Lyrics + En  | lyrics    | manual    | Pair lyric lines with en cues, audit en             |
+| G: Burned-in    | picture   | either    | Captions are the ko text where they render speech   |
 
 For a song with official lyrics, use Scenario F even when a Korean track exists, because fixing auto-generated lyrics only guesses at what the lyrics already say. If auto-generated quality looks unsalvageable and there are no official lyrics, flag it, because a different video may be the better choice.
+
+When the user asks to use the captions burned into the picture, read them with the [burned-in captions skill](../../burned-in-captions/SKILL.md) and use Scenario G, because the picture is a Korean source that the ASR is not.
 
 ## Produce captions.json
 
@@ -175,6 +178,18 @@ jq --slurpfile k ko-lines.json \
 When the counts differ, the description usually leaves out a repeated chorus line that the translator heard. Find it through `ja` and fill it in from the matching chorus, and tell the person running the task to check that spot by ear.
 
 The translators worked from the Korean and can misread it, so audit `text2` as in Scenario A. For example, both tracks of one song translated 우리 서로의 이름을 묻어요 as "let's ask each other's names", but "ask" would conjugate as 물어요, so 묻어요 means "bury". English can also reorder a few lines, so that one cue's English belongs to its neighbor's Korean. Rewrite `text2` for those rows, or merge them.
+
+### Use Burned-In Captions (Scenario G)
+
+The burned-in captions skill returns the captions as the viewer sees them, with their times, each tagged `transcript` or `editorial`. Where a `transcript` caption renders a spoken line, use its text as that line's Korean, because the ASR is the weaker source. Fix the other lines from the ASR as usual. An `editorial` caption becomes a row of its own, because it is written-register Korean that a learner can pick, and only the picture has it.
+
+When captions become rows:
+
+- Write sound and mimetic captions in brackets, such as `[짝짝짝]` and `[쭈뼛쭈뼛]`, so they don't read as spoken lines.
+- Drop a caption that is only laughter, a reaction emoji, or a music mark. Laughter inside a spoken line stays.
+- Collapse exact repeats into one row.
+
+Continue as in Scenario B when there is a manual English track, or as in Scenario D when there isn't, which translates each row into English for `text2`.
 
 ### Output Format
 

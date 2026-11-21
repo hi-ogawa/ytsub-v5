@@ -37,7 +37,7 @@ The commands below shorten this to `uv run scripts/...`. Outputs go to the folde
 
 ## Read the Picture
 
-Transcribe the picture, not the speech. Where a caption differs from the ASR, keep the caption's text exactly, and flag the difference instead of resolving it. Captions are worth reading because they differ: editors spell things their own way, censor swears, and fix what the ASR misheard. Never adjust a caption toward the ASR, or toward standard Korean.
+Transcribe the picture, not the speech. Where a caption differs from the ASR, keep the caption's text exactly. Captions are worth reading because they differ: editors spell things their own way, censor swears, and fix what the ASR misheard. Never adjust a caption toward the ASR, or toward standard Korean.
 
 Use any context that helps, such as the ASR's line timings to find caption changes, or a word the ASR heard to make out a small or blurred caption. A reader that had the ASR kept every caption that differed from it, and got one right that a reader without it misread.
 
@@ -137,24 +137,6 @@ If a channel record is available, add anything new about the channel to it: its 
 ## Reading Ranges Again
 
 A caller can pass time ranges where it suspects a miss, such as Fix & Align ASR passing the times of ASR lines that no caption matches. Read every other step in each range, and add the new captions to the track.
-
-## Using the Track
-
-How to use the track depends on how closely its `transcript` captions follow the speech. With the ASR, measure the share of ASR lines that a caption matches in time and text, or take it from the channel record, if one is available, and report it with the track.
-
-- **Near-verbatim captions,** as on a talk show whose captions follow the speech, can be the Korean text and its segmentation. The ASR covers the lines the captions skip.
-- **Mostly editorial captions,** as on a vlog with mostly editor comments, leave the ASR as the Korean text. Their `transcript` captions are evidence for fixing it, the way an official track in another language is.
-
-Where a caption and the ASR differ, the caption wins, because it is what the viewer sees, and the ASR is the weaker source.
-
-When the track becomes caption rows, such as in Fix & Align ASR in the Zamak skill:
-
-- Both kinds become rows, and nothing is dropped by kind. Editorial text is written-register Korean that a learner can pick, and only the picture has it, because the ASR doesn't contain it and a translation track can't recover its Korean.
-- Write sound and mimetic captions in brackets, such as `[짝짝짝]` and `[쭈뼛쭈뼛]`, so they don't read as spoken lines.
-- Drop a caption that is only laughter, a reaction emoji, or a music mark. Laughter inside a spoken line stays.
-- Collapse exact repeats into one row.
-
-For Fix & Align ASR, the rest of the task runs as usual.
 
 ## Features
 
