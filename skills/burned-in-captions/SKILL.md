@@ -26,12 +26,12 @@ The commands below shorten this to `uv run scripts/...`. Outputs go to the folde
   "begin": 12.5,
   "end": 14.25,
   "text": "진짜 몰랐어요??",
-  "kind": "transcript",
+  "kind": "speech",
   "position": [470, 600, 340, 58]
 }
 ```
 
-- `kind` is `transcript` or `editorial`, by whether the editor added meaning, not by the caption's frame. A `transcript` caption renders what happens in the scene, such as speech, sounds, and actions. An `editorial` caption is content the editor added, in any frame, such as caption-style comments, cards, titles, banners, name cards, and sponsor copy. Text filmed in the scene, such as signs and menus, isn't a caption, so leave it out.
+- `kind` is `speech`, `commentary` (editor comments, often in brackets), or `label` (name cards and titles).
 - `position` is the caption's box `[x, y, w, h]` in the 1280×720 frame.
 - `text` is exactly what the picture shows, including nonstandard spelling, censored words such as ㅅㄲ, and spelled-out laughter.
 
@@ -106,7 +106,7 @@ This tiles the frames into sheets of 20 full frames at 480×270, about 3,400 ima
 
 Give the sheets to reader subagents, about 8 sheets each, because most of a reader's tokens are its own overhead. Use the strongest model available: a cheaper one added a fluent ending that wasn't on screen. Give each reader the ASR for its time range if you have it, with this instruction:
 
-> Transcribe every caption in each frame exactly as shown, including nonstandard spelling, censored words, spelled-out laughter, and emoticons such as ㅠㅠ. The ASR is there to help you understand what is said. Where a caption differs from it, write what is on screen, never the ASR's words or standard Korean. Mark unclear or partial text with `[?]`. Tag each caption by whether the editor added meaning, not by its frame: `transcript` renders what happens in the scene, such as speech, sounds, and actions, and `editorial` is content the editor added, such as comments, cards, titles, banners, name cards, and sponsor copy. Skip text filmed in the scene, such as signs and menus. Return a JSON list with one entry per tile, including tiles with no caption: `{"t": <time>, "captions": [{"text": ..., "box": [x, y, w, h], "kind": "transcript" | "editorial"}]}`, with boxes in the tile's 480×270 pixels.
+> Transcribe every caption in each frame exactly as shown, including nonstandard spelling, censored words, spelled-out laughter, and emoticons such as ㅠㅠ. The ASR is there to help you understand what is said. Where a caption differs from it, write what is on screen, never the ASR's words or standard Korean. Mark unclear or partial text with `[?]`. Return a JSON list with one entry per tile, including tiles with no caption: `{"t": <time>, "captions": [{"text": ..., "box": [x, y, w, h], "kind": "speech" | "commentary" | "label"}]}`, with boxes in the tile's 480×270 pixels.
 
 Without subagents, read a few sheets per turn yourself.
 
@@ -140,21 +140,12 @@ A caller can pass time ranges where it suspects a miss, such as Fix & Align ASR 
 
 ## Using the Track
 
-How to use the track depends on how closely its `transcript` captions follow the speech. With the ASR, measure the share of ASR lines that a caption matches in time and text, or take it from the channel record, if one is available, and report it with the track.
+How to use the track depends on how closely the captions follow the speech. With the ASR, measure the share of ASR lines that a caption matches in time and text, or take it from the channel record, if one is available, and report it with the track.
 
 - **Near-verbatim captions,** as on a talk show whose captions follow the speech, can be the Korean text and its segmentation. The ASR covers the lines the captions skip.
-- **Mostly editorial captions,** as on a vlog with mostly editor comments, leave the ASR as the Korean text. Their `transcript` captions are evidence for fixing it, the way an official track in another language is.
+- **Commentary-heavy captions,** as on a vlog with mostly editor comments, are evidence for fixing the ASR, the way an official track in another language is.
 
-Where a caption and the ASR differ, the caption wins, because it is what the viewer sees, and the ASR is the weaker source.
-
-When the track becomes caption rows, such as in Fix & Align ASR in the Zamak skill:
-
-- Both kinds become rows, and nothing is dropped by kind. Editorial text is written-register Korean that a learner can pick, and only the picture has it, because the ASR doesn't contain it and a translation track can't recover its Korean.
-- Write sound and mimetic captions in brackets, such as `[짝짝짝]` and `[쭈뼛쭈뼛]`, so they don't read as spoken lines.
-- Drop a caption that is only laughter, a reaction emoji, or a music mark. Laughter inside a spoken line stays.
-- Collapse exact repeats into one row.
-
-For Fix & Align ASR, the rest of the task runs as usual.
+Where a caption and the ASR differ, the caption wins, because it is what the viewer sees, and the ASR is the weaker source. For Fix & Align ASR in the Zamak skill, the track is one more source for its rows, and the rest of that task runs as usual.
 
 ## Features
 
