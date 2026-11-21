@@ -36,10 +36,6 @@ function main() {
 }
 
 function mountOverlay(videoId: string) {
-  function useSync(youtubeId: string) {
-    return useExtensionSync({ bgRpc, youtubeId });
-  }
-
   const { host, container } = createShadowHost({
     id: "zamak-host",
     css: contentCss,
@@ -62,7 +58,10 @@ function mountOverlay(videoId: string) {
     <StrictMode>
       <PortalContainerProvider value={container}>
         <QueryClientProvider client={queryClient}>
-          <CaptionOverlay videoId={videoId} useSync={useSync} />
+          <CaptionOverlay
+            videoId={videoId}
+            useSync={(youtubeId) => useExtensionSync({ bgRpc, youtubeId })}
+          />
         </QueryClientProvider>
       </PortalContainerProvider>
     </StrictMode>,
