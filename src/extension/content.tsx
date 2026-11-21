@@ -26,9 +26,7 @@ const queryClient = new QueryClient({
   },
 });
 
-const useSync = createUseExtensionSync(
-  createRuntimeRelayRpc<typeof bgRpcHandlers>(),
-);
+const bgRpc = createRuntimeRelayRpc<typeof bgRpcHandlers>();
 
 function main() {
   console.log(`[zamak] build: ${__BUILD_TIME__} (${__GIT_REV__})`);
@@ -38,6 +36,8 @@ function main() {
 }
 
 function mountOverlay(videoId: string) {
+  const useSync = createUseExtensionSync(bgRpc);
+
   const { host, container } = createShadowHost({
     id: "zamak-host",
     css: contentCss,
