@@ -1,4 +1,4 @@
-import { createTransact, type StoreMap } from "../utils/idb.ts";
+import { createTransact } from "../utils/idb.ts";
 import type {
   CaptionStorage,
   PersistedCaptionSession,
@@ -32,42 +32,62 @@ class IdbCaptionStorage implements CaptionStorage {
     session: PersistedCaptionSession,
     options?: { forceIndex?: boolean },
   ) {
-    await this.updateIndex(["sessions"], async ({ sessions, index }) => {
-      sessions.put(session);
-      const existing = await index.get(session.youtubeId);
-      if (!existing && !options?.forceIndex && !session.bookmarks.length) {
-        return false;
-      }
-      index.put({
-        youtubeId: session.youtubeId,
-        title: session.title,
-        channelName: session.channelName,
-        bookmarkCount: session.bookmarks.length,
-        updatedAt: new Date().toISOString(),
-        syncedAt: existing?.syncedAt,
-        syncedServerUpdatedAt: existing?.syncedServerUpdatedAt,
-      });
-    });
+    const entries = await transact(
+      ["sessions", "index"],
+      "readwrite",
+      async ({ sessions, index }) => {
+        sessions.put(session);
+        const existing = await index.get(session.youtubeId);
+        if (!existing && !options?.forceIndex && !session.bookmarks.length) {
+          return;
+        }
+        index.put({
+          youtubeId: session.youtubeId,
+          title: session.title,
+          channelName: session.channelName,
+          bookmarkCount: session.bookmarks.length,
+          updatedAt: new Date().toISOString(),
+          syncedAt: existing?.syncedAt,
+          syncedServerUpdatedAt: existing?.syncedServerUpdatedAt,
+        });
+        return index.getAll();
+      },
+    );
+    if (entries) {
+      this.notify({ type: "index", entries });
+    }
   }
 
   async deleteVideo(youtubeId: string) {
-    await this.updateIndex(["sessions"], async ({ sessions, index }) => {
-      sessions.delete(youtubeId);
-      index.delete(youtubeId);
-    });
+    const entries = await transact(
+      ["sessions", "index"],
+      "readwrite",
+      async ({ sessions, index }) => {
+        sessions.delete(youtubeId);
+        index.delete(youtubeId);
+        return index.getAll();
+      },
+    );
+    this.notify({ type: "index", entries });
   }
 
   async setSyncedAt(youtubeId: string, serverUpdatedAt: string) {
-    await this.updateIndex([], async ({ index }) => {
-      const existing = await index.get(youtubeId);
-      if (existing) {
-        index.put({
-          ...existing,
-          syncedAt: new Date().toISOString(),
-          syncedServerUpdatedAt: serverUpdatedAt,
-        });
-      }
-    });
+    const entries = await transact(
+      ["index"],
+      "readwrite",
+      async ({ index }) => {
+        const existing = await index.get(youtubeId);
+        if (existing) {
+          index.put({
+            ...existing,
+            syncedAt: new Date().toISOString(),
+            syncedServerUpdatedAt: serverUpdatedAt,
+          });
+        }
+        return index.getAll();
+      },
+    );
+    this.notify({ type: "index", entries });
   }
 
   async listIndex() {
@@ -79,28 +99,6 @@ class IdbCaptionStorage implements CaptionStorage {
     return () => {
       this.listeners.delete(listener);
     };
-  }
-
-  // Runs a write that may change the index, then notifies listeners with the
-  // whole index read back in the same transaction. The write returns false to
-  // skip the notice.
-  async updateIndex<K extends keyof Stores>(
-    names: K[],
-    write: (stores: StoreMap<Stores, K | "index">) => Promise<void | false>,
-  ) {
-    const entries = await transact(
-      [...names, "index"],
-      "readwrite",
-      async (stores) => {
-        if ((await write(stores)) === false) {
-          return undefined;
-        }
-        return stores.index.getAll();
-      },
-    );
-    if (entries) {
-      this.notify({ type: "index", entries });
-    }
   }
 
   notify(notice: StorageNotice) {
