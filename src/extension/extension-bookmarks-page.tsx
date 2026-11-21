@@ -26,9 +26,13 @@ import { useTheme } from "../lib/theme.ts";
 import { orpc } from "../rpc.ts";
 import { chromeStorage } from "./lib/chrome-storage.ts";
 
-declare const __DEV_EXT__: boolean;
-
-export function ExtensionBookmarksPage({ serverUrl }: { serverUrl: string }) {
+export function ExtensionBookmarksPage({
+  serverUrl,
+  showAdvanced,
+}: {
+  serverUrl: string;
+  showAdvanced: boolean;
+}) {
   const [entries] = videoIndexStore.useValue("entries");
   const usernameQuery = useQuery(
     chromeStorage.queryOptions<string>("username"),
@@ -36,7 +40,7 @@ export function ExtensionBookmarksPage({ serverUrl }: { serverUrl: string }) {
   const { theme, cycle, Icon } = useTheme();
   const sync = useVideoSync();
   const [showLogin, setShowLogin] = useState(false);
-  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [advancedOpen, setAdvancedOpen] = useState(false);
   const deleteMutation = useMutation(
     orpc.videos.deleteVideo.mutationOptions({
       onSuccess: () => sync.refetch(),
@@ -105,9 +109,9 @@ export function ExtensionBookmarksPage({ serverUrl }: { serverUrl: string }) {
                 <Icon className="size-4" />
                 <span className="capitalize">{theme}</span>
               </DropdownMenuItem>
-              {__DEV_EXT__ && (
+              {showAdvanced && (
                 <DropdownMenuItem
-                  onSelect={() => setShowAdvanced(true)}
+                  onSelect={() => setAdvancedOpen(true)}
                   className="gap-2"
                 >
                   <Settings className="size-4" />
@@ -142,11 +146,11 @@ export function ExtensionBookmarksPage({ serverUrl }: { serverUrl: string }) {
           </DropdownMenu>
         </div>
       </header>
-      {__DEV_EXT__ && (
+      {showAdvanced && (
         <AdvancedDialog
           serverUrl={serverUrl}
-          open={showAdvanced}
-          onOpenChange={setShowAdvanced}
+          open={advancedOpen}
+          onOpenChange={setAdvancedOpen}
         />
       )}
       <LoginDialog

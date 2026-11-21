@@ -12,6 +12,8 @@ import { chromeStorage } from "./lib/chrome-storage.ts";
 import { getServerUrl } from "./lib/server-url.ts";
 import "../styles.css";
 
+declare const __DEV_EXT__: boolean;
+
 const queryClient = createAppQueryClient({
   defaultOptions: { queries: { refetchOnWindowFocus: false } },
 });
@@ -41,7 +43,10 @@ async function main() {
     <StrictMode>
       <MemoryRouter>
         <QueryClientProvider client={queryClient}>
-          <ExtensionBookmarksPage serverUrl={serverUrl} />
+          <ExtensionBookmarksPage
+            serverUrl={serverUrl}
+            showAdvanced={__DEV_EXT__}
+          />
           <Toaster position="top-right" richColors />
         </QueryClientProvider>
       </MemoryRouter>
