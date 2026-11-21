@@ -10,7 +10,7 @@ Many Korean variety shows, talk shows, and vlogs burn captions into the picture.
 You need a shell with `ffmpeg`, `uv`, and `yt-dlp`. Work in a folder of your own, outside this skill, and run the scripts with `uv run --project`, which takes their dependencies from this skill's `pyproject.toml`. With `S` set to this skill's folder:
 
 ```bash
-uv run --project $S $S/scripts/features.py video.webm > steps.csv
+uv run --project $S $S/scripts/features.py video.webm > steps.jsonl
 ```
 
 The commands below shorten this to `uv run scripts/...`. Outputs go to the folder you work in.
@@ -81,22 +81,30 @@ Decide whether the video has burned-in captions, and what style they are, such a
 ### 2. Compute features
 
 ```bash
-uv run scripts/features.py video.webm > steps.csv
+uv run scripts/features.py video.webm > steps.jsonl
 ```
 
-This writes one row per 0.25 s step, about 5,100 rows and 1.1 MB for a 21-minute video, in about 3 minutes. It also finds overlays that stay on screen most of the video, such as the channel logo, drops them from the masks, and writes their boxes to `static.json`. Pass `--start` and `--dur` in seconds for a window. The columns are in [Features](#features).
+This writes one JSON object per line for each 0.25 s step, about 5,100 lines and 2 MB for a 21-minute video, in about 3 minutes. It also finds overlays that stay on screen most of the video, such as the channel logo, drops them from the masks, and writes their boxes to `static.json`. Pass `--start` and `--dur` in seconds for a window. The keys are in [Features](#features).
 
-The whole-frame columns also see scenery, so on a busy channel every camera cut can look like a caption change. Where the captions keep to fixed areas, such as a bar at the bottom and zones at the sides, pass each area as a region, and the table gets the same features for the letters inside it:
+The whole-frame features also see scenery, so on a busy channel every camera cut can look like a caption change. Where the captions keep to fixed areas, such as a bar at the bottom and zones at the sides, pass each area as a region, and each step gets the same features for the letters inside it:
 
 ```bash
-uv run scripts/features.py video.webm --region bar=160,590,960,90 --region left=0,300,420,150 > steps.csv
+uv run scripts/features.py video.webm --region bar=160,590,960,90 --region left=0,300,420,150 > steps.jsonl
 ```
 
 Find the areas from the check sheet, or from where `clusters_b` or `clusters_o` boxes keep turning up in a run over a short window. Region features use the box mask by default, and `--region-mask o` switches to the outline mask for outlined captions.
 
 ### 3. Plan reads
 
-Load `steps.csv` and filter it with code, not row by row. Use the region columns where you have them. Look for steps where something changes, such as:
+Filter `steps.jsonl` with code, not line by line. Use `jq` for quick looks:
+
+```bash
+jq -c 'select(.kept_bar < 0.7 and .gone_bar > 500) | [.t, .kept_bar, .box_bar]' steps.jsonl
+```
+
+A missing key reads as `null` in `jq`, which compares below every number, so pair a `<` test with a test that a missing value fails, as `.gone_bar > 500` does here. Build runs with a Python script and the standard `json` module, because grouping change steps needs state across steps.
+
+Use the region keys where you have them. Look for steps where something changes, such as:
 
 - `kept` drops, a swap
 - `gone` and `new` spike while `scene` stays low, a swap in the same spot
@@ -184,7 +192,7 @@ The scripts find letters with two masks, because each caption style needs its ow
 - The outline mask (`_o`) wants dark within a few pixels. It fits outlined text, but on busy scenes it also picks up scenery.
 - The box mask (`_b`) wants at least 30% dark within 11 px. It fits text on a dark box, but loses outlined text on bright backgrounds.
 
-| Column                                                                                                       | Mask            | What it tells                                                                                                                   |
+| Key                                                                                                          | Mask            | What it tells                                                                                                                   |
 | ------------------------------------------------------------------------------------------------------------ | --------------- | ------------------------------------------------------------------------------------------------------------------------------- |
 | `t`                                                                                                          |                 | time in seconds                                                                                                                 |
 | `letters`                                                                                                    | each            | letter pixels, which say whether there is a caption and how much text                                                           |
@@ -193,8 +201,8 @@ The scripts find letters with two masks, because each caption style needs its ow
 | `kept_1s`, `kept_2s`                                                                                         | each            | the same against 1 s and 2 s back. A slow fall means a crossfade that `kept` misses. Both also fall for 1–2 s after every swap. |
 | `gone`, `new`                                                                                                | each            | letter pixels that left, and that arrived. Both high means a swap, only `new` means a reveal.                                   |
 | `scene`                                                                                                      |                 | change across the whole frame. A spike means a camera cut.                                                                      |
-| `clusters_o`, `clusters_b`                                                                                   | each            | a JSON list of `[x, y, w, h]`, one box per group of letters, which shows positions and how many captions are on screen          |
+| `clusters_o`, `clusters_b`                                                                                   | each            | a list of `[x, y, w, h]`, one box per group of letters, which shows positions and how many captions are on screen               |
 | `letters_<region>`, `kept_<region>`, `kept_1s_<region>`, `kept_2s_<region>`, `gone_<region>`, `new_<region>` | `--region-mask` | the same features inside a region given with `--region`                                                                         |
 | `box_<region>`                                                                                               | `--region-mask` | the box around the letters in the region, the caption's position                                                                |
 
-Compare the masks yourself when one may be fooled by scenery, and track a cluster's box across rows to see how long it holds.
+A step leaves out a key that has no value, such as `kept` on the first step, or `box_<region>` when the region has no letters. Compare the masks yourself when one may be fooled by scenery, and track a cluster's box across steps to see how long it holds.

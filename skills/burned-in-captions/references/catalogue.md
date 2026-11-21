@@ -1,6 +1,6 @@
 # Catalogue of Caption Patterns
 
-Each row pairs a feature signature with what it usually means. The signatures are rough, because they come from a few channels, so when the frames show something else, trust the frames. The column names are in [Features](../SKILL.md#features). With regions set, read `kept`, `gone`, and `new` as the region's columns, and a cluster as a region.
+Each row pairs a feature signature with what it usually means. The signatures are rough, because they come from a few channels, so when the frames show something else, trust the frames. The keys are in [Features](../SKILL.md#features). With regions set, read `kept`, `gone`, and `new` as the region's keys, and a cluster as a region.
 
 | Pattern                                  | Feature signature                                                                                                                                                                  | Usually means                                                                                                                       |
 | ---------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
