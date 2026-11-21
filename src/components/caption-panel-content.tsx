@@ -1,4 +1,4 @@
-import { Bookmark, ChevronLeft, ChevronRight, Loader2, X } from "lucide-react";
+import { Bookmark, ChevronLeft, ChevronRight, X } from "lucide-react";
 import {
   useEffect,
   useImperativeHandle,
@@ -8,17 +8,13 @@ import {
 } from "react";
 import type { MergedCaption } from "../lib/caption-merge.ts";
 import type { CaptionSessionManager } from "../lib/caption-session.ts";
-import {
-  type BookmarkSelection,
-  type ExtensionBookmark,
-  extractBookmarkSelection,
-} from "../lib/extension-bookmarks.ts";
-import { getSelectionAt } from "../utils/get-selection.ts";
+import type { ExtensionBookmark } from "../lib/extension-bookmarks.ts";
 import {
   type BookmarksListHandle,
   ExtensionBookmarksList,
 } from "./bookmarks-list.tsx";
 import { CaptionList, type CaptionListHandle } from "./caption-list.tsx";
+import { useBookmarkSelection } from "./use-bookmark-selection.ts";
 import type { YTPlayer } from "./youtube-player.tsx";
 
 export function CaptionPanelContent({
@@ -30,10 +26,7 @@ export function CaptionPanelContent({
   player?: YTPlayer;
   autoScroll: boolean;
 }) {
-  // --- Tab state ---
-  const [activeTab, setActiveTab] = useState<"captions" | "bookmarks">(
-    "captions",
-  );
+  const [activeTab, setActiveTab] = useState<Tab>("captions");
 
   const sortedBookmarks = useMemo(
     () =>
@@ -43,7 +36,6 @@ export function CaptionPanelContent({
     [store.bookmarks],
   );
 
-  // --- Bookmark navigation ---
   function onPrevBookmark() {
     if (!player || sortedBookmarks.length === 0) {
       return;
@@ -69,7 +61,6 @@ export function CaptionPanelContent({
     captionListRef.current?.showCaption(bookmark.captionIndex);
   }
 
-  // --- Cross-tab navigation ---
   const captionListRef = useRef<CaptionViewerHandle>(null);
   const bookmarksListRef = useRef<BookmarksListHandle>(null);
 
@@ -87,96 +78,18 @@ export function CaptionPanelContent({
     });
   }
 
-  // --- Bookmark selection ---
-  const [bookmarkSelection, setBookmarkSelection] =
-    useState<BookmarkSelection>();
-  const [isCreating, setIsCreating] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const handler = () => {
-      const sel = getSelectionAt(contentRef.current) ?? undefined;
-      setBookmarkSelection(sel ? extractBookmarkSelection(sel) : undefined);
-    };
-    document.addEventListener("selectionchange", handler);
-    return () => document.removeEventListener("selectionchange", handler);
-  }, []);
-
-  function onClickBookmark() {
-    if (!bookmarkSelection) {
-      return;
-    }
-    const rows = store.rows;
-    const row = rows[bookmarkSelection.captionIndex];
-    if (!row) {
-      return;
-    }
-    setIsCreating(true);
-    store.createBookmarks([
-      {
-        ...bookmarkSelection,
-        timestamp: row.begin,
-        context: bookmarkSelection.side === 0 ? row.text1 : row.text2,
-      },
-    ]);
-    getSelectionAt(contentRef.current)?.removeAllRanges();
-    setBookmarkSelection(undefined);
-    setIsCreating(false);
-  }
-
-  function onCancelBookmark() {
-    getSelectionAt(contentRef.current)?.removeAllRanges();
-    setBookmarkSelection(undefined);
-  }
+  const bookmarkSelection = useBookmarkSelection(contentRef, store);
 
   return (
     <div ref={contentRef} className="flex min-h-0 flex-[1_0_0] flex-col">
-      {/* Tab bar */}
-      <div className="flex flex-none items-center gap-1 border-b px-2 py-0.5 lg:py-1">
-        <button
-          className={[
-            "rounded px-2 py-0.5 text-sm",
-            activeTab === "captions"
-              ? "bg-muted font-medium"
-              : "text-muted-foreground hover:bg-muted",
-          ].join(" ")}
-          onClick={() => setActiveTab("captions")}
-        >
-          Captions
-        </button>
-        <button
-          className={[
-            "rounded px-2 py-0.5 text-sm",
-            activeTab === "bookmarks"
-              ? "bg-muted font-medium"
-              : "text-muted-foreground hover:bg-muted",
-          ].join(" ")}
-          onClick={() => setActiveTab("bookmarks")}
-        >
-          Bookmarks
-          {sortedBookmarks.length > 0 && ` (${sortedBookmarks.length})`}
-        </button>
-        <div className="ml-auto flex items-center gap-0.5">
-          <div className="flex gap-0.5">
-            <button
-              className={`rounded p-0.5 text-muted-foreground ${sortedBookmarks.length > 0 ? "hover:bg-muted" : "opacity-30"}`}
-              onClick={onPrevBookmark}
-              disabled={sortedBookmarks.length === 0}
-              title="Previous bookmark"
-            >
-              <ChevronLeft className="size-4" />
-            </button>
-            <button
-              className={`rounded p-0.5 text-muted-foreground ${sortedBookmarks.length > 0 ? "hover:bg-muted" : "opacity-30"}`}
-              onClick={onNextBookmark}
-              disabled={sortedBookmarks.length === 0}
-              title="Next bookmark"
-            >
-              <ChevronRight className="size-4" />
-            </button>
-          </div>
-        </div>
-      </div>
+      <TabBar
+        activeTab={activeTab}
+        bookmarkCount={sortedBookmarks.length}
+        onSelectTab={setActiveTab}
+        onPrevBookmark={onPrevBookmark}
+        onNextBookmark={onNextBookmark}
+      />
 
       <div className="relative flex min-h-0 flex-[1_0_0] flex-col">
         {/* Captions — hidden (not unmounted) to preserve scroll position */}
@@ -219,31 +132,104 @@ export function CaptionPanelContent({
           )}
         </div>
 
-        {/* Floating bookmark action buttons */}
-        {(bookmarkSelection || isCreating) && (
-          <div className="absolute bottom-2 right-2 flex gap-2">
-            <button
-              className="flex h-10 w-10 items-center justify-center rounded-full bg-muted shadow hover:bg-muted/80"
-              onClick={onCancelBookmark}
-              title="Cancel"
-            >
-              <X className="size-5" />
-            </button>
-            <button
-              className="flex h-10 w-10 items-center justify-center rounded-full bg-accent text-accent-foreground shadow hover:bg-accent/90"
-              onClick={onClickBookmark}
-              disabled={isCreating}
-              title="Create bookmark"
-            >
-              {isCreating ? (
-                <Loader2 className="size-5 animate-spin" />
-              ) : (
-                <Bookmark className="size-5 fill-current" />
-              )}
-            </button>
-          </div>
+        {bookmarkSelection.selection && (
+          <BookmarkActions
+            onCancel={bookmarkSelection.cancel}
+            onCreate={bookmarkSelection.create}
+          />
         )}
       </div>
+    </div>
+  );
+}
+
+type Tab = "captions" | "bookmarks";
+
+function TabBar({
+  activeTab,
+  bookmarkCount,
+  onSelectTab,
+  onPrevBookmark,
+  onNextBookmark,
+}: {
+  activeTab: Tab;
+  bookmarkCount: number;
+  onSelectTab: (tab: Tab) => void;
+  onPrevBookmark: () => void;
+  onNextBookmark: () => void;
+}) {
+  return (
+    <div className="flex flex-none items-center gap-1 border-b px-2 py-0.5 lg:py-1">
+      <button
+        className={[
+          "rounded px-2 py-0.5 text-sm",
+          activeTab === "captions"
+            ? "bg-muted font-medium"
+            : "text-muted-foreground hover:bg-muted",
+        ].join(" ")}
+        onClick={() => onSelectTab("captions")}
+      >
+        Captions
+      </button>
+      <button
+        className={[
+          "rounded px-2 py-0.5 text-sm",
+          activeTab === "bookmarks"
+            ? "bg-muted font-medium"
+            : "text-muted-foreground hover:bg-muted",
+        ].join(" ")}
+        onClick={() => onSelectTab("bookmarks")}
+      >
+        Bookmarks
+        {bookmarkCount > 0 && ` (${bookmarkCount})`}
+      </button>
+      <div className="ml-auto flex items-center gap-0.5">
+        <div className="flex gap-0.5">
+          <button
+            className={`rounded p-0.5 text-muted-foreground ${bookmarkCount > 0 ? "hover:bg-muted" : "opacity-30"}`}
+            onClick={onPrevBookmark}
+            disabled={bookmarkCount === 0}
+            title="Previous bookmark"
+          >
+            <ChevronLeft className="size-4" />
+          </button>
+          <button
+            className={`rounded p-0.5 text-muted-foreground ${bookmarkCount > 0 ? "hover:bg-muted" : "opacity-30"}`}
+            onClick={onNextBookmark}
+            disabled={bookmarkCount === 0}
+            title="Next bookmark"
+          >
+            <ChevronRight className="size-4" />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function BookmarkActions({
+  onCancel,
+  onCreate,
+}: {
+  onCancel: () => void;
+  onCreate: () => void;
+}) {
+  return (
+    <div className="absolute bottom-2 right-2 flex gap-2">
+      <button
+        className="flex h-10 w-10 items-center justify-center rounded-full bg-muted shadow hover:bg-muted/80"
+        onClick={onCancel}
+        title="Cancel"
+      >
+        <X className="size-5" />
+      </button>
+      <button
+        className="flex h-10 w-10 items-center justify-center rounded-full bg-accent text-accent-foreground shadow hover:bg-accent/90"
+        onClick={onCreate}
+        title="Create bookmark"
+      >
+        <Bookmark className="size-5 fill-current" />
+      </button>
     </div>
   );
 }
