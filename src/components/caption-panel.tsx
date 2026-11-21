@@ -86,396 +86,6 @@ const preferences = withUseValue(
   }),
 );
 
-export function useFabOpen(videoId: string) {
-  const [fabOpen, setFabOpen] = preferences.useValue("fabOpen");
-  const open = fabOpen[videoId] ?? false;
-  const toggle = () => setFabOpen((prev) => ({ ...prev, [videoId]: !open }));
-  return [open, toggle] as const;
-}
-
-export function CaptionFab({
-  open,
-  onClick,
-}: {
-  open: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      data-testid="caption-fab"
-      type="button"
-      onClick={onClick}
-      className={`fixed right-3 bottom-3 flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border-none shadow-lg pointer-events-auto ${open ? "bg-accent text-accent-foreground" : "bg-primary text-primary-foreground"}`}
-      title={open ? "Hide captions" : "Show captions"}
-    >
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        className="size-8"
-        viewBox="0 0 128 128"
-      >
-        <path
-          d="M28,36 h72 v12 l-52,32 h52 v12 h-72 v-12 l52,-32 h-52 z"
-          fill="currentColor"
-        />
-      </svg>
-    </button>
-  );
-}
-
-const WIDTH_KEY = "zamak:panel-width";
-const DEFAULT_WIDTH = 400;
-const MIN_WIDTH = 280;
-const MAX_WIDTH = 800;
-
-function getPanelWidth(): number {
-  try {
-    const stored = localStorage.getItem(WIDTH_KEY);
-    if (stored) {
-      const n = Number(stored);
-      if (n >= MIN_WIDTH && n <= MAX_WIDTH) {
-        return n;
-      }
-    }
-  } catch {}
-  return DEFAULT_WIDTH;
-}
-
-export function ResizablePanel({
-  children,
-  id,
-  className,
-  style,
-}: {
-  children: React.ReactNode;
-  id?: string;
-  className?: string;
-  style?: React.CSSProperties;
-}) {
-  const [width, setWidth] = useState(getPanelWidth);
-  const widthRef = useRef(width);
-  widthRef.current = width;
-
-  const onPointerDown = useCallback((e: React.PointerEvent) => {
-    e.preventDefault();
-    const target = e.currentTarget as HTMLElement;
-    target.setPointerCapture(e.pointerId);
-    const startX = e.clientX;
-    const startWidth = widthRef.current;
-
-    // A cross-origin iframe (the YouTube player) can take the pointer events
-    // when the drag passes over it, even with pointer capture.
-    const iframes = [...document.querySelectorAll("iframe")];
-    for (const iframe of iframes) {
-      iframe.style.pointerEvents = "none";
-    }
-
-    const onPointerMove = (e: PointerEvent) => {
-      // Dragging left = wider (panel is right-aligned)
-      const newWidth = Math.max(
-        MIN_WIDTH,
-        Math.min(MAX_WIDTH, startWidth + (startX - e.clientX)),
-      );
-      setWidth(newWidth);
-    };
-
-    const onPointerUp = () => {
-      target.releasePointerCapture(e.pointerId);
-      for (const iframe of iframes) {
-        iframe.style.pointerEvents = "";
-      }
-      target.removeEventListener("pointermove", onPointerMove);
-      target.removeEventListener("pointerup", onPointerUp);
-      localStorage.setItem(WIDTH_KEY, String(widthRef.current));
-    };
-
-    target.addEventListener("pointermove", onPointerMove);
-    target.addEventListener("pointerup", onPointerUp);
-  }, []);
-
-  return (
-    <div
-      id={id}
-      className={className}
-      style={{ ...style, width: `${width}px` }}
-      data-testid="resizable-panel"
-    >
-      <div
-        className="absolute top-0 bottom-0 left-0 z-10 w-1.5 cursor-col-resize hover:bg-ring/50"
-        data-testid="resize-handle"
-        onPointerDown={onPointerDown}
-      />
-      {children}
-    </div>
-  );
-}
-
-// --- AI prompt copy (inline dropdown widget) ---
-
-function AiPromptCopy({
-  store,
-  tracks,
-}: {
-  store: CaptionSessionManager;
-  tracks: YouTubeCaptionTrack[];
-}) {
-  const [selected, setSelected] = useState<AiTask>(AI_TASKS[0].task);
-  const [copied, setCopied] = useState(false);
-  const { youtubeId, title } = store.videoMeta;
-
-  function getPrompt(task: AiTask) {
-    return makeAiPrompt(task, {
-      youtubeId,
-      title,
-      rows: store.rows,
-      bookmarks: store.bookmarks,
-      tracks,
-      vssId1: store.vssId1,
-      vssId2: store.vssId2,
-    });
-  }
-
-  function copyPrompt(task: AiTask) {
-    navigator.clipboard.writeText(getPrompt(task));
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1500);
-  }
-
-  function downloadPrompt(task: AiTask) {
-    const text = getPrompt(task);
-    if (!text) {
-      return;
-    }
-    const blob = new Blob([text], { type: "text/plain" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `zamak-${youtubeId}-prompt-${task}.txt`;
-    a.click();
-    URL.revokeObjectURL(url);
-  }
-
-  return (
-    <div className="px-2 py-1.5">
-      <label className="mb-1 block text-sm text-muted-foreground flex items-center gap-1">
-        AI prompt{" "}
-        <a
-          href="https://github.com/hi-ogawa/ytsub-v5/blob/main/skills/zamak/SKILL.md"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex align-middle text-muted-foreground/70 hover:text-foreground"
-          title="How to use AI prompts"
-        >
-          <ExternalLink className="size-3.5" />
-        </a>
-      </label>
-      <div className="flex gap-1">
-        <select
-          className="min-w-0 flex-1 rounded border bg-background px-1 py-0.5 text-sm"
-          value={selected}
-          onChange={(e) => {
-            setSelected(e.target.value as AiTask);
-            copyPrompt(e.target.value as AiTask);
-          }}
-        >
-          {AI_TASKS.map((p) => (
-            <option key={p.task} value={p.task}>
-              {p.label}
-            </option>
-          ))}
-        </select>
-        <button
-          type="button"
-          className="shrink-0 rounded p-0.5 text-muted-foreground hover:bg-muted"
-          title="Copy prompt"
-          onClick={() => copyPrompt(selected)}
-        >
-          {copied ? (
-            <Check className="size-4 text-green-500" />
-          ) : (
-            <Copy className="size-4" />
-          )}
-        </button>
-        <button
-          type="button"
-          className="shrink-0 rounded p-0.5 text-muted-foreground hover:bg-muted"
-          title="Download prompt"
-          onClick={() => downloadPrompt(selected)}
-        >
-          <Download className="size-4" />
-        </button>
-      </div>
-    </div>
-  );
-}
-
-// --- AI import paste ---
-
-function importAiResult(store: CaptionSessionManager): void {
-  const raw = window.prompt("Paste AI result JSON");
-  if (!raw) {
-    return;
-  }
-  try {
-    const result = parseAiResult(raw);
-    switch (result.type) {
-      case "pick-fill": {
-        const { bookmarks, warnings } = pickFillToBookmarks(
-          result.entries,
-          store.rows,
-        );
-        if (bookmarks.length > 0) {
-          store.createBookmarks(bookmarks);
-        }
-        alert(
-          `Created ${bookmarks.length} bookmarks` +
-            (warnings.length > 0
-              ? `\n\n${warnings.length} skipped:\n${warnings.join("\n")}`
-              : ""),
-        );
-        break;
-      }
-      case "fill":
-        store.updateBookmarks(result.entries);
-        alert(`Filled ${result.entries.length} bookmarks`);
-        break;
-      case "fix-asr": {
-        const { captions, bookmarks, errors } = alignResultToSession(
-          result,
-          store.bookmarks,
-        );
-        if (errors.length > 0) {
-          alert(
-            `Nothing imported. ${errors.length} bookmark problems:\n${errors.join("\n")}`,
-          );
-          break;
-        }
-        const moved = store.bookmarks.length;
-        store.replace({ captions, bookmarks });
-        alert(
-          `Replaced captions with ${captions.length} rows, moved ${moved} bookmarks, and added ${bookmarks.length - moved}`,
-        );
-        break;
-      }
-    }
-  } catch (e) {
-    alert(e instanceof Error ? e.message : "Invalid JSON");
-  }
-}
-
-// --- CaptionPanel: display component ---
-
-const displayNames = new Intl.DisplayNames(["en"], { type: "language" });
-
-function langName(vssId: string): string {
-  const code = vssId.split(".").pop()!;
-  return displayNames.of(code) ?? code;
-}
-
-function formatTimestamp(seconds: number): string {
-  const m = Math.floor(seconds / 60);
-  const s = Math.floor(seconds % 60);
-  return `${m}:${String(s).padStart(2, "0")}`;
-}
-
-// The menu content mounts each time the menu opens, so the sync hook's
-// queries refetch then.
-function SyncMenuItem({
-  useSync,
-  store,
-}: {
-  useSync: UseSync;
-  store: CaptionSessionManager;
-}) {
-  const sync = useSync(store.videoMeta.youtubeId);
-  const { state, error, onNavigate } = sync;
-  const { icon, label } = syncStateDisplay(state);
-  const action = getSyncMenuAction(sync, store);
-
-  const content = (
-    <>
-      <span className="mr-2 size-4">{icon}</span>
-      {label}
-    </>
-  );
-  const testAttrs = {
-    "data-testid": "sync-status",
-    "data-sync-state": state,
-  };
-
-  return (
-    <>
-      {/* min-w-52 keeps the menu from resizing as the label changes. */}
-      <div className="flex min-w-52">
-        {action ? (
-          <DropdownMenuItem
-            className="min-w-0 flex-1"
-            onSelect={(e) => {
-              if (action.keepOpen) {
-                e.preventDefault();
-              }
-              action.run();
-            }}
-            {...testAttrs}
-          >
-            {content}
-          </DropdownMenuItem>
-        ) : (
-          <div
-            className="flex min-w-0 flex-1 items-center px-2 py-1.5 text-sm"
-            {...testAttrs}
-          >
-            {content}
-          </div>
-        )}
-        <div className="shrink-0">
-          <DropdownMenuItem
-            className="px-1.5 text-muted-foreground"
-            onSelect={onNavigate}
-            title="Open bookmarks page"
-            aria-label="Open bookmarks page"
-          >
-            <ExternalLink className="size-4" />
-          </DropdownMenuItem>
-        </div>
-      </div>
-      {error && (
-        <div
-          className="w-0 min-w-full pr-2 pb-1.5 pl-8 text-xs text-destructive"
-          data-testid="sync-error"
-        >
-          {error}
-        </div>
-      )}
-      <div className="my-1 h-px bg-border" />
-    </>
-  );
-}
-
-// A row is clickable only when clicking it does something. Push and pull run
-// in place, with the menu kept open to show progress, and states whose next
-// step lives on the bookmarks page open it.
-function getSyncMenuAction(
-  sync: SyncStatus,
-  store: CaptionSessionManager,
-): { run: () => void; keepOpen: boolean } | undefined {
-  const { onPush, onPull, onNavigate } = sync;
-  switch (sync.state) {
-    case "push": {
-      return { run: () => onPush(store), keepOpen: true };
-    }
-    case "pull": {
-      return { run: () => onPull(store), keepOpen: true };
-    }
-    case "conflict":
-    case "unauthenticated": {
-      return { run: onNavigate, keepOpen: false };
-    }
-    default: {
-      return undefined;
-    }
-  }
-}
-
 type CaptionPanelProps = {
   tracks: YouTubeCaptionTrack[];
   player?: YTPlayer;
@@ -602,34 +212,6 @@ function CaptionPanelInner({
   );
 }
 
-async function buildCaptionSession(options: {
-  track1: YouTubeCaptionTrack;
-  track2: YouTubeCaptionTrack;
-  fetchJson3: (track: YouTubeCaptionTrack) => Promise<Json3File>;
-  videoMeta: YouTubeVideoData;
-  strategy?: MergeStrategy;
-}): Promise<CaptionSessionManager> {
-  const [json3_1, json3_2] = await Promise.all([
-    options.fetchJson3(options.track1),
-    options.fetchJson3(options.track2),
-  ]);
-  const merged = mergeCaptions(
-    { json3: json3_1, vssId: options.track1.vssId },
-    { json3: json3_2, vssId: options.track2.vssId },
-    options.strategy,
-  );
-  const store = new CaptionSessionManager({
-    videoMeta: options.videoMeta,
-    vssId1: options.track1.vssId,
-    vssId2: options.track2.vssId,
-    rows: merged.captions,
-    strategy: merged.strategy,
-    bookmarks: [],
-  });
-  await store.persistSession();
-  return store;
-}
-
 /** State B: tracks selected, fetching json3 → builds store and calls setStore */
 function CaptionPanelLoading({
   tracks,
@@ -711,6 +293,34 @@ function CaptionPanelLoading({
   );
 }
 
+async function buildCaptionSession(options: {
+  track1: YouTubeCaptionTrack;
+  track2: YouTubeCaptionTrack;
+  fetchJson3: (track: YouTubeCaptionTrack) => Promise<Json3File>;
+  videoMeta: YouTubeVideoData;
+  strategy?: MergeStrategy;
+}): Promise<CaptionSessionManager> {
+  const [json3_1, json3_2] = await Promise.all([
+    options.fetchJson3(options.track1),
+    options.fetchJson3(options.track2),
+  ]);
+  const merged = mergeCaptions(
+    { json3: json3_1, vssId: options.track1.vssId },
+    { json3: json3_2, vssId: options.track2.vssId },
+    options.strategy,
+  );
+  const store = new CaptionSessionManager({
+    videoMeta: options.videoMeta,
+    vssId1: options.track1.vssId,
+    vssId2: options.track2.vssId,
+    rows: merged.captions,
+    strategy: merged.strategy,
+    bookmarks: [],
+  });
+  await store.persistSession();
+  return store;
+}
+
 function CaptionPanelWithStore({
   store,
   sessionOnly,
@@ -765,16 +375,6 @@ function CaptionPanelWithStore({
         player={player}
         autoScroll={autoScroll}
       />
-    </div>
-  );
-}
-
-// --- SettingsDropdown ---
-
-function SettingsDropdownSkeleton() {
-  return (
-    <div className="mr-1 shrink-0 rounded p-0.5 text-muted-foreground opacity-50">
-      <EllipsisVertical className="size-4" />
     </div>
   );
 }
@@ -884,7 +484,261 @@ function SettingsDropdown({
   );
 }
 
-// --- CaptionPanelContent: store-dependent viewer ---
+// The menu content mounts each time the menu opens, so the sync hook's
+// queries refetch then.
+function SyncMenuItem({
+  useSync,
+  store,
+}: {
+  useSync: UseSync;
+  store: CaptionSessionManager;
+}) {
+  const sync = useSync(store.videoMeta.youtubeId);
+  const { state, error, onNavigate } = sync;
+  const { icon, label } = syncStateDisplay(state);
+  const action = getSyncMenuAction(sync, store);
+
+  const content = (
+    <>
+      <span className="mr-2 size-4">{icon}</span>
+      {label}
+    </>
+  );
+  const testAttrs = {
+    "data-testid": "sync-status",
+    "data-sync-state": state,
+  };
+
+  return (
+    <>
+      {/* min-w-52 keeps the menu from resizing as the label changes. */}
+      <div className="flex min-w-52">
+        {action ? (
+          <DropdownMenuItem
+            className="min-w-0 flex-1"
+            onSelect={(e) => {
+              if (action.keepOpen) {
+                e.preventDefault();
+              }
+              action.run();
+            }}
+            {...testAttrs}
+          >
+            {content}
+          </DropdownMenuItem>
+        ) : (
+          <div
+            className="flex min-w-0 flex-1 items-center px-2 py-1.5 text-sm"
+            {...testAttrs}
+          >
+            {content}
+          </div>
+        )}
+        <div className="shrink-0">
+          <DropdownMenuItem
+            className="px-1.5 text-muted-foreground"
+            onSelect={onNavigate}
+            title="Open bookmarks page"
+            aria-label="Open bookmarks page"
+          >
+            <ExternalLink className="size-4" />
+          </DropdownMenuItem>
+        </div>
+      </div>
+      {error && (
+        <div
+          className="w-0 min-w-full pr-2 pb-1.5 pl-8 text-xs text-destructive"
+          data-testid="sync-error"
+        >
+          {error}
+        </div>
+      )}
+      <div className="my-1 h-px bg-border" />
+    </>
+  );
+}
+
+// A row is clickable only when clicking it does something. Push and pull run
+// in place, with the menu kept open to show progress, and states whose next
+// step lives on the bookmarks page open it.
+function getSyncMenuAction(
+  sync: SyncStatus,
+  store: CaptionSessionManager,
+): { run: () => void; keepOpen: boolean } | undefined {
+  const { onPush, onPull, onNavigate } = sync;
+  switch (sync.state) {
+    case "push": {
+      return { run: () => onPush(store), keepOpen: true };
+    }
+    case "pull": {
+      return { run: () => onPull(store), keepOpen: true };
+    }
+    case "conflict":
+    case "unauthenticated": {
+      return { run: onNavigate, keepOpen: false };
+    }
+    default: {
+      return undefined;
+    }
+  }
+}
+
+function AiPromptCopy({
+  store,
+  tracks,
+}: {
+  store: CaptionSessionManager;
+  tracks: YouTubeCaptionTrack[];
+}) {
+  const [selected, setSelected] = useState<AiTask>(AI_TASKS[0].task);
+  const [copied, setCopied] = useState(false);
+  const { youtubeId, title } = store.videoMeta;
+
+  function getPrompt(task: AiTask) {
+    return makeAiPrompt(task, {
+      youtubeId,
+      title,
+      rows: store.rows,
+      bookmarks: store.bookmarks,
+      tracks,
+      vssId1: store.vssId1,
+      vssId2: store.vssId2,
+    });
+  }
+
+  function copyPrompt(task: AiTask) {
+    navigator.clipboard.writeText(getPrompt(task));
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  }
+
+  function downloadPrompt(task: AiTask) {
+    const text = getPrompt(task);
+    if (!text) {
+      return;
+    }
+    const blob = new Blob([text], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `zamak-${youtubeId}-prompt-${task}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  return (
+    <div className="px-2 py-1.5">
+      <label className="mb-1 block text-sm text-muted-foreground flex items-center gap-1">
+        AI prompt{" "}
+        <a
+          href="https://github.com/hi-ogawa/ytsub-v5/blob/main/skills/zamak/SKILL.md"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex align-middle text-muted-foreground/70 hover:text-foreground"
+          title="How to use AI prompts"
+        >
+          <ExternalLink className="size-3.5" />
+        </a>
+      </label>
+      <div className="flex gap-1">
+        <select
+          className="min-w-0 flex-1 rounded border bg-background px-1 py-0.5 text-sm"
+          value={selected}
+          onChange={(e) => {
+            setSelected(e.target.value as AiTask);
+            copyPrompt(e.target.value as AiTask);
+          }}
+        >
+          {AI_TASKS.map((p) => (
+            <option key={p.task} value={p.task}>
+              {p.label}
+            </option>
+          ))}
+        </select>
+        <button
+          type="button"
+          className="shrink-0 rounded p-0.5 text-muted-foreground hover:bg-muted"
+          title="Copy prompt"
+          onClick={() => copyPrompt(selected)}
+        >
+          {copied ? (
+            <Check className="size-4 text-green-500" />
+          ) : (
+            <Copy className="size-4" />
+          )}
+        </button>
+        <button
+          type="button"
+          className="shrink-0 rounded p-0.5 text-muted-foreground hover:bg-muted"
+          title="Download prompt"
+          onClick={() => downloadPrompt(selected)}
+        >
+          <Download className="size-4" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function importAiResult(store: CaptionSessionManager): void {
+  const raw = window.prompt("Paste AI result JSON");
+  if (!raw) {
+    return;
+  }
+  try {
+    const result = parseAiResult(raw);
+    switch (result.type) {
+      case "pick-fill": {
+        const { bookmarks, warnings } = pickFillToBookmarks(
+          result.entries,
+          store.rows,
+        );
+        if (bookmarks.length > 0) {
+          store.createBookmarks(bookmarks);
+        }
+        alert(
+          `Created ${bookmarks.length} bookmarks` +
+            (warnings.length > 0
+              ? `\n\n${warnings.length} skipped:\n${warnings.join("\n")}`
+              : ""),
+        );
+        break;
+      }
+      case "fill":
+        store.updateBookmarks(result.entries);
+        alert(`Filled ${result.entries.length} bookmarks`);
+        break;
+      case "fix-asr": {
+        const { captions, bookmarks, errors } = alignResultToSession(
+          result,
+          store.bookmarks,
+        );
+        if (errors.length > 0) {
+          alert(
+            `Nothing imported. ${errors.length} bookmark problems:\n${errors.join("\n")}`,
+          );
+          break;
+        }
+        const moved = store.bookmarks.length;
+        store.replace({ captions, bookmarks });
+        alert(
+          `Replaced captions with ${captions.length} rows, moved ${moved} bookmarks, and added ${bookmarks.length - moved}`,
+        );
+        break;
+      }
+    }
+  } catch (e) {
+    alert(e instanceof Error ? e.message : "Invalid JSON");
+  }
+}
+
+function SettingsDropdownSkeleton() {
+  return (
+    <div className="mr-1 shrink-0 rounded p-0.5 text-muted-foreground opacity-50">
+      <EllipsisVertical className="size-4" />
+    </div>
+  );
+}
 
 function CaptionPanelContent({
   store,
@@ -1131,7 +985,77 @@ function CaptionPanelContent({
   );
 }
 
-// --- ExtensionBookmarksList ---
+type CaptionViewerHandle = CaptionListHandle & {
+  showCaption: (index: number) => void;
+};
+
+function CaptionViewer({
+  ref,
+  rows,
+  player,
+  autoScroll,
+  bookmarks,
+  onGoToBookmark,
+  onPopoverOpenChange,
+}: {
+  ref: React.Ref<CaptionViewerHandle>;
+  rows: MergedCaption[];
+  player?: YTPlayer;
+  autoScroll: boolean;
+  bookmarks: ExtensionBookmark[];
+  onGoToBookmark: (bookmarkId: string) => void;
+  onPopoverOpenChange: (open: boolean) => void;
+}) {
+  const [currentIndex, setCurrentIndex] = useState<number>();
+  const [isPlaying, setIsPlaying] = useState(false);
+  const listRef = useRef<CaptionListHandle>(null);
+
+  useImperativeHandle(ref, () => ({
+    scrollToIndex: (index) => listRef.current?.scrollToIndex(index),
+    showCaption: (index) => {
+      setCurrentIndex(index);
+      listRef.current?.scrollToIndex(index);
+    },
+  }));
+
+  useEffect(() => {
+    if (!player || rows.length === 0) {
+      return;
+    }
+    let rafId: number;
+
+    const loop = () => {
+      const playing = player.getPlayerState() === 1;
+      setIsPlaying(playing);
+      if (playing) {
+        const time = player.getCurrentTime();
+        for (let i = rows.length - 1; i >= 0; i--) {
+          if (rows[i].begin <= time) {
+            setCurrentIndex(i);
+            break;
+          }
+        }
+      }
+      rafId = requestAnimationFrame(loop);
+    };
+    rafId = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(rafId);
+  }, [player, rows]);
+
+  return (
+    <CaptionList
+      ref={listRef}
+      rows={rows}
+      currentIndex={currentIndex}
+      isPlaying={isPlaying}
+      player={player}
+      autoScroll={autoScroll}
+      bookmarks={bookmarks}
+      onGoToBookmark={onGoToBookmark}
+      onPopoverOpenChange={onPopoverOpenChange}
+    />
+  );
+}
 
 type BookmarksListHandle = {
   scrollToBookmark: (bookmarkId: string) => void;
@@ -1268,76 +1192,138 @@ function ExtensionBookmarksList({
   );
 }
 
-// --- CaptionViewer: playback-synced caption list ---
+const displayNames = new Intl.DisplayNames(["en"], { type: "language" });
 
-type CaptionViewerHandle = CaptionListHandle & {
-  showCaption: (index: number) => void;
-};
+function langName(vssId: string): string {
+  const code = vssId.split(".").pop()!;
+  return displayNames.of(code) ?? code;
+}
 
-function CaptionViewer({
-  ref,
-  rows,
-  player,
-  autoScroll,
-  bookmarks,
-  onGoToBookmark,
-  onPopoverOpenChange,
+function formatTimestamp(seconds: number): string {
+  const m = Math.floor(seconds / 60);
+  const s = Math.floor(seconds % 60);
+  return `${m}:${String(s).padStart(2, "0")}`;
+}
+
+export function useFabOpen(videoId: string) {
+  const [fabOpen, setFabOpen] = preferences.useValue("fabOpen");
+  const open = fabOpen[videoId] ?? false;
+  const toggle = () => setFabOpen((prev) => ({ ...prev, [videoId]: !open }));
+  return [open, toggle] as const;
+}
+
+export function CaptionFab({
+  open,
+  onClick,
 }: {
-  ref: React.Ref<CaptionViewerHandle>;
-  rows: MergedCaption[];
-  player?: YTPlayer;
-  autoScroll: boolean;
-  bookmarks: ExtensionBookmark[];
-  onGoToBookmark: (bookmarkId: string) => void;
-  onPopoverOpenChange: (open: boolean) => void;
+  open: boolean;
+  onClick: () => void;
 }) {
-  const [currentIndex, setCurrentIndex] = useState<number>();
-  const [isPlaying, setIsPlaying] = useState(false);
-  const listRef = useRef<CaptionListHandle>(null);
+  return (
+    <button
+      data-testid="caption-fab"
+      type="button"
+      onClick={onClick}
+      className={`fixed right-3 bottom-3 flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border-none shadow-lg pointer-events-auto ${open ? "bg-accent text-accent-foreground" : "bg-primary text-primary-foreground"}`}
+      title={open ? "Hide captions" : "Show captions"}
+    >
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        className="size-8"
+        viewBox="0 0 128 128"
+      >
+        <path
+          d="M28,36 h72 v12 l-52,32 h52 v12 h-72 v-12 l52,-32 h-52 z"
+          fill="currentColor"
+        />
+      </svg>
+    </button>
+  );
+}
 
-  useImperativeHandle(ref, () => ({
-    scrollToIndex: (index) => listRef.current?.scrollToIndex(index),
-    showCaption: (index) => {
-      setCurrentIndex(index);
-      listRef.current?.scrollToIndex(index);
-    },
-  }));
+const WIDTH_KEY = "zamak:panel-width";
+const DEFAULT_WIDTH = 400;
+const MIN_WIDTH = 280;
+const MAX_WIDTH = 800;
 
-  useEffect(() => {
-    if (!player || rows.length === 0) {
-      return;
-    }
-    let rafId: number;
-
-    const loop = () => {
-      const playing = player.getPlayerState() === 1;
-      setIsPlaying(playing);
-      if (playing) {
-        const time = player.getCurrentTime();
-        for (let i = rows.length - 1; i >= 0; i--) {
-          if (rows[i].begin <= time) {
-            setCurrentIndex(i);
-            break;
-          }
-        }
+function getPanelWidth(): number {
+  try {
+    const stored = localStorage.getItem(WIDTH_KEY);
+    if (stored) {
+      const n = Number(stored);
+      if (n >= MIN_WIDTH && n <= MAX_WIDTH) {
+        return n;
       }
-      rafId = requestAnimationFrame(loop);
+    }
+  } catch {}
+  return DEFAULT_WIDTH;
+}
+
+export function ResizablePanel({
+  children,
+  id,
+  className,
+  style,
+}: {
+  children: React.ReactNode;
+  id?: string;
+  className?: string;
+  style?: React.CSSProperties;
+}) {
+  const [width, setWidth] = useState(getPanelWidth);
+  const widthRef = useRef(width);
+  widthRef.current = width;
+
+  const onPointerDown = useCallback((e: React.PointerEvent) => {
+    e.preventDefault();
+    const target = e.currentTarget as HTMLElement;
+    target.setPointerCapture(e.pointerId);
+    const startX = e.clientX;
+    const startWidth = widthRef.current;
+
+    // A cross-origin iframe (the YouTube player) can take the pointer events
+    // when the drag passes over it, even with pointer capture.
+    const iframes = [...document.querySelectorAll("iframe")];
+    for (const iframe of iframes) {
+      iframe.style.pointerEvents = "none";
+    }
+
+    const onPointerMove = (e: PointerEvent) => {
+      // Dragging left = wider (panel is right-aligned)
+      const newWidth = Math.max(
+        MIN_WIDTH,
+        Math.min(MAX_WIDTH, startWidth + (startX - e.clientX)),
+      );
+      setWidth(newWidth);
     };
-    rafId = requestAnimationFrame(loop);
-    return () => cancelAnimationFrame(rafId);
-  }, [player, rows]);
+
+    const onPointerUp = () => {
+      target.releasePointerCapture(e.pointerId);
+      for (const iframe of iframes) {
+        iframe.style.pointerEvents = "";
+      }
+      target.removeEventListener("pointermove", onPointerMove);
+      target.removeEventListener("pointerup", onPointerUp);
+      localStorage.setItem(WIDTH_KEY, String(widthRef.current));
+    };
+
+    target.addEventListener("pointermove", onPointerMove);
+    target.addEventListener("pointerup", onPointerUp);
+  }, []);
 
   return (
-    <CaptionList
-      ref={listRef}
-      rows={rows}
-      currentIndex={currentIndex}
-      isPlaying={isPlaying}
-      player={player}
-      autoScroll={autoScroll}
-      bookmarks={bookmarks}
-      onGoToBookmark={onGoToBookmark}
-      onPopoverOpenChange={onPopoverOpenChange}
-    />
+    <div
+      id={id}
+      className={className}
+      style={{ ...style, width: `${width}px` }}
+      data-testid="resizable-panel"
+    >
+      <div
+        className="absolute top-0 bottom-0 left-0 z-10 w-1.5 cursor-col-resize hover:bg-ring/50"
+        data-testid="resize-handle"
+        onPointerDown={onPointerDown}
+      />
+      {children}
+    </div>
   );
 }
