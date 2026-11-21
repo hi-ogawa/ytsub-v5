@@ -6,7 +6,7 @@ import { initCaptionStorage } from "../lib/caption-storage.ts";
 import { createShadowHost } from "../utils/shadow-root.ts";
 import type { bgRpcHandlers } from "./background.ts";
 import { CaptionOverlay } from "./components/caption-overlay.tsx";
-import { createUseExtensionSync } from "./components/use-extension-sync.ts";
+import { useExtensionSync } from "./components/use-extension-sync.ts";
 import contentCss from "./content.css?inline";
 import { createRuntimeRelayRpc } from "./lib/extension-rpc.ts";
 import { createBridgeStorage } from "./lib/storage-bridge.ts";
@@ -36,7 +36,9 @@ function main() {
 }
 
 function mountOverlay(videoId: string) {
-  const useSync = createUseExtensionSync(bgRpc);
+  function useSync(youtubeId: string) {
+    return useExtensionSync({ bgRpc, youtubeId });
+  }
 
   const { host, container } = createShadowHost({
     id: "zamak-host",
