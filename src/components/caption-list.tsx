@@ -9,6 +9,7 @@ import {
 import type { MergedCaption } from "../lib/caption-merge.ts";
 import type { ExtensionBookmark } from "../lib/extension-bookmarks.ts";
 import { flashHighlight } from "../lib/flash-highlight.ts";
+import { getSelectionAt } from "../utils/get-selection.ts";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover.tsx";
 import { useTimedFlag } from "./use-timed-flag.ts";
 import type { YTPlayer } from "./youtube-player.tsx";
@@ -124,14 +125,7 @@ export function CaptionList({
     if (!player) {
       return;
     }
-    const root = scrollRef.current?.getRootNode();
-    const sel =
-      root && "getSelection" in root
-        ? (
-            root as unknown as { getSelection(): Selection | null }
-          ).getSelection()
-        : document.getSelection();
-    if (sel?.toString()) {
+    if (getSelectionAt(scrollRef.current)?.toString()) {
       return;
     }
     manualScroll.clear();
