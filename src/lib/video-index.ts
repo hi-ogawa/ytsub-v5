@@ -6,7 +6,10 @@ export type VideoIndexEntry = {
   channelName: string;
   bookmarkCount: number;
   updatedAt: string;
+  // Local clock, compared with updatedAt
   syncedAt?: string;
+  // Server clock, the server's updatedAt at the last push or pull
+  syncedServerUpdatedAt?: string;
 };
 
 const VIDEO_INDEX_KEY = "zamak:video-index";
@@ -32,6 +35,7 @@ export function updateVideoIndex(
       bookmarkCount,
       updatedAt: new Date().toISOString(),
       syncedAt: existing?.syncedAt,
+      syncedServerUpdatedAt: existing?.syncedServerUpdatedAt,
     };
     const next = [...entries];
     if (idx >= 0) next[idx] = entry;
@@ -46,11 +50,15 @@ export function removeFromVideoIndex(youtubeId: string) {
   );
 }
 
-export function setSyncedAt(youtubeId: string) {
+export function setSyncedAt(youtubeId: string, serverUpdatedAt: string) {
   videoIndexStore.set((entries) =>
     entries.map((e) =>
       e.youtubeId === youtubeId
-        ? { ...e, syncedAt: new Date().toISOString() }
+        ? {
+            ...e,
+            syncedAt: new Date().toISOString(),
+            syncedServerUpdatedAt: serverUpdatedAt,
+          }
         : e,
     ),
   );

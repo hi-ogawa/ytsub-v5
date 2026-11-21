@@ -31,23 +31,30 @@ export const bgRpcHandlers = {
     const exportData = sessionToExportData(
       session as Parameters<typeof sessionToExportData>[0],
     );
-    await orpc.videos.importVideo.call(exportData);
+    const result = await orpc.videos.importVideo.call(exportData);
+    return { serverUpdatedAt: result.updatedAt };
   },
 
   // The caption panel pulls with this. docs/extension-runtime.md explains why.
   async fetchSession({ youtubeId }: { youtubeId: string }) {
     const data = await orpc.videos.getFullSession.call({ youtubeId });
     if (!data) throw new Error("Video not found on server");
-    return serverSessionToLocal(data);
+    return {
+      session: serverSessionToLocal(data),
+      serverUpdatedAt: data.video.updatedAt,
+    };
   },
 
   async pullSession({ youtubeId }: { youtubeId: string }) {
-    const session = await bgRpcHandlers.fetchSession({ youtubeId });
+    const { session, serverUpdatedAt } = await bgRpcHandlers.fetchSession({
+      youtubeId,
+    });
     await contentRpc.saveSession({ session });
     return {
       title: session.title,
       channelName: session.channelName,
       bookmarkCount: session.bookmarks.length,
+      serverUpdatedAt,
     };
   },
 };

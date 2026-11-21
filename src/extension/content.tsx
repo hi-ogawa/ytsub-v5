@@ -150,9 +150,12 @@ function useExtensionSync(youtubeId: string): SyncStatus {
   const syncMutation = useMutation({
     mutationFn: async (action: SyncAction) => {
       if (action.direction === "push") {
-        await bgRpc.pushSession({ youtubeId });
+        const { serverUpdatedAt } = await bgRpc.pushSession({ youtubeId });
+        setSyncedAt(youtubeId, serverUpdatedAt);
       } else {
-        const session = await bgRpc.fetchSession({ youtubeId });
+        const { session, serverUpdatedAt } = await bgRpc.fetchSession({
+          youtubeId,
+        });
         // replace() bumps the index entry's updatedAt, so setSyncedAt must follow it.
         await action.store.replace({
           vssId1: session.vssId1,
@@ -160,8 +163,8 @@ function useExtensionSync(youtubeId: string): SyncStatus {
           captions: session.captions,
           bookmarks: session.bookmarks,
         });
+        setSyncedAt(youtubeId, serverUpdatedAt);
       }
-      setSyncedAt(youtubeId);
     },
     onSuccess: () => serverQuery.refetch(),
   });
@@ -175,6 +178,7 @@ function useExtensionSync(youtubeId: string): SyncStatus {
     return computeSyncState({
       localUpdatedAt: localEntry?.updatedAt,
       syncedAt: localEntry?.syncedAt,
+      syncedServerUpdatedAt: localEntry?.syncedServerUpdatedAt,
       serverUpdatedAt: serverQuery.data.serverUpdatedAt,
     });
   };

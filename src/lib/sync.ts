@@ -47,9 +47,11 @@ export type ComputedSyncState =
 export function computeSyncState(params: {
   localUpdatedAt?: string;
   syncedAt?: string;
+  syncedServerUpdatedAt?: string;
   serverUpdatedAt?: string;
 }): ComputedSyncState {
-  const { localUpdatedAt, syncedAt, serverUpdatedAt } = params;
+  const { localUpdatedAt, syncedAt, syncedServerUpdatedAt, serverUpdatedAt } =
+    params;
 
   // No local entry
   if (!localUpdatedAt) return serverUpdatedAt ? "pull" : "empty";
@@ -65,8 +67,11 @@ export function computeSyncState(params: {
   // Server data gone after a previous sync — need to re-push
   if (!serverUpdatedAt) return "push";
 
+  // Each comparison stays within one clock, because the client and server
+  // clocks can disagree. Entries synced before syncedServerUpdatedAt existed
+  // fall back to the local syncedAt.
   const localChanged = localUpdatedAt > syncedAt;
-  const serverChanged = serverUpdatedAt > syncedAt;
+  const serverChanged = serverUpdatedAt > (syncedServerUpdatedAt ?? syncedAt);
 
   if (!localChanged && !serverChanged) return "synced";
   if (localChanged && !serverChanged) return "push";
@@ -108,7 +113,10 @@ export function useSyncState({
       store: CaptionSessionManager;
     }) => {
       if (action.direction === "push") {
-        await orpc.videos.importVideo.call(action.store.toExportData());
+        const result = await orpc.videos.importVideo.call(
+          action.store.toExportData(),
+        );
+        setSyncedAt(youtubeId, result.updatedAt);
       } else {
         const data = await orpc.videos.getFullSession.call({ youtubeId });
         if (!data) throw new Error("Video not found on server");
@@ -120,8 +128,8 @@ export function useSyncState({
           captions: session.captions,
           bookmarks: session.bookmarks,
         });
+        setSyncedAt(youtubeId, data.video.updatedAt);
       }
-      setSyncedAt(youtubeId);
     },
     onSuccess: () => serverQuery.refetch(),
   });
@@ -136,6 +144,7 @@ export function useSyncState({
     return computeSyncState({
       localUpdatedAt: localEntry?.updatedAt,
       syncedAt: localEntry?.syncedAt,
+      syncedServerUpdatedAt: localEntry?.syncedServerUpdatedAt,
       serverUpdatedAt: serverQuery.data?.updatedAt ?? undefined,
     });
   };
@@ -172,6 +181,7 @@ function mergeVideoEntries(
     const status = computeSyncState({
       localUpdatedAt: local.updatedAt,
       syncedAt: local.syncedAt,
+      syncedServerUpdatedAt: local.syncedServerUpdatedAt,
       serverUpdatedAt: server?.updatedAt ?? undefined,
     });
     merged.set(local.youtubeId, {
@@ -204,16 +214,20 @@ function mergeVideoEntries(
 
 export type VideoSyncHandle = ReturnType<typeof useVideoSync>;
 
+// Both resolve with the server's updatedAt after the push or pull.
 export interface VideoSyncActions {
-  pushSession(youtubeId: string): Promise<void>;
-  pullSession(youtubeId: string): Promise<void>;
+  pushSession(youtubeId: string): Promise<{ serverUpdatedAt: string }>;
+  pullSession(youtubeId: string): Promise<{ serverUpdatedAt: string }>;
 }
 
 const defaultSyncActions: VideoSyncActions = {
   async pushSession(youtubeId) {
     const session = await getSession(youtubeId);
     if (!session) throw new Error("No local session found");
-    await orpc.videos.importVideo.call(sessionToExportData(session));
+    const result = await orpc.videos.importVideo.call(
+      sessionToExportData(session),
+    );
+    return { serverUpdatedAt: result.updatedAt };
   },
   async pullSession(youtubeId) {
     const data = await orpc.videos.getFullSession.call({ youtubeId });
@@ -226,6 +240,7 @@ const defaultSyncActions: VideoSyncActions = {
       session.channelName,
       session.bookmarks.length,
     );
+    return { serverUpdatedAt: data.video.updatedAt };
   },
 };
 
@@ -262,15 +277,15 @@ export function useVideoSync(actions: VideoSyncActions = defaultSyncActions) {
 
   const onPush = async (youtubeId: string) => {
     await withSyncing(youtubeId, async () => {
-      await actions.pushSession(youtubeId);
-      setSyncedAt(youtubeId);
+      const { serverUpdatedAt } = await actions.pushSession(youtubeId);
+      setSyncedAt(youtubeId, serverUpdatedAt);
     });
   };
 
   const onPull = async (youtubeId: string) => {
     await withSyncing(youtubeId, async () => {
-      await actions.pullSession(youtubeId);
-      setSyncedAt(youtubeId);
+      const { serverUpdatedAt } = await actions.pullSession(youtubeId);
+      setSyncedAt(youtubeId, serverUpdatedAt);
     });
   };
 

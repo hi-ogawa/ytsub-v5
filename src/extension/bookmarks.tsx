@@ -55,7 +55,7 @@ const bgRpc = createRuntimeRpc<typeof bgRpcHandlers>();
 
 const extensionSyncActions: VideoSyncActions = {
   async pushSession(youtubeId) {
-    await bgRpc.pushSession({ youtubeId });
+    return bgRpc.pushSession({ youtubeId });
   },
   async pullSession(youtubeId) {
     const result = await bgRpc.pullSession({ youtubeId });
@@ -65,6 +65,7 @@ const extensionSyncActions: VideoSyncActions = {
       result.channelName,
       result.bookmarkCount,
     );
+    return { serverUpdatedAt: result.serverUpdatedAt };
   },
 };
 
