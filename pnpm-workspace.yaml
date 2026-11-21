@@ -2,5 +2,8 @@ allowBuilds:
   esbuild: false
   sharp: false
   workerd: false
+catalog:
+  # vite-plus pins this exact version, and the override makes it use ours.
+  vitest: 5.1.0
 overrides:
-  vitest: $vitest
+  vitest: "catalog:"
