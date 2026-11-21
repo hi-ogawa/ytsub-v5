@@ -336,3 +336,37 @@ test("bookmarks page: pull works without a YouTube tab", async ({
   checkpoint("pull synced");
   await expect(card.getByTestId("video-card-badge")).toHaveText("15 bookmarks");
 });
+
+test("bookmarks page: a pull reaches the panel open in a YouTube tab", async ({
+  context,
+  page,
+  extensionId,
+}) => {
+  await setupDb({ seed: true });
+  const ytPage = await openYouTubeTab(context, SEED_VIDEO_ID);
+  await openPanelWithTracks(ytPage);
+  const host = ytPage.locator("#zamak-host");
+  await expect(
+    host.getByRole("button", { name: "Bookmarks", exact: true }),
+  ).toBeVisible();
+
+  await gotoBookmarks(page, extensionId);
+  await page.bringToFront();
+  await login(page);
+  const badge = page
+    .getByTestId(`video-card-${SEED_VIDEO_ID}`)
+    .getByTestId("video-sync-badge");
+  await expect(badge).toHaveAttribute("data-sync-status", "pull");
+  await badge.click();
+  await expect(badge).toHaveAttribute("data-sync-status", "synced");
+
+  // The open panel rereads the pulled session, without a reload
+  await expect(
+    host.getByRole("button", { name: "Bookmarks (15)" }),
+  ).toBeVisible();
+  await host.getByTitle("Settings").click();
+  await expect(host.getByTestId("sync-status")).toHaveAttribute(
+    "data-sync-state",
+    "synced",
+  );
+});

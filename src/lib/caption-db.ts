@@ -23,7 +23,7 @@ function getChannel() {
     channel = new BroadcastChannel(CHANNEL_NAME);
     channel.addEventListener("message", (e: MessageEvent<StorageNotice>) => {
       for (const l of listeners) {
-        l(e.data);
+        l(e.data, false);
       }
     });
   }
@@ -32,7 +32,7 @@ function getChannel() {
 
 function notify(notice: StorageNotice) {
   for (const l of listeners) {
-    l(notice);
+    l(notice, true);
   }
   getChannel().postMessage(notice);
 }
@@ -71,6 +71,7 @@ export const idbCaptionStorage: CaptionStorage = {
         return await requestResult<VideoIndexEntry[]>(index.getAll());
       },
     );
+    notify({ type: "session-saved", youtubeId: session.youtubeId });
     if (entries) {
       notify({ type: "index", entries });
     }

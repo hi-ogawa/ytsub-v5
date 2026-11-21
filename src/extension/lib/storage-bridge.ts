@@ -39,7 +39,7 @@ export type BridgeMessage =
       result?: unknown;
       error?: string;
     }
-  | { type: "zamak-storage:notice"; notice: StorageNotice };
+  | { type: "zamak-storage:notice"; notice: StorageNotice; own: boolean };
 
 type Connection = { frame: Window; origin: string };
 
@@ -58,7 +58,7 @@ export function createBridgeStorage(): CaptionStorage {
           return;
         }
         for (const l of listeners) {
-          l(message.notice);
+          l(message.notice, message.own);
         }
       });
       return conn;

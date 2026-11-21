@@ -476,13 +476,27 @@ type CaptionPanelProps = {
 
 export function CaptionPanel(props: CaptionPanelProps) {
   const { youtubeId } = props.videoMeta;
+  const [reloadCount, setReloadCount] = useState(0);
+
+  // Another context, such as a pull from the bookmarks page or an edit in
+  // another tab, replaced the stored session, so the panel starts over from it.
+  useEffect(() => {
+    return captionStorage.subscribe((notice, own) => {
+      if (
+        !own &&
+        notice.type === "session-saved" &&
+        notice.youtubeId === youtubeId
+      ) {
+        setReloadCount((c) => c + 1);
+      }
+    });
+  }, [youtubeId]);
 
   // Restore last session
-  // - always fetch on mount
+  // - always fetch on mount and after another context saves it
   // - always spinner until ready
-  // - never refetch after mount
   const initialStoreQuery = useQuery({
-    queryKey: ["caption-session", youtubeId],
+    queryKey: ["caption-session", youtubeId, reloadCount],
     queryFn: async () => {
       const session = await captionStorage.getSession(youtubeId);
       if (!session) {
@@ -508,6 +522,7 @@ export function CaptionPanel(props: CaptionPanelProps) {
 
   return (
     <CaptionPanelInner
+      key={reloadCount}
       {...props}
       initialStore={initialStoreQuery.data ?? undefined}
     />
