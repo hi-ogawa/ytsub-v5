@@ -23,6 +23,10 @@ export interface YouTubeCaptionTrack {
   vssId: string;
 }
 
+export function langFromVssId(vssId: string): string {
+  return vssId.split(".").pop()!;
+}
+
 export interface YouTubeExtractionResult {
   video: YouTubeVideoData;
   captionTracks: YouTubeCaptionTrack[];

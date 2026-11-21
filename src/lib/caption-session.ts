@@ -9,6 +9,7 @@ import type { ExtensionBookmark } from "./extension-bookmarks.ts";
 import {
   type YouTubeCaptionTrack,
   type YouTubeVideoData,
+  langFromVssId,
   pickBestTrack,
 } from "./youtube.ts";
 
@@ -154,10 +155,6 @@ export async function importExportData(data: ExportData): Promise<void> {
 }
 
 // --- Store ---
-
-function langFromVssId(vssId: string): string {
-  return vssId.split(".").pop()!;
-}
 
 export class CaptionSessionManager {
   readonly videoMeta: YouTubeVideoData;
