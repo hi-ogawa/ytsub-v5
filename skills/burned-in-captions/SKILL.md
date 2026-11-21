@@ -136,6 +136,8 @@ Ask for more frames where something is off:
 - an ASR line, or a cue of another subtitle track such as `en`, that no caption matches in time, on a show whose captions follow the speech
 - readers who disagree on a caption's text
 
+Stop when a round of corrections finds little that's new, and list the doubts that remain in your report instead of chasing each one.
+
 For small or unclear text, crop the frames to the caption's area. With `--crop`, `frames.py` tiles only that box, at twice the scale of a full-frame tile:
 
 ```bash
