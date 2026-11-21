@@ -10,6 +10,7 @@ import type { MergedCaption } from "../lib/caption-merge.ts";
 import type { ExtensionBookmark } from "../lib/extension-bookmarks.ts";
 import { flashHighlight } from "../lib/flash-highlight.ts";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover.tsx";
+import { useTimedFlag } from "./use-timed-flag.ts";
 import type { YTPlayer } from "./youtube-player.tsx";
 
 export type CaptionListHandle = {
@@ -57,20 +58,8 @@ export function CaptionList({
 
   // Auto-scroll pauses for 2 seconds after the user scrolls or jumps to a
   // row, and while a bookmark popover is open.
-  const isManualScrollRef = useRef(false);
+  const manualScroll = useTimedFlag(2000);
   const isPopoverOpenRef = useRef(false);
-  const manualScrollTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
-
-  function onManualScroll() {
-    isManualScrollRef.current = true;
-    if (manualScrollTimer.current) {
-      clearTimeout(manualScrollTimer.current);
-    }
-    manualScrollTimer.current = setTimeout(() => {
-      isManualScrollRef.current = false;
-      manualScrollTimer.current = undefined;
-    }, 2000);
-  }
 
   function onPopoverOpenChange(open: boolean) {
     isPopoverOpenRef.current = open;
@@ -87,7 +76,7 @@ export function CaptionList({
         el.scrollIntoView({ behavior: "smooth", block: "center" });
         flashHighlight(el);
       }
-      onManualScroll();
+      manualScroll.trigger();
     },
   }));
 
@@ -103,7 +92,7 @@ export function CaptionList({
     }
     prevScrollIndex.current = currentIndex;
 
-    if (!autoScroll || isManualScrollRef.current || isPopoverOpenRef.current) {
+    if (!autoScroll || manualScroll.isActive() || isPopoverOpenRef.current) {
       return;
     }
 
@@ -145,7 +134,7 @@ export function CaptionList({
     if (sel?.toString()) {
       return;
     }
-    isManualScrollRef.current = false;
+    manualScroll.clear();
     if (index === currentIndex) {
       isPlaying ? player.pauseVideo() : player.playVideo();
     } else {
@@ -158,8 +147,8 @@ export function CaptionList({
     <div
       className="flex-[1_0_0] overflow-y-auto"
       ref={scrollRef}
-      onWheel={onManualScroll}
-      onTouchStart={onManualScroll}
+      onWheel={manualScroll.trigger}
+      onTouchStart={manualScroll.trigger}
     >
       <div className="flex flex-col gap-1.5 p-1.5">
         {rows.map((row, i) => (
