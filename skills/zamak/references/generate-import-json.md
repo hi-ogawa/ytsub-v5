@@ -183,8 +183,8 @@ The translators worked from the Korean and can misread it, so audit `text2` as i
 
 The burned-in captions skill returns the captions as the viewer sees them, with their times. Compare them with the ASR to see how closely they follow the speech:
 
-- **Captions that follow the speech,** as on many talk shows, are the Korean text and its segmentation, like a manual Korean track. Continue as in Scenario A when there is a manual English track, and as in Scenario C when there isn't. The ASR covers the lines the captions skip. An ASR line that no caption matches in time can be a missed caption, so pass those times back to the skill as ranges to read again.
-- **Captions that are mostly editor comments,** as on many vlogs, are evidence for fixing the ASR, the way the other manual tracks are in Scenario B. Continue as in Scenario B, or as in Scenario D when there is no English track.
+- **Captions that follow the speech,** as on many talk shows, are the Korean text and its segmentation, like a manual Korean track. Continue as in Scenario A when there is a manual English track, and as in Scenario C when there isn't, which translates each row into English for `text2`. The ASR covers the lines the captions skip. An ASR line that no caption matches in time can be a missed caption, so pass those times back to the skill as ranges to read again.
+- **Captions that are mostly editor comments,** as on many vlogs, are evidence for fixing the ASR, the way the other manual tracks are in Scenario B. Continue as in Scenario B, or as in Scenario D when there is no English track, which also translates.
 
 ### Output Format
 
