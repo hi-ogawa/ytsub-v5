@@ -12,182 +12,6 @@ import { flashHighlight } from "../lib/flash-highlight.ts";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover.tsx";
 import type { YTPlayer } from "./youtube-player.tsx";
 
-function formatTimestamp(seconds: number): string {
-  const m = Math.floor(seconds / 60);
-  const s = Math.floor(seconds % 60);
-  return `${m}:${String(s).padStart(2, "0")}`;
-}
-
-function BookmarkWord({
-  bookmark,
-  bookmarkNumber,
-  offset,
-  children,
-  onGoToBookmark,
-  onPopoverOpenChange,
-}: {
-  bookmark: ExtensionBookmark;
-  bookmarkNumber?: number;
-  offset: number;
-  children: React.ReactNode;
-  onGoToBookmark: (bookmarkId: string) => void;
-  onPopoverOpenChange: (open: boolean) => void;
-}) {
-  const filled = !!bookmark.translation;
-  const triggerRef = useRef<HTMLSpanElement>(null);
-  const [open, setOpen] = useState(false);
-  function changeOpen(next: boolean) {
-    setOpen(next);
-    onPopoverOpenChange(next);
-  }
-  return (
-    <Popover open={open} onOpenChange={changeOpen}>
-      <PopoverTrigger asChild>
-        <span
-          ref={triggerRef}
-          className="inline-block cursor-pointer"
-          data-testid="bookmark-highlight"
-          data-offset={offset}
-          onClick={(e) => e.stopPropagation()}
-        >
-          <span
-            className={
-              filled
-                ? "border-b-2 border-highlight-alt-border bg-highlight-alt-bg"
-                : "border-b-2 border-highlight-border bg-highlight-bg"
-            }
-          >
-            {children}
-          </span>
-        </span>
-      </PopoverTrigger>
-      <PopoverContent
-        data-testid="bookmark-popover"
-        side="top"
-        avoidCollisions
-        onOpenAutoFocus={(e) => e.preventDefault()}
-        onClick={(e) => e.stopPropagation()}
-        onPointerDownOutside={(e) => {
-          // When modal=false (extension shadow DOM), DismissableLayer closes
-          // on pointerdown before the trigger's click can toggle. Prevent the
-          // dismiss when clicking the trigger so the toggle handles it.
-          // Use composedPath() because shadow DOM retargets event.target to
-          // the host element.
-          const target = e.detail.originalEvent.composedPath()[0] as Node;
-          if (triggerRef.current?.contains(target)) {
-            e.preventDefault();
-          }
-        }}
-      >
-        <span className="block text-xs font-medium text-popover-foreground">
-          {bookmarkNumber !== undefined && (
-            <span className="mr-1 text-muted-foreground">
-              #{bookmarkNumber}
-            </span>
-          )}
-          {bookmark.text}
-        </span>
-        {bookmark.translation ? (
-          <span className="block text-xs text-muted-foreground">
-            {bookmark.translation}
-          </span>
-        ) : (
-          <span className="block text-xs italic text-muted-foreground/50">
-            unfilled
-          </span>
-        )}
-        {bookmark.etymology && (
-          <span className="mt-1 block text-[10px] text-muted-foreground">
-            {bookmark.etymology}
-          </span>
-        )}
-        {bookmark.notes && (
-          <span className="mt-1 block max-h-24 overflow-y-auto text-[10px] text-muted-foreground">
-            {bookmark.notes}
-          </span>
-        )}
-        {onGoToBookmark && (
-          <button
-            className="mt-1 rounded p-0.5 text-muted-foreground hover:bg-accent hover:text-foreground"
-            title="Go to bookmark"
-            onMouseDown={(e) => {
-              e.stopPropagation();
-              // The Captions tab gets hidden rather than unmounted, so an open
-              // popover would stay on screen, anchored to a zero-size trigger.
-              changeOpen(false);
-              onGoToBookmark(bookmark.id);
-            }}
-          >
-            <ExternalLink className="size-3.5" />
-          </button>
-        )}
-      </PopoverContent>
-    </Popover>
-  );
-}
-
-function highlightText(
-  text: string,
-  marks: {
-    offset: number;
-    length: number;
-    bookmark?: ExtensionBookmark;
-    bookmarkNumber?: number;
-  }[],
-  onGoToBookmark: (bookmarkId: string) => void,
-  onPopoverOpenChange: (open: boolean) => void,
-) {
-  if (marks.length === 0) {
-    return <span data-offset={0}>{text}</span>;
-  }
-  const sorted = [...marks].sort((a, b) => a.offset - b.offset);
-  const parts: React.ReactNode[] = [];
-  let cursor = 0;
-  for (const m of sorted) {
-    if (m.offset > cursor) {
-      parts.push(
-        <span key={`t${cursor}`} data-offset={cursor}>
-          {text.slice(cursor, m.offset)}
-        </span>,
-      );
-    }
-    const end = m.offset + m.length;
-    if (m.bookmark) {
-      parts.push(
-        <BookmarkWord
-          key={m.bookmark.id}
-          bookmark={m.bookmark}
-          bookmarkNumber={m.bookmarkNumber}
-          offset={m.offset}
-          onGoToBookmark={onGoToBookmark}
-          onPopoverOpenChange={onPopoverOpenChange}
-        >
-          {text.slice(m.offset, end)}
-        </BookmarkWord>,
-      );
-    } else {
-      parts.push(
-        <span
-          key={`h${m.offset}`}
-          data-offset={m.offset}
-          className="border-b-2 border-highlight-border bg-highlight-bg"
-        >
-          {text.slice(m.offset, end)}
-        </span>,
-      );
-    }
-    cursor = end;
-  }
-  if (cursor < text.length) {
-    parts.push(
-      <span key={`t${cursor}`} data-offset={cursor}>
-        {text.slice(cursor)}
-      </span>,
-    );
-  }
-  return <>{parts}</>;
-}
-
 export type CaptionListHandle = {
   scrollToIndex: (index: number) => void;
 };
@@ -392,4 +216,180 @@ export function CaptionList({
       </div>
     </div>
   );
+}
+
+function BookmarkWord({
+  bookmark,
+  bookmarkNumber,
+  offset,
+  children,
+  onGoToBookmark,
+  onPopoverOpenChange,
+}: {
+  bookmark: ExtensionBookmark;
+  bookmarkNumber?: number;
+  offset: number;
+  children: React.ReactNode;
+  onGoToBookmark: (bookmarkId: string) => void;
+  onPopoverOpenChange: (open: boolean) => void;
+}) {
+  const filled = !!bookmark.translation;
+  const triggerRef = useRef<HTMLSpanElement>(null);
+  const [open, setOpen] = useState(false);
+  function changeOpen(next: boolean) {
+    setOpen(next);
+    onPopoverOpenChange(next);
+  }
+  return (
+    <Popover open={open} onOpenChange={changeOpen}>
+      <PopoverTrigger asChild>
+        <span
+          ref={triggerRef}
+          className="inline-block cursor-pointer"
+          data-testid="bookmark-highlight"
+          data-offset={offset}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <span
+            className={
+              filled
+                ? "border-b-2 border-highlight-alt-border bg-highlight-alt-bg"
+                : "border-b-2 border-highlight-border bg-highlight-bg"
+            }
+          >
+            {children}
+          </span>
+        </span>
+      </PopoverTrigger>
+      <PopoverContent
+        data-testid="bookmark-popover"
+        side="top"
+        avoidCollisions
+        onOpenAutoFocus={(e) => e.preventDefault()}
+        onClick={(e) => e.stopPropagation()}
+        onPointerDownOutside={(e) => {
+          // When modal=false (extension shadow DOM), DismissableLayer closes
+          // on pointerdown before the trigger's click can toggle. Prevent the
+          // dismiss when clicking the trigger so the toggle handles it.
+          // Use composedPath() because shadow DOM retargets event.target to
+          // the host element.
+          const target = e.detail.originalEvent.composedPath()[0] as Node;
+          if (triggerRef.current?.contains(target)) {
+            e.preventDefault();
+          }
+        }}
+      >
+        <span className="block text-xs font-medium text-popover-foreground">
+          {bookmarkNumber !== undefined && (
+            <span className="mr-1 text-muted-foreground">
+              #{bookmarkNumber}
+            </span>
+          )}
+          {bookmark.text}
+        </span>
+        {bookmark.translation ? (
+          <span className="block text-xs text-muted-foreground">
+            {bookmark.translation}
+          </span>
+        ) : (
+          <span className="block text-xs italic text-muted-foreground/50">
+            unfilled
+          </span>
+        )}
+        {bookmark.etymology && (
+          <span className="mt-1 block text-[10px] text-muted-foreground">
+            {bookmark.etymology}
+          </span>
+        )}
+        {bookmark.notes && (
+          <span className="mt-1 block max-h-24 overflow-y-auto text-[10px] text-muted-foreground">
+            {bookmark.notes}
+          </span>
+        )}
+        {onGoToBookmark && (
+          <button
+            className="mt-1 rounded p-0.5 text-muted-foreground hover:bg-accent hover:text-foreground"
+            title="Go to bookmark"
+            onMouseDown={(e) => {
+              e.stopPropagation();
+              // The Captions tab gets hidden rather than unmounted, so an open
+              // popover would stay on screen, anchored to a zero-size trigger.
+              changeOpen(false);
+              onGoToBookmark(bookmark.id);
+            }}
+          >
+            <ExternalLink className="size-3.5" />
+          </button>
+        )}
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+function highlightText(
+  text: string,
+  marks: {
+    offset: number;
+    length: number;
+    bookmark?: ExtensionBookmark;
+    bookmarkNumber?: number;
+  }[],
+  onGoToBookmark: (bookmarkId: string) => void,
+  onPopoverOpenChange: (open: boolean) => void,
+) {
+  if (marks.length === 0) {
+    return <span data-offset={0}>{text}</span>;
+  }
+  const sorted = [...marks].sort((a, b) => a.offset - b.offset);
+  const parts: React.ReactNode[] = [];
+  let cursor = 0;
+  for (const m of sorted) {
+    if (m.offset > cursor) {
+      parts.push(
+        <span key={`t${cursor}`} data-offset={cursor}>
+          {text.slice(cursor, m.offset)}
+        </span>,
+      );
+    }
+    const end = m.offset + m.length;
+    if (m.bookmark) {
+      parts.push(
+        <BookmarkWord
+          key={m.bookmark.id}
+          bookmark={m.bookmark}
+          bookmarkNumber={m.bookmarkNumber}
+          offset={m.offset}
+          onGoToBookmark={onGoToBookmark}
+          onPopoverOpenChange={onPopoverOpenChange}
+        >
+          {text.slice(m.offset, end)}
+        </BookmarkWord>,
+      );
+    } else {
+      parts.push(
+        <span
+          key={`h${m.offset}`}
+          data-offset={m.offset}
+          className="border-b-2 border-highlight-border bg-highlight-bg"
+        >
+          {text.slice(m.offset, end)}
+        </span>,
+      );
+    }
+    cursor = end;
+  }
+  if (cursor < text.length) {
+    parts.push(
+      <span key={`t${cursor}`} data-offset={cursor}>
+        {text.slice(cursor)}
+      </span>,
+    );
+  }
+  return <>{parts}</>;
+}
+
+function formatTimestamp(seconds: number): string {
+  const m = Math.floor(seconds / 60);
+  const s = Math.floor(seconds % 60);
+  return `${m}:${String(s).padStart(2, "0")}`;
 }
