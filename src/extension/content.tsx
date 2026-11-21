@@ -20,13 +20,24 @@ const queryClient = new QueryClient({
   },
 });
 
-function applyTheme(host: HTMLElement, container: HTMLElement) {
-  const dark = isYouTubeDark();
-  container.classList.toggle("dark", dark);
-  host.classList.toggle("dark", dark);
-}
-
 let themeObserver: MutationObserver | undefined;
+
+function main() {
+  console.log(`[zamak] build: ${__BUILD_TIME__} (${__GIT_REV__})`);
+  initCaptionStorage(createBridgeStorage());
+
+  // YouTube SPA navigation
+  if (isWatchPage()) {
+    injectOverlay();
+  }
+
+  document.addEventListener("yt-navigate-start", removeOverlay);
+  document.addEventListener("yt-navigate-finish", () => {
+    if (isWatchPage()) {
+      injectOverlay();
+    }
+  });
+}
 
 function injectOverlay() {
   if (document.getElementById("zamak-host")) {
@@ -81,27 +92,16 @@ function injectOverlay() {
   );
 }
 
+function applyTheme(host: HTMLElement, container: HTMLElement) {
+  const dark = isYouTubeDark();
+  container.classList.toggle("dark", dark);
+  host.classList.toggle("dark", dark);
+}
+
 function removeOverlay() {
   themeObserver?.disconnect();
   themeObserver = undefined;
   document.getElementById("zamak-host")?.remove();
-}
-
-function main() {
-  console.log(`[zamak] build: ${__BUILD_TIME__} (${__GIT_REV__})`);
-  initCaptionStorage(createBridgeStorage());
-
-  // YouTube SPA navigation
-  if (isWatchPage()) {
-    injectOverlay();
-  }
-
-  document.addEventListener("yt-navigate-start", removeOverlay);
-  document.addEventListener("yt-navigate-finish", () => {
-    if (isWatchPage()) {
-      injectOverlay();
-    }
-  });
 }
 
 main();

@@ -68,23 +68,6 @@ function ExtensionViewer({ videoId }: { videoId: string }) {
   );
 }
 
-function getUserLangs(): string[] {
-  const langs = [...navigator.languages];
-  try {
-    const pref = localStorage.getItem("zamak:preferred-langs");
-    if (pref) {
-      const { lang1, lang2 } = JSON.parse(pref);
-      if (lang1 && !langs.includes(lang1)) {
-        langs.push(lang1);
-      }
-      if (lang2 && !langs.includes(lang2)) {
-        langs.push(lang2);
-      }
-    }
-  } catch {}
-  return langs;
-}
-
 function ExtensionSession({
   data,
   player,
@@ -101,4 +84,21 @@ function ExtensionSession({
       useSync={useExtensionSync}
     />
   );
+}
+
+function getUserLangs(): string[] {
+  const langs = [...navigator.languages];
+  try {
+    const pref = localStorage.getItem("zamak:preferred-langs");
+    if (pref) {
+      const { lang1, lang2 } = JSON.parse(pref);
+      if (lang1 && !langs.includes(lang1)) {
+        langs.push(lang1);
+      }
+      if (lang2 && !langs.includes(lang2)) {
+        langs.push(lang2);
+      }
+    }
+  } catch {}
+  return langs;
 }
