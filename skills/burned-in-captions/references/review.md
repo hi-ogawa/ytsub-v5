@@ -1,17 +1,15 @@
 # Review
 
-A review is a look back over a finished run. A person goes over the parts the run wasn't sure of on a local page, which shows the picture and plays the speech at each one, because a doubt written as prose can't be settled without both. A review polishes the track, but its main use is finding what the skill should do better, because each doubt the run settled wrong or couldn't settle points at a gap in the steps.
+A review is a look back over a finished run. A person goes over the run's doubts on a local page, which shows the picture and plays the speech at each one. A review polishes the track, but its main use is finding what the skill should do better.
 
 ## Doubts
 
-Start by collecting the run's doubts into `doubts.json`, from what the run left:
+Collect the run's doubts into `doubts.json`, both the ones it left open and the ones it settled, because a doubt settled wrong shows a gap in the steps:
 
 - reads with `[?]` or a `note`, from the readers' output, with the judgment the report gives for each
 - omitted captions, from `captions.json`
 - ASR lines that no caption matches, from the ASR against the track, with what the report says about them
 - judgment calls on `kind`, corrections, and doubts left open, from the report
-
-Include the doubts the run settled, not only the open ones, because a settled one can still be wrong, and a wrong one points at what the skill should do better.
 
 Each item has a time range, a group, and a one-line reason:
 
@@ -35,7 +33,7 @@ Each item has a time range, a group, and a one-line reason:
 }
 ```
 
-Let each group's `why` say why its items are on the page, so that a reviewer understands without the run's context. For example, "A reader declined to transcribe these as song lyrics" says more than "Left out of the track". `frames` is optional, and without it the page shows up to three frames across the range.
+Let each group's `why` say why its items are on the page in words a reviewer understands without the run's context, such as "A reader declined to transcribe these as song lyrics". `frames` is optional, and without it the page shows up to three frames across the range.
 
 ## Build the page
 
@@ -52,7 +50,7 @@ Give the user the URL. For each item, the page plays the range with sound and th
 
 Sort each finding by where it belongs:
 
-- **Track:** a fix to this video's captions. Apply it as a patch that runs after assembly, such as a script of edits matched by time and text, rather than by editing `captions.json` in place, so that rerunning the assembly keeps it. A fix that needs more frames, such as a closer crop of a card, goes to a new reader as in [Assemble and correct](../SKILL.md#5-assemble-and-correct).
+- **Track:** a fix to this video's captions. Apply it as a patch that runs after assembly, such as a script of edits matched by time and text, so that rerunning the assembly keeps it. A fix that needs more frames, such as a closer crop of a card, goes to a new reader as in [Assemble and correct](../SKILL.md#5-assemble-and-correct).
 - **Skill:** something the steps should have done differently, such as a fade-in that was read as its own caption. Say what the skill should do, with the items that show it, and group findings that share a cause. Draft these as issues for this skill, and file them once the user agrees.
 - **Channel:** something true of this channel only, such as how it tags speakers. Add it to the channel record, if one is available.
 

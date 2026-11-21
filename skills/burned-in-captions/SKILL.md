@@ -193,7 +193,7 @@ The user or the Zamak skill can pass time ranges where it suspects a miss, such 
 
 ## Reviewing a Run
 
-When the user wants to look back over a finished run, follow [Review](references/review.md). A person goes over the run's doubts on a local page with the video, its frames, and the tracks. The review polishes the track, but its main use is finding what this skill should do better.
+When the user wants to look back over a finished run, mostly to find what this skill should do better, follow [Review](references/review.md).
 
 ## Features
 
