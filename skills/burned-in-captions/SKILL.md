@@ -34,6 +34,7 @@ The commands below shorten this to `uv run scripts/...`. Outputs go to the folde
 - `kind` is `speech` for words someone says, and `other` for anything else the editor put on screen, whatever its frame. Text filmed in the scene, such as signs, isn't a caption, so leave it out.
 - `position` is the caption's box `[x, y, w, h]` in the 1280×720 frame.
 - `text` is exactly what the picture shows, including nonstandard spelling, censored words such as ㅅㄲ, and spelled-out laughter.
+- `omitted` is a short reason, set on a caption whose text a reader declined to reproduce, such as copyrighted text. Its `text` is empty, and it keeps its time and position, so a user can fill it in by hand. Text that is only hard to read is not omitted, so mark it with `[?]` or read it again. Never put a placeholder label in `text` instead, because a caller would take the label as the caption.
 
 ## Read the Picture
 
@@ -118,15 +119,37 @@ uv run scripts/frames.py video.webm --at 12.25 12.5 12.75 --out sheets/
 
 This tiles the frames into sheets of 20 full frames at 480×270, about 3,400 image tokens each, each labelled with its time, and prints each sheet's path with its times as JSON. Times round to the 0.25 s step grid. It takes the frames from the same 4 fps decode as `features.py`, because seeking to each timestamp sometimes returns the frame before.
 
-Give the sheets to reader subagents, about 8 sheets each, because most of a reader's tokens are its own overhead. Use the strongest model available: a cheaper one added a fluent ending that wasn't on screen. Give each reader the ASR for its time range if you have it, with this instruction:
+Give the sheets to reader subagents, about 8 sheets each, because most of a reader's tokens are its own overhead. Start each reader's batch with the last tile of the batch before it, so a reader can link a caption across the boundary. Use the strongest model available: a cheaper one added a fluent ending that wasn't on screen. Give each reader the ASR for its time range if you have it, with this instruction:
 
-> Transcribe every caption in each frame exactly as shown, including nonstandard spelling, censored words, spelled-out laughter, and emoticons such as ㅠㅠ. The ASR is there to help you understand what is said. Where a caption differs from it, write what is on screen, never the ASR's words or standard Korean. Mark unclear or partial text with `[?]`. Tag each caption `speech` if it is words someone says, and `other` for anything else the editor put on screen. Skip text filmed in the scene, such as signs. Return a JSON list with one entry per tile, including tiles with no caption: `{"t": <time>, "captions": [{"text": ..., "box": [x, y, w, h], "kind": "speech" | "other"}]}`, with boxes in the tile's 480×270 pixels.
+> Transcribe every caption in each frame exactly as shown, including nonstandard spelling, censored words, spelled-out laughter, and emoticons such as ㅠㅠ. The ASR is there to help you understand what is said. Where a caption differs from it, write what is on screen, never the ASR's words or standard Korean. Mark unclear or partial text with `[?]`.
+>
+> Tag each caption `speech` if it is words someone says, and `other` for anything else the editor put on screen. Skip text filmed in the scene, such as signs.
+>
+> Add a `note` to a caption, in your own words, whenever something about it matters for putting the track together: the caption isn't fully shown in this frame, it is the same caption as in another tile (give that tile's time), its text is too small or unclear to read at this size, or it comes from footage other than this video's own editing. Most captions need no note.
+>
+> If you won't reproduce a caption's text, such as copyrighted text, return the caption with empty text and a short reason in `omitted`, rather than a placeholder in `text`.
+>
+> Return a JSON list with one entry per tile, including tiles with no caption: `{"t": <time>, "captions": [{"text": ..., "box": [x, y, w, h], "kind": "speech" | "other", "note"?: ..., "omitted"?: ...}]}`, with boxes in the tile's 480×270 pixels.
 
 Without subagents, read a few sheets per turn yourself.
 
 ### 5. Assemble and correct
 
-Turn the reads into captions. Each caption takes its text from the reads, and its begin and end from the run it was read in. Take its position from the masks, not the reader's box: the region's `box` at that step, or the `clusters_b` or `clusters_o` box that overlaps the reader's box scaled up to the frame (× 1280/480). Text read in two neighboring runs becomes one caption. A half-revealed line becomes its fuller version.
+Turn the reads into captions:
+
+- Each caption takes its text from the reads, and its begin and end from the run it was read in.
+- Take its position from the masks: the region's `box` at that step, or the `clusters_b` or `clusters_o` box that overlaps the reader's box scaled up to the frame (× 1280/480).
+- Identical text read in neighboring runs becomes one caption.
+- A caption with `omitted` keeps its run's time and position like any other, and neighboring ones with the same reason in the same place become one.
+
+Reads with a `note` or a `[?]` need judgment. Judge each one together with the reads of the runs on either side: merge it into a neighbor, keep it as its own caption, drop it, or read it again from a later step or a closer crop, with a one-line reason.
+
+- A read of a caption that isn't fully shown merges into the read of the same caption once it settles.
+- Text too small or unclear to read gets read again from a closer crop.
+- Text from other footage stays only if it belongs in this video's track.
+- The note is the reader's own description of what it saw, so let it decide over how similar two texts look, because two different lines can differ by a single word. Fall back to text similarity only where neither a note nor identical text links two reads.
+
+A merge keeps the fuller read's text and spans both runs, so a fade-in read merged into its steady caption gets the right begin. Timing always comes from the runs, never from the judgment. Give the reads to do again to a new reader as described below, and treat the new reads the same way.
 
 Ask for more frames where something is off:
 
@@ -136,7 +159,7 @@ Ask for more frames where something is off:
 - an ASR line, or a cue of another subtitle track such as `en`, that no caption matches in time, on a show whose captions follow the speech
 - readers who disagree on a caption's text
 
-Stop when a round of corrections finds little that's new, and list the doubts that remain in your report instead of chasing each one.
+Stop when a round of corrections finds little that's new, and list the doubts that remain in your report instead of chasing each one. The report also lists each omitted range with its reason, and each judgment with its reason.
 
 For small or unclear text, crop the frames to the caption's area. With `--crop`, `frames.py` tiles only that box, at twice the scale of a full-frame tile:
 
@@ -152,7 +175,7 @@ If a channel record is available, add anything new about the channel to it: its 
 
 ## Reading Ranges Again
 
-A caller can pass time ranges where it suspects a miss, such as Fix & Align ASR passing the times of ASR lines that no caption matches. Read every other step in each range, and add the new captions to the track.
+A caller can pass time ranges where it suspects a miss, such as Fix & Align ASR passing the times of ASR lines that no caption matches. Read every other step in each range, put the new reads through [Assemble and correct](#5-assemble-and-correct), and add the new captions to the track.
 
 ## Features
 
