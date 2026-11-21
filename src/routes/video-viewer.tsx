@@ -1,9 +1,9 @@
 import { useNavigate, useParams } from "react-router";
 import { CaptionPanel } from "../components/caption-panel.tsx";
 import { useYouTubePlayer } from "../components/youtube-player.tsx";
+import { videoIndexStore } from "../lib/caption-storage.ts";
 import { useStore } from "../lib/external-store.ts";
 import { useSyncState } from "../lib/sync.ts";
-import { videoIndexStore } from "../lib/video-index.ts";
 import type { Json3File } from "../lib/youtube.ts";
 
 const neverFetchJson3 = (): Promise<Json3File> => {
@@ -16,12 +16,7 @@ export function VideoViewerPage() {
   const [entries] = useStore(videoIndexStore);
   const entry = entries.find((e) => e.youtubeId === youtubeId);
 
-  const navigate = useNavigate();
   const { ref: playerElRef, player } = useYouTubePlayer(youtubeId);
-  const sync = useSyncState({
-    youtubeId: youtubeId!,
-    onNavigate: () => navigate("/"),
-  });
 
   if (!youtubeId) {
     return (
@@ -60,9 +55,14 @@ export function VideoViewerPage() {
           player={player}
           fetchJson3={neverFetchJson3}
           videoMeta={videoMeta}
-          sync={sync}
+          useSync={useViewerSync}
         />
       </div>
     </div>
   );
+}
+
+function useViewerSync(youtubeId: string) {
+  const navigate = useNavigate();
+  return useSyncState({ youtubeId, onNavigate: () => navigate("/") });
 }
