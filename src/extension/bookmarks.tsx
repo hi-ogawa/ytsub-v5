@@ -281,6 +281,7 @@ let serverUrl = "";
 
 async function main() {
   initCaptionStorage(idbCaptionStorage);
+  await loadVideoIndex();
   serverUrl = await getServerUrl();
 
   // Configure RPC to use extension server URL + bearer token auth
@@ -298,8 +299,6 @@ async function main() {
       return fetch(request);
     },
   });
-
-  await loadVideoIndex();
 
   createRoot(document.getElementById("root")!).render(
     <StrictMode>
