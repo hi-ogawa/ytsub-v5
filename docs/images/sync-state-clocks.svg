@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="340" viewBox="0 0 1000 340" font-family="system-ui, sans-serif" font-size="13">
+  <defs>
+    <style>
+      .t { font-weight: bold; }
+      .s { fill: #666; font-size: 11px; }
+      .v { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12px; fill: #36a; }
+      .lane { fill: #f3f5fc; stroke: #99b; }
+      .axis { stroke: #557; stroke-width: 1.5; }
+      .dot { fill: #fff; stroke: #36a; stroke-width: 2; }
+      .sync { stroke: #2a7; stroke-width: 1.5; stroke-dasharray: 5 4; }
+      .st { fill: #186; font-weight: bold; font-size: 12px; }
+      .check { fill: #fdfaf2; stroke: #a96; }
+      .bad { stroke: #c33; stroke-width: 1.5; stroke-dasharray: 4 4; fill: none; }
+      .badt { fill: #c33; font-size: 12px; }
+    </style>
+  </defs>
+  <rect width="1000" height="340" fill="#fff"/>
+
+  <!-- Browser clock lane -->
+  <rect x="20" y="70" width="640" height="80" rx="8" class="lane"/>
+  <text x="36" y="104" class="t">Browser clock</text>
+  <text x="36" y="122" class="s">video index</text>
+  <line x1="200" y1="110" x2="640" y2="110" class="axis"/>
+  <circle cx="320" cy="110" r="6" class="dot"/>
+  <text x="320" y="94" text-anchor="middle">last sync</text>
+  <text x="320" y="134" text-anchor="middle" class="v">10:50:01</text>
+  <circle cx="540" cy="110" r="6" class="dot"/>
+  <text x="540" y="94" text-anchor="middle">last change</text>
+  <text x="540" y="134" text-anchor="middle" class="v">10:51:00</text>
+
+  <!-- Server clock lane -->
+  <rect x="20" y="190" width="640" height="80" rx="8" class="lane"/>
+  <text x="36" y="224" class="t">Server clock</text>
+  <text x="36" y="242" class="s">server's copy (D1)</text>
+  <line x1="200" y1="230" x2="640" y2="230" class="axis"/>
+  <circle cx="320" cy="230" r="6" class="dot"/>
+  <text x="320" y="214" text-anchor="middle">last change, at sync</text>
+  <text x="320" y="254" text-anchor="middle" class="v">10:53:10</text>
+  <circle cx="540" cy="230" r="6" class="dot"/>
+  <text x="540" y="214" text-anchor="middle">last change, now</text>
+  <text x="540" y="254" text-anchor="middle" class="v">10:53:10</text>
+
+  <!-- The sync moment, recorded on both clocks -->
+  <line x1="320" y1="60" x2="320" y2="78" class="sync"/>
+  <line x1="320" y1="144" x2="320" y2="198" class="sync"/>
+  <text x="320" y="54" text-anchor="middle" class="st">push or pull records both</text>
+  <text x="312" y="174" text-anchor="end" class="s">same moment</text>
+
+  <!-- The old cross-clock comparison -->
+  <path d="M327,114 C440,120 420,231 532,231" class="bad"/>
+  <text x="440" y="170" class="badt">✗</text>
+
+  <!-- Checks -->
+  <rect x="690" y="70" width="290" height="80" rx="6" class="check"/>
+  <text x="706" y="96" class="t">Did the local session change?</text>
+  <text x="706" y="118" class="v">10:51:00 &gt; 10:50:01</text>
+  <text x="706" y="138">yes</text>
+  <rect x="690" y="190" width="290" height="80" rx="6" class="check"/>
+  <text x="706" y="216" class="t">Did the server's copy change?</text>
+  <text x="706" y="238" class="v">10:53:10 &gt; 10:53:10</text>
+  <text x="706" y="258">no</text>
+  <text x="835" y="174" text-anchor="middle" class="st">→ push</text>
+
+  <!-- Footer -->
+  <text x="20" y="300" class="badt">✗ Comparing across clocks reads 10:53:10 &gt; 10:50:01 as a server change, and shows a conflict.</text>
+  <text x="20" y="322" class="s">Example times for a browser clock about three minutes behind the server.</text>
+</svg>
