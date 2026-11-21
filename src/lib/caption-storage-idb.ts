@@ -14,7 +14,7 @@ type Stores = { sessions: PersistedCaptionSession; videos: VideoIndexEntry };
 
 const STORE_NAMES: { [K in keyof Stores]: string } = {
   sessions: "caption-sessions",
-  videos: "video-index",
+  videos: "videos",
 };
 
 const transact = createTransact<Stores>({ openDb, storeNames: STORE_NAMES });
