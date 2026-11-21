@@ -22,16 +22,12 @@ const transact = createTransact<Stores>({ openDb, storeNames: STORE_NAMES });
 class IdbCaptionStorage implements CaptionStorage {
   listeners = new Set<StorageListener>();
 
-  async getSession(youtubeId: string) {
-    return transact(["sessions"], "readonly", ({ sessions }) =>
+  getSession: CaptionStorage["getSession"] = (youtubeId) =>
+    transact(["sessions"], "readonly", ({ sessions }) =>
       sessions.get(youtubeId),
     );
-  }
 
-  async saveSession(
-    session: PersistedCaptionSession,
-    options?: { forceIndex?: boolean },
-  ) {
+  saveSession: CaptionStorage["saveSession"] = async (session, options) => {
     const entries = await transact(
       ["sessions", "index"],
       "readwrite",
@@ -56,9 +52,9 @@ class IdbCaptionStorage implements CaptionStorage {
     if (entries) {
       this.notify({ type: "index", entries });
     }
-  }
+  };
 
-  async deleteVideo(youtubeId: string) {
+  deleteVideo: CaptionStorage["deleteVideo"] = async (youtubeId) => {
     const entries = await transact(
       ["sessions", "index"],
       "readwrite",
@@ -69,9 +65,12 @@ class IdbCaptionStorage implements CaptionStorage {
       },
     );
     this.notify({ type: "index", entries });
-  }
+  };
 
-  async setSyncedAt(youtubeId: string, serverUpdatedAt: string) {
+  setSyncedAt: CaptionStorage["setSyncedAt"] = async (
+    youtubeId,
+    serverUpdatedAt,
+  ) => {
     const entries = await transact(
       ["index"],
       "readwrite",
@@ -88,18 +87,17 @@ class IdbCaptionStorage implements CaptionStorage {
       },
     );
     this.notify({ type: "index", entries });
-  }
+  };
 
-  async listIndex() {
-    return transact(["index"], "readonly", ({ index }) => index.getAll());
-  }
+  listIndex: CaptionStorage["listIndex"] = () =>
+    transact(["index"], "readonly", ({ index }) => index.getAll());
 
-  subscribe(listener: StorageListener) {
+  subscribe: CaptionStorage["subscribe"] = (listener) => {
     this.listeners.add(listener);
     return () => {
       this.listeners.delete(listener);
     };
-  }
+  };
 
   notify(notice: StorageNotice) {
     for (const l of this.listeners) {
