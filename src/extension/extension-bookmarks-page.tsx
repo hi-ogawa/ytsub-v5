@@ -28,10 +28,10 @@ import { chromeStorage } from "./lib/chrome-storage.ts";
 
 export function ExtensionBookmarksPage({
   serverUrl,
-  showAdvanced,
+  isDevelopment,
 }: {
   serverUrl: string;
-  showAdvanced: boolean;
+  isDevelopment: boolean;
 }) {
   const [entries] = videoIndexStore.useValue("entries");
   const usernameQuery = useQuery(
@@ -109,7 +109,7 @@ export function ExtensionBookmarksPage({
                 <Icon className="size-4" />
                 <span className="capitalize">{theme}</span>
               </DropdownMenuItem>
-              {showAdvanced && (
+              {isDevelopment && (
                 <DropdownMenuItem
                   onSelect={() => setAdvancedOpen(true)}
                   className="gap-2"
@@ -146,7 +146,7 @@ export function ExtensionBookmarksPage({
           </DropdownMenu>
         </div>
       </header>
-      {showAdvanced && (
+      {isDevelopment && (
         <AdvancedDialog
           serverUrl={serverUrl}
           open={advancedOpen}

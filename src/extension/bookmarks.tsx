@@ -45,7 +45,7 @@ async function main() {
         <QueryClientProvider client={queryClient}>
           <ExtensionBookmarksPage
             serverUrl={serverUrl}
-            showAdvanced={__DEV_EXT__}
+            isDevelopment={__DEV_EXT__}
           />
           <Toaster position="top-right" richColors />
         </QueryClientProvider>
