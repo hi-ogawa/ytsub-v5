@@ -19,6 +19,7 @@ export type BridgeMethod =
   | "getSession"
   | "saveSession"
   | "setSyncedAt"
+  | "getIndexEntry"
   | "listIndex";
 
 export type BridgeMessage =
@@ -115,6 +116,7 @@ export function createBridgeStorage(): CaptionStorage {
     },
     setSyncedAt: (youtubeId, serverUpdatedAt) =>
       call("setSyncedAt", youtubeId, serverUpdatedAt),
+    getIndexEntry: (youtubeId) => call("getIndexEntry", youtubeId),
     listIndex: () => call("listIndex"),
     subscribe(listener) {
       connect().catch(() => {});

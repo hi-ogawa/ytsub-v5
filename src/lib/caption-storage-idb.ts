@@ -88,6 +88,14 @@ class IdbCaptionStorage implements CaptionStorage {
     this.notify({ type: "index", entries });
   }
 
+  async getIndexEntry(youtubeId: string) {
+    return withTransaction([INDEX], "readonly", (tx) =>
+      requestResult<VideoIndexEntry | undefined>(
+        tx.objectStore(INDEX).get(youtubeId),
+      ),
+    );
+  }
+
   async listIndex() {
     return withTransaction([INDEX], "readonly", (tx) =>
       requestResult<VideoIndexEntry[]>(tx.objectStore(INDEX).getAll()),

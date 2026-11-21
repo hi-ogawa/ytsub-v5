@@ -15,6 +15,7 @@ const handlers: Record<BridgeMethod, (...params: any[]) => Promise<unknown>> = {
   saveSession: (session, options) => storage.saveSession(session, options),
   setSyncedAt: (youtubeId, serverUpdatedAt) =>
     storage.setSyncedAt(youtubeId, serverUpdatedAt),
+  getIndexEntry: (youtubeId) => storage.getIndexEntry(youtubeId),
   listIndex: () => storage.listIndex(),
 };
 
