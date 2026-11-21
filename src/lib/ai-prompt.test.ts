@@ -1,4 +1,4 @@
-import { expect, test } from "vite-plus/test";
+import { expect, test } from "vitest";
 import { alignResultToSession } from "./ai-prompt.ts";
 import type { ExtensionBookmark } from "./extension-bookmarks.ts";
 
