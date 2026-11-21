@@ -2,6 +2,15 @@ import { MutationCache, QueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { assertTypeEqual } from "../utils/type-assert.ts";
 
+// https://tanstack.com/query/latest/docs/framework/react/typescript#registering-global-meta
+declare module "@tanstack/react-query" {
+  interface Register {
+    mutationMeta: {
+      toastOnError?: boolean;
+    };
+  }
+}
+
 export function createAppQueryClient(
   options?: ConstructorParameters<typeof QueryClient>[0],
 ) {
@@ -9,7 +18,7 @@ export function createAppQueryClient(
     ...options,
     mutationCache: new MutationCache({
       onError: (error, _variables, _context, mutation) => {
-        // verify query.d.ts Register augmentation is applied
+        // verify the Register augmentation above is applied
         assertTypeEqual<
           typeof mutation.meta,
           { toastOnError?: boolean } | undefined

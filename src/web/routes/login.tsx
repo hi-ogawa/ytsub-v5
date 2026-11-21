@@ -2,7 +2,7 @@ import { useMutation } from "@tanstack/react-query";
 import { Bookmark, ExternalLink, Languages, Sparkles } from "lucide-react";
 import { Link } from "react-router";
 import { LoginForm } from "../../components/login-form.tsx";
-import { orpc } from "../../rpc.ts";
+import { orpc } from "../../lib/rpc-client.ts";
 
 const CHROME_STORE_URL =
   "https://chromewebstore.google.com/detail/zamak/gkonhebhbkfoeggebiipfbblfecdbabn";

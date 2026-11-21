@@ -22,8 +22,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "../../components/ui/dropdown-menu.tsx";
+import { orpc } from "../../lib/rpc-client.ts";
 import { useTheme } from "../../lib/theme.ts";
-import { orpc } from "../../rpc.ts";
 
 export async function authLoader() {
   const res = await fetch("/api/auth/check", {
