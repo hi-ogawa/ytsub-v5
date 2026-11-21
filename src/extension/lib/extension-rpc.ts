@@ -70,7 +70,7 @@ type HandlerResult<H> = H extends (...args: never[]) => Promise<infer R>
   ? R
   : never;
 
-type RpcClient<Handlers> = {
+export type RpcClient<Handlers> = {
   [M in keyof Handlers]: HandlerParams<Handlers[M]> extends undefined
     ? () => Promise<HandlerResult<Handlers[M]>>
     : (

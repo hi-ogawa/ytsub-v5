@@ -7,12 +7,18 @@ import {
   useFabOpen,
 } from "../../components/caption-panel.tsx";
 import type { YTPlayer } from "../../components/youtube-player.tsx";
+import type { UseSync } from "../../lib/sync.ts";
 import type { YouTubeExtractionResult } from "../../lib/youtube.ts";
 import { fetchPlayerApi, fetchTrackJson3 } from "../../lib/youtube.ts";
-import { useExtensionSync } from "../lib/extension-sync.ts";
 import { getVideoPlayer } from "../lib/youtube-page.ts";
 
-export function CaptionOverlay({ videoId }: { videoId: string }) {
+export function CaptionOverlay({
+  videoId,
+  useSync,
+}: {
+  videoId: string;
+  useSync: UseSync;
+}) {
   const [open, toggleOpen] = useFabOpen(videoId);
 
   return (
@@ -28,7 +34,7 @@ export function CaptionOverlay({ videoId }: { videoId: string }) {
             pointerEvents: "auto",
           }}
         >
-          <ExtensionViewer videoId={videoId} />
+          <ExtensionViewer videoId={videoId} useSync={useSync} />
         </ResizablePanel>
       )}
       <CaptionFab open={open} onClick={toggleOpen} />
@@ -36,7 +42,13 @@ export function CaptionOverlay({ videoId }: { videoId: string }) {
   );
 }
 
-function ExtensionViewer({ videoId }: { videoId: string }) {
+function ExtensionViewer({
+  videoId,
+  useSync,
+}: {
+  videoId: string;
+  useSync: UseSync;
+}) {
   const [player] = useState(() => getVideoPlayer());
 
   const metadataQuery = useQuery({
@@ -63,7 +75,9 @@ function ExtensionViewer({ videoId }: { videoId: string }) {
 
   return (
     <div className="flex h-full flex-col">
-      {data && <ExtensionSession data={data} player={player} />}
+      {data && (
+        <ExtensionSession data={data} player={player} useSync={useSync} />
+      )}
     </div>
   );
 }
@@ -71,9 +85,11 @@ function ExtensionViewer({ videoId }: { videoId: string }) {
 function ExtensionSession({
   data,
   player,
+  useSync,
 }: {
   data: YouTubeExtractionResult;
   player?: YTPlayer;
+  useSync: UseSync;
 }) {
   return (
     <CaptionPanel
@@ -81,7 +97,7 @@ function ExtensionSession({
       player={player}
       fetchJson3={(track) => fetchTrackJson3(track.baseUrl)}
       videoMeta={data.video}
-      useSync={useExtensionSync}
+      useSync={useSync}
     />
   );
 }

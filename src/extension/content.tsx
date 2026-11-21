@@ -4,8 +4,11 @@ import { createRoot } from "react-dom/client";
 import { PortalContainerProvider } from "../components/ui/portal-container.tsx";
 import { initCaptionStorage } from "../lib/caption-storage.ts";
 import { addShadowStyle } from "../utils/shadow-style.ts";
+import type { bgRpcHandlers } from "./background.ts";
 import { CaptionOverlay } from "./components/caption-overlay.tsx";
+import { createUseExtensionSync } from "./components/use-extension-sync.ts";
 import contentCss from "./content.css?inline";
+import { createRuntimeRelayRpc } from "./lib/extension-rpc.ts";
 import { createBridgeStorage } from "./lib/storage-bridge.ts";
 import { getVideoId, isWatchPage, isYouTubeDark } from "./lib/youtube-page.ts";
 
@@ -19,6 +22,10 @@ const queryClient = new QueryClient({
     },
   },
 });
+
+const useSync = createUseExtensionSync(
+  createRuntimeRelayRpc<typeof bgRpcHandlers>(),
+);
 
 let themeObserver: MutationObserver | undefined;
 
@@ -85,7 +92,7 @@ function injectOverlay() {
     <StrictMode>
       <PortalContainerProvider value={container}>
         <QueryClientProvider client={queryClient}>
-          <CaptionOverlay videoId={videoId} />
+          <CaptionOverlay videoId={videoId} useSync={useSync} />
         </QueryClientProvider>
       </PortalContainerProvider>
     </StrictMode>,
