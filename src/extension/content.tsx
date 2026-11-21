@@ -28,7 +28,7 @@ function applyTheme(host: HTMLElement, container: HTMLElement) {
 
 let themeObserver: MutationObserver | undefined;
 
-function inject() {
+function injectOverlay() {
   if (document.getElementById("zamak-host")) {
     return;
   }
@@ -81,7 +81,7 @@ function inject() {
   );
 }
 
-function remove() {
+function removeOverlay() {
   themeObserver?.disconnect();
   themeObserver = undefined;
   document.getElementById("zamak-host")?.remove();
@@ -93,13 +93,13 @@ function main() {
 
   // YouTube SPA navigation
   if (isWatchPage()) {
-    inject();
+    injectOverlay();
   }
 
-  document.addEventListener("yt-navigate-start", remove);
+  document.addEventListener("yt-navigate-start", removeOverlay);
   document.addEventListener("yt-navigate-finish", () => {
     if (isWatchPage()) {
-      inject();
+      injectOverlay();
     }
   });
 }
