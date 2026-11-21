@@ -33,15 +33,25 @@ import type { bgRpcHandlers } from "./background.ts";
 import contentCss from "./content.css?inline";
 import { createRuntimeRelayRpc } from "./lib/extension-rpc.ts";
 import { createBridgeStorage } from "./lib/storage-bridge.ts";
+import { readYouTubeLegacyData } from "./lib/youtube-legacy-data.ts";
 
 const bgRpc = createRuntimeRelayRpc<typeof bgRpcHandlers>();
 
 setCaptionStorage(createBridgeStorage());
 
+// Copies youtube.com data into extension storage once, then loads the index.
 let storageReady: Promise<void> | undefined;
 
 function prepareStorage() {
-  storageReady ??= loadVideoIndex();
+  storageReady ??= (async () => {
+    if (!(await captionStorage.isLegacyImported("youtube"))) {
+      await captionStorage.importLegacy(
+        "youtube",
+        await readYouTubeLegacyData(),
+      );
+    }
+    await loadVideoIndex();
+  })();
   return storageReady;
 }
 

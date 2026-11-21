@@ -10,7 +10,7 @@ import {
   LogOut,
   Settings,
 } from "lucide-react";
-import { StrictMode, useState } from "react";
+import { StrictMode, useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { MemoryRouter } from "react-router";
 import { Toaster } from "sonner";
@@ -32,13 +32,28 @@ import { useStore } from "../lib/external-store.ts";
 import { createAppQueryClient } from "../lib/query-client.ts";
 import { type VideoSyncEntry, useVideoSync } from "../lib/sync.ts";
 import { useTheme } from "../lib/theme.ts";
-import { videoIndexStore } from "../lib/video-index.ts";
+import { type VideoIndexEntry, videoIndexStore } from "../lib/video-index.ts";
 import { orpc, setRpcConfig } from "../rpc.ts";
 import { chromeStorage } from "./lib/chrome-storage.ts";
 import { getServerUrl } from "./lib/server-url.ts";
 import "../styles.css";
 
 declare const __DEV_EXT__: boolean;
+
+// A YouTube tab copies the data the extension kept on youtube.com before it
+// moved to the extension's own storage. Until then, the list here is empty.
+// chrome.storage.local still holds the old index copy, which tells a user
+// with data to move from a new user.
+const LEGACY_INDEX_KEY = "zamak:video-index";
+
+async function checkMigrationPending() {
+  if (await captionStorage.isLegacyImported("youtube")) {
+    return false;
+  }
+  const legacyIndex =
+    await chromeStorage.get<VideoIndexEntry[]>(LEGACY_INDEX_KEY);
+  return !!legacyIndex?.length;
+}
 
 const SERVER_PRESETS = [
   { label: "Production", url: "https://zamak.hiro18181.workers.dev" },
@@ -116,6 +131,18 @@ function ExtensionBookmarksPage() {
   );
   const { theme, cycle, Icon } = useTheme();
   const sync = useVideoSync();
+  const migrationQuery = useQuery({
+    queryKey: ["migration-pending"],
+    queryFn: checkMigrationPending,
+  });
+  const { refetch: refetchMigration } = migrationQuery;
+  useEffect(() => {
+    return captionStorage.subscribe((notice) => {
+      if (notice.type === "index") {
+        refetchMigration();
+      }
+    });
+  }, [refetchMigration]);
   const [showLogin, setShowLogin] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
   const deleteMutation = useMutation(
@@ -255,6 +282,14 @@ function ExtensionBookmarksPage() {
         }
       />
       <main className="flex-1 overflow-auto">
+        {migrationQuery.data && (
+          <p
+            data-testid="migration-notice"
+            className="mx-auto mt-3 max-w-3xl rounded-md border bg-muted px-3 py-2 text-sm text-muted-foreground"
+          >
+            Open any YouTube video once to finish moving your saved videos here.
+          </p>
+        )}
         <BookmarksPage
           entries={entries}
           videoHref={(id) => `https://www.youtube.com/watch?v=${id}`}

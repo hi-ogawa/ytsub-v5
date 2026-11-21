@@ -10,6 +10,7 @@ const DB_NAME = "zamak";
 const DB_VERSION = 2;
 const SESSIONS = "caption-sessions";
 const INDEX = "video-index";
+const META = "meta";
 
 const listeners = new Set<StorageListener>();
 
@@ -97,6 +98,56 @@ export const idbCaptionStorage: CaptionStorage = {
     );
   },
 
+  // One transaction checks the marker and writes everything, so concurrent
+  // imports run one after the other, and an interrupted one leaves nothing.
+  async importLegacy(source, data) {
+    const entries = await withTransaction(
+      [SESSIONS, INDEX, META],
+      "readwrite",
+      async (tx) => {
+        const meta = tx.objectStore(META);
+        const marker = await requestResult(meta.get(importMarkerKey(source)));
+        if (marker !== undefined) {
+          return undefined;
+        }
+
+        const index = tx.objectStore(INDEX);
+        const sessions = tx.objectStore(SESSIONS);
+        const winners = new Set<string>();
+        for (const entry of data.index) {
+          const existing = await requestResult<VideoIndexEntry | undefined>(
+            index.get(entry.youtubeId),
+          );
+          if (!existing || entry.updatedAt > existing.updatedAt) {
+            index.put(entry);
+            winners.add(entry.youtubeId);
+          }
+        }
+        for (const session of data.sessions) {
+          const keep =
+            winners.has(session.youtubeId) ||
+            (await requestResult(sessions.getKey(session.youtubeId))) ===
+              undefined;
+          if (keep) {
+            sessions.put(session);
+          }
+        }
+        meta.put(new Date().toISOString(), importMarkerKey(source));
+        return await requestResult<VideoIndexEntry[]>(index.getAll());
+      },
+    );
+    if (entries) {
+      notify({ type: "index", entries });
+    }
+  },
+
+  async isLegacyImported(source) {
+    const marker = await withTransaction([META], "readonly", (tx) =>
+      requestResult(tx.objectStore(META).get(importMarkerKey(source))),
+    );
+    return marker !== undefined;
+  },
+
   subscribe(listener) {
     listeners.add(listener);
     return () => {
@@ -104,6 +155,10 @@ export const idbCaptionStorage: CaptionStorage = {
     };
   },
 };
+
+function importMarkerKey(source: string) {
+  return `imported:${source}`;
+}
 
 // --- IndexedDB helpers ---
 
@@ -119,6 +174,7 @@ function openDb(): Promise<IDBDatabase> {
       }
       if (e.oldVersion < 2) {
         db.createObjectStore(INDEX, { keyPath: "youtubeId" });
+        db.createObjectStore(META);
       }
     };
     req.onsuccess = () => {

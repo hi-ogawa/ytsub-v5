@@ -22,6 +22,11 @@ export type StorageNotice = { type: "index"; entries: VideoIndexEntry[] };
 
 export type StorageListener = (notice: StorageNotice) => void;
 
+export type LegacyData = {
+  index: VideoIndexEntry[];
+  sessions: PersistedCaptionSession[];
+};
+
 export interface CaptionStorage {
   getSession(youtubeId: string): Promise<PersistedCaptionSession | undefined>;
   // Also updates the video's index entry when the session has bookmarks or is
@@ -33,6 +38,9 @@ export interface CaptionStorage {
   deleteVideo(youtubeId: string): Promise<void>;
   setSyncedAt(youtubeId: string, serverUpdatedAt: string): Promise<void>;
   listIndex(): Promise<VideoIndexEntry[]>;
+  // Runs once per source. docs/data-and-sync.md explains the conflict rule.
+  importLegacy(source: string, data: LegacyData): Promise<void>;
+  isLegacyImported(source: string): Promise<boolean>;
   subscribe(listener: StorageListener): () => void;
 }
 
@@ -66,5 +74,7 @@ export const captionStorage: CaptionStorage = {
   setSyncedAt: (youtubeId, serverUpdatedAt) =>
     current.setSyncedAt(youtubeId, serverUpdatedAt),
   listIndex: () => current.listIndex(),
+  importLegacy: (source, data) => current.importLegacy(source, data),
+  isLegacyImported: (source) => current.isLegacyImported(source),
   subscribe: (listener) => current.subscribe(listener),
 };

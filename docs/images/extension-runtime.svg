@@ -82,6 +82,14 @@
   <path d="M 964 150 L 985 150 L 985 440 L 964 440" class="line" marker-end="url(#a)"/>
   <text x="978" y="300" text-anchor="middle" class="s" transform="rotate(-90 978 300)">reads a session to push</text>
 
+  <!-- Legacy storage -->
+  <rect x="40" y="390" width="300" height="100" rx="6" class="store"/>
+  <text x="190" y="414" text-anchor="middle" class="t">youtube.com storage</text>
+  <text x="190" y="434" text-anchor="middle" class="s">where earlier versions kept sessions</text>
+  <text x="190" y="450" text-anchor="middle" class="s">and the index, left in place</text>
+  <line x1="140" y1="386" x2="140" y2="214" class="line" marker-end="url(#a)"/>
+  <text x="148" y="290" class="s">read once to migrate</text>
+
   <!-- Legend -->
   <line x1="40" y1="520" x2="90" y2="520" class="line"/>
   <text x="100" y="524">call, pointing from caller to callee: the response comes back on the same line</text>

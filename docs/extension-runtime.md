@@ -2,7 +2,7 @@
 
 The extension runs as five separate pieces of JavaScript. Each one can do things the others can't, so most features need several of them to work together. This doc explains what each piece is for and how they send messages to each other.
 
-![Each YouTube tab runs the content script and the relay, and the relay mounts a hidden storage frame from the extension. The content script calls the background through the relay, and reads and writes storage through the frame, which sends change notices back. The frame, the bookmarks page, and the background all open the same IndexedDB on the extension's origin.](images/extension-runtime.svg)
+![Each YouTube tab runs the content script and the relay, and the relay mounts a hidden storage frame from the extension. The content script calls the background through the relay, and reads and writes storage through the frame, which sends change notices back. The frame, the bookmarks page, and the background all open the same IndexedDB on the extension's origin. Earlier versions' data in youtube.com storage is read once to migrate it.](images/extension-runtime.svg)
 
 ## Split the Content Script Across Two Worlds
 
@@ -41,3 +41,9 @@ When the caption panel opens, and again each time you open its menu, the content
 ## Run the Bookmarks Page as an Extension Page
 
 The bookmarks page is an extension page, so it has the `chrome.*` APIs and the database directly, and needs no relay. It calls the server itself for signing in, listing the server's videos, pushing, pulling, and deleting, and it adds the session token from `chrome.storage.local` to each request. A YouTube tab doesn't need to be open for any of it.
+
+## Move Data From youtube.com Once
+
+Earlier versions kept sessions and the index in youtube.com storage. The first watch page that loads after the update reads that data and sends it through the frame, and the frame writes it in one transaction that also records that the move is done. Two tabs loading together write it once, because the second transaction sees the record. A load that stops partway writes nothing, so the next watch page tries again. The youtube.com copy stays in place, so a failed move or a downgrade loses nothing.
+
+Before the move, the bookmarks page's list is empty, and it asks you to open a YouTube video once. [Data and sync](data-and-sync.md#move-earlier-data-without-losing-changes) explains which copy wins when a video is in both places.
