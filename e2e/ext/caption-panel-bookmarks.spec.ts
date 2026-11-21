@@ -1,5 +1,11 @@
 import { expect } from "@playwright/test";
-import { openPanelWithTracks, openYouTubeTab, test } from "./helper";
+import {
+  createBookmarkAt,
+  openPanelWithTracks,
+  openYouTubeTab,
+  selectTextInCaption,
+  test,
+} from "./helper";
 
 // Billlie - cloud palace
 const SEED_VIDEO_ID = "7GU_VQfgMT0";
@@ -17,13 +23,21 @@ test("clicks inside the bookmark popover don't reach the caption row", async ({
   const video = ytPage.locator("video");
   const isPaused = () => video.evaluate((el: HTMLVideoElement) => el.paused);
 
-  await host
+  const highlight = host
     .locator("[data-index='1']")
-    .getByTestId("bookmark-highlight")
-    .click();
+    .getByTestId("bookmark-highlight");
+  await highlight.click();
   const popover = host.getByTestId("bookmark-popover");
+  await expect(
+    popover.getByRole("button", { name: "Go to bookmark" }),
+  ).toBeVisible();
   await popover.getByText("unfilled").click();
   await expect(popover).toBeVisible();
+  expect(await isPaused()).toBe(true);
+
+  // A second click on the highlight closes the popover
+  await highlight.click();
+  await expect(popover).not.toBeVisible();
   expect(await isPaused()).toBe(true);
 
   // A click on the row itself seeks and plays
@@ -35,10 +49,16 @@ test("bookmark arrows keep the play state", async ({ context }) => {
   const ytPage = await openYouTubeTab(context, SEED_VIDEO_ID);
   await openPanelWithTracks(ytPage);
   const host = ytPage.locator("#zamak-host");
+  const prevButton = host.getByRole("button", { name: "Previous bookmark" });
+  const nextButton = host.getByRole("button", { name: "Next bookmark" });
+  await expect(prevButton).toBeDisabled();
+  await expect(nextButton).toBeDisabled();
   await host
     .locator("[data-index='1'] [data-side='0'] [data-offset]")
     .selectText();
   await host.getByRole("button", { name: "Create bookmark" }).click();
+  await expect(prevButton).toBeEnabled();
+  await expect(nextButton).toBeEnabled();
   const video = ytPage.locator("video");
   const isPaused = () => video.evaluate((el: HTMLVideoElement) => el.paused);
   const getCurrentTime = () =>
@@ -78,4 +98,296 @@ test("bookmark arrows show the caption while paused", async ({ context }) => {
     });
   await expect.poll(getOffsetFromCenter).toBeLessThan(2);
   await expect(row).toHaveClass(/border-ring/);
+});
+
+test("manual bookmark: cancel selection, create, highlight, and export", async ({
+  context,
+}) => {
+  const ytPage = await openYouTubeTab(context, SEED_VIDEO_ID);
+  await openPanelWithTracks(ytPage);
+  const host = ytPage.locator("#zamak-host");
+
+  // Select text — cancel hides FAB
+  await selectTextInCaption(host, { index: 0, start: 0, end: 3 });
+  await expect(host.getByRole("button", { name: "Cancel" })).toBeVisible();
+  await host.getByRole("button", { name: "Cancel" }).click();
+  await expect(
+    host.getByRole("button", { name: "Create bookmark" }),
+  ).not.toBeVisible();
+
+  // Select again and create bookmark
+  await selectTextInCaption(host, { index: 0, start: 0, end: 3 });
+  await expect(
+    host.getByRole("button", { name: "Create bookmark" }),
+  ).toBeVisible();
+  await host.getByRole("button", { name: "Create bookmark" }).click();
+
+  // FAB disappears, highlight appears
+  await expect(
+    host.getByRole("button", { name: "Create bookmark" }),
+  ).not.toBeVisible();
+  const highlight = host.locator("[data-index='0'] .bg-highlight-bg").first();
+  await expect(highlight).toBeVisible();
+  await expect(highlight).toHaveText("꼬집어");
+
+  // Export includes the bookmark
+  await host.getByTitle("Settings").click();
+  const [download] = await Promise.all([
+    ytPage.waitForEvent("download"),
+    host.getByText("Export import.json").click(),
+  ]);
+  const content = await (
+    await download.createReadStream()
+  )
+    .toArray()
+    .then((chunks) => Buffer.concat(chunks).toString());
+  const data = JSON.parse(content);
+  expect(data.bookmarks).toHaveLength(1);
+  expect(data.bookmarks[0]).toMatchObject({
+    text: "꼬집어",
+    captionIdx: 0,
+    side: 0,
+    offset: 0,
+  });
+});
+
+test("track picker locks when bookmarks exist", async ({ context }) => {
+  const ytPage = await openYouTubeTab(context, SEED_VIDEO_ID);
+  await openPanelWithTracks(ytPage);
+  const host = ytPage.locator("#zamak-host");
+
+  // Create a bookmark first
+  await createBookmarkAt(host, { index: 0, start: 0, end: 3 });
+
+  // Track selects should be disabled
+  const selects = host.locator("select");
+  await expect(selects.nth(0)).toBeDisabled();
+  await expect(selects.nth(1)).toBeDisabled();
+
+  // Clear bookmarks via settings menu
+  await host.getByTitle("Settings").click();
+  ytPage.on("dialog", (d) => d.accept());
+  await host.getByText("Clear bookmarks").click();
+
+  // Track selects should be re-enabled
+  await expect(selects.nth(0)).toBeEnabled();
+  await expect(selects.nth(1)).toBeEnabled();
+
+  // Highlight should be gone
+  await expect(
+    host.locator("[data-index='0'] .bg-highlight-bg"),
+  ).not.toBeVisible();
+});
+
+test("bookmarks persist across panel close/reopen", async ({ context }) => {
+  const ytPage = await openYouTubeTab(context, SEED_VIDEO_ID);
+  await openPanelWithTracks(ytPage);
+  const host = ytPage.locator("#zamak-host");
+
+  // Create a bookmark
+  await createBookmarkAt(host, { index: 0, start: 0, end: 3 });
+  await expect(host.locator("[data-index='0'] .bg-highlight-bg")).toBeVisible();
+
+  // Close and reopen panel
+  await host.getByTitle("Hide captions").click();
+  await host.getByTitle("Show captions").click();
+
+  // Bookmark highlight should still be there (hydrated from IndexedDB)
+  await expect(host.locator("[data-index='0']")).toBeVisible();
+  await expect(host.locator("[data-index='0'] .bg-highlight-bg")).toBeVisible();
+  await expect(
+    host.locator("[data-index='0'] .bg-highlight-bg").first(),
+  ).toHaveText("꼬집어");
+});
+
+test("bookmarks tab: empty state, create bookmark, count and context", async ({
+  context,
+}) => {
+  const ytPage = await openYouTubeTab(context, SEED_VIDEO_ID);
+  await openPanelWithTracks(ytPage);
+  const host = ytPage.locator("#zamak-host");
+  const panel = host.getByTestId("resizable-panel");
+
+  // Tab bar visible
+  await expect(panel.getByRole("button", { name: "Captions" })).toBeVisible();
+  await expect(panel.getByRole("button", { name: /Bookmarks/ })).toBeVisible();
+
+  // Empty state
+  await panel.getByRole("button", { name: /Bookmarks/ }).click();
+  await expect(host.getByText("No bookmarks yet")).toBeVisible();
+
+  // Create bookmark and verify count
+  await panel.getByRole("button", { name: "Captions" }).click();
+  await createBookmarkAt(host, { index: 0, start: 0, end: 3 });
+  await expect(
+    panel.getByRole("button", { name: "Bookmarks (1)" }),
+  ).toBeVisible();
+
+  // Bookmark card with caption context
+  await panel.getByRole("button", { name: /Bookmarks/ }).click();
+  const bookmarkCard = host.locator("[data-bookmark-id]").first();
+  await expect(bookmarkCard).toBeVisible();
+  await expect(bookmarkCard.getByText("꼬집어").first()).toBeVisible();
+  await expect(
+    bookmarkCard.getByText("꼬집어 봐 뜬 꿈인 것 같아"),
+  ).toBeVisible();
+});
+
+test("bookmarks tab orders bookmarks in one row by offset", async ({
+  context,
+}) => {
+  const ytPage = await openYouTubeTab(context, SEED_VIDEO_ID);
+  await openPanelWithTracks(ytPage);
+  const host = ytPage.locator("#zamak-host");
+  const panel = host.getByTestId("resizable-panel");
+
+  // Create the later word first
+  await createBookmarkAt(host, { index: 0, start: 8, end: 10 });
+  await createBookmarkAt(host, { index: 0, start: 0, end: 3 });
+
+  await panel.getByRole("button", { name: "Bookmarks (2)" }).click();
+  const cards = host.locator("[data-bookmark-id] .font-medium");
+  await expect(cards).toHaveText(["꼬집어", "꿈인"]);
+});
+
+test("go-to-caption button switches from bookmarks to captions tab", async ({
+  context,
+}) => {
+  const ytPage = await openYouTubeTab(context, SEED_VIDEO_ID);
+  await openPanelWithTracks(ytPage);
+  const host = ytPage.locator("#zamak-host");
+  const panel = host.getByTestId("resizable-panel");
+  await createBookmarkAt(host, { index: 0, start: 0, end: 3 });
+
+  // Switch to bookmarks tab
+  await panel.getByRole("button", { name: /Bookmarks/ }).click();
+  await expect(host.locator("[data-bookmark-id]").first()).toBeVisible();
+
+  // Click go-to-caption
+  await host.getByRole("button", { name: "Go to caption" }).first().click();
+
+  // Should switch back to captions tab
+  await expect(panel.getByRole("button", { name: "Captions" })).toHaveClass(
+    /font-medium/,
+  );
+  await expect(host.locator("[data-index='0']")).toBeVisible();
+});
+
+test("delete bookmark from bookmarks tab", async ({ context }) => {
+  const ytPage = await openYouTubeTab(context, SEED_VIDEO_ID);
+  await openPanelWithTracks(ytPage);
+  const host = ytPage.locator("#zamak-host");
+  const panel = host.getByTestId("resizable-panel");
+  await createBookmarkAt(host, { index: 0, start: 0, end: 3 });
+
+  await panel.getByRole("button", { name: /Bookmarks/ }).click();
+  await expect(host.locator("[data-bookmark-id]").first()).toBeVisible();
+
+  // Open dropdown and delete
+  ytPage.on("dialog", (d) => d.accept());
+  const bookmarkCard = host.locator("[data-bookmark-id]").first();
+  await bookmarkCard
+    .getByRole("button")
+    .filter({ has: ytPage.locator("svg") })
+    .first()
+    .click();
+  await host.getByRole("menuitem", { name: "Delete" }).click();
+
+  // Should show empty state
+  await expect(host.getByText("No bookmarks yet")).toBeVisible();
+
+  // Highlight should be gone from captions
+  await panel.getByRole("button", { name: "Captions" }).click();
+  await expect(
+    host.locator("[data-index='0'] .bg-highlight-bg"),
+  ).not.toBeVisible();
+});
+
+test("bookmark numbers in popover and bookmarks tab", async ({ context }) => {
+  const ytPage = await openYouTubeTab(context, SEED_VIDEO_ID);
+  await openPanelWithTracks(ytPage);
+  const host = ytPage.locator("#zamak-host");
+  const panel = host.getByTestId("resizable-panel");
+  // Create out of order, so numbers must follow timestamps
+  await createBookmarkAt(host, { index: 4, start: 0, end: 2 });
+  await createBookmarkAt(host, { index: 0, start: 0, end: 3 });
+  await createBookmarkAt(host, { index: 2, start: 0, end: 1 });
+
+  // Popover shows the bookmark's number
+  await host
+    .locator("[data-index='2']")
+    .getByTestId("bookmark-highlight")
+    .first()
+    .click();
+  await expect(host.getByTestId("bookmark-popover")).toContainText("#2널");
+  await ytPage.keyboard.press("Escape");
+
+  // Bookmark cards are numbered in order
+  await panel.getByRole("button", { name: /Bookmarks/ }).click();
+  const cards = host.locator("[data-bookmark-id]");
+  await expect(cards).toHaveCount(3);
+  await expect(cards.nth(0)).toContainText("#1꼬집어");
+  await expect(cards.nth(1)).toContainText("#2널");
+  await expect(cards.nth(2)).toContainText("#3아직");
+
+  // Deleting the first bookmark renumbers the rest
+  ytPage.on("dialog", (d) => d.accept());
+  await cards
+    .nth(0)
+    .getByRole("button")
+    .filter({ has: ytPage.locator("svg") })
+    .first()
+    .click();
+  await host.getByRole("menuitem", { name: "Delete" }).click();
+  await expect(cards).toHaveCount(2);
+  await expect(cards.nth(0)).toContainText("#1널");
+  await expect(cards.nth(1)).toContainText("#2아직");
+});
+
+test("popover go-to-bookmark switches to bookmarks tab with flash-highlight", async ({
+  context,
+}) => {
+  const ytPage = await openYouTubeTab(context, SEED_VIDEO_ID);
+  await openPanelWithTracks(ytPage);
+  const host = ytPage.locator("#zamak-host");
+  const panel = host.getByTestId("resizable-panel");
+  await createBookmarkAt(host, { index: 0, start: 0, end: 3 });
+  await createBookmarkAt(host, { index: 2, start: 0, end: 1 });
+  const cards = host.locator("[data-bookmark-id]");
+
+  async function goToBookmark(index: number) {
+    await test.step(
+      `Go to bookmark at caption ${index}`,
+      async () => {
+        await host
+          .locator(`[data-index='${index}']`)
+          .getByTestId("bookmark-highlight")
+          .first()
+          .click();
+        await host
+          .getByTestId("bookmark-popover")
+          .getByRole("button", { name: "Go to bookmark" })
+          .dispatchEvent("mousedown");
+      },
+      { box: true },
+    );
+  }
+
+  await goToBookmark(0);
+
+  // Should switch to bookmarks tab and close the popover
+  await expect(panel.getByRole("button", { name: /Bookmarks/ })).toHaveClass(
+    /font-medium/,
+  );
+  await expect(host.getByTestId("bookmark-popover")).toHaveCount(0);
+
+  // Bookmark card should be visible with flash-highlight animation
+  await expect(cards.nth(0)).toBeVisible();
+  await expect(cards.nth(0)).toHaveClass(/flash-highlight/);
+
+  // Hiding the tab mid-flash must not leave the class to replay later
+  await panel.getByRole("button", { name: /Captions/ }).click();
+  await goToBookmark(2);
+  await expect(cards.nth(1)).toHaveClass(/flash-highlight/);
+  await expect(cards.nth(0)).not.toHaveClass(/flash-highlight/);
 });

@@ -4,6 +4,7 @@ import {
   chromium,
   expect,
   type BrowserContext,
+  type Locator,
   type Page,
 } from "@playwright/test";
 import { mockYouTube } from "./youtube-mock";
@@ -133,6 +134,54 @@ export async function openPanelWithTracks(ytPage: Page) {
       await selects.nth(0).selectOption(".ko");
       await selects.nth(1).selectOption(".en");
       await expect(host.locator("[data-index='0']")).toBeVisible();
+    },
+    { box: true },
+  );
+}
+
+interface CaptionSelection {
+  index: number;
+  start: number;
+  end: number;
+}
+
+/** Select text in a caption row inside the content script's shadow root */
+export async function selectTextInCaption(
+  host: Locator,
+  { index, start, end }: CaptionSelection,
+) {
+  await test.step(
+    "Select caption text",
+    async () => {
+      await host
+        .locator(`[data-index='${index}'] [data-side='0'] [data-offset]`)
+        .first()
+        .evaluate(
+          (el, { start, end }) => {
+            const range = document.createRange();
+            range.setStart(el.firstChild!, start);
+            range.setEnd(el.firstChild!, end);
+            const selection = document.getSelection()!;
+            selection.removeAllRanges();
+            selection.addRange(range);
+          },
+          { start, end },
+        );
+    },
+    { box: true },
+  );
+}
+
+/** Select text in a caption row and create a bookmark */
+export async function createBookmarkAt(
+  host: Locator,
+  selection: CaptionSelection,
+) {
+  await test.step(
+    "Create bookmark",
+    async () => {
+      await selectTextInCaption(host, selection);
+      await host.getByRole("button", { name: "Create bookmark" }).click();
     },
     { box: true },
   );
