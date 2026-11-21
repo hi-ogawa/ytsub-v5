@@ -49,7 +49,7 @@ import {
 } from "../lib/extension-bookmarks.ts";
 import { createLocalStorageStore, useStore } from "../lib/external-store.ts";
 import { flashHighlight } from "../lib/flash-highlight.ts";
-import type { SyncStatus } from "../lib/sync.ts";
+import type { SyncStatus, UseSync } from "../lib/sync.ts";
 import type {
   Json3File,
   YouTubeCaptionTrack,
@@ -369,7 +369,7 @@ function SyncMenuItem({
   useSync,
   store,
 }: {
-  useSync: (youtubeId: string) => SyncStatus;
+  useSync: UseSync;
   store: CaptionSessionManager;
 }) {
   const sync = useSync(store.videoMeta.youtubeId);
@@ -468,7 +468,7 @@ type CaptionPanelProps = {
   fetchJson3: (track: YouTubeCaptionTrack) => Promise<Json3File>;
   videoMeta: YouTubeVideoData;
   // Called by the sync menu each time it opens, so its queries refetch then.
-  useSync: (youtubeId: string) => SyncStatus;
+  useSync: UseSync;
   sessionOnly?: boolean;
 };
 
@@ -712,7 +712,7 @@ function CaptionPanelWithStore({
   player?: YTPlayer;
   onSelectTracks: (v1?: string, v2?: string) => void;
   onSelectStrategy: (s: MergeStrategy) => void;
-  useSync: (youtubeId: string) => SyncStatus;
+  useSync: UseSync;
 }) {
   useSyncExternalStore(store.subscribe, () => store.version);
 
@@ -779,7 +779,7 @@ function SettingsDropdown({
   autoScroll: boolean;
   onSetAutoScroll: (value: boolean | ((prev: boolean) => boolean)) => void;
   onSelectStrategy: (s: MergeStrategy) => void;
-  useSync: (youtubeId: string) => SyncStatus;
+  useSync: UseSync;
   sessionOnly?: boolean;
 }) {
   const hasBookmarks = store.bookmarks.length > 0;

@@ -99,6 +99,8 @@ export type SyncStatus = {
   onPull: (store: CaptionSessionManager) => void;
 };
 
+export type UseSync = (youtubeId: string) => SyncStatus;
+
 export function useSyncState({
   youtubeId,
   onNavigate,
