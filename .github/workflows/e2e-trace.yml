@@ -23,7 +23,7 @@ on:
         default: main
         type: string
       tests:
-        description: Space-separated Playwright file filters (for example e2e/sync.spec.ts e2e/ext/bookmarks.spec.ts)
+        description: Space-separated Playwright file filters (for example e2e/sync.spec.ts e2e/ext/bookmarks-page.spec.ts)
         required: true
         type: string
       grep:
