@@ -5,12 +5,12 @@ import {
   CaptionPanel,
   ResizablePanel,
   useFabOpen,
-} from "../components/caption-panel.tsx";
-import type { YTPlayer } from "../components/youtube-player.tsx";
-import type { YouTubeExtractionResult } from "../lib/youtube.ts";
-import { fetchPlayerApi, fetchTrackJson3 } from "../lib/youtube.ts";
-import { useExtensionSync } from "./lib/extension-sync.ts";
-import { getVideoPlayer } from "./lib/youtube-page.ts";
+} from "../../components/caption-panel.tsx";
+import type { YTPlayer } from "../../components/youtube-player.tsx";
+import type { YouTubeExtractionResult } from "../../lib/youtube.ts";
+import { fetchPlayerApi, fetchTrackJson3 } from "../../lib/youtube.ts";
+import { useExtensionSync } from "../lib/extension-sync.ts";
+import { getVideoPlayer } from "../lib/youtube-page.ts";
 
 export function CaptionOverlay({ videoId }: { videoId: string }) {
   const [open, toggleOpen] = useFabOpen(videoId);

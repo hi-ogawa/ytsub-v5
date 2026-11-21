@@ -4,7 +4,7 @@ import { createRoot } from "react-dom/client";
 import { PortalContainerProvider } from "../components/ui/portal-container.tsx";
 import { initCaptionStorage } from "../lib/caption-storage.ts";
 import { addShadowStyle } from "../utils/shadow-style.ts";
-import { CaptionOverlay } from "./caption-overlay.tsx";
+import { CaptionOverlay } from "./components/caption-overlay.tsx";
 import contentCss from "./content.css?inline";
 import { createBridgeStorage } from "./lib/storage-bridge.ts";
 import { getVideoId, isWatchPage, isYouTubeDark } from "./lib/youtube-page.ts";
