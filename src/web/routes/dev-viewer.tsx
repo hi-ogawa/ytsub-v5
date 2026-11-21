@@ -1,11 +1,11 @@
 import { useCallback } from "react";
 import { useNavigate, useParams } from "react-router";
 import {
-  CaptionFab,
-  CaptionPanel,
-  ResizablePanel,
+  CaptionPanelFab,
   useFabOpen,
-} from "../../components/caption-panel.tsx";
+} from "../../components/caption-panel-fab.tsx";
+import { CaptionPanel } from "../../components/caption-panel.tsx";
+import { ResizablePanel } from "../../components/resizable-panel.tsx";
 import { useYouTubePlayer } from "../../components/youtube-player.tsx";
 import { fixtureMetadata, fixtureTracks } from "../../lib/dev-fixtures.ts";
 import { useSyncState } from "../../lib/sync.ts";
@@ -53,7 +53,7 @@ export function DevViewerPage() {
           <DevViewerSession videoId={videoId} meta={meta} player={player} />
         </ResizablePanel>
       )}
-      <CaptionFab open={panelOpen} onClick={togglePanel} />
+      <CaptionPanelFab open={panelOpen} onClick={togglePanel} />
     </div>
   );
 }

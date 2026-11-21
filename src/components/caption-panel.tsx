@@ -22,7 +22,6 @@ import {
   useState,
   useSyncExternalStore,
 } from "react";
-import { z } from "zod";
 import {
   type AiTask,
   AI_TASKS,
@@ -37,6 +36,7 @@ import {
   type MergedCaption,
   mergeCaptions,
 } from "../lib/caption-merge.ts";
+import { captionPanelPreferences } from "../lib/caption-panel-preferences.ts";
 import {
   CaptionSessionManager,
   getInitialTracks,
@@ -55,8 +55,8 @@ import type {
   YouTubeCaptionTrack,
   YouTubeVideoData,
 } from "../lib/youtube.ts";
+import { downloadText } from "../utils/download-text.ts";
 import { getSelectionAt } from "../utils/get-selection.ts";
-import { createLocalStorageStore } from "../utils/local-storage-store.ts";
 import { CaptionList, type CaptionListHandle } from "./caption-list.tsx";
 import { syncStateDisplay } from "./sync-state.tsx";
 import { TrackPicker } from "./track-picker.tsx";
@@ -66,149 +66,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu.tsx";
-import { withUseValue } from "./use-store-value.ts";
 import type { YTPlayer } from "./youtube-player.tsx";
-
-const DEFAULT_PREFERENCES = { autoScroll: true, fabOpen: {} };
-
-const preferencesSchema = z
-  .object({
-    autoScroll: z.boolean().catch(DEFAULT_PREFERENCES.autoScroll),
-    fabOpen: z
-      .record(z.string(), z.boolean())
-      .catch(DEFAULT_PREFERENCES.fabOpen),
-  })
-  .catch(DEFAULT_PREFERENCES);
-
-const preferences = withUseValue(
-  createLocalStorageStore({
-    key: "zamak:caption-panel",
-    parse: (stored) => preferencesSchema.parse(stored),
-  }),
-);
-
-export function useFabOpen(videoId: string) {
-  const [fabOpen, setFabOpen] = preferences.useValue("fabOpen");
-  const open = fabOpen[videoId] ?? false;
-  const toggle = () => setFabOpen((prev) => ({ ...prev, [videoId]: !open }));
-  return [open, toggle] as const;
-}
-
-export function CaptionFab({
-  open,
-  onClick,
-}: {
-  open: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      data-testid="caption-fab"
-      type="button"
-      onClick={onClick}
-      className={`fixed right-3 bottom-3 flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border-none shadow-lg pointer-events-auto ${open ? "bg-accent text-accent-foreground" : "bg-primary text-primary-foreground"}`}
-      title={open ? "Hide captions" : "Show captions"}
-    >
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        className="size-8"
-        viewBox="0 0 128 128"
-      >
-        <path
-          d="M28,36 h72 v12 l-52,32 h52 v12 h-72 v-12 l52,-32 h-52 z"
-          fill="currentColor"
-        />
-      </svg>
-    </button>
-  );
-}
-
-const WIDTH_KEY = "zamak:panel-width";
-const DEFAULT_WIDTH = 400;
-const MIN_WIDTH = 280;
-const MAX_WIDTH = 800;
-
-function getPanelWidth(): number {
-  try {
-    const stored = localStorage.getItem(WIDTH_KEY);
-    if (stored) {
-      const n = Number(stored);
-      if (n >= MIN_WIDTH && n <= MAX_WIDTH) {
-        return n;
-      }
-    }
-  } catch {}
-  return DEFAULT_WIDTH;
-}
-
-export function ResizablePanel({
-  children,
-  id,
-  className,
-  style,
-}: {
-  children: React.ReactNode;
-  id?: string;
-  className?: string;
-  style?: React.CSSProperties;
-}) {
-  const [width, setWidth] = useState(getPanelWidth);
-  const widthRef = useRef(width);
-  widthRef.current = width;
-
-  const onPointerDown = useCallback((e: React.PointerEvent) => {
-    e.preventDefault();
-    const target = e.currentTarget as HTMLElement;
-    target.setPointerCapture(e.pointerId);
-    const startX = e.clientX;
-    const startWidth = widthRef.current;
-
-    // A cross-origin iframe (the YouTube player) can take the pointer events
-    // when the drag passes over it, even with pointer capture.
-    const iframes = [...document.querySelectorAll("iframe")];
-    for (const iframe of iframes) {
-      iframe.style.pointerEvents = "none";
-    }
-
-    const onPointerMove = (e: PointerEvent) => {
-      // Dragging left = wider (panel is right-aligned)
-      const newWidth = Math.max(
-        MIN_WIDTH,
-        Math.min(MAX_WIDTH, startWidth + (startX - e.clientX)),
-      );
-      setWidth(newWidth);
-    };
-
-    const onPointerUp = () => {
-      target.releasePointerCapture(e.pointerId);
-      for (const iframe of iframes) {
-        iframe.style.pointerEvents = "";
-      }
-      target.removeEventListener("pointermove", onPointerMove);
-      target.removeEventListener("pointerup", onPointerUp);
-      localStorage.setItem(WIDTH_KEY, String(widthRef.current));
-    };
-
-    target.addEventListener("pointermove", onPointerMove);
-    target.addEventListener("pointerup", onPointerUp);
-  }, []);
-
-  return (
-    <div
-      id={id}
-      className={className}
-      style={{ ...style, width: `${width}px` }}
-      data-testid="resizable-panel"
-    >
-      <div
-        className="absolute top-0 bottom-0 left-0 z-10 w-1.5 cursor-col-resize hover:bg-ring/50"
-        data-testid="resize-handle"
-        onPointerDown={onPointerDown}
-      />
-      {children}
-    </div>
-  );
-}
 
 // --- AI prompt copy (inline dropdown widget) ---
 
@@ -246,13 +104,11 @@ function AiPromptCopy({
     if (!text) {
       return;
     }
-    const blob = new Blob([text], { type: "text/plain" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `zamak-${youtubeId}-prompt-${task}.txt`;
-    a.click();
-    URL.revokeObjectURL(url);
+    downloadText({
+      filename: `zamak-${youtubeId}-prompt-${task}.txt`,
+      text,
+      type: "text/plain",
+    });
   }
 
   return (
@@ -731,7 +587,8 @@ function CaptionPanelWithStore({
 }) {
   useSyncExternalStore(store.subscribe, () => store.version);
 
-  const [autoScroll, setAutoScroll] = preferences.useValue("autoScroll");
+  const [autoScroll, setAutoScroll] =
+    captionPanelPreferences.useValue("autoScroll");
 
   return (
     <div className="flex h-full flex-col">
@@ -854,16 +711,11 @@ function SettingsDropdown({
         </DropdownMenuItem>
         <DropdownMenuItem
           onClick={() => {
-            const data = store.toExportData();
-            const blob = new Blob([JSON.stringify(data, null, 2)], {
+            downloadText({
+              filename: `import-${store.videoMeta.youtubeId}.json`,
+              text: JSON.stringify(store.toExportData(), null, 2),
               type: "application/json",
             });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement("a");
-            a.href = url;
-            a.download = `import-${store.videoMeta.youtubeId}.json`;
-            a.click();
-            URL.revokeObjectURL(url);
           }}
         >
           <Download className="mr-2 size-4" />
