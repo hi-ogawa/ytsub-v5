@@ -11,10 +11,11 @@ import {
 const storage = idbCaptionStorage;
 
 const handlers: Record<BridgeMethod, (...params: any[]) => Promise<unknown>> = {
-  getSession: storage.getSession,
-  saveSession: storage.saveSession,
-  setSyncedAt: storage.setSyncedAt,
-  listIndex: storage.listIndex,
+  getSession: (youtubeId) => storage.getSession(youtubeId),
+  saveSession: (session, options) => storage.saveSession(session, options),
+  setSyncedAt: (youtubeId, serverUpdatedAt) =>
+    storage.setSyncedAt(youtubeId, serverUpdatedAt),
+  listIndex: () => storage.listIndex(),
 };
 
 function postToPage(message: BridgeMessage) {

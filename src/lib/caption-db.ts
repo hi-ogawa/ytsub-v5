@@ -11,24 +11,21 @@ const DB_VERSION = 2;
 const SESSIONS = "caption-sessions";
 const INDEX = "video-index";
 
-const listeners = new Set<StorageListener>();
+class IdbCaptionStorage implements CaptionStorage {
+  listeners = new Set<StorageListener>();
 
-function notify(notice: StorageNotice) {
-  for (const l of listeners) {
-    l(notice);
-  }
-}
-
-export const idbCaptionStorage: CaptionStorage = {
-  async getSession(youtubeId) {
+  async getSession(youtubeId: string) {
     return withTransaction([SESSIONS], "readonly", (tx) =>
       requestResult<PersistedCaptionSession | undefined>(
         tx.objectStore(SESSIONS).get(youtubeId),
       ),
     );
-  },
+  }
 
-  async saveSession(session, options) {
+  async saveSession(
+    session: PersistedCaptionSession,
+    options?: { forceIndex?: boolean },
+  ) {
     const entries = await withTransaction(
       [SESSIONS, INDEX],
       "readwrite",
@@ -54,11 +51,11 @@ export const idbCaptionStorage: CaptionStorage = {
       },
     );
     if (entries) {
-      notify({ type: "index", entries });
+      this.notify({ type: "index", entries });
     }
-  },
+  }
 
-  async deleteVideo(youtubeId) {
+  async deleteVideo(youtubeId: string) {
     const entries = await withTransaction(
       [SESSIONS, INDEX],
       "readwrite",
@@ -70,10 +67,10 @@ export const idbCaptionStorage: CaptionStorage = {
         );
       },
     );
-    notify({ type: "index", entries });
-  },
+    this.notify({ type: "index", entries });
+  }
 
-  async setSyncedAt(youtubeId, serverUpdatedAt) {
+  async setSyncedAt(youtubeId: string, serverUpdatedAt: string) {
     const entries = await withTransaction([INDEX], "readwrite", async (tx) => {
       const index = tx.objectStore(INDEX);
       const existing = await requestResult<VideoIndexEntry | undefined>(
@@ -88,22 +85,30 @@ export const idbCaptionStorage: CaptionStorage = {
       }
       return await requestResult<VideoIndexEntry[]>(index.getAll());
     });
-    notify({ type: "index", entries });
-  },
+    this.notify({ type: "index", entries });
+  }
 
   async listIndex() {
     return withTransaction([INDEX], "readonly", (tx) =>
       requestResult<VideoIndexEntry[]>(tx.objectStore(INDEX).getAll()),
     );
-  },
+  }
 
-  subscribe(listener) {
-    listeners.add(listener);
+  subscribe(listener: StorageListener) {
+    this.listeners.add(listener);
     return () => {
-      listeners.delete(listener);
+      this.listeners.delete(listener);
     };
-  },
-};
+  }
+
+  notify(notice: StorageNotice) {
+    for (const l of this.listeners) {
+      l(notice);
+    }
+  }
+}
+
+export const idbCaptionStorage = new IdbCaptionStorage();
 
 // --- IndexedDB helpers ---
 
