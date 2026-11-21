@@ -71,7 +71,7 @@ Look at one sheet of 20 frames spread across the whole video:
 uv run scripts/frames.py video.webm --spread 20 --out check/
 ```
 
-Decide whether the video has burned-in captions, and what style they are, such as white text with a dark outline, or text on a dark box.
+Decide whether the video has burned-in captions, and what style they are, such as white text with a dark outline, or text on a dark box. Note also how easily the captions read at this tile size, which guides the tile size for reading in step 4.
 
 - With no captions, return an empty track and say so.
 - If a channel record is available and has notes on this channel, use them.
@@ -116,17 +116,21 @@ Read where you are unsure, and skip reads that would only repeat what you alread
 uv run scripts/frames.py video.webm --at 12.25 12.5 12.75 --out sheets/
 ```
 
-This tiles the frames into sheets of 20 full frames at 480×270, about 3,400 image tokens each, each labelled with its time, and prints each sheet's path with its times as JSON. Times round to the 0.25 s step grid. It takes the frames from the same 4 fps decode as `features.py`, because seeking to each timestamp sometimes returns the frame before.
+This tiles the frames into sheets, each tile labelled with its time, and prints each sheet's path, times, `scale`, and crop `origin` as JSON. Times round to the 0.25 s step grid. It takes the frames from the same 4 fps decode as `features.py`, because seeking to each timestamp sometimes returns the frame before.
 
-Give the sheets to reader subagents, about 8 sheets each, because most of a reader's tokens are its own overhead. Use the strongest model available: a cheaper one added a fluent ending that wasn't on screen. Give each reader the ASR for its time range if you have it, with this instruction:
+Choose the tile size with `--scale`, so that this video's captions read comfortably, judging from the check sheet, which uses the default of 0.375, or 480×270 tiles. A sheet costs about 3,400 image tokens whatever is on it, so smaller tiles fit more frames per sheet.
 
-> Transcribe every caption in each frame exactly as shown, including nonstandard spelling, censored words, spelled-out laughter, and emoticons such as ㅠㅠ. The ASR is there to help you understand what is said. Where a caption differs from it, write what is on screen, never the ASR's words or standard Korean. Mark unclear or partial text with `[?]`. Tag each caption `speech` if it is words someone says, and `other` for anything else the editor put on screen. Skip text filmed in the scene, such as signs. Return a JSON list with one entry per tile, including tiles with no caption: `{"t": <time>, "captions": [{"text": ..., "box": [x, y, w, h], "kind": "speech" | "other"}]}`, with boxes in the tile's 480×270 pixels.
+If the captions keep to a band and look small in full-frame tiles, also give readers a padded crop of that band with `--crop`, next to the full frames. The band is usually the area found for the regions in step 2. Text outside the band still needs the full frames. Crop and full-frame sheets hold different numbers of tiles, so a reader pairs them by the time on each tile, not sheet by sheet. For example, on one travel channel, 480 px full-frame tiles were borderline for the dialogue line, and a crop of the caption band at 0.75 scale read cleanly.
+
+Give the sheets to reader subagents, with enough sheets per reader that its fixed overhead is small next to its reading. Use the strongest model available: a cheaper one added a fluent ending that wasn't on screen. Give each reader the ASR for its time range if you have it, with this instruction:
+
+> Transcribe every caption in each frame exactly as shown, including nonstandard spelling, censored words, spelled-out laughter, and emoticons such as ㅠㅠ. The ASR is there to help you understand what is said. Where a caption differs from it, write what is on screen, never the ASR's words or standard Korean. Mark unclear or partial text with `[?]`. Tag each caption `speech` if it is words someone says, and `other` for anything else the editor put on screen. Skip text filmed in the scene, such as signs. Return a JSON list with one entry per tile, including tiles with no caption: `{"t": <time>, "captions": [{"text": ..., "box": [x, y, w, h], "kind": "speech" | "other"}]}`, with boxes in the pixels of the full-frame tile, or of the crop tile where a time has no full-frame tile.
 
 Without subagents, read a few sheets per turn yourself.
 
 ### 5. Assemble and correct
 
-Turn the reads into captions. Each caption takes its text from the reads, and its begin and end from the run it was read in. Take its position from the masks, not the reader's box: the region's `box` at that step, or the `clusters_b` or `clusters_o` box that overlaps the reader's box scaled up to the frame (× 1280/480). Text read in two neighboring runs becomes one caption. A half-revealed line becomes its fuller version.
+Turn the reads into captions. Each caption takes its text from the reads, and its begin and end from the run it was read in. Take its position from the masks, not the reader's box: the region's `box` at that step, or the `clusters_b` or `clusters_o` box that overlaps the reader's box. Convert the reader's box to the frame with its sheet's printed `scale` and `origin`: divide by the scale, then add the origin. Text read in two neighboring runs becomes one caption. A half-revealed line becomes its fuller version.
 
 Ask for more frames where something is off:
 
@@ -138,7 +142,7 @@ Ask for more frames where something is off:
 
 Stop when a round of corrections finds little that's new, and list the doubts that remain in your report instead of chasing each one.
 
-For small or unclear text, crop the frames to the caption's area. With `--crop`, `frames.py` tiles only that box, at twice the scale of a full-frame tile:
+For small or unclear text, crop the frames to the caption's area. With `--crop`, `frames.py` tiles only that box, at a scale of 0.75 unless `--scale` says otherwise:
 
 ```bash
 uv run scripts/frames.py video.webm --at 12.25 12.5 --crop 160,580,960,110 --out zoom/
