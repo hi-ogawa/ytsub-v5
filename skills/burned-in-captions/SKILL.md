@@ -31,9 +31,26 @@ The commands below shorten this to `uv run scripts/...`. Outputs go to the folde
 }
 ```
 
-- `kind` is `speech` for words someone says, and `other` for anything else the editor put on screen, whatever its frame. Text filmed in the scene, such as signs, isn't a caption, so leave it out.
+- `kind` is `speech` for words someone says, and `other` for anything else the editor put on screen, whatever its frame. Text filmed in the scene, such as signs, isn't a caption, so leave it out. Some examples:
+  - Large or decorated text of what someone says, such as crying text `제발 천천히 걸어주세요ㅠㅠㅠ`, is `speech`.
+  - A sound someone imitates, such as a person bleating like a sheep, is `other` by default.
+  - Name tags, such as `(주니)` when a member first appears, are `other`.
 - `position` is the caption's box `[x, y, w, h]` in the 1280×720 frame.
 - `text` is exactly what the picture shows, including nonstandard spelling, censored words such as ㅅㄲ, and spelled-out laughter.
+- `omitted` is set on a caption whose text the readers didn't transcribe, such as song lyrics. Such a caption has empty `text` and keeps its time and position, so a user can fill it in by hand:
+
+  ```json
+  {
+    "begin": 1044.5,
+    "end": 1061.25,
+    "text": "",
+    "kind": "speech",
+    "position": [280, 563, 455, 40],
+    "omitted": "lyrics"
+  }
+  ```
+
+  Never put a label such as `[가사]` in `text` instead, because a caller would take it as the caption and replace the ASR's sung words with it.
 
 ## Read the Picture
 
@@ -53,7 +70,7 @@ Download the video at 720p into a folder kept for that video, such as one named 
 yt-dlp -f 247 -o 'video.%(ext)s' <youtube-id>
 ```
 
-Download it once, and reuse the file for reruns, follow-ups, and [Reading Ranges Again](#reading-ranges-again). Each download is a request to YouTube, and YouTube blocks a machine that sends too many with "Sign in to confirm you're not a bot". If `yt-dlp` answers with that, stop and report it, because retrying keeps the machine blocked longer.
+Download it once, and reuse the file for reruns, follow-ups, and [Reading Ranges Again](#reading-ranges-again). Each download is a request to YouTube, and YouTube blocks a machine that sends too many with "Sign in to confirm you're not a bot". If `yt-dlp` answers with that, stop and report it, because retrying keeps the machine blocked longer. HTTP 403 is a different error. It usually means the installed `yt-dlp` is out of date, so run the same command with `uvx yt-dlp@latest` instead.
 
 When the task needs only part of the video, download only that part:
 
@@ -95,14 +112,14 @@ Find the areas from the check sheet, or from where `clusters_b` or `clusters_o` 
 
 ### 3. Plan reads
 
-Load `steps.csv` and filter it with code, not row by row. Use the region columns where you have them. Look for steps where something changes, such as:
+Load `steps.csv` and filter it with code, not row by row. The skill's project has only numpy and OpenCV, so read the table with Python's `csv` module, or add pandas for the script with `uv run --project $S --with pandas`. Use the region columns where you have them. Look for steps where something changes, such as:
 
 - `kept` drops, a swap
 - `gone` and `new` spike while `scene` stays low, a swap in the same spot
 - `new` grows while `gone` stays near zero, a reveal
 - `kept_1s` or `kept_2s` falls slowly while `kept` stays high, a crossfade. Both also fall for 1–2 s after every swap, because they compare with a step from before it, so a slow fall means a crossfade only with no swap just before.
 
-Group the steps between changes into runs, and match each run to a pattern in [the catalogue](references/catalogue.md). The pattern gives the reading rule, such as one late frame for a clean swap, or both sides of a spike for a swap in the same spot. A run's read comes before the next change, never on the frame after it, because that frame already shows the next caption.
+Group the steps between changes into runs, and match each run to a pattern in [the catalogue](references/catalogue.md). The pattern gives the reading rule, such as one late frame for a clean swap, or both sides of a spike for a swap in the same spot. A run's read comes before the next change, never on the frame after it, because that frame already shows the next caption. A change can span several steps, such as a fade, so treat neighboring change steps as one change. The run before it ends before its first step, and the run after it starts after its last step.
 
 Check the plan against the subtitle tracks first, because their text costs far less than frames. Look at frames only where the tracks can't settle a doubt, such as editor text, which no track contains, or a scene type you haven't seen yet, by tiling a few there and reading them yourself. Rerun the features on a window with `--start` and `--dur` between looks when a setting needs to change. A few sheets is usually enough. Stop once what you see agrees with the plan. Where a stretch stays unclear, such as scenery the masks keep reading as text, read it at a fixed interval instead, or accept some misses there and say so. Reading every caption precisely isn't the goal.
 
@@ -118,15 +135,40 @@ uv run scripts/frames.py video.webm --at 12.25 12.5 12.75 --out sheets/
 
 This tiles the frames into sheets of 20 full frames at 480×270, about 3,400 image tokens each, each labelled with its time, and prints each sheet's path with its times as JSON. Times round to the 0.25 s step grid. It takes the frames from the same 4 fps decode as `features.py`, because seeking to each timestamp sometimes returns the frame before.
 
-Give the sheets to reader subagents, about 8 sheets each, because most of a reader's tokens are its own overhead. Use the strongest model available: a cheaper one added a fluent ending that wasn't on screen. Give each reader the ASR for its time range if you have it, with this instruction:
+When the captions are too small to read exactly in a 480 px tile, such as a thin dialogue line about 10 px tall, give the readers a crop sheet of the caption area next to each full-frame sheet, made with `--crop` as in [step 5](#5-assemble-and-correct). Crop tiles are a different size, so a crop sheet holds a different number of tiles. Make the crop sheets from the same times, and pair the two by the times `frames.py` prints, not by sheet number.
 
-> Transcribe every caption in each frame exactly as shown, including nonstandard spelling, censored words, spelled-out laughter, and emoticons such as ㅠㅠ. The ASR is there to help you understand what is said. Where a caption differs from it, write what is on screen, never the ASR's words or standard Korean. Mark unclear or partial text with `[?]`. Tag each caption `speech` if it is words someone says, and `other` for anything else the editor put on screen. Skip text filmed in the scene, such as signs. Return a JSON list with one entry per tile, including tiles with no caption: `{"t": <time>, "captions": [{"text": ..., "box": [x, y, w, h], "kind": "speech" | "other"}]}`, with boxes in the tile's 480×270 pixels.
+Give the sheets to reader subagents, about 8 sheets each, because most of a reader's tokens are its own overhead. Start each reader's batch with the last tile of the batch before it, so a reader can link a caption across the boundary. Use the strongest model available: a cheaper one added a fluent ending that wasn't on screen. Give each reader the ASR for its time range if you have it, with this instruction:
+
+> Transcribe every caption in each frame exactly as shown, including nonstandard spelling, censored words, spelled-out laughter, and emoticons such as ㅠㅠ. The ASR is there to help you understand what is said. Where a caption differs from it, write what is on screen, never the ASR's words or standard Korean. Mark unclear or partial text with `[?]`.
+>
+> Tag each caption `speech` if it is words someone says, and `other` for anything else the editor put on screen. Large or decorated text of what someone says is still `speech`. Imitated sounds and name tags are `other`. Skip text filmed in the scene, such as signs.
+>
+> Add a `note` to a caption whenever something about it matters for putting the track together, in your own words. For example: "faint, still fading in", "same caption as at 612.25", "end card still unfolding", "same card as the previous tile, small handwriting I can't read at this size", or "clip from another video with its own lyrics". Most captions need no note.
+>
+> For song lyrics, or other text you don't transcribe, return the caption with empty text and the reason in `omitted`, such as `{"text": "", "omitted": "lyrics", ...}`. Don't write a placeholder such as "[song lyrics omitted]" in `text`.
+>
+> Return a JSON list with one entry per tile, including tiles with no caption: `{"t": <time>, "captions": [{"text": ..., "box": [x, y, w, h], "kind": "speech" | "other", "note"?: ..., "omitted"?: ...}]}`, with boxes in the tile's 480×270 pixels.
+
+A letter, memo, or review card can come back as one caption or as several, and either is fine. Read its small text from a crop of the card area, because full-frame tiles misread whole phrases on such cards. A card someone reads aloud is a `speech` caption that lines up with that speech as a best guess.
 
 Without subagents, read a few sheets per turn yourself.
 
 ### 5. Assemble and correct
 
-Turn the reads into captions. Each caption takes its text from the reads, and its begin and end from the run it was read in. Take its position from the masks, not the reader's box: the region's `box` at that step, or the `clusters_b` or `clusters_o` box that overlaps the reader's box scaled up to the frame (× 1280/480). Text read in two neighboring runs becomes one caption. A half-revealed line becomes its fuller version.
+Assemble in two passes. Code does the bulk, because most reads need nothing more, and a model settles the reads that code can't.
+
+**Code pass.** Turn the reads into captions with a script:
+
+- Each caption takes its text from the reads, and its begin and end from the run it was read in.
+- Take its position from the masks: the region's `box` at that step, or the `clusters_b` or `clusters_o` box that overlaps the reader's box scaled up to the frame (× 1280/480). On busy backgrounds a region's box can stretch over scenery to the region's edge, so where it is much larger than the reader's scaled box, use the reader's box.
+- Identical text read in neighboring runs becomes one caption.
+- A caption with `omitted` keeps its run's time and position like any other, and neighboring ones with the same reason in the same place become one.
+
+**Model pass.** Collect every read that has a `note` or a `[?]`, and give them to a subagent on the strongest model available. Give each read with the reads of the runs on either side, their run times, and the [cases in the catalogue](references/catalogue.md#notes-and-how-to-settle-them) as examples, with this instruction:
+
+> Each flagged read below comes with its neighbors and their run times. Decide what to do with each flagged read: `merge` it into a neighbor, `keep` it as its own caption, `drop` it, or `reread` it from a later step or a closer crop. The note is the reader's own description of what it saw, so let it decide over how similar two texts look. Lines that differ by a word, such as `우리는 소인으로 해야 돼?` and `대인으로 해야 돼?`, are usually different lines. Return a JSON list: `{"t": <time>, "action": "merge" | "keep" | "drop" | "reread", "into"?: <time of the read to merge into>, "at"?: <time to read again>, "crop"?: [x, y, w, h], "reason": <one line>}`.
+
+Apply the decisions in code. A merge keeps the fuller read's text and spans both runs, so a fade-in read merged into its steady caption gives the caption the right begin. Timing always comes from the runs, never from the model. Send each `reread` to a new reader as described below, and put the new reads through both passes again. Fall back to text similarity only where neither a note nor identical text links two reads.
 
 Ask for more frames where something is off:
 
@@ -136,7 +178,7 @@ Ask for more frames where something is off:
 - an ASR line, or a cue of another subtitle track such as `en`, that no caption matches in time, on a show whose captions follow the speech
 - readers who disagree on a caption's text
 
-Stop when a round of corrections finds little that's new, and list the doubts that remain in your report instead of chasing each one.
+Stop when a round of corrections finds little that's new, and list the doubts that remain in your report instead of chasing each one. The report also lists each omitted range with its reason, and the model pass's decisions with their reasons.
 
 For small or unclear text, crop the frames to the caption's area. With `--crop`, `frames.py` tiles only that box, at twice the scale of a full-frame tile:
 
@@ -148,11 +190,11 @@ Give the extra frames to a new reader, together with the frames already read fro
 
 ### 6. Record
 
-If a channel record is available, add anything new about the channel to it: its style, how closely its captions follow the speech, what went wrong, and the windows you checked. Add new patterns to [the catalogue](references/catalogue.md). Tell the user what you changed, because the next video on the channel relies on it.
+If a channel record is available, add anything new about the channel to it: its style, how closely its captions follow the speech, what went wrong, and the windows you checked. Add new patterns, and new cases the model pass settled, to [the catalogue](references/catalogue.md). Tell the user what you changed, because the next video on the channel relies on it.
 
 ## Reading Ranges Again
 
-A caller can pass time ranges where it suspects a miss, such as Fix & Align ASR passing the times of ASR lines that no caption matches. Read every other step in each range, and add the new captions to the track.
+A caller can pass time ranges where it suspects a miss, such as Fix & Align ASR passing the times of ASR lines that no caption matches. Read every other step in each range, put the new reads through [Assemble and correct](#5-assemble-and-correct), and add the new captions to the track.
 
 ## Features
 
