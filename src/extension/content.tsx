@@ -1,10 +1,8 @@
 import {
   QueryClient,
   QueryClientProvider,
-  useIsMutating,
   useMutation,
   useQuery,
-  useQueryClient,
 } from "@tanstack/react-query";
 import { StrictMode, useState } from "react";
 import { createRoot } from "react-dom/client";
@@ -132,21 +130,14 @@ type SyncAction =
   | { direction: "pull"; store: CaptionSessionManager };
 
 function useExtensionSync(youtubeId: string): SyncStatus {
-  const queryClient = useQueryClient();
   const entryQuery = useIndexEntry(youtubeId);
 
-  const serverQueryKey = ["extension-sync-state", youtubeId];
   const serverQuery = useQuery({
-    queryKey: serverQueryKey,
+    queryKey: ["extension-sync-state", youtubeId],
     queryFn: () => bgRpc.getSyncState({ youtubeId }),
   });
 
-  const mutationKey = ["sync", youtubeId];
-  // The menu may close and reopen during a push or pull, so the state comes
-  // from the mutation cache rather than this observer.
-  const isSyncing = useIsMutating({ mutationKey }) > 0;
   const syncMutation = useMutation({
-    mutationKey,
     mutationFn: async (action: SyncAction) => {
       if (action.direction === "push") {
         const { serverUpdatedAt } = await bgRpc.pushSession({ youtubeId });
@@ -165,12 +156,11 @@ function useExtensionSync(youtubeId: string): SyncStatus {
         await captionStorage.setSyncedAt(youtubeId, serverUpdatedAt);
       }
     },
-    onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: serverQueryKey }),
+    onSuccess: () => serverQuery.refetch(),
   });
 
   const getState = (): SyncState => {
-    if (isSyncing) {
+    if (syncMutation.isPending) {
       return "syncing";
     }
     if (serverQuery.isPending) {
