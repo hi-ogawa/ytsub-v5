@@ -11,7 +11,6 @@ import contentCss from "./content.css?inline";
 import { createRuntimeRelayRpc } from "./lib/extension-rpc.ts";
 import { createBridgeStorage } from "./lib/storage-bridge.ts";
 import {
-  getVideoId,
   subscribeWatchPage,
   subscribeYouTubeTheme,
 } from "./lib/youtube-page.ts";
@@ -31,25 +30,14 @@ const useSync = createUseExtensionSync(
   createRuntimeRelayRpc<typeof bgRpcHandlers>(),
 );
 
-let unsubscribeTheme: (() => void) | undefined;
-
 function main() {
   console.log(`[zamak] build: ${__BUILD_TIME__} (${__GIT_REV__})`);
   initCaptionStorage(createBridgeStorage());
 
-  subscribeWatchPage({ onEnter: injectOverlay, onLeave: removeOverlay });
+  subscribeWatchPage(mountOverlay);
 }
 
-function injectOverlay() {
-  if (document.getElementById("zamak-host")) {
-    return;
-  }
-
-  const videoId = getVideoId();
-  if (!videoId) {
-    return;
-  }
-
+function mountOverlay(videoId: string) {
   const { host, container } = createShadowHost({
     id: "zamak-host",
     css: contentCss,
@@ -63,7 +51,7 @@ function injectOverlay() {
     },
   });
 
-  unsubscribeTheme = subscribeYouTubeTheme((dark) =>
+  const unsubscribeTheme = subscribeYouTubeTheme((dark) =>
     applyTheme(host, container, dark),
   );
 
@@ -76,17 +64,16 @@ function injectOverlay() {
       </PortalContainerProvider>
     </StrictMode>,
   );
+
+  return () => {
+    unsubscribeTheme();
+    host.remove();
+  };
 }
 
 function applyTheme(host: HTMLElement, container: HTMLElement, dark: boolean) {
   container.classList.toggle("dark", dark);
   host.classList.toggle("dark", dark);
-}
-
-function removeOverlay() {
-  unsubscribeTheme?.();
-  unsubscribeTheme = undefined;
-  document.getElementById("zamak-host")?.remove();
 }
 
 main();

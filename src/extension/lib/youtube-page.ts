@@ -1,30 +1,29 @@
 import type { YTPlayer } from "../../components/youtube-player.tsx";
 
 // YouTube navigates as a single-page app, so the content script runs once and
-// follows its navigation events.
-export function subscribeWatchPage({
-  onEnter,
-  onLeave,
-}: {
-  onEnter: () => void;
-  onLeave: () => void;
-}) {
-  if (isWatchPage()) {
-    onEnter();
-  }
-  document.addEventListener("yt-navigate-start", onLeave);
-  document.addEventListener("yt-navigate-finish", () => {
-    if (isWatchPage()) {
-      onEnter();
+// follows its navigation events. onEnter returns the cleanup to run when the
+// page is left.
+export function subscribeWatchPage(onEnter: (videoId: string) => () => void) {
+  let leave: (() => void) | undefined;
+  const enter = () => {
+    const videoId = getVideoId();
+    if (isWatchPage() && videoId && !leave) {
+      leave = onEnter(videoId);
     }
+  };
+  enter();
+  document.addEventListener("yt-navigate-start", () => {
+    leave?.();
+    leave = undefined;
   });
+  document.addEventListener("yt-navigate-finish", enter);
 }
 
 function isWatchPage() {
   return window.location.pathname === "/watch";
 }
 
-export function getVideoId() {
+function getVideoId() {
   return new URL(window.location.href).searchParams.get("v");
 }
 
