@@ -19,6 +19,7 @@ import {
   captionStorage,
   initCaptionStorage,
   loadVideoIndex,
+  videoIndexStore,
 } from "../lib/caption-storage.ts";
 import { useStore } from "../lib/external-store.ts";
 import {
@@ -26,7 +27,6 @@ import {
   type SyncStatus,
   computeSyncState,
 } from "../lib/sync.ts";
-import { videoIndexStore } from "../lib/video-index.ts";
 import type { YouTubeExtractionResult } from "../lib/youtube.ts";
 import { fetchPlayerApi, fetchTrackJson3 } from "../lib/youtube.ts";
 import type { bgRpcHandlers } from "./background.ts";

@@ -11,9 +11,10 @@ import {
 import {
   type PersistedCaptionSession,
   captionStorage,
+  type VideoIndexEntry,
+  videoIndexStore,
 } from "./caption-storage.ts";
 import { useStore } from "./external-store.ts";
-import { type VideoIndexEntry, videoIndexStore } from "./video-index.ts";
 
 type ListVideosOutput = InferRouterOutputs<Router>["videos"]["listVideos"];
 type GetFullSessionOutput = NonNullable<

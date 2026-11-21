@@ -3,8 +3,8 @@ import type {
   PersistedCaptionSession,
   StorageListener,
   StorageNotice,
+  VideoIndexEntry,
 } from "./caption-storage.ts";
-import type { VideoIndexEntry } from "./video-index.ts";
 
 const DB_NAME = "zamak";
 const DB_VERSION = 2;

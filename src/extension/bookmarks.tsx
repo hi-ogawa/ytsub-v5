@@ -32,12 +32,12 @@ import {
   captionStorage,
   initCaptionStorage,
   loadVideoIndex,
+  videoIndexStore,
 } from "../lib/caption-storage.ts";
 import { useStore } from "../lib/external-store.ts";
 import { createAppQueryClient } from "../lib/query-client.ts";
 import { type VideoSyncEntry, useVideoSync } from "../lib/sync.ts";
 import { useTheme } from "../lib/theme.ts";
-import { videoIndexStore } from "../lib/video-index.ts";
 import { orpc, setRpcConfig } from "../rpc.ts";
 import { chromeStorage } from "./lib/chrome-storage.ts";
 import { getServerUrl } from "./lib/server-url.ts";
