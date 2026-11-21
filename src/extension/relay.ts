@@ -8,7 +8,10 @@ function main() {
   setupRpcRelay();
 }
 
-// The main world has no chrome.runtime to build the frame URL.
+// The frame is mounted here because only this world has chrome.runtime to
+// build its extension URL. The worlds share the DOM, so the main world finds
+// the frame by id and posts to it directly; this script takes no part in
+// storage calls after mounting.
 function mountStorageFrame() {
   const frame = document.createElement("iframe");
   frame.id = STORAGE_FRAME_ID;
