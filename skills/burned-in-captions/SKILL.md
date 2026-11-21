@@ -47,11 +47,21 @@ Keep the reading sheets out of your own context where you can, by giving them to
 
 ### 1. Check for captions
 
-Download the video at 720p:
+Download the video at 720p into a folder kept for that video, such as one named after its ID:
 
 ```bash
 yt-dlp -f 247 -o 'video.%(ext)s' <youtube-id>
 ```
+
+Download it once, and reuse the file for reruns, follow-ups, and [Reading Ranges Again](#reading-ranges-again). Each download is a request to YouTube, and YouTube blocks a machine that sends too many with "Sign in to confirm you're not a bot". If `yt-dlp` answers with that, stop and report it, because retrying keeps the machine blocked longer.
+
+When the task needs only part of the video, download only that part:
+
+```bash
+yt-dlp -f 247 --download-sections '*600-780' --force-keyframes-at-cuts -o 'video-600.%(ext)s' <youtube-id>
+```
+
+The file starts at 0 s, so add the section's start to every time the scripts print or take. `--force-keyframes-at-cuts` makes the cut land exactly on the start, which a plain cut misses by up to a few seconds.
 
 Look at one sheet of 20 frames spread across the whole video:
 

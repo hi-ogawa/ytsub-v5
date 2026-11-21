@@ -13,19 +13,32 @@ Work in a scratch directory.
 
 ## Fetch and Assess
 
-### Download Metadata
+### Fetch the Video Once
+
+Each `yt-dlp` run fetches the video's page from YouTube again, and YouTube blocks a machine that sends too many with "Sign in to confirm you're not a bot". So fetch everything about the video in one run:
 
 ```bash
-yt-dlp --print '{"youtubeId":"%(id)s","title":"%(title)s","channelName":"%(channel)s","channelId":"%(channel_id)s","duration":%(duration)s,"language1":"ko","language2":"en"}' --skip-download "<URL>" > video.json
+yt-dlp -J --skip-download "<URL>" > yt.json
+```
+
+`yt.json` holds the metadata, the subtitle tracks with their URLs, and the description. Read all of these from it with `jq`, and don't run `yt-dlp` again for anything already on disk. The only other run is the one that downloads the subtitles.
+
+If `yt-dlp` answers "Sign in to confirm you're not a bot", stop and report it. Retrying keeps the machine blocked longer.
+
+### Write Metadata
+
+```bash
+jq '{youtubeId: .id, title, channelName: .channel, channelId: .channel_id, duration, language1: "ko", language2: "en"}' yt.json > video.json
 ```
 
 ### List Available Subtitle Tracks
 
 ```bash
-yt-dlp --list-subs --skip-download "<URL>" 2>&1 | grep -E "^\[info\]|^Language|^ko |^en |^en-US"
+jq -r '"manual: \(.subtitles | keys | join(" "))",
+  "automatic: \(.automatic_captions | keys | map(select(test("^(ko|en)"))) | join(" "))"' yt.json
 ```
 
-The full output is ~1000 lines (hundreds of auto-translated languages). The grep filter shows section headers and ko/en rows. Check which section each row falls under: `Available subtitles` (manual) vs `Available automatic captions` (auto-generated). Adjust the grep pattern if targeting other languages (e.g. `^ja|^zh`).
+The automatic captions include over a hundred machine translations, so the filter keeps the ko/en codes. Adjust it when targeting other languages (e.g. `^(ja|zh)`).
 
 Note the exact language code of each track you need, such as `en-US` rather than `en`. When the Korean is auto-generated, also note the other manual tracks, such as `ja` and `zh`, because they help fix the Korean in Scenario B.
 
@@ -48,13 +61,13 @@ Creating a video through the [server API](server-api.md#replace-or-create-a-vide
 This prints each track's yt-dlp code next to its vssId:
 
 ```bash
-yt-dlp -J --skip-download "<URL>" | jq -r '
+jq -r '
   def param($k): (capture("[?&]\($k)=(?<v>[^&]*)").v) // null;
   [.subtitles, .automatic_captions][] | to_entries[] | .key as $key | .value[]
   | select(.ext == "json3") | .url
   | (if param("kind") == "asr" then "a." else "." end) + param("lang")
     + (if param("tlang") then ".t.\(param("tlang"))" else "" end)
-  | "\($key)\t\(.)"' | grep -E "^(ko|en)"
+  | "\($key)\t\(.)"' yt.json | grep -E "^(ko|en)"
 ```
 
 For a Korean video with manual English subtitles, the output includes:
@@ -71,26 +84,24 @@ A yt-dlp code can stand for several tracks. Here `ko` covers the Korean ASR trac
 
 ### Download Subtitles
 
-Prefer manual subs over auto-generated. Use json3 format, and pass the language code exactly as the list shows it. If the code doesn't match a track, such as `en` for a video whose English is `en-US`, yt-dlp downloads nothing and reports no error.
+Download every track you need in one run, in json3 format. Pass each language code exactly as the list shows it. If a code doesn't match a track, such as `en` for a video whose English is `en-US`, yt-dlp skips it and reports no error.
 
 ```bash
-# Manual subs (preferred), here with English listed as en-US
-yt-dlp --write-sub --sub-lang ko --skip-download --sub-format json3 -o "%(id)s" "<URL>"
+# Here with English listed as en-US, and ja for fixing the Korean in Scenario B
+yt-dlp --write-sub --write-auto-sub --sub-lang ko,en-US,ja --sub-format json3 --skip-download -o "%(id)s" "<URL>"
 mv <id>.ko.json3 ko.json3
-yt-dlp --write-sub --sub-lang en-US --skip-download --sub-format json3 -o "%(id)s" "<URL>"
 mv <id>.en-US.json3 en.json3
-
-# Auto-generated (fallback)
-yt-dlp --write-auto-sub --sub-lang ko --skip-download --sub-format json3 -o "%(id)s" "<URL>"
-mv <id>.ko.json3 ko.json3
+mv <id>.ja.json3 ja.json3
 ```
+
+Where a code has both a manual and an automatic track, yt-dlp takes the manual one, which is the one to prefer. For a code that exists only among the automatic captions, it takes the automatic one.
 
 ### Get Official Lyrics (Songs)
 
 For a song, the official lyrics beat any Korean track. Artist and label channels often post them in the video description:
 
 ```bash
-yt-dlp --print description --skip-download "<URL>" > description.txt
+jq -r .description yt.json > description.txt
 ```
 
 If the description has none, Korean streaming services such as Melon carry them. They carry the studio version, though, and a live, solo, or remix upload can drop a verse or add a bridge. For those uploads, trust only the video's own description, or check the lyrics against the timed tracks line by line.
@@ -151,7 +162,7 @@ When fixing auto-generated Korean, watch for:
 - `>>` speaker markers, which should be removed
 - Truncated words at cue boundaries
 
-In Scenario B, download and parse the other manual tracks too, and use them as evidence for the fixes. Japanese follows Korean clause by clause, and its kanji confirm Sino-Korean words, so `ja` often settles a fix that the English only hints at, such as 3초째 → 3회째 from 3回目. A Chinese track can name people that the other tracks leave out. Leave a fix out when no track supports it, because a person who can hear the audio should check those spots.
+In Scenario B, include the other manual tracks in the subtitle download, parse them too, and use them as evidence for the fixes. Japanese follows Korean clause by clause, and its kanji confirm Sino-Korean words, so `ja` often settles a fix that the English only hints at, such as 3초째 → 3회째 from 3回目. A Chinese track can name people that the other tracks leave out. Leave a fix out when no track supports it, because a person who can hear the audio should check those spots.
 
 Watch also for a word the ASR doesn't know, because it can come back across the whole video, garbled differently each time. On one variety video, the slang 남찍사 came out as 남직, 남사, and 남택사 in four places, and fixing them row by row left two of them as 남찍. The ASR can also get such a word right once and garble it elsewhere, as with 추구미 in one line and 죽음미 in two others. Names, unit names, and recent slang are the usual cases. So before you fix row by row, look through the whole ASR for words like these, settle each one once from the other tracks or its clean spot, and spell it the same way in every row.
 
