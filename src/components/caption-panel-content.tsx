@@ -1,4 +1,4 @@
-import { Bookmark, ChevronLeft, ChevronRight, Loader2, X } from "lucide-react";
+import { Bookmark, ChevronLeft, ChevronRight, X } from "lucide-react";
 import {
   useEffect,
   useImperativeHandle,
@@ -90,7 +90,6 @@ export function CaptionPanelContent({
   // --- Bookmark selection ---
   const [bookmarkSelection, setBookmarkSelection] =
     useState<BookmarkSelection>();
-  const [isCreating, setIsCreating] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -111,7 +110,6 @@ export function CaptionPanelContent({
     if (!row) {
       return;
     }
-    setIsCreating(true);
     store.createBookmarks([
       {
         ...bookmarkSelection,
@@ -121,7 +119,6 @@ export function CaptionPanelContent({
     ]);
     getSelectionAt(contentRef.current)?.removeAllRanges();
     setBookmarkSelection(undefined);
-    setIsCreating(false);
   }
 
   function onCancelBookmark() {
@@ -220,7 +217,7 @@ export function CaptionPanelContent({
         </div>
 
         {/* Floating bookmark action buttons */}
-        {(bookmarkSelection || isCreating) && (
+        {bookmarkSelection && (
           <div className="absolute bottom-2 right-2 flex gap-2">
             <button
               className="flex h-10 w-10 items-center justify-center rounded-full bg-muted shadow hover:bg-muted/80"
@@ -232,14 +229,9 @@ export function CaptionPanelContent({
             <button
               className="flex h-10 w-10 items-center justify-center rounded-full bg-accent text-accent-foreground shadow hover:bg-accent/90"
               onClick={onClickBookmark}
-              disabled={isCreating}
               title="Create bookmark"
             >
-              {isCreating ? (
-                <Loader2 className="size-5 animate-spin" />
-              ) : (
-                <Bookmark className="size-5 fill-current" />
-              )}
+              <Bookmark className="size-5 fill-current" />
             </button>
           </div>
         )}
