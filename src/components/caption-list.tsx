@@ -251,6 +251,68 @@ function CaptionRow({
   );
 }
 
+function highlightText(
+  text: string,
+  marks: {
+    offset: number;
+    length: number;
+    bookmark?: ExtensionBookmark;
+    bookmarkNumber?: number;
+  }[],
+  onGoToBookmark: (bookmarkId: string) => void,
+  onPopoverOpenChange: (open: boolean) => void,
+) {
+  if (marks.length === 0) {
+    return <span data-offset={0}>{text}</span>;
+  }
+  const sorted = [...marks].sort((a, b) => a.offset - b.offset);
+  const parts: React.ReactNode[] = [];
+  let cursor = 0;
+  for (const m of sorted) {
+    if (m.offset > cursor) {
+      parts.push(
+        <span key={`t${cursor}`} data-offset={cursor}>
+          {text.slice(cursor, m.offset)}
+        </span>,
+      );
+    }
+    const end = m.offset + m.length;
+    if (m.bookmark) {
+      parts.push(
+        <BookmarkWord
+          key={m.bookmark.id}
+          bookmark={m.bookmark}
+          bookmarkNumber={m.bookmarkNumber}
+          offset={m.offset}
+          onGoToBookmark={onGoToBookmark}
+          onPopoverOpenChange={onPopoverOpenChange}
+        >
+          {text.slice(m.offset, end)}
+        </BookmarkWord>,
+      );
+    } else {
+      parts.push(
+        <span
+          key={`h${m.offset}`}
+          data-offset={m.offset}
+          className="border-b-2 border-highlight-border bg-highlight-bg"
+        >
+          {text.slice(m.offset, end)}
+        </span>,
+      );
+    }
+    cursor = end;
+  }
+  if (cursor < text.length) {
+    parts.push(
+      <span key={`t${cursor}`} data-offset={cursor}>
+        {text.slice(cursor)}
+      </span>,
+    );
+  }
+  return <>{parts}</>;
+}
+
 function BookmarkWord({
   bookmark,
   bookmarkNumber,
@@ -357,68 +419,6 @@ function BookmarkWord({
       </PopoverContent>
     </Popover>
   );
-}
-
-function highlightText(
-  text: string,
-  marks: {
-    offset: number;
-    length: number;
-    bookmark?: ExtensionBookmark;
-    bookmarkNumber?: number;
-  }[],
-  onGoToBookmark: (bookmarkId: string) => void,
-  onPopoverOpenChange: (open: boolean) => void,
-) {
-  if (marks.length === 0) {
-    return <span data-offset={0}>{text}</span>;
-  }
-  const sorted = [...marks].sort((a, b) => a.offset - b.offset);
-  const parts: React.ReactNode[] = [];
-  let cursor = 0;
-  for (const m of sorted) {
-    if (m.offset > cursor) {
-      parts.push(
-        <span key={`t${cursor}`} data-offset={cursor}>
-          {text.slice(cursor, m.offset)}
-        </span>,
-      );
-    }
-    const end = m.offset + m.length;
-    if (m.bookmark) {
-      parts.push(
-        <BookmarkWord
-          key={m.bookmark.id}
-          bookmark={m.bookmark}
-          bookmarkNumber={m.bookmarkNumber}
-          offset={m.offset}
-          onGoToBookmark={onGoToBookmark}
-          onPopoverOpenChange={onPopoverOpenChange}
-        >
-          {text.slice(m.offset, end)}
-        </BookmarkWord>,
-      );
-    } else {
-      parts.push(
-        <span
-          key={`h${m.offset}`}
-          data-offset={m.offset}
-          className="border-b-2 border-highlight-border bg-highlight-bg"
-        >
-          {text.slice(m.offset, end)}
-        </span>,
-      );
-    }
-    cursor = end;
-  }
-  if (cursor < text.length) {
-    parts.push(
-      <span key={`t${cursor}`} data-offset={cursor}>
-        {text.slice(cursor)}
-      </span>,
-    );
-  }
-  return <>{parts}</>;
 }
 
 function formatTimestamp(seconds: number): string {

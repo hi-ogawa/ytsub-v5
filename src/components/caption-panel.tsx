@@ -1246,19 +1246,6 @@ const DEFAULT_WIDTH = 400;
 const MIN_WIDTH = 280;
 const MAX_WIDTH = 800;
 
-function getPanelWidth(): number {
-  try {
-    const stored = localStorage.getItem(WIDTH_KEY);
-    if (stored) {
-      const n = Number(stored);
-      if (n >= MIN_WIDTH && n <= MAX_WIDTH) {
-        return n;
-      }
-    }
-  } catch {}
-  return DEFAULT_WIDTH;
-}
-
 export function ResizablePanel({
   children,
   id,
@@ -1326,4 +1313,17 @@ export function ResizablePanel({
       {children}
     </div>
   );
+}
+
+function getPanelWidth(): number {
+  try {
+    const stored = localStorage.getItem(WIDTH_KEY);
+    if (stored) {
+      const n = Number(stored);
+      if (n >= MIN_WIDTH && n <= MAX_WIDTH) {
+        return n;
+      }
+    }
+  } catch {}
+  return DEFAULT_WIDTH;
 }
