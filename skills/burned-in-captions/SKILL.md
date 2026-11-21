@@ -171,7 +171,7 @@ Ask for more frames where something is off:
 - an ASR line, or a cue of another subtitle track such as `en`, that no caption matches in time, on a show whose captions follow the speech
 - readers who disagree on a caption's text
 
-Stop when a round of corrections finds little that's new, and keep the doubts that remain for [the review](#6-review) instead of chasing each one. The report also lists each omitted range with its reason, and each judgment with its reason.
+Stop when a round of corrections finds little that's new, instead of chasing each doubt. Keep every doubt in `doubts.json` with its time range and a one-line reason, both the ones that remain and the ones you settled, such as omitted ranges, judgments on reads, `kind` calls, and corrections. A later [review](references/review.md) of the run starts from this file, because a prose report loses the time ranges. Your report summarizes it.
 
 For small or unclear text, crop the frames to the caption's area. With `--crop`, `frames.py` tiles only that box, at a scale of 0.75 unless `--scale` says otherwise:
 
@@ -181,61 +181,17 @@ uv run scripts/frames.py video.webm --at 12.25 12.5 --crop 160,580,960,110 --out
 
 Give the extra frames to a new reader, together with the frames already read from the same run and the runs next to it, so it can tell a reveal from a swap.
 
-### 6. Review
+### 6. Record
 
-A doubt written as prose in a report doesn't settle it, because each needs a look at the picture and a listen to the speech at that time. So give the user a page to review them on.
-
-Keep the doubts in `doubts.json` as you find them, each with a time range, a group, and a one-line reason:
-
-```json
-{
-  "groups": [
-    {
-      "title": "Partly legible text",
-      "why": "Readers marked part of the text [?]. Check the words against the frame."
-    }
-  ],
-  "items": [
-    {
-      "begin": 612.0,
-      "end": 613.0,
-      "group": "Partly legible text",
-      "reason": "Large text fading in",
-      "frames": [612.25, 612.5]
-    }
-  ]
-}
-```
-
-Collect at least these:
-
-- reads with `[?]`
-- reads with a `note`, with the judgment made on each and its one-line reason
-- omitted captions, with their reason
-- ASR lines that no caption matches, after frames confirmed there is none
-- judgment calls on `kind`
-- corrections from step 5, so the user can check that they hold
-
-Group items by why they are on the page, and let each group's `why` say it so that a reviewer understands without the run's context. For example, "A reader declined to transcribe these as song lyrics" says more than "Left out of the track". `frames` is optional, and without it the page shows up to three frames across the range.
-
-Build the page, and serve it on localhost in the background, because the YouTube player on it needs an http origin:
-
-```bash
-uv run scripts/review.py video.webm --video-id <youtube-id> --asr ko.json3 --out review/
-uv run python -m http.server 8765 --bind 127.0.0.1 --directory review
-```
-
-Give the user the URL. For each item, the page plays the range with sound and the track's captions drawn over the player, shows frames with the caption boxes, and lists the track next to the ASR. The user marks each item and pastes back the text from "Copy review".
-
-Apply each fix as a patch that runs after assembly, such as a script of edits matched by time and text, rather than by editing `captions.json` in place, so that rerunning the assembly keeps the fixes. A fix that needs more frames, such as a closer crop of a card, goes to a new reader as in step 5. Then drop the settled items from `doubts.json`, rebuild the page, and repeat until the user is done. Stop the server when you finish.
-
-### 7. Record
-
-If a channel record is available, add anything new about the channel to it: its style, how closely its captions follow the speech, what went wrong, what the review corrected, and the windows you checked. Add a feature signature to [the catalogue](references/catalogue.md) only when it took real effort to decode. Tell the user what you changed, because the next video on the channel relies on it.
+If a channel record is available, add anything new about the channel to it: its style, how closely its captions follow the speech, what went wrong, and the windows you checked. Add a feature signature to [the catalogue](references/catalogue.md) only when it took real effort to decode. Tell the user what you changed, because the next video on the channel relies on it.
 
 ## Reading Ranges Again
 
 A caller can pass time ranges where it suspects a miss, such as Fix & Align ASR passing the times of ASR lines that no caption matches. Read every other step in each range, put the new reads through [Assemble and correct](#5-assemble-and-correct), and add the new captions to the track.
+
+## Reviewing a Run
+
+When the user wants to look back over a finished run, follow [Review](references/review.md). A person goes over the run's doubts on a local page with the video, its frames, and the tracks. The review polishes the track, but its main use is finding what this skill should do better.
 
 ## Features
 
