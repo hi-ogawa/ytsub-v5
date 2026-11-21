@@ -11,8 +11,8 @@ import {
 import {
   type PersistedCaptionSession,
   captionStorage,
-  type VideoIndexEntry,
-  videoIndexStore,
+  type VideoEntry,
+  videosStore,
 } from "./caption-storage.ts";
 import { useStore } from "./external-store.ts";
 
@@ -53,7 +53,7 @@ export function computeSyncState(params: {
     return serverUpdatedAt ? "pull" : "empty";
   }
 
-  // syncedAt without localUpdatedAt is structurally impossible (syncedAt lives on VideoIndexEntry)
+  // syncedAt without localUpdatedAt is structurally impossible (syncedAt lives on VideoEntry)
   // but handled above. syncedAt without serverUpdatedAt is degenerate (server data deleted).
 
   if (!syncedAt) {
@@ -96,21 +96,20 @@ export type SyncStatus = {
 
 export type UseSync = (youtubeId: string) => SyncStatus;
 
-export function useIndexEntry(youtubeId: string) {
+export function useVideoEntry(youtubeId: string) {
   const queryClient = useQueryClient();
   const query = useQuery({
-    queryKey: ["index-entry", youtubeId],
+    queryKey: ["video-entry", youtubeId],
     // React Query rejects undefined data.
-    queryFn: async () =>
-      (await captionStorage.getIndexEntry(youtubeId)) ?? null,
+    queryFn: async () => (await captionStorage.getVideo(youtubeId)) ?? null,
   });
 
   useEffect(
     () =>
       captionStorage.subscribe((notice) => {
-        if (notice.type === "index") {
+        if (notice.type === "videos") {
           queryClient.invalidateQueries({
-            queryKey: ["index-entry", youtubeId],
+            queryKey: ["video-entry", youtubeId],
           });
         }
       }),
@@ -127,7 +126,7 @@ export function useSyncState({
   youtubeId: string;
   onNavigate: () => void;
 }): SyncStatus {
-  const entryQuery = useIndexEntry(youtubeId);
+  const entryQuery = useVideoEntry(youtubeId);
 
   const authQuery = useQuery(orpc.auth.check.queryOptions());
   const authenticated = authQuery.data?.authenticated === true;
@@ -155,7 +154,7 @@ export function useSyncState({
           throw new Error("Video not found on server");
         }
         const session = serverSessionToLocal(data);
-        // replace() bumps the index entry's updatedAt, so setSyncedAt must follow it.
+        // replace() bumps the video entry's updatedAt, so setSyncedAt must follow it.
         await action.store.replace({
           vssId1: session.vssId1,
           vssId2: session.vssId2,
@@ -209,13 +208,13 @@ export function useSyncState({
   };
 }
 
-export type VideoSyncEntry = VideoIndexEntry & {
+export type VideoSyncEntry = VideoEntry & {
   syncStatus?: ComputedSyncState;
   serverId?: number;
 };
 
 function mergeVideoEntries(
-  localEntries: VideoIndexEntry[],
+  localEntries: VideoEntry[],
   serverVideos: ListVideosOutput["items"],
 ): VideoSyncEntry[] {
   const merged = new Map<string, VideoSyncEntry>();
@@ -259,7 +258,7 @@ function mergeVideoEntries(
 export type VideoSyncHandle = ReturnType<typeof useVideoSync>;
 
 export function useVideoSync() {
-  const [videoIndex] = useStore(videoIndexStore);
+  const [localEntries] = useStore(videosStore);
 
   const authQuery = useQuery(orpc.auth.check.queryOptions());
   const authenticated = authQuery.data?.authenticated === true;
@@ -267,7 +266,7 @@ export function useVideoSync() {
   const serverQuery = useQuery({
     ...orpc.videos.listVideos.queryOptions({ input: { limit: 200 } }),
     enabled: authenticated,
-    select: (data) => mergeVideoEntries(videoIndex, data.items),
+    select: (data) => mergeVideoEntries(localEntries, data.items),
   });
 
   const [syncing, setSyncing] = useState<Set<string>>(new Set());
@@ -309,7 +308,7 @@ export function useVideoSync() {
         throw new Error("Video not found on server");
       }
       await captionStorage.saveSession(serverSessionToLocal(data), {
-        forceIndex: true,
+        forceEntry: true,
       });
       await captionStorage.setSyncedAt(youtubeId, data.video.updatedAt);
     });
@@ -317,7 +316,7 @@ export function useVideoSync() {
 
   const isPending =
     authQuery.isLoading || (authenticated && serverQuery.isLoading);
-  const entries: VideoSyncEntry[] = serverQuery.data ?? videoIndex;
+  const entries: VideoSyncEntry[] = serverQuery.data ?? localEntries;
 
   return {
     authenticated,

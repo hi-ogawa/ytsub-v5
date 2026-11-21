@@ -20,7 +20,7 @@ import {
   type SyncState,
   type SyncStatus,
   computeSyncState,
-  useIndexEntry,
+  useVideoEntry,
 } from "../lib/sync.ts";
 import type { YouTubeExtractionResult } from "../lib/youtube.ts";
 import { fetchPlayerApi, fetchTrackJson3 } from "../lib/youtube.ts";
@@ -130,7 +130,7 @@ type SyncAction =
   | { direction: "pull"; store: CaptionSessionManager };
 
 function useExtensionSync(youtubeId: string): SyncStatus {
-  const entryQuery = useIndexEntry(youtubeId);
+  const entryQuery = useVideoEntry(youtubeId);
 
   const serverQuery = useQuery({
     queryKey: ["extension-sync-state", youtubeId],
@@ -146,7 +146,7 @@ function useExtensionSync(youtubeId: string): SyncStatus {
         const { session, serverUpdatedAt } = await bgRpc.fetchSession({
           youtubeId,
         });
-        // replace() bumps the index entry's updatedAt, so setSyncedAt must follow it.
+        // replace() bumps the video entry's updatedAt, so setSyncedAt must follow it.
         await action.store.replace({
           vssId1: session.vssId1,
           vssId2: session.vssId2,

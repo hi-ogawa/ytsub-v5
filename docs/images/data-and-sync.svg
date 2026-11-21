@@ -21,7 +21,7 @@
   <rect x="40" y="70" width="260" height="90" rx="6" class="store"/>
   <text x="170" y="94" text-anchor="middle" class="t">IndexedDB</text>
   <text x="170" y="112" text-anchor="middle" class="s">caption sessions: captions and bookmarks</text>
-  <text x="170" y="128" text-anchor="middle" class="s">video index: title, bookmark count,</text>
+  <text x="170" y="128" text-anchor="middle" class="s">videos: title, bookmark count,</text>
   <text x="170" y="144" text-anchor="middle" class="s">last change, last sync times</text>
   <text x="170" y="190" text-anchor="middle" class="s">YouTube tabs reach it through a hidden</text>
   <text x="170" y="206" text-anchor="middle" class="s">extension frame. The bookmarks page and</text>
@@ -43,7 +43,7 @@
   <text x="694" y="52" class="gl">Web app <tspan class="s" font-weight="normal">(its own origin)</tspan></text>
   <rect x="700" y="70" width="260" height="90" rx="6" class="store"/>
   <text x="830" y="94" text-anchor="middle" class="t">IndexedDB</text>
-  <text x="830" y="112" text-anchor="middle" class="s">caption sessions and video index,</text>
+  <text x="830" y="112" text-anchor="middle" class="s">caption sessions and videos,</text>
   <text x="830" y="128" text-anchor="middle" class="s">the same layout as the extension's</text>
   <line x1="696" y1="98" x2="644" y2="98" class="sync" marker-end="url(#g)"/>
   <line x1="696" y1="132" x2="644" y2="132" class="sync" marker-start="url(#g)"/>
@@ -53,5 +53,5 @@
   <!-- Notes -->
   <text x="360" y="220" class="s">Green arrows: push and pull replace the receiving side's</text>
   <text x="360" y="236" class="s">copy of the whole video. Each origin keeps one store,</text>
-  <text x="360" y="252" class="s">so the index is never copied between pages.</text>
+  <text x="360" y="252" class="s">so video entries are never copied between pages.</text>
 </svg>

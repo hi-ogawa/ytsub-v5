@@ -2,7 +2,7 @@
 
 Your captions and bookmarks live in the browser first. The server keeps a copy that you push to and pull from by hand, one video at a time. This doc explains what is stored where, how push and pull move a video, and where the copies can drift apart.
 
-![The extension keeps caption sessions and the video index in IndexedDB on its own origin, where YouTube tabs reach it through a hidden frame. The web app keeps the same layout on its own origin. Both push to and pull from the server.](images/data-and-sync.svg)
+![The extension keeps caption sessions and video entries in IndexedDB on its own origin, where YouTube tabs reach it through a hidden frame. The web app keeps the same layout on its own origin. Both push to and pull from the server.](images/data-and-sync.svg)
 
 ## Keep Each Video as a Caption Session
 
@@ -12,11 +12,11 @@ The caption panel creates a session the first time captions load for a video, an
 
 Browser storage belongs to an origin. The extension keeps its sessions on its own origin, where the bookmarks page, the background, and every YouTube tab can reach them ([Extension runtime](extension-runtime.md) explains how a YouTube tab gets there). The web app keeps its sessions on its own origin.
 
-## List Videos From a Small Index
+## List Videos From Small Entries
 
-Opening every session just to draw the bookmarks page would be slow, so the same database also keeps a video index, one entry per video. An entry holds a video's title, channel, and bookmark count, plus timestamps for sync: when the session last changed locally, when it was last pushed or pulled, and the server's own timestamp for the video at that push or pull.
+Opening every session just to draw the bookmarks page would be slow, so the same database also keeps a small entry per video in a separate store. An entry holds a video's title, channel, and bookmark count, plus timestamps for sync: when the session last changed locally, when it was last pushed or pulled, and the server's own timestamp for the video at that push or pull.
 
-Saving a session updates its index entry in the same transaction, so the two never disagree. A video gets an entry once it has a bookmark, and keeps it at zero bookmarks so that deleting the last one can still be pushed. Each entry is its own record, so two pages that change different videos at once never overwrite each other.
+Saving a session updates its video entry in the same transaction, so the two never disagree. A video gets an entry once it has a bookmark, and keeps it at zero bookmarks so that deleting the last one can still be pushed. Each entry is its own record, so two pages that change different videos at once never overwrite each other.
 
 ## Decide the Sync Direction From Two Pairs of Timestamps
 
@@ -37,7 +37,7 @@ The answers decide the status:
 
 ## Push and Pull Whole Videos
 
-Push and pull always move a whole video, and the receiving side replaces its copy. A push sends the session to the server, which replaces that video's captions and bookmarks. A pull fetches the server's copy and replaces the local session. Either one then records the sync time and the server's timestamp in the index.
+Push and pull always move a whole video, and the receiving side replaces its copy. A push sends the session to the server, which replaces that video's captions and bookmarks. A pull fetches the server's copy and replaces the local session. Either one then records the sync time and the server's timestamp in the video entry.
 
 The bookmarks page pushes and pulls directly, in both the extension and the web app. The caption panel does too in the web app. In the extension, the panel asks the background, which holds the session token. A pull from the panel only fetches the session, and the panel applies it itself. The web app's caption panel only shows sessions that are already stored, because it can't fetch subtitles.
 
@@ -47,6 +47,6 @@ Data can also enter the web app from an `import.json` file, through Import in th
 
 ## Know Where an Open Page Can Fall Behind
 
-Each page keeps what it shows of the video index in memory and updates it after its own writes. Writes from other pages show up after a reload. So a second YouTube tab keeps the sync status it loaded, and an open bookmarks page doesn't show what a YouTube tab saves, such as a pull.
+Each page keeps what it shows of the video entries in memory and updates it after its own writes. Writes from other pages show up after a reload. So a second YouTube tab keeps the sync status it loaded, and an open bookmarks page doesn't show what a YouTube tab saves, such as a pull.
 
 The caption panel also holds its session in memory while you work, and reads the stored copy only when it opens. If another page saves that video's session while the panel is open, such as a pull from the bookmarks page or an edit in another tab, the panel keeps showing its older copy, and its next edit saves that copy over the newer one.

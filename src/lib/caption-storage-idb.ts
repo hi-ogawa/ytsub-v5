@@ -4,13 +4,13 @@ import type {
   PersistedCaptionSession,
   StorageListener,
   StorageNotice,
-  VideoIndexEntry,
+  VideoEntry,
 } from "./caption-storage.ts";
 
 const DB_NAME = "zamak";
 const DB_VERSION = 2;
 
-type Stores = { sessions: PersistedCaptionSession; videos: VideoIndexEntry };
+type Stores = { sessions: PersistedCaptionSession; videos: VideoEntry };
 
 const STORE_NAMES: { [K in keyof Stores]: string } = {
   sessions: "caption-sessions",
@@ -46,7 +46,7 @@ class IdbCaptionStorage implements CaptionStorage {
       async ({ sessions, videos }) => {
         sessions.put(session);
         const existing = await videos.get(session.youtubeId);
-        if (!existing && !options?.forceIndex && !session.bookmarks.length) {
+        if (!existing && !options?.forceEntry && !session.bookmarks.length) {
           return;
         }
         videos.put({
@@ -62,7 +62,7 @@ class IdbCaptionStorage implements CaptionStorage {
       },
     );
     if (entries) {
-      this.notify({ type: "index", entries });
+      this.notify({ type: "videos", entries });
     }
   };
 
@@ -76,7 +76,7 @@ class IdbCaptionStorage implements CaptionStorage {
         return videos.getAll();
       },
     );
-    this.notify({ type: "index", entries });
+    this.notify({ type: "videos", entries });
   };
 
   setSyncedAt: CaptionStorage["setSyncedAt"] = async (
@@ -98,13 +98,13 @@ class IdbCaptionStorage implements CaptionStorage {
         return videos.getAll();
       },
     );
-    this.notify({ type: "index", entries });
+    this.notify({ type: "videos", entries });
   };
 
-  getIndexEntry: CaptionStorage["getIndexEntry"] = (youtubeId) =>
+  getVideo: CaptionStorage["getVideo"] = (youtubeId) =>
     transact(["videos"], "readonly", ({ videos }) => videos.get(youtubeId));
 
-  listIndex: CaptionStorage["listIndex"] = () =>
+  listVideos: CaptionStorage["listVideos"] = () =>
     transact(["videos"], "readonly", ({ videos }) => videos.getAll());
 
   subscribe: CaptionStorage["subscribe"] = (listener) => {

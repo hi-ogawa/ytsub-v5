@@ -5,7 +5,7 @@ import {
   login,
   openPanelWithTracks,
   openYouTubeTab,
-  seedVideoIndex,
+  seedVideos,
   test,
 } from "./helper";
 
@@ -148,7 +148,7 @@ test("bookmarks page: shows local entries without login", async ({
   extensionId,
 }) => {
   await gotoBookmarks(page, extensionId);
-  await seedVideoIndex(page, fixtureEntries);
+  await seedVideos(page, fixtureEntries);
 
   await expect(page.getByText("Test Video One")).toBeVisible();
   await expect(page.getByText("Test Video Two")).toBeVisible();
@@ -163,7 +163,7 @@ test("bookmarks page: shows local entries with sync badges after login", async (
 }) => {
   await setupDb({ seed: true });
   await gotoBookmarks(page, extensionId);
-  await seedVideoIndex(page, fixtureEntries);
+  await seedVideos(page, fixtureEntries);
 
   // Entries visible before login
   await expect(page.getByText("Test Video One")).toBeVisible();
@@ -212,7 +212,7 @@ test("bookmarks page: delete removes video from list", async ({
   extensionId,
 }) => {
   await gotoBookmarks(page, extensionId);
-  await seedVideoIndex(page, fixtureEntries);
+  await seedVideos(page, fixtureEntries);
 
   // Both entries visible
   await expect(page.getByText("Test Video One")).toBeVisible();
@@ -256,7 +256,7 @@ test("bookmarks page: sync badges show correct states per entry", async ({
     },
   ];
   await gotoBookmarks(page, extensionId);
-  await seedVideoIndex(page, localEntries);
+  await seedVideos(page, localEntries);
   await login(page);
 
   // Seed video exists on both server and local → conflict
@@ -304,10 +304,10 @@ test("bookmarks page: push shows an error toast when the local session is missin
     },
   ];
   await gotoBookmarks(page, extensionId);
-  await seedVideoIndex(page, localEntries);
+  await seedVideos(page, localEntries);
   await login(page);
 
-  // The index has an entry, but no session to push
+  // The video has an entry, but no session to push
   const badge = page
     .getByTestId("video-card-push-test-123")
     .getByTestId("video-sync-badge");

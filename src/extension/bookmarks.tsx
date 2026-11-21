@@ -31,8 +31,8 @@ import { idbCaptionStorage } from "../lib/caption-storage-idb.ts";
 import {
   captionStorage,
   initCaptionStorage,
-  loadVideoIndex,
-  videoIndexStore,
+  loadVideos,
+  videosStore,
 } from "../lib/caption-storage.ts";
 import { useStore } from "../lib/external-store.ts";
 import { createAppQueryClient } from "../lib/query-client.ts";
@@ -115,7 +115,7 @@ const queryClient = createAppQueryClient({
 });
 
 function ExtensionBookmarksPage() {
-  const [entries] = useStore(videoIndexStore);
+  const [entries] = useStore(videosStore);
   const usernameQuery = useQuery(
     chromeStorage.queryOptions<string>("username"),
   );
@@ -281,7 +281,7 @@ let serverUrl = "";
 
 async function main() {
   initCaptionStorage(idbCaptionStorage);
-  await loadVideoIndex();
+  await loadVideos();
   serverUrl = await getServerUrl();
 
   // Configure RPC to use extension server URL + bearer token auth

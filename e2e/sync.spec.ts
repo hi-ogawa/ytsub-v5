@@ -32,11 +32,11 @@ test.describe("dev-viewer sync indicator", () => {
     const indicator = page.getByTestId("sync-status");
     await expect(indicator).toBeVisible();
 
-    // Fresh video without bookmarks — not in video index yet
+    // Fresh video without bookmarks — no video entry yet
     await expect(indicator).toHaveAttribute("data-sync-state", "empty");
     await page.keyboard.press("Escape");
 
-    // First bookmark adds it to the video index, pushable to server
+    // First bookmark adds its video entry, pushable to server
     await createBookmarkAt(page, { index: 0, start: 0, end: 3 });
     await page.getByTitle("Settings").click();
     await expect(indicator).toHaveAttribute("data-sync-state", "push");
@@ -92,13 +92,13 @@ test("dev-viewer sync › shows conflict when local bookmarks and server data bo
   await expect(indicator).toHaveAttribute("data-sync-state", "conflict");
 });
 
-test.describe("dev-viewer video-index", () => {
+test.describe("dev-viewer video entries", () => {
   test.beforeEach(async ({ page }) => {
     await setupDb({ seed: true });
     await login(page);
   });
 
-  test("creating bookmark populates video-list page via video-index", async ({
+  test("creating bookmark populates video-list page via its video entry", async ({
     page,
   }) => {
     await page.goto(`/dev/videos/${FIXTURE_VIDEO_ID}`);
@@ -208,7 +208,7 @@ test.describe("video-list sync", () => {
     await badge.click();
     await expect(badge).toHaveAttribute("data-sync-status", "synced");
 
-    // Verify pulled data is in local video-index
+    // Verify pulled data is in the local video entries
     const card = page.getByTestId(`video-card-${FIXTURE_VIDEO_ID}`);
     await expect(card.getByTestId("video-card-badge")).toHaveText(
       "15 bookmarks",

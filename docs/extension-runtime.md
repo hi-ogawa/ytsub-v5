@@ -17,7 +17,7 @@ The two worlds can't call each other's functions, so they send each other window
 
 ## Keep Data on the Extension's Origin
 
-Browser storage belongs to an origin. If the content script stored captions itself, they would land in youtube.com storage, which the bookmarks page and the background can't open. So the extension keeps sessions and the video index in IndexedDB on its own origin, and every piece reaches the same database:
+Browser storage belongs to an origin. If the content script stored captions itself, they would land in youtube.com storage, which the bookmarks page and the background can't open. So the extension keeps sessions and video entries in IndexedDB on its own origin, and every piece reaches the same database:
 
 - **The bookmarks page and the background** run on the extension's origin, so they open the database directly.
 - **The content script** runs on youtube.com, so it goes through a hidden storage frame. The frame is a page from the extension, loaded in an iframe, so it runs on the extension's origin and opens the same database. Chrome gives an extension frame the same storage as the extension's own pages when the extension has host permission for the site around it.
@@ -26,11 +26,11 @@ The main world has no `chrome.runtime` to build the frame's URL, so the relay mo
 
 If the extension updates while a tab is open, the tab's frame stops answering. A call that gets no answer fails with a message to reload the page.
 
-## Keep the Index Current After Each Write
+## Keep Video Entries Current After Each Write
 
-The caption panel needs only this video's index entry, for its sync status. It reads the entry through the frame, and reads it again on each change notice.
+The caption panel needs only this video's entry, for its sync status. It reads the entry through the frame, and reads it again on each change notice.
 
-Every write to the database posts a notice with the new index to listeners on the same page. The frame forwards its notices to its content script, so a YouTube tab's sync status follows the writes that tab makes. Other pages see the write after they reload, as [Know Where an Open Page Can Fall Behind](data-and-sync.md#know-where-an-open-page-can-fall-behind) describes.
+Every write to the database posts a notice with the new video entries to listeners on the same page. The frame forwards its notices to its content script, so a YouTube tab's sync status follows the writes that tab makes. Other pages see the write after they reload, as [Know Where an Open Page Can Fall Behind](data-and-sync.md#know-where-an-open-page-can-fall-behind) describes.
 
 ## Keep Server Calls and Secrets in the Background
 

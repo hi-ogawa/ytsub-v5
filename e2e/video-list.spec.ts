@@ -88,7 +88,7 @@ test("no sync badges when unauthenticated", async ({ page }) => {
   await page.goto("/dev");
   await expect(page.getByText("No bookmarked videos yet")).toBeVisible();
 
-  // Bootstrap fixtures to populate video index
+  // Bootstrap fixtures to populate video entries
   await page.getByTestId("header-menu").click();
   await page.getByTestId("bootstrap-fixtures").click();
 

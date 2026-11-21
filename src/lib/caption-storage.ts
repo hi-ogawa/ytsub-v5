@@ -17,7 +17,7 @@ export interface PersistedCaptionSession {
   bookmarks: ExtensionBookmark[];
 }
 
-export type VideoIndexEntry = {
+export type VideoEntry = {
   youtubeId: string;
   title: string;
   channelName: string;
@@ -29,22 +29,22 @@ export type VideoIndexEntry = {
   syncedServerUpdatedAt?: string;
 };
 
-export type StorageNotice = { type: "index"; entries: VideoIndexEntry[] };
+export type StorageNotice = { type: "videos"; entries: VideoEntry[] };
 
 export type StorageListener = (notice: StorageNotice) => void;
 
 export interface CaptionStorage {
   getSession(youtubeId: string): Promise<PersistedCaptionSession | undefined>;
-  // Also updates the video's index entry when the session has bookmarks or is
-  // already indexed. `forceIndex` indexes it regardless, as after a pull.
+  // Also updates the video's entry when the session has bookmarks or the video
+  // already has an entry. `forceEntry` writes it regardless, as after a pull.
   saveSession(
     session: PersistedCaptionSession,
-    options?: { forceIndex?: boolean },
+    options?: { forceEntry?: boolean },
   ): Promise<void>;
   deleteVideo(youtubeId: string): Promise<void>;
   setSyncedAt(youtubeId: string, serverUpdatedAt: string): Promise<void>;
-  getIndexEntry(youtubeId: string): Promise<VideoIndexEntry | undefined>;
-  listIndex(): Promise<VideoIndexEntry[]>;
+  getVideo(youtubeId: string): Promise<VideoEntry | undefined>;
+  listVideos(): Promise<VideoEntry[]>;
   subscribe(listener: StorageListener): () => void;
 }
 
@@ -53,19 +53,19 @@ export interface CaptionStorage {
 // own origin.
 export let captionStorage: CaptionStorage;
 
-// In-memory copy of the stored index, for components that read it as they
+// In-memory copy of the stored videos, for components that read it as they
 // render.
-export const videoIndexStore = createExternalStore<VideoIndexEntry[]>([]);
+export const videosStore = createExternalStore<VideoEntry[]>([]);
 
 export function initCaptionStorage(storage: CaptionStorage) {
   captionStorage = storage;
   storage.subscribe((notice) => {
-    if (notice.type === "index") {
-      videoIndexStore.set(notice.entries);
+    if (notice.type === "videos") {
+      videosStore.set(notice.entries);
     }
   });
 }
 
-export async function loadVideoIndex() {
-  videoIndexStore.set(await captionStorage.listIndex());
+export async function loadVideos() {
+  videosStore.set(await captionStorage.listVideos());
 }

@@ -52,7 +52,7 @@ export async function bootstrapFixtures() {
         captions,
         bookmarks: [],
       },
-      { forceIndex: true },
+      { forceEntry: true },
     );
   }
 }

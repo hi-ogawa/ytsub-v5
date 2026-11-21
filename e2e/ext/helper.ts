@@ -82,10 +82,10 @@ export async function seedChromeStorage(
 }
 
 /**
- * Write video index entries into the extension's IndexedDB from the bookmarks
+ * Write video entries into the extension's IndexedDB from the bookmarks
  * page, then reload it to show them.
  */
-export async function seedVideoIndex(page: Page, entries: object[]) {
+export async function seedVideos(page: Page, entries: object[]) {
   await page.evaluate(async (entries) => {
     const db = await new Promise<IDBDatabase>((resolve, reject) => {
       const req = indexedDB.open("zamak");

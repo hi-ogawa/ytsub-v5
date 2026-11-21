@@ -26,8 +26,8 @@ export function createBridgeStorage(): CaptionStorage {
     getSession: client.getSession,
     saveSession: client.saveSession,
     setSyncedAt: client.setSyncedAt,
-    getIndexEntry: client.getIndexEntry,
-    listIndex: client.listIndex,
+    getVideo: client.getVideo,
+    listVideos: client.listVideos,
     async deleteVideo() {
       throw new Error("Deleting is not available on the watch page");
     },

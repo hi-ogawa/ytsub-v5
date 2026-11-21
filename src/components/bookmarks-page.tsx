@@ -6,7 +6,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { useState } from "react";
-import type { VideoIndexEntry } from "../lib/caption-storage.ts";
+import type { VideoEntry } from "../lib/caption-storage.ts";
 import type { VideoSyncEntry, VideoSyncHandle } from "../lib/sync.ts";
 import { syncStateDisplay } from "./sync-state.tsx";
 import { Dialog, DialogContent, DialogTitle } from "./ui/dialog.tsx";
@@ -25,7 +25,7 @@ export function BookmarksPage({
   sync,
   emptyState,
 }: {
-  entries: VideoIndexEntry[];
+  entries: VideoEntry[];
   videoHref: (youtubeId: string) => string;
   onDelete?: (entry: VideoSyncEntry) => void;
   sync?: VideoSyncHandle;
