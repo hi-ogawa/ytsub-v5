@@ -7,24 +7,24 @@ import {
   Settings,
 } from "lucide-react";
 import { useState } from "react";
-import { BookmarksPage } from "../components/bookmarks-page.tsx";
-import { LoginDialog } from "../components/login-dialog.tsx";
+import { BookmarksPage } from "../../components/bookmarks-page.tsx";
+import { LoginDialog } from "../../components/login-dialog.tsx";
 import {
   Dialog,
   DialogContent,
   DialogTitle,
-} from "../components/ui/dialog.tsx";
+} from "../../components/ui/dialog.tsx";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "../components/ui/dropdown-menu.tsx";
-import { captionStorage, videoIndexStore } from "../lib/caption-storage.ts";
-import { type VideoSyncEntry, useVideoSync } from "../lib/sync.ts";
-import { useTheme } from "../lib/theme.ts";
-import { orpc } from "../rpc.ts";
-import { chromeStorage } from "./lib/chrome-storage.ts";
+} from "../../components/ui/dropdown-menu.tsx";
+import { captionStorage, videoIndexStore } from "../../lib/caption-storage.ts";
+import { type VideoSyncEntry, useVideoSync } from "../../lib/sync.ts";
+import { useTheme } from "../../lib/theme.ts";
+import { orpc } from "../../rpc.ts";
+import { chromeStorage } from "../lib/chrome-storage.ts";
 
 export function ExtensionBookmarksPage({
   serverUrl,

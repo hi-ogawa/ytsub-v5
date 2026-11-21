@@ -7,7 +7,7 @@ import { idbCaptionStorage } from "../lib/caption-storage-idb.ts";
 import { initCaptionStorage, loadVideoIndex } from "../lib/caption-storage.ts";
 import { createAppQueryClient } from "../lib/query-client.ts";
 import { setRpcConfig } from "../rpc.ts";
-import { ExtensionBookmarksPage } from "./extension-bookmarks-page.tsx";
+import { ExtensionBookmarksPage } from "./components/bookmarks-page.tsx";
 import { chromeStorage } from "./lib/chrome-storage.ts";
 import { getServerUrl } from "./lib/server-url.ts";
 import "../styles.css";
