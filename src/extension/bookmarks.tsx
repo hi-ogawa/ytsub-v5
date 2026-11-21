@@ -27,7 +27,12 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "../components/ui/dropdown-menu.tsx";
-import { captionStorage, loadVideoIndex } from "../lib/caption-storage.ts";
+import { idbCaptionStorage } from "../lib/caption-db.ts";
+import {
+  captionStorage,
+  initCaptionStorage,
+  loadVideoIndex,
+} from "../lib/caption-storage.ts";
 import { useStore } from "../lib/external-store.ts";
 import { createAppQueryClient } from "../lib/query-client.ts";
 import { type VideoSyncEntry, useVideoSync } from "../lib/sync.ts";
@@ -275,6 +280,7 @@ function ExtensionBookmarksPage() {
 let serverUrl = "";
 
 async function main() {
+  initCaptionStorage(idbCaptionStorage);
   serverUrl = await getServerUrl();
 
   // Configure RPC to use extension server URL + bearer token auth

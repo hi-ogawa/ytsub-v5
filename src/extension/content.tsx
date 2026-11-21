@@ -17,8 +17,8 @@ import type { YTPlayer } from "../components/youtube-player.tsx";
 import type { CaptionSessionManager } from "../lib/caption-session.ts";
 import {
   captionStorage,
+  initCaptionStorage,
   loadVideoIndex,
-  setCaptionStorage,
 } from "../lib/caption-storage.ts";
 import { useStore } from "../lib/external-store.ts";
 import {
@@ -36,7 +36,7 @@ import { createBridgeStorage } from "./lib/storage-bridge.ts";
 
 const bgRpc = createRuntimeRelayRpc<typeof bgRpcHandlers>();
 
-setCaptionStorage(createBridgeStorage());
+initCaptionStorage(createBridgeStorage());
 
 let storageReady: Promise<void> | undefined;
 
