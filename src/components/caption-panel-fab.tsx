@@ -7,7 +7,7 @@ export function useFabOpen(videoId: string) {
   return [open, toggle] as const;
 }
 
-export function CaptionFab({
+export function CaptionPanelFab({
   open,
   onClick,
 }: {
