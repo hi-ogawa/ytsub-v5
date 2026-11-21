@@ -1,7 +1,7 @@
 // Hidden extension frame on the watch page. It opens IndexedDB on the extension
 // origin for the content script. docs/extension-runtime.md explains the bridge.
 
-import { idbCaptionStorage } from "../lib/caption-db.ts";
+import { idbCaptionStorage } from "../lib/caption-storage-idb.ts";
 import {
   type BridgeMessage,
   type BridgeMethod,

@@ -1,7 +1,7 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { App } from "./app.tsx";
-import { idbCaptionStorage } from "./lib/caption-db.ts";
+import { idbCaptionStorage } from "./lib/caption-storage-idb.ts";
 import { initCaptionStorage, loadVideoIndex } from "./lib/caption-storage.ts";
 import "./styles.css";
 

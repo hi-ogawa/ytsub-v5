@@ -27,7 +27,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "../components/ui/dropdown-menu.tsx";
-import { idbCaptionStorage } from "../lib/caption-db.ts";
+import { idbCaptionStorage } from "../lib/caption-storage-idb.ts";
 import {
   captionStorage,
   initCaptionStorage,
