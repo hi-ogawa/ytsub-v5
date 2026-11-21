@@ -1,7 +1,8 @@
 // Background service worker. docs/extension-runtime.md explains its role.
 
+import { idbCaptionStorage } from "../lib/caption-db.ts";
 import { sessionToExportData } from "../lib/caption-session.ts";
-import { captionStorage } from "../lib/caption-storage.ts";
+import { captionStorage, initCaptionStorage } from "../lib/caption-storage.ts";
 import { serverSessionToLocal } from "../lib/sync.ts";
 import { orpc, setRpcConfig } from "../rpc.ts";
 import { chromeStorage } from "./lib/chrome-storage.ts";
@@ -51,6 +52,7 @@ export const bgRpcHandlers = {
 };
 
 async function main() {
+  initCaptionStorage(idbCaptionStorage);
   setRpcConfig({
     url: async () => new URL("/api", await getServerUrl()),
     fetch: async (request) => {
