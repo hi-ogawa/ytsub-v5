@@ -13,7 +13,7 @@ const preferencesSchema = z
   })
   .catch(DEFAULT_PREFERENCES);
 
-export const preferences = withUseValue(
+export const captionPanelPreferences = withUseValue(
   createLocalStorageStore({
     key: "zamak:caption-panel",
     parse: (stored) => preferencesSchema.parse(stored),

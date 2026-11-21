@@ -1,6 +1,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 import type { MergeStrategy } from "../lib/caption-merge.ts";
+import { captionPanelPreferences } from "../lib/caption-panel-preferences.ts";
 import {
   buildCaptionSession,
   CaptionSessionManager,
@@ -8,7 +9,6 @@ import {
   saveSelectedTracks,
 } from "../lib/caption-session.ts";
 import { captionStorage } from "../lib/caption-storage.ts";
-import { preferences } from "../lib/preferences.ts";
 import type { UseSync } from "../lib/sync.ts";
 import {
   type Json3File,
@@ -250,7 +250,8 @@ function CaptionPanelWithStore({
 }) {
   useSyncExternalStore(store.subscribe, () => store.version);
 
-  const [autoScroll, setAutoScroll] = preferences.useValue("autoScroll");
+  const [autoScroll, setAutoScroll] =
+    captionPanelPreferences.useValue("autoScroll");
 
   return (
     <div className="flex h-full flex-col">
