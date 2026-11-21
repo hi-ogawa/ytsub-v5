@@ -1,3 +1,4 @@
+import { createTransact } from "../utils/idb.ts";
 import type {
   CaptionStorage,
   PersistedCaptionSession,
@@ -8,17 +9,22 @@ import type {
 
 const DB_NAME = "zamak";
 const DB_VERSION = 2;
-const SESSIONS = "caption-sessions";
-const INDEX = "video-index";
+
+type Stores = { sessions: PersistedCaptionSession; index: VideoIndexEntry };
+
+const STORE_NAMES: { [K in keyof Stores]: string } = {
+  sessions: "caption-sessions",
+  index: "video-index",
+};
+
+const transact = createTransact<Stores>({ openDb, storeNames: STORE_NAMES });
 
 class IdbCaptionStorage implements CaptionStorage {
   listeners = new Set<StorageListener>();
 
   async getSession(youtubeId: string) {
-    return withTransaction([SESSIONS], "readonly", (tx) =>
-      requestResult<PersistedCaptionSession | undefined>(
-        tx.objectStore(SESSIONS).get(youtubeId),
-      ),
+    return transact(["sessions"], "readonly", ({ sessions }) =>
+      sessions.get(youtubeId),
     );
   }
 
@@ -26,17 +32,14 @@ class IdbCaptionStorage implements CaptionStorage {
     session: PersistedCaptionSession,
     options?: { forceIndex?: boolean },
   ) {
-    const entries = await withTransaction(
-      [SESSIONS, INDEX],
+    const entries = await transact(
+      ["sessions", "index"],
       "readwrite",
-      async (tx) => {
-        tx.objectStore(SESSIONS).put(session);
-        const index = tx.objectStore(INDEX);
-        const existing = await requestResult<VideoIndexEntry | undefined>(
-          index.get(session.youtubeId),
-        );
+      async ({ sessions, index }) => {
+        sessions.put(session);
+        const existing = await index.get(session.youtubeId);
         if (!existing && !options?.forceIndex && !session.bookmarks.length) {
-          return undefined;
+          return;
         }
         index.put({
           youtubeId: session.youtubeId,
@@ -46,8 +49,8 @@ class IdbCaptionStorage implements CaptionStorage {
           updatedAt: new Date().toISOString(),
           syncedAt: existing?.syncedAt,
           syncedServerUpdatedAt: existing?.syncedServerUpdatedAt,
-        } satisfies VideoIndexEntry);
-        return await requestResult<VideoIndexEntry[]>(index.getAll());
+        });
+        return index.getAll();
       },
     );
     if (entries) {
@@ -56,42 +59,39 @@ class IdbCaptionStorage implements CaptionStorage {
   }
 
   async deleteVideo(youtubeId: string) {
-    const entries = await withTransaction(
-      [SESSIONS, INDEX],
+    const entries = await transact(
+      ["sessions", "index"],
       "readwrite",
-      async (tx) => {
-        tx.objectStore(SESSIONS).delete(youtubeId);
-        tx.objectStore(INDEX).delete(youtubeId);
-        return await requestResult<VideoIndexEntry[]>(
-          tx.objectStore(INDEX).getAll(),
-        );
+      async ({ sessions, index }) => {
+        sessions.delete(youtubeId);
+        index.delete(youtubeId);
+        return index.getAll();
       },
     );
     this.notify({ type: "index", entries });
   }
 
   async setSyncedAt(youtubeId: string, serverUpdatedAt: string) {
-    const entries = await withTransaction([INDEX], "readwrite", async (tx) => {
-      const index = tx.objectStore(INDEX);
-      const existing = await requestResult<VideoIndexEntry | undefined>(
-        index.get(youtubeId),
-      );
-      if (existing) {
-        index.put({
-          ...existing,
-          syncedAt: new Date().toISOString(),
-          syncedServerUpdatedAt: serverUpdatedAt,
-        } satisfies VideoIndexEntry);
-      }
-      return await requestResult<VideoIndexEntry[]>(index.getAll());
-    });
+    const entries = await transact(
+      ["index"],
+      "readwrite",
+      async ({ index }) => {
+        const existing = await index.get(youtubeId);
+        if (existing) {
+          index.put({
+            ...existing,
+            syncedAt: new Date().toISOString(),
+            syncedServerUpdatedAt: serverUpdatedAt,
+          });
+        }
+        return index.getAll();
+      },
+    );
     this.notify({ type: "index", entries });
   }
 
   async listIndex() {
-    return withTransaction([INDEX], "readonly", (tx) =>
-      requestResult<VideoIndexEntry[]>(tx.objectStore(INDEX).getAll()),
-    );
+    return transact(["index"], "readonly", ({ index }) => index.getAll());
   }
 
   subscribe(listener: StorageListener) {
@@ -110,8 +110,6 @@ class IdbCaptionStorage implements CaptionStorage {
 
 export const idbCaptionStorage = new IdbCaptionStorage();
 
-// --- IndexedDB helpers ---
-
 let dbPromise: Promise<IDBDatabase> | undefined;
 
 function openDb(): Promise<IDBDatabase> {
@@ -120,10 +118,10 @@ function openDb(): Promise<IDBDatabase> {
     req.onupgradeneeded = (e) => {
       const db = req.result;
       if (e.oldVersion < 1) {
-        db.createObjectStore(SESSIONS, { keyPath: "youtubeId" });
+        db.createObjectStore(STORE_NAMES.sessions, { keyPath: "youtubeId" });
       }
       if (e.oldVersion < 2) {
-        db.createObjectStore(INDEX, { keyPath: "youtubeId" });
+        db.createObjectStore(STORE_NAMES.index, { keyPath: "youtubeId" });
       }
     };
     req.onsuccess = () => {
@@ -138,39 +136,4 @@ function openDb(): Promise<IDBDatabase> {
     req.onerror = () => reject(req.error);
   });
   return dbPromise;
-}
-
-// The body may await requests on `tx`, because a transaction stays active
-// through promise callbacks run from its request events.
-async function withTransaction<T>(
-  stores: string[],
-  mode: IDBTransactionMode,
-  body: (tx: IDBTransaction) => Promise<T>,
-): Promise<T> {
-  const db = await openDb();
-  const tx = db.transaction(stores, mode);
-  const done = new Promise<void>((resolve, reject) => {
-    tx.oncomplete = () => resolve();
-    tx.onerror = () => reject(tx.error);
-    tx.onabort = () => reject(tx.error ?? new Error("Transaction aborted"));
-  });
-  let result: T;
-  try {
-    result = await body(tx);
-  } catch (err) {
-    done.catch(() => {});
-    try {
-      tx.abort();
-    } catch {}
-    throw err;
-  }
-  await done;
-  return result;
-}
-
-function requestResult<T = unknown>(req: IDBRequest): Promise<T> {
-  return new Promise((resolve, reject) => {
-    req.onsuccess = () => resolve(req.result as T);
-    req.onerror = () => reject(req.error);
-  });
 }
