@@ -118,6 +118,23 @@ test("video page: bookmark arrows keep the play state", async ({ context }) => {
   expect(await isPaused()).toBe(false);
 });
 
+test("video page: bookmark arrows show the caption while paused", async ({
+  context,
+}) => {
+  const ytPage = await openYouTubeTab(context, SEED_VIDEO_ID);
+  await openPanelWithTracks(ytPage);
+  const host = ytPage.locator("#zamak-host");
+  const row = host.locator("[data-index='30']");
+  await row.locator("[data-side='0'] [data-offset]").selectText();
+  await host.getByRole("button", { name: "Create bookmark" }).click();
+  await host.locator("[data-index='0']").scrollIntoViewIfNeeded();
+  await expect(row).not.toBeInViewport();
+
+  await host.getByRole("button", { name: "Next bookmark" }).click();
+  await expect(row).toBeInViewport();
+  await expect(row).toHaveClass(/border-ring/);
+});
+
 test("bookmarks page: shows local entries without login", async ({
   context,
   page,
