@@ -50,10 +50,11 @@ import {
 } from "../lib/extension-bookmarks.ts";
 import { flashHighlight } from "../lib/flash-highlight.ts";
 import type { SyncStatus, UseSync } from "../lib/sync.ts";
-import type {
-  Json3File,
-  YouTubeCaptionTrack,
-  YouTubeVideoData,
+import {
+  type Json3File,
+  type YouTubeCaptionTrack,
+  type YouTubeVideoData,
+  langFromVssId,
 } from "../lib/youtube.ts";
 import { downloadText } from "../utils/download-text.ts";
 import { getSelectionAt } from "../utils/get-selection.ts";
@@ -224,7 +225,7 @@ function importAiResult(store: CaptionSessionManager): void {
 const displayNames = new Intl.DisplayNames(["en"], { type: "language" });
 
 function langName(vssId: string): string {
-  const code = vssId.split(".").pop()!;
+  const code = langFromVssId(vssId);
   return displayNames.of(code) ?? code;
 }
 

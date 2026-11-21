@@ -1,7 +1,7 @@
 import promptMd from "./ai-prompt.md?raw";
 import type { MergedCaption } from "./caption-merge.ts";
 import type { ExtensionBookmark } from "./extension-bookmarks.ts";
-import type { YouTubeCaptionTrack } from "./youtube.ts";
+import { type YouTubeCaptionTrack, langFromVssId } from "./youtube.ts";
 
 export const AI_TASKS = [
   { label: "Pick & Fill", task: "pick-fill" },
@@ -73,7 +73,7 @@ function formatTracks({
   const vssIds = [...new Set([vssId1, vssId2, ...tracks.map((t) => t.vssId)])];
   return vssIds
     .map((vssId) => {
-      const lang = vssId.split(".").pop();
+      const lang = langFromVssId(vssId);
       const source = vssId.includes(".t.")
         ? "translated"
         : vssId.startsWith("a.")
