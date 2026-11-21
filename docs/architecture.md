@@ -25,6 +25,4 @@ The extension and the web app render the same two pages from shared components:
 - **The caption panel** shows dual captions and handles bookmarking and the AI workflow. The extension draws it over YouTube's video page inside a shadow root. The web app shows it at `/videos/:id` next to an embedded player.
 - **The bookmarks page** lists your bookmarked videos with their sync status. The extension opens it as `bookmarks.html` in a full tab when you click its icon. The web app serves it at `/`.
 
-Reloading an extension by hand on every change is slow, so UI work goes through the e2e tests instead. They load the built extension into Chromium on a mocked YouTube page with captions recorded from real videos. See [E2E tests](e2e.md).
-
 [Extension runtime](extension-runtime.md) explains how the extension's pieces talk to each other. [Data and sync](data-and-sync.md) explains where data is stored and how it moves between the browser and the server.
