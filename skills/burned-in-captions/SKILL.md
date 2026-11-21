@@ -34,7 +34,7 @@ The commands below shorten this to `uv run scripts/...`. Outputs go to the folde
 - `kind` is `speech` for words someone says, and `other` for anything else the editor put on screen, whatever its frame. Text filmed in the scene, such as signs, isn't a caption, so leave it out.
 - `position` is the caption's box `[x, y, w, h]` in the 1280×720 frame.
 - `text` is exactly what the picture shows, including nonstandard spelling, censored words such as ㅅㄲ, and spelled-out laughter.
-- `omitted` is set on a caption whose text the readers didn't transcribe, such as song lyrics. Such a caption has empty `text` and keeps its time and position, so a user can fill it in by hand:
+- `omitted` is set on a caption whose text a reader declined to reproduce, such as copyrighted song lyrics. Such a caption has empty `text` and keeps its time and position, so a user can fill it in by hand. Text that is only hard to read is not omitted, so mark it with `[?]` or read it again:
 
   ```json
   {
@@ -140,7 +140,7 @@ Give the sheets to reader subagents, about 8 sheets each, because most of a read
 >
 > Add a `note` to a caption whenever something about it matters for putting the track together, in your own words. For example: "faint, still fading in", "same caption as at 612.25", "end card still unfolding", "same card as the previous tile, small handwriting I can't read at this size", or "clip from another video with its own lyrics". Most captions need no note.
 >
-> For song lyrics, or other text you don't transcribe, return the caption with empty text and the reason in `omitted`, such as `{"text": "", "omitted": "lyrics", ...}`. Don't write a placeholder such as "[song lyrics omitted]" in `text`.
+> If you won't reproduce a caption's text, such as copyrighted song lyrics, return the caption with empty text and the reason in `omitted`, such as `{"text": "", "omitted": "lyrics", ...}`. Don't write a placeholder such as "[song lyrics omitted]" in `text`.
 >
 > Return a JSON list with one entry per tile, including tiles with no caption: `{"t": <time>, "captions": [{"text": ..., "box": [x, y, w, h], "kind": "speech" | "other", "note"?: ..., "omitted"?: ...}]}`, with boxes in the tile's 480×270 pixels.
 
