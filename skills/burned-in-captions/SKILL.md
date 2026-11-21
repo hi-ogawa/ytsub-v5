@@ -103,11 +103,11 @@ Load `steps.csv` and filter it with code, not row by row. Use the region columns
 - `new` grows while `gone` stays near zero, a reveal
 - `kept_1s` or `kept_2s` falls slowly while `kept` stays high, a crossfade. Both also fall for 1–2 s after every swap, because they compare with a step from before it, so a slow fall means a crossfade only with no swap just before.
 
-Group the steps between changes into runs, and match each run to a pattern in [the catalogue](references/catalogue.md). The pattern gives the reading rule, such as one late frame for a clean swap, or both sides of a spike for a swap in the same spot. A run's read comes before the next change, never on the frame after it, because that frame already shows the next caption.
+Group the steps between changes into runs. [The catalogue](references/catalogue.md) lists what common signatures usually mean, such as a swap or a reveal, which helps decide where a run's caption can be read. Treat it as a starting point, and let the frames and the tracks settle a doubt. A run's read comes before the next change, never on the frame after it, because that frame already shows the next caption.
 
 Check the plan against the subtitle tracks first, because their text costs far less than frames. Look at frames only where the tracks can't settle a doubt, such as editor text, which no track contains, or a scene type you haven't seen yet, by tiling a few there and reading them yourself. Rerun the features on a window with `--start` and `--dur` between looks when a setting needs to change. A few sheets is usually enough. Stop once what you see agrees with the plan. Where a stretch stays unclear, such as scenery the masks keep reading as text, read it at a fixed interval instead, or accept some misses there and say so. Reading every caption precisely isn't the goal.
 
-Write a read list. Each entry has a time, its run, and the pattern that led to it, so a later miss can be traced to a rule.
+Write a read list. Each entry has a time, its run, and why it was planned, so a later miss can be traced back to its reason.
 
 Read where you are unsure, and skip reads that would only repeat what you already know with confidence, such as a second frame of a steady run whose caption you have read, or a camera cut where the features and the ASR show the same caption going on. Skip only from confidence, never to save a fixed number of reads.
 
@@ -170,7 +170,7 @@ Give the extra frames to a new reader, together with the frames already read fro
 
 ### 6. Record
 
-If a channel record is available, add anything new about the channel to it: its style, how closely its captions follow the speech, what went wrong, and the windows you checked. Add new patterns to [the catalogue](references/catalogue.md). Tell the user what you changed, because the next video on the channel relies on it.
+If a channel record is available, add anything new about the channel to it: its style, how closely its captions follow the speech, what went wrong, and the windows you checked. Add a feature signature to [the catalogue](references/catalogue.md) only when it took real effort to decode. Tell the user what you changed, because the next video on the channel relies on it.
 
 ## Reading Ranges Again
 
