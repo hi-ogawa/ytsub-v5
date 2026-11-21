@@ -34,30 +34,15 @@ const handlers: Record<BridgeMethod, (...params: any[]) => Promise<unknown>> = {
   isLegacyImported: (source) => storage.isLegacyImported(source),
 };
 
-function mergeLegacyIndexes(a: VideoIndexEntry[], b: VideoIndexEntry[]) {
-  const merged = new Map(a.map((e) => [e.youtubeId, e]));
-  for (const entry of b) {
-    const other = merged.get(entry.youtubeId);
-    if (!other || compareEntries(entry, other) > 0) {
-      merged.set(entry.youtubeId, entry);
-    }
-  }
-  return [...merged.values()];
+function main() {
+  window.addEventListener("message", onMessage);
+  storage.subscribe((notice) => {
+    postToPage({ type: "zamak-storage:notice", notice });
+  });
+  postToPage({ type: "zamak-storage:ready" });
 }
 
-// Newer local change first, then the more recent sync.
-function compareEntries(a: VideoIndexEntry, b: VideoIndexEntry) {
-  if (a.updatedAt !== b.updatedAt) {
-    return a.updatedAt > b.updatedAt ? 1 : -1;
-  }
-  return (a.syncedAt ?? "") > (b.syncedAt ?? "") ? 1 : -1;
-}
-
-function postToPage(message: BridgeMessage) {
-  window.parent.postMessage(message, YOUTUBE_ORIGIN);
-}
-
-window.addEventListener("message", async (e) => {
+async function onMessage(e: MessageEvent) {
   if (e.source !== window.parent || e.origin !== YOUTUBE_ORIGIN) {
     return;
   }
@@ -87,10 +72,29 @@ window.addEventListener("message", async (e) => {
       error: err instanceof Error ? err.message : "Unknown error",
     });
   }
-});
+}
 
-storage.subscribe((notice) => {
-  postToPage({ type: "zamak-storage:notice", notice });
-});
+function postToPage(message: BridgeMessage) {
+  window.parent.postMessage(message, YOUTUBE_ORIGIN);
+}
 
-postToPage({ type: "zamak-storage:ready" });
+function mergeLegacyIndexes(a: VideoIndexEntry[], b: VideoIndexEntry[]) {
+  const merged = new Map(a.map((e) => [e.youtubeId, e]));
+  for (const entry of b) {
+    const other = merged.get(entry.youtubeId);
+    if (!other || compareEntries(entry, other) > 0) {
+      merged.set(entry.youtubeId, entry);
+    }
+  }
+  return [...merged.values()];
+}
+
+// Newer local change first, then the more recent sync.
+function compareEntries(a: VideoIndexEntry, b: VideoIndexEntry) {
+  if (a.updatedAt !== b.updatedAt) {
+    return a.updatedAt > b.updatedAt ? 1 : -1;
+  }
+  return (a.syncedAt ?? "") > (b.syncedAt ?? "") ? 1 : -1;
+}
+
+main();
