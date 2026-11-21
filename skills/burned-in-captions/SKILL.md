@@ -76,7 +76,7 @@ This writes one row per 0.25 s step, about 5,100 rows and 1.1 MB for a 21-minute
 The whole-frame columns also see scenery, so on a busy channel every camera cut can look like a caption change. Where the captions keep to fixed areas, such as a bar at the bottom and zones at the sides, pass each area as a region, and the table gets the same features for the letters inside it:
 
 ```bash
-uv run scripts/features.py video.webm --region bar=180,570,920,95 --region left=0,290,460,160 > steps.csv
+uv run scripts/features.py video.webm --region bar=160,590,960,90 --region left=0,300,420,150 > steps.csv
 ```
 
 Find the areas from the check sheet, or from where `clusters_b` or `clusters_o` boxes keep turning up in a run over a short window. Region features use the box mask by default, and `--region-mask o` switches to the outline mask for outlined captions.
@@ -125,7 +125,7 @@ Ask for more frames where something is off:
 For small or unclear text, crop the frames to the caption's area. With `--crop`, `frames.py` tiles only that box, at twice the scale of a full-frame tile:
 
 ```bash
-uv run scripts/frames.py video.webm --at 12.25 12.5 --crop 180,560,920,110 --out zoom/
+uv run scripts/frames.py video.webm --at 12.25 12.5 --crop 160,580,960,110 --out zoom/
 ```
 
 Give the extra frames to a new reader, together with the frames already read from the same run and the runs next to it, so it can tell a reveal from a swap.
@@ -142,8 +142,8 @@ A caller can pass time ranges where it suspects a miss, such as Fix & Align ASR 
 
 How to use the track depends on how closely the captions follow the speech. With the ASR, measure the share of ASR lines that a caption matches in time and text, or take it from the channel record, if one is available, and report it with the track.
 
-- **Near-verbatim captions,** as on 노빠꾸탁재훈, can be the Korean text and its segmentation. The ASR covers the lines the captions skip.
-- **Commentary-heavy captions,** as on 조현영's vlog, are evidence for fixing the ASR, the way an official track in another language is. Commentary and labels aren't speech, so they never become caption rows of their own.
+- **Near-verbatim captions,** as on a talk show whose captions follow the speech, can be the Korean text and its segmentation. The ASR covers the lines the captions skip.
+- **Commentary-heavy captions,** as on a vlog with mostly editor comments, are evidence for fixing the ASR, the way an official track in another language is.
 
 Where a caption and the ASR differ, the caption wins, because it is what the viewer sees, and the ASR is the weaker source. For Fix & Align ASR in the Zamak skill, the track is one more source for its rows, and the rest of that task runs as usual.
 
