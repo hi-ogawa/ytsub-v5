@@ -1,5 +1,10 @@
 import type { InferRouterOutputs } from "@orpc/server";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  useIsMutating,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { orpc } from "../rpc.ts";
@@ -90,7 +95,6 @@ export type SyncStatus = {
   state: SyncState;
   error?: string;
   onNavigate: () => void;
-  onRefresh: () => void;
   onPush: (store: CaptionSessionManager) => void;
   onPull: (store: CaptionSessionManager) => void;
 };
@@ -126,19 +130,26 @@ export function useSyncState({
   youtubeId: string;
   onNavigate: () => void;
 }): SyncStatus {
+  const queryClient = useQueryClient();
   const entryQuery = useIndexEntry(youtubeId);
 
   const authQuery = useQuery(orpc.auth.check.queryOptions());
   const authenticated = authQuery.data?.authenticated === true;
 
+  const serverQueryOptions = orpc.videos.getVideoUpdatedAt.queryOptions({
+    input: { youtubeId },
+  });
   const serverQuery = useQuery({
-    ...orpc.videos.getVideoUpdatedAt.queryOptions({
-      input: { youtubeId },
-    }),
+    ...serverQueryOptions,
     enabled: authenticated,
   });
 
+  const mutationKey = ["sync", youtubeId];
+  // The menu may close and reopen during a push or pull, so the state comes
+  // from the mutation cache rather than this observer.
+  const isSyncing = useIsMutating({ mutationKey }) > 0;
   const syncMutation = useMutation({
+    mutationKey,
     mutationFn: async (action: {
       direction: "push" | "pull";
       store: CaptionSessionManager;
@@ -164,11 +175,12 @@ export function useSyncState({
         await captionStorage.setSyncedAt(youtubeId, data.video.updatedAt);
       }
     },
-    onSuccess: () => serverQuery.refetch(),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: serverQueryOptions.queryKey }),
   });
 
   const getState = (): SyncState => {
-    if (syncMutation.isPending) {
+    if (isSyncing) {
       return "syncing";
     }
     if (authQuery.isFetching) {
@@ -203,11 +215,6 @@ export function useSyncState({
       ? `${variables?.direction === "pull" ? "Download" : "Upload"} failed: ${error.message}`
       : undefined,
     onNavigate,
-    onRefresh: () => {
-      if (authenticated) {
-        serverQuery.refetch({ cancelRefetch: false });
-      }
-    },
     onPush: (store) => syncMutation.mutate({ direction: "push", store }),
     onPull: (store) => syncMutation.mutate({ direction: "pull", store }),
   };

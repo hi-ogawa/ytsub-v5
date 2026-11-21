@@ -1,8 +1,10 @@
 import {
   QueryClient,
   QueryClientProvider,
+  useIsMutating,
   useMutation,
   useQuery,
+  useQueryClient,
 } from "@tanstack/react-query";
 import { StrictMode, useState } from "react";
 import { createRoot } from "react-dom/client";
@@ -130,14 +132,21 @@ type SyncAction =
   | { direction: "pull"; store: CaptionSessionManager };
 
 function useExtensionSync(youtubeId: string): SyncStatus {
+  const queryClient = useQueryClient();
   const entryQuery = useIndexEntry(youtubeId);
 
+  const serverQueryKey = ["extension-sync-state", youtubeId];
   const serverQuery = useQuery({
-    queryKey: ["extension-sync-state", youtubeId],
+    queryKey: serverQueryKey,
     queryFn: () => bgRpc.getSyncState({ youtubeId }),
   });
 
+  const mutationKey = ["sync", youtubeId];
+  // The menu may close and reopen during a push or pull, so the state comes
+  // from the mutation cache rather than this observer.
+  const isSyncing = useIsMutating({ mutationKey }) > 0;
   const syncMutation = useMutation({
+    mutationKey,
     mutationFn: async (action: SyncAction) => {
       if (action.direction === "push") {
         const { serverUpdatedAt } = await bgRpc.pushSession({ youtubeId });
@@ -156,11 +165,12 @@ function useExtensionSync(youtubeId: string): SyncStatus {
         await captionStorage.setSyncedAt(youtubeId, serverUpdatedAt);
       }
     },
-    onSuccess: () => serverQuery.refetch(),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: serverQueryKey }),
   });
 
   const getState = (): SyncState => {
-    if (syncMutation.isPending) {
+    if (isSyncing) {
       return "syncing";
     }
     if (serverQuery.isPending) {
@@ -192,7 +202,6 @@ function useExtensionSync(youtubeId: string): SyncStatus {
       ? `${variables?.direction === "pull" ? "Download" : "Upload"} failed: ${error.message}`
       : undefined,
     onNavigate: () => bgRpc.openBookmarks(),
-    onRefresh: () => serverQuery.refetch({ cancelRefetch: false }),
     onPush: () => syncMutation.mutate({ direction: "push" }),
     onPull: (store) => syncMutation.mutate({ direction: "pull", store }),
   };
@@ -205,15 +214,13 @@ function ExtensionSession({
   data: YouTubeExtractionResult;
   player?: YTPlayer;
 }) {
-  const sync = useExtensionSync(data.video.youtubeId);
-
   return (
     <CaptionPanel
       tracks={data.captionTracks}
       player={player}
       fetchJson3={(track) => fetchTrackJson3(track.baseUrl)}
       videoMeta={data.video}
-      sync={sync}
+      useSync={useExtensionSync}
     />
   );
 }
