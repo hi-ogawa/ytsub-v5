@@ -6,8 +6,8 @@ import {
   Trash2,
 } from "lucide-react";
 import { useState } from "react";
+import type { VideoIndexEntry } from "../lib/caption-storage.ts";
 import type { VideoSyncEntry, VideoSyncHandle } from "../lib/sync.ts";
-import type { VideoIndexEntry } from "../lib/video-index.ts";
 import { syncStateDisplay } from "./sync-state.tsx";
 import { Dialog, DialogContent, DialogTitle } from "./ui/dialog.tsx";
 import {

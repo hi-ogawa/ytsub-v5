@@ -1,10 +1,9 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { ExternalLink } from "lucide-react";
 import { BookmarksPage } from "../components/bookmarks-page.tsx";
-import { captionStorage } from "../lib/caption-storage.ts";
+import { captionStorage, videoIndexStore } from "../lib/caption-storage.ts";
 import { useStore } from "../lib/external-store.ts";
 import { useVideoSync, type VideoSyncEntry } from "../lib/sync.ts";
-import { videoIndexStore } from "../lib/video-index.ts";
 import { orpc } from "../rpc.ts";
 
 const CHROME_STORE_URL =
