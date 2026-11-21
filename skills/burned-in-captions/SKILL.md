@@ -19,7 +19,7 @@ The commands below shorten this to `uv run scripts/...`. Outputs go to the folde
 
 **Input:** a video, as a YouTube ID or a file. Optionally, the video's ASR or other subtitle tracks, which help plan reads and check them, and a list of time ranges to read again (see [Reading Ranges Again](#reading-ranges-again)).
 
-**Output:** `captions.json`, a list of captions in time order:
+**Output:** `captions.json`, the track that Fix & Align ASR in the [Zamak skill](../zamak/SKILL.md) takes. It is a list of captions in time order:
 
 ```json
 {
@@ -31,10 +31,10 @@ The commands below shorten this to `uv run scripts/...`. Outputs go to the folde
 }
 ```
 
-- `kind` is `speech` for words someone says, and `other` for anything else the editor put on screen, whatever its frame. Text filmed in the scene, such as signs, isn't a caption, so leave it out.
+- `kind` is `speech` for words someone says, and `other` for anything else the editor put on screen, whatever its frame. Fix & Align ASR uses a `speech` caption's text in place of the ASR's line at the same time, and makes an `other` caption a row of its own. So tag a caption `speech` when someone in the video says its words aloud at that time, and use the ASR at that time to check. Text filmed in the scene, such as signs, isn't a caption, so leave it out.
 - `position` is the caption's box `[x, y, w, h]` in the 1280×720 frame.
 - `text` is exactly what the picture shows, including nonstandard spelling, censored words such as ㅅㄲ, and spelled-out laughter.
-- `omitted` is a short reason, set on a caption whose text a reader declined to reproduce, such as copyrighted text. Its `text` is empty, and it keeps its time and position, so a user can fill it in by hand. Text that is only hard to read is not omitted, so mark it with `[?]` or read it again. Never put a placeholder label in `text` instead, because a caller would take the label as the caption.
+- `omitted` is a short reason, set on a caption whose text a reader declined to reproduce, such as copyrighted text. Its `text` is empty, and it keeps its time and position, so a user can fill it in by hand. Text that is only hard to read is not omitted, so mark it with `[?]` or read it again. Never put a placeholder label in `text` instead, because Fix & Align ASR would use the label as the caption's text.
 
 ## Read the Picture
 
@@ -56,6 +56,8 @@ yt-dlp -f 247 -o 'video.%(ext)s' <youtube-id>
 
 Download it once, and reuse the file for reruns, follow-ups, and [Reading Ranges Again](#reading-ranges-again). Each download is a request to YouTube, and YouTube blocks a machine that sends too many with "Sign in to confirm you're not a bot". If `yt-dlp` answers with that, stop and report it, because retrying keeps the machine blocked longer.
 
+Other `yt-dlp` failures, such as HTTP 403, usually mean the installed `yt-dlp` is out of date, because YouTube changes often. Retry once with the latest release through `uvx yt-dlp@latest` before giving up.
+
 When the task needs only part of the video, download only that part:
 
 ```bash
@@ -64,7 +66,7 @@ yt-dlp -f 247 --download-sections '*600-780' --force-keyframes-at-cuts -o 'video
 
 The file starts at 0 s, so add the section's start to every time the scripts print or take. `--force-keyframes-at-cuts` makes the cut land exactly on the start, which a plain cut misses by up to a few seconds.
 
-If the caller didn't pass the subtitle tracks, fetch them as [Fetch and Assess](../zamak/references/generate-import-json.md#fetch-and-assess) describes, because planning checks against them.
+If you weren't given the subtitle tracks, fetch them as [Fetch and Assess](../zamak/references/generate-import-json.md#fetch-and-assess) describes, because planning checks against them.
 
 Look at one sheet of 20 frames spread across the whole video:
 
@@ -150,7 +152,7 @@ Without subagents, read a few sheets per turn yourself.
 Turn the reads into captions:
 
 - Each caption takes its text from the reads, and its begin and end from the run it was read in.
-- Take its position from the masks: the region's `box` at that step, or the `clusters_b` or `clusters_o` box that overlaps the reader's box. Convert the reader's box to the frame with its sheet's printed `scale` and `origin`: divide by the scale, then add the origin.
+- Take its position from the reader's box, converted to the frame with its sheet's printed `scale` and `origin`: divide by the scale, then add the origin. The mask boxes can't stand in for it, because on busy scenes they stretch over scenery that passes for letters, and `position` only needs to show where the caption is.
 - Identical text read in neighboring runs becomes one caption.
 - A caption with `omitted` keeps its run's time and position like any other, and neighboring ones with the same reason in the same place become one.
 
@@ -187,7 +189,7 @@ If a channel record is available, add anything new about the channel to it: its 
 
 ## Reading Ranges Again
 
-A caller can pass time ranges where it suspects a miss, such as Fix & Align ASR passing the times of ASR lines that no caption matches. Read every other step in each range, put the new reads through [Assemble and correct](#5-assemble-and-correct), and add the new captions to the track.
+The user or the Zamak skill can pass time ranges where it suspects a miss, such as Fix & Align ASR passing the times of ASR lines that no caption matches. Read every other step in each range, put the new reads through [Assemble and correct](#5-assemble-and-correct), and add the new captions to the track.
 
 ## Reviewing a Run
 
@@ -211,6 +213,6 @@ The scripts find letters with two masks, because each caption style needs its ow
 | `scene`                                                                                                      |                 | change across the whole frame. A spike means a camera cut.                                                                      |
 | `clusters_o`, `clusters_b`                                                                                   | each            | a list of `[x, y, w, h]`, one box per group of letters, which shows positions and how many captions are on screen               |
 | `letters_<region>`, `kept_<region>`, `kept_1s_<region>`, `kept_2s_<region>`, `gone_<region>`, `new_<region>` | `--region-mask` | the same features inside a region given with `--region`                                                                         |
-| `box_<region>`                                                                                               | `--region-mask` | the box around the letters in the region, the caption's position                                                                |
+| `box_<region>`                                                                                               | `--region-mask` | the box around the letters in the region                                                                                        |
 
 A step leaves out a key that has no value, such as `kept` on the first step, or `box_<region>` when the region has no letters. Compare the masks yourself when one may be fooled by scenery, and track a cluster's box across steps to see how long it holds.
