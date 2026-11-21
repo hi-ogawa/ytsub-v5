@@ -53,7 +53,7 @@ test.describe("dev-viewer sync indicator", () => {
   });
 });
 
-test("dev-viewer sync › pull from the sync menu replaces captions and bookmarks in place", async ({
+test("pull from the sync menu replaces captions and bookmarks in place", async ({
   page,
 }) => {
   await setupDb({ seed: true });
@@ -77,7 +77,7 @@ test("dev-viewer sync › pull from the sync menu replaces captions and bookmark
   ).toBeVisible();
 });
 
-test("dev-viewer sync › shows conflict when local bookmarks and server data both exist", async ({
+test("shows conflict when local bookmarks and server data both exist", async ({
   page,
 }) => {
   await setupDb({ seed: true });
