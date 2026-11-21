@@ -26,11 +26,11 @@ The main world has no `chrome.runtime` to build the frame's URL, so the relay mo
 
 If the extension updates while a tab is open, the tab's frame stops answering. A call that gets no answer fails with a message to reload the page.
 
-## Announce Each Write to Every Page
+## Keep the Index Current After Each Write
 
 The caption panel reads the video index synchronously as it renders, so the content script keeps a copy of the index in memory. It loads the copy through the frame before the panel opens, and keeps it current from change notices.
 
-Every write to the database posts a notice on the `zamak:storage` BroadcastChannel, which reaches every context on the extension's origin: the frame in each YouTube tab, the bookmarks page, and the background. A notice carries the new index. Each frame forwards notices to its content script. A listener only updates what it shows and never writes back, so notices can't loop.
+Every write to the database posts a notice carrying the new index to listeners in the context that made it. The frame forwards its notices to its content script, so a YouTube tab's index follows the writes that tab makes. Notices don't reach other contexts, so other pages see a write only after they reload, as [Know Where an Open Page Can Fall Behind](data-and-sync.md#know-where-an-open-page-can-fall-behind) describes. A listener only updates what it shows and never writes back, so notices can't loop.
 
 ## Keep Server Calls and Secrets in the Background
 

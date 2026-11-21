@@ -51,6 +51,8 @@ Earlier versions kept the index in localStorage, and the extension kept its data
 
 The extension's old index came in two copies, one in youtube.com localStorage and one in `chrome.storage.local`, and they could disagree. The move takes the entry with the later local change from either copy, or the later sync when both changed at the same time. A video can also be in the database already, if you pulled it on the bookmarks page before opening a YouTube tab. Then the entry with the later local change wins, together with its session, and a tie keeps the copy already in the database. A session with no index entry moves only if the database has none for that video.
 
-## Know Where an Open Panel Can Fall Behind
+## Know Where an Open Page Can Fall Behind
 
-The caption panel holds its session in memory while you work, and reads the stored copy only when it opens. If another page saves that video's session while the panel is open, such as a pull from the bookmarks page or an edit in another tab, the panel keeps showing its older copy, and its next edit saves that copy over the newer one. The index stays current everywhere, so the panel's sync status still reflects the newer save.
+Each page keeps the video index in memory and updates it after its own writes, but it doesn't hear writes from other pages. A second YouTube tab keeps the sync status it loaded until you reload it. An open bookmarks page keeps its list, and its notice about moving earlier data, after a YouTube tab moves that data.
+
+The caption panel also holds its session in memory while you work, and reads the stored copy only when it opens. If another page saves that video's session while the panel is open, such as a pull from the bookmarks page or an edit in another tab, the panel keeps showing its older copy, and its next edit saves that copy over the newer one.
