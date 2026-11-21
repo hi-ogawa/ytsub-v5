@@ -22,7 +22,6 @@ import {
   useState,
   useSyncExternalStore,
 } from "react";
-import { z } from "zod";
 import {
   type AiTask,
   AI_TASKS,
@@ -37,6 +36,7 @@ import {
   type MergedCaption,
   mergeCaptions,
 } from "../lib/caption-merge.ts";
+import { captionPanelPreferences } from "../lib/caption-panel-preferences.ts";
 import {
   CaptionSessionManager,
   getInitialTracks,
@@ -56,7 +56,6 @@ import type {
   YouTubeVideoData,
 } from "../lib/youtube.ts";
 import { getSelectionAt } from "../utils/get-selection.ts";
-import { createLocalStorageStore } from "../utils/local-storage-store.ts";
 import { CaptionList, type CaptionListHandle } from "./caption-list.tsx";
 import { syncStateDisplay } from "./sync-state.tsx";
 import { TrackPicker } from "./track-picker.tsx";
@@ -66,29 +65,10 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu.tsx";
-import { withUseValue } from "./use-store-value.ts";
 import type { YTPlayer } from "./youtube-player.tsx";
 
-const DEFAULT_PREFERENCES = { autoScroll: true, fabOpen: {} };
-
-const preferencesSchema = z
-  .object({
-    autoScroll: z.boolean().catch(DEFAULT_PREFERENCES.autoScroll),
-    fabOpen: z
-      .record(z.string(), z.boolean())
-      .catch(DEFAULT_PREFERENCES.fabOpen),
-  })
-  .catch(DEFAULT_PREFERENCES);
-
-const preferences = withUseValue(
-  createLocalStorageStore({
-    key: "zamak:caption-panel",
-    parse: (stored) => preferencesSchema.parse(stored),
-  }),
-);
-
 export function useFabOpen(videoId: string) {
-  const [fabOpen, setFabOpen] = preferences.useValue("fabOpen");
+  const [fabOpen, setFabOpen] = captionPanelPreferences.useValue("fabOpen");
   const open = fabOpen[videoId] ?? false;
   const toggle = () => setFabOpen((prev) => ({ ...prev, [videoId]: !open }));
   return [open, toggle] as const;
@@ -731,7 +711,8 @@ function CaptionPanelWithStore({
 }) {
   useSyncExternalStore(store.subscribe, () => store.version);
 
-  const [autoScroll, setAutoScroll] = preferences.useValue("autoScroll");
+  const [autoScroll, setAutoScroll] =
+    captionPanelPreferences.useValue("autoScroll");
 
   return (
     <div className="flex h-full flex-col">
