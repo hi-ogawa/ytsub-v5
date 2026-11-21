@@ -19,19 +19,19 @@ The two worlds share the tab's origin, so they read and write the same IndexedDB
 
 Three channels connect the content script and the relay. Each one works in a single direction:
 
-| Channel         | Who starts it                                       | Who answers                       | What comes back |
-| --------------- | --------------------------------------------------- | --------------------------------- | --------------- |
-| `zamak:rpc`     | The content script                                  | The background, through the relay | A response      |
-| `zamak:tab-rpc` | The background, through the relay                   | The content script                | A response      |
-| `zamak:store`   | The content script, when it changes the video index | Nobody                            | Nothing         |
+| Channel         | Who starts it                                 | Who answers                       | What comes back |
+| --------------- | --------------------------------------------- | --------------------------------- | --------------- |
+| `zamak:rpc`     | The content script                            | The background, through the relay | A response      |
+| `zamak:tab-rpc` | The background, through the relay             | The content script                | A response      |
+| `zamak:store`   | Either world, when it changes the video index | Nobody                            | Nothing         |
 
 - **`zamak:rpc`** lets the content script call the background, such as to check the sync status. The content script posts a request with an ID. The relay forwards it to the background, then posts the response, and the content script matches it by ID. The background never starts a call on this channel.
 - **`zamak:tab-rpc`** is the same in reverse. The background sends a request to the relay, the relay posts it to the content script, and the content script posts the response. The content script never starts a call on this channel.
-- **`zamak:store`** is a change notice, not a call. When the content script changes the index, it posts the new index, and the relay writes it to `chrome.storage.local`. The relay never posts on it. When a tab loads, the relay copies the index from `chrome.storage.local` into localStorage without posting, and the content script reads it from there.
+- **`zamak:store`** is a change notice, not a call. When the content script changes the index, it posts the new index, and the relay writes it to `chrome.storage.local`. When `chrome.storage.local` changes, such as on load or after a write from the bookmarks page, the relay posts the new index, and the content script updates its copy. The relay posts on load even though it also writes localStorage, because the content script may have read localStorage before the relay ran.
 
 The two RPC channels use window messages, because both worlds share the tab's `window` and a window message never leaves the tab. Each message is also tagged as a request or a response, so a listener never answers a response.
 
-`zamak:store` uses a BroadcastChannel, which reaches every channel with the same name on the same origin. That includes every other open YouTube tab, so a change in one tab also updates the index in the others. It can't loop, because a listener only updates its local copy and never posts again. The RPC channels can't use one for this reason: a request would reach the relays in every tab, and their responses would reach every tab too. That was [issue #184](https://github.com/hi-ogawa/ytsub-v5/issues/184), which froze the browser with two YouTube tabs open.
+`zamak:store` uses a BroadcastChannel, which reaches every channel with the same name on the same origin. That includes every other open YouTube tab, so a change in one tab also updates the index in the others. It can't loop, because a listener only updates its local copy and never posts again, and the relay skips writing an index that matches what `chrome.storage.local` already holds. The RPC channels can't use one for this reason: a request would reach the relays in every tab, and their responses would reach every tab too. That was [issue #184](https://github.com/hi-ogawa/ytsub-v5/issues/184), which froze the browser with two YouTube tabs open.
 
 ## Keep Server Calls and Secrets in the Background
 
@@ -45,10 +45,10 @@ Captions and bookmarks live in IndexedDB on the youtube.com origin. The backgrou
 
 To find a tab, the background asks Chrome for the open YouTube tabs on every call and sends a Chrome message to each in turn until one answers. A tab answers once its relay is running. A tab that is still loading, or that runs a script from an older version of the extension, has no relay to answer, so the background moves on to the next tab. The relay passes the request to the content script through `zamak:tab-rpc`, and the content script reads or writes IndexedDB. Every YouTube tab shares the same origin storage, so any tab will do. The background keeps no list of its own, because Chrome stops the service worker when it is idle, and anything the worker kept in memory is lost.
 
-This is why pushing and pulling from the bookmarks page needs an open YouTube tab. Without one, the call fails with "No YouTube tab open". The caption panel runs in a YouTube tab, so its push always finds one. Its pull doesn't go through a tab. The background only returns the fetched session, and the panel applies it to the session it holds in memory. A write to IndexedDB from outside the panel would leave it showing the old copy. [Data and sync](data-and-sync.md) describes what push and pull do with the data.
+This is why pushing and pulling from the bookmarks page needs an open YouTube tab. Without one, the call fails with "No YouTube tab open". The caption panel runs in a YouTube tab, so its push always finds one. Its pull doesn't go through a tab. The background only returns the fetched session, and the panel applies it to the session it holds in memory. A write to IndexedDB from outside the panel, such as a pull from the bookmarks page, would leave it showing the old copy, so the content script that writes it posts the video ID on a `zamak:session-saved` BroadcastChannel, and a panel showing that video rereads its session. [Data and sync](data-and-sync.md) describes what push and pull do with the data.
 
 ## Run the Bookmarks Page as an Extension Page
 
 The bookmarks page is an extension page, so it has the `chrome.*` APIs directly and needs no relay. It calls the background with plain Chrome messages for push and pull. It calls the server itself for everything else, such as signing in, listing the server's videos, and deleting a video, and it adds the session token from `chrome.storage.local` to each request.
 
-The page runs on the extension's origin, so it has its own localStorage. It keeps its own copy of the video index there. It loads the copy from `chrome.storage.local` when it opens and writes the whole index back after each change.
+The page runs on the extension's origin, so it has its own localStorage. It keeps its own copy of the video index there. It loads the copy from `chrome.storage.local` when it opens, writes the whole index back after each change, and applies changes that YouTube tabs write there.

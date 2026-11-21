@@ -37,7 +37,6 @@ import {
 } from "../lib/sync.ts";
 import { useTheme } from "../lib/theme.ts";
 import {
-  type VideoIndexEntry,
   removeFromVideoIndex,
   updateVideoIndex,
   videoIndexStore,
@@ -47,6 +46,7 @@ import type { bgRpcHandlers } from "./background.ts";
 import { chromeStorage } from "./lib/chrome-storage.ts";
 import { createRuntimeRpc } from "./lib/extension-rpc.ts";
 import { getServerUrl } from "./lib/server-url.ts";
+import { mirrorVideoIndex } from "./lib/video-index-mirror.ts";
 import "../styles.css";
 
 declare const __DEV_EXT__: boolean;
@@ -323,15 +323,7 @@ async function main() {
     },
   });
 
-  // This page's copy of the video index. See docs/data-and-sync.md.
-  const entries = await chromeStorage.get<VideoIndexEntry[]>(
-    videoIndexStore.key,
-  );
-  videoIndexStore.setLocal(entries ?? []);
-
-  videoIndexStore.subscribe(() => {
-    chromeStorage.set({ [videoIndexStore.key]: videoIndexStore.get() });
-  });
+  await mirrorVideoIndex();
 
   createRoot(document.getElementById("root")!).render(
     <StrictMode>

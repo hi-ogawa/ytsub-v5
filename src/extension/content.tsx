@@ -4,7 +4,7 @@ import {
   useMutation,
   useQuery,
 } from "@tanstack/react-query";
-import { StrictMode, useState } from "react";
+import { StrictMode, useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import {
   CaptionFab,
@@ -35,6 +35,11 @@ import {
 
 const bgRpc = createRuntimeRelayRpc<typeof bgRpcHandlers>();
 
+// Announces a session written from outside the caption panel, such as a pull
+// from the bookmarks page, to the panels in every YouTube tab
+const SESSION_SAVED_CHANNEL = "zamak:session-saved";
+const sessionSavedChannel = new BroadcastChannel(SESSION_SAVED_CHANNEL);
+
 // The background reaches youtube.com IndexedDB through these handlers.
 // See docs/extension-runtime.md.
 export const tabRpcHandlers = {
@@ -43,6 +48,7 @@ export const tabRpcHandlers = {
   },
   async saveSession({ session }: { session: PersistedCaptionSession }) {
     await saveSession(session);
+    sessionSavedChannel.postMessage({ youtubeId: session.youtubeId });
   },
 };
 registerTabRpcHandlers(tabRpcHandlers);
@@ -205,9 +211,11 @@ function ExtensionSession({
   player?: YTPlayer;
 }) {
   const sync = useExtensionSync(data.video.youtubeId);
+  const sessionVersion = useSessionSavedVersion(data.video.youtubeId);
 
   return (
     <CaptionPanel
+      sessionVersion={sessionVersion}
       tracks={data.captionTracks}
       player={player}
       fetchJson3={(track) => fetchTrackJson3(track.baseUrl)}
@@ -215,6 +223,19 @@ function ExtensionSession({
       sync={sync}
     />
   );
+}
+
+// Counts the saves announced for this video
+function useSessionSavedVersion(youtubeId: string) {
+  const [version, setVersion] = useState(0);
+  useEffect(() => {
+    const channel = new BroadcastChannel(SESSION_SAVED_CHANNEL);
+    channel.onmessage = (e: MessageEvent<{ youtubeId: string }>) => {
+      if (e.data.youtubeId === youtubeId) setVersion((v) => v + 1);
+    };
+    return () => channel.close();
+  }, [youtubeId]);
+  return version;
 }
 
 // --- Style injection ---

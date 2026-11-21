@@ -16,7 +16,7 @@ Browser storage belongs to an origin, so where a session lives depends on which 
 
 Opening every session just to draw the bookmarks page would be slow, so each origin also keeps a video index in localStorage. An entry holds a video's title, channel, and bookmark count, plus timestamps for sync: when the session last changed locally, when it was last pushed or pulled, and the server's own timestamp for the video at that push or pull.
 
-The extension has three copies of the index, because its pieces run on two origins. YouTube tabs keep one in youtube.com localStorage, the bookmarks page keeps one in the extension's localStorage, and `chrome.storage.local` sits between them. Each side copies the index from `chrome.storage.local` when it loads, and writes its whole index back there after each change.
+The extension has three copies of the index, because its pieces run on two origins. YouTube tabs keep one in youtube.com localStorage, the bookmarks page keeps one in the extension's localStorage, and `chrome.storage.local` sits between them. `chrome.storage.local` is the copy the others follow. Each side loads the index from it, writes its whole index back after each change, and listens for the other side's writes, so an open YouTube tab and an open bookmarks page see each other's changes as they happen.
 
 ## Decide the Sync Direction From Two Pairs of Timestamps
 
@@ -43,7 +43,7 @@ In the extension, you can push or pull from the caption panel's menu or from the
 
 In the web app, the bookmarks page and the caption panel push and pull directly, because the sessions live on its own origin. The web app's caption panel only shows sessions that are already stored, because it can't fetch subtitles.
 
-In both clients, a pull from the caption panel replaces the captions and bookmarks it shows, so you see the pulled copy without a reload. A conflict in the panel opens the bookmarks page, where you pick which copy to keep.
+In both clients, a pull from the caption panel replaces the captions and bookmarks it shows, so you see the pulled copy without a reload. In the extension, a pull from the bookmarks page also reloads the session in any open panel that shows that video. A conflict in the panel opens the bookmarks page, where you pick which copy to keep.
 
 Data can also enter the web app from an `import.json` file, through Import in the header menu. Import writes a session to the web app's storage, and a push then uploads it. [Generate import.json](../skills/zamak/references/generate-import-json.md) describes how to build one without the extension.
 
@@ -51,5 +51,5 @@ Data can also enter the web app from an `import.json` file, through Import in th
 
 Because each side writes its whole copy, two places can overwrite each other:
 
-- **The extension's index copies only meet at load time.** An open YouTube tab and an open bookmarks page don't see each other's changes, so the next write from one side can undo the other's. [Issue #167](https://github.com/hi-ogawa/ytsub-v5/issues/167) tracks this.
+- **Two index writes at the same moment keep only one.** Each side writes its whole index, so if the bookmarks page and a YouTube tab change it within the few milliseconds before they hear each other, the later write drops the earlier change.
 - **Deleting a video on the extension's bookmarks page leaves its session on youtube.com.** The page removes the index entry and the server's copy, but the session it deletes is in the extension origin's IndexedDB, where no session is stored.

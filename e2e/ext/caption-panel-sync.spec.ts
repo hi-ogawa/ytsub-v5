@@ -128,3 +128,71 @@ test("caption panel: a failed push shows its error in the sync menu", async ({
   ).toContainText("Upload failed");
   await expect(status).toHaveAttribute("data-sync-state", "push");
 });
+
+test("caption panel: a pull from the bookmarks page updates the open panel", async ({
+  context,
+  page,
+  extensionId,
+}) => {
+  await setupDb({ seed: true });
+  const ytPage = await openYouTubeTab(context, SEED_VIDEO_ID);
+  await openPanelWithTracks(ytPage);
+  const host = ytPage.locator("#zamak-host");
+
+  await gotoBookmarks(page, extensionId);
+  await page.bringToFront();
+  await login(page);
+  const badge = page
+    .getByTestId(`video-card-${SEED_VIDEO_ID}`)
+    .getByTestId("video-sync-badge");
+  await badge.click();
+  await expect(badge).toHaveAttribute("data-sync-status", "synced");
+
+  // The open panel picks up the pulled session and the sync record without a reload
+  await ytPage.bringToFront();
+  await expect(
+    host.getByRole("button", { name: "Bookmarks (15)" }),
+  ).toBeVisible();
+  const status = await openSyncMenu(ytPage);
+  await expect(status).toHaveAttribute("data-sync-state", "synced");
+
+  // A fresh load reads the current index on its first load
+  await ytPage.reload();
+  await expect(
+    host.getByRole("button", { name: "Bookmarks (15)" }),
+  ).toBeVisible();
+  await expect(await openSyncMenu(ytPage)).toHaveAttribute(
+    "data-sync-state",
+    "synced",
+  );
+});
+
+test("caption panel: a new YouTube tab reads the current index on its first load", async ({
+  context,
+  page,
+  extensionId,
+}) => {
+  await setupDb({ seed: true });
+  await gotoBookmarks(page, extensionId);
+  await login(page);
+
+  // An index entry that never synced shows as a conflict against the server's copy.
+  // Without it, the panel would show a pull.
+  await seedChromeStorage(context, {
+    "zamak:video-index": [
+      {
+        youtubeId: SEED_VIDEO_ID,
+        title: "seed",
+        channelName: "seed",
+        bookmarkCount: 1,
+        updatedAt: "2020-01-01T00:00:00.000Z",
+      },
+    ],
+  });
+  const ytPage = await openYouTubeTab(context, SEED_VIDEO_ID);
+  await openPanelWithTracks(ytPage);
+  await expect(await openSyncMenu(ytPage)).toHaveAttribute(
+    "data-sync-state",
+    "conflict",
+  );
+});

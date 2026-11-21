@@ -460,6 +460,8 @@ type CaptionPanelProps = {
   videoMeta: YouTubeVideoData;
   sync: SyncStatus;
   sessionOnly?: boolean;
+  // Bump to reread the stored session after something outside the panel wrote it
+  sessionVersion?: number;
 };
 
 export function CaptionPanel(props: CaptionPanelProps) {
@@ -470,7 +472,7 @@ export function CaptionPanel(props: CaptionPanelProps) {
   // - always spinner until ready
   // - never refetch after mount
   const initialStoreQuery = useQuery({
-    queryKey: ["caption-session", youtubeId],
+    queryKey: ["caption-session", youtubeId, props.sessionVersion],
     queryFn: async () => {
       const session = await getSession(youtubeId);
       if (!session) return null;
