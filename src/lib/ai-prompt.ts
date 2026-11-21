@@ -242,10 +242,14 @@ export function alignResultToSession(
     return placed ? [{ ...b, ...placed }] : [];
   });
   const added = result.bookmarks.flatMap((a) => {
-    if (a.id) return [];
+    if (a.id) {
+      return [];
+    }
     const side = a.side ?? 0;
     const placed = placeOnRow(a, side);
-    if (!placed) return [];
+    if (!placed) {
+      return [];
+    }
     return [
       {
         ...placed,
@@ -296,7 +300,9 @@ export function makeAiPrompt(
   },
 ): string {
   const template = sections[task];
-  if (!template) return "";
+  if (!template) {
+    return "";
+  }
   const label = AI_TASKS.find((t) => t.task === task)!.label;
   return `${sections.header}\n\n${template}`
     .replace(/\{\{TASK\}\}/g, label)

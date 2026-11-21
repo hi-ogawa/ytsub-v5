@@ -572,8 +572,11 @@ test.describe("dev-viewer caption panel", () => {
   {"captionIndex": 1, "text": "밤새", "translation": "all night", "etymology": "" }]}
 \`\`\``;
     page.on("dialog", (dialog) => {
-      if (dialog.type() === "prompt") dialog.accept(wrapped);
-      else dialog.accept();
+      if (dialog.type() === "prompt") {
+        dialog.accept(wrapped);
+      } else {
+        dialog.accept();
+      }
     });
     await page.getByText("Import AI result").click();
 
@@ -626,8 +629,11 @@ test.describe("dev-viewer caption panel", () => {
       ],
     });
     page.on("dialog", (dialog) => {
-      if (dialog.type() === "prompt") dialog.accept(json);
-      else dialog.accept();
+      if (dialog.type() === "prompt") {
+        dialog.accept(json);
+      } else {
+        dialog.accept();
+      }
     });
     await page.getByText("Import AI result").click();
 
@@ -681,8 +687,11 @@ test.describe("dev-viewer caption panel", () => {
     let answer = "";
     page.on("dialog", (dialog) => {
       dialogs.push(dialog.message());
-      if (dialog.type() === "prompt") dialog.accept(answer);
-      else dialog.accept();
+      if (dialog.type() === "prompt") {
+        dialog.accept(answer);
+      } else {
+        dialog.accept();
+      }
     });
 
     // A bookmark that isn't at its offset rejects the whole result

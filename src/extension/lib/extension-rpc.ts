@@ -48,8 +48,12 @@ function listenWorldMessage(
     "message",
     (e) => {
       const message = e.data as WorldMessage | undefined;
-      if (e.source !== window) return;
-      if (message?.channel !== channel || message.kind !== kind) return;
+      if (e.source !== window) {
+        return;
+      }
+      if (message?.channel !== channel || message.kind !== kind) {
+        return;
+      }
       listener(message.data);
     },
     options,
@@ -98,10 +102,15 @@ export function createRuntimeRelayRpc<
         RPC_CHANNEL,
         "response",
         (response: RpcResponse) => {
-          if (response.id !== id) return;
+          if (response.id !== id) {
+            return;
+          }
           ac.abort();
-          if (response.error) reject(new Error(response.error));
-          else resolve(response.result);
+          if (response.error) {
+            reject(new Error(response.error));
+          } else {
+            resolve(response.result);
+          }
         },
         { signal: ac.signal },
       );
@@ -121,7 +130,9 @@ export function createRuntimeRpc<Handlers extends Record<string, Function>>() {
       params,
     };
     const response = await chrome.runtime.sendMessage(request);
-    if (response?.__error) throw new Error(response.__error);
+    if (response?.__error) {
+      throw new Error(response.__error);
+    }
     return response;
   });
 }
@@ -149,7 +160,9 @@ export function setupRpcRelay() {
 
 export function setupTabRpcRelay() {
   chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
-    if (msg?.type !== "zamak-tab-rpc") return;
+    if (msg?.type !== "zamak-tab-rpc") {
+      return;
+    }
     const { id, method, params } = msg as TabRpcRequest;
 
     const ac = new AbortController();
@@ -157,10 +170,15 @@ export function setupTabRpcRelay() {
       TAB_RPC_CHANNEL,
       "response",
       (response: RpcResponse) => {
-        if (response.id !== id) return;
+        if (response.id !== id) {
+          return;
+        }
         ac.abort();
-        if (response.error) sendResponse({ error: response.error });
-        else sendResponse({ result: response.result });
+        if (response.error) {
+          sendResponse({ error: response.error });
+        } else {
+          sendResponse({ result: response.result });
+        }
       },
       { signal: ac.signal },
     );
@@ -173,7 +191,9 @@ export function setupTabRpcRelay() {
 
 export function registerRpcHandlers(handlers: Record<string, Function>) {
   chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
-    if (msg?.type !== "zamak-rpc") return;
+    if (msg?.type !== "zamak-rpc") {
+      return;
+    }
     const { method, params } = msg as RpcRequest;
     const handler = handlers[method];
     if (!handler) {
@@ -222,14 +242,18 @@ async function sendToYouTubeTab(request: TabRpcRequest) {
     discarded: false,
   });
   for (const tab of tabs) {
-    if (tab.id === undefined) continue;
+    if (tab.id === undefined) {
+      continue;
+    }
     try {
       return (await chrome.tabs.sendMessage(tab.id, request)) as
         | { result?: unknown; error?: string }
         | undefined;
     } catch (err) {
       // The tab has no relay from the current extension yet, or anymore.
-      if (String(err).includes("Receiving end does not exist")) continue;
+      if (String(err).includes("Receiving end does not exist")) {
+        continue;
+      }
       throw err;
     }
   }

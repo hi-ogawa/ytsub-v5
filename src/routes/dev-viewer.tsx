@@ -24,13 +24,16 @@ export function DevViewerPage() {
 
   const { ref: playerElRef, player } = useYouTubePlayer(meta?.video.youtubeId);
 
-  if (!videoId) return <div className="p-4">No video ID</div>;
-  if (!meta)
+  if (!videoId) {
+    return <div className="p-4">No video ID</div>;
+  }
+  if (!meta) {
     return (
       <div className="flex h-full items-center justify-center text-sm text-destructive">
         No fixture for {videoId}
       </div>
     );
+  }
 
   return (
     <div className="h-full w-full p-6">
@@ -69,7 +72,9 @@ function DevViewerSession({
     async (track: YouTubeCaptionTrack) => {
       const key = `/scripts/youtube-json/${videoId}/track-${track.vssId}.json`;
       const loader = fixtureTracks[key];
-      if (!loader) throw new Error(`No track fixture for ${track.vssId}`);
+      if (!loader) {
+        throw new Error(`No track fixture for ${track.vssId}`);
+      }
       const mod = await loader();
       return mod.default;
     },

@@ -57,7 +57,9 @@ export function GuestLayout() {
   const { authenticated } = useRouteLoaderData("root") as Awaited<
     ReturnType<typeof authLoader>
   >;
-  if (authenticated) return <Navigate to="/" replace />;
+  if (authenticated) {
+    return <Navigate to="/" replace />;
+  }
   return (
     <div className="h-full">
       <Outlet />
@@ -69,7 +71,9 @@ export function AuthLayout() {
   const { authenticated } = useRouteLoaderData("root") as Awaited<
     ReturnType<typeof authLoader>
   >;
-  if (!authenticated) return <Navigate to="/login" replace />;
+  if (!authenticated) {
+    return <Navigate to="/login" replace />;
+  }
   return <Outlet />;
 }
 

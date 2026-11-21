@@ -38,8 +38,11 @@ export function updateVideoIndex(
       syncedServerUpdatedAt: existing?.syncedServerUpdatedAt,
     };
     const next = [...entries];
-    if (idx >= 0) next[idx] = entry;
-    else next.push(entry);
+    if (idx >= 0) {
+      next[idx] = entry;
+    } else {
+      next.push(entry);
+    }
     return next;
   });
 }

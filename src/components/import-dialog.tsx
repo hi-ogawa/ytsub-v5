@@ -42,7 +42,9 @@ export function ImportDialog({
   }
 
   async function onImport() {
-    if (!parsed) return;
+    if (!parsed) {
+      return;
+    }
     setImporting(true);
     setImportError("");
     try {
@@ -74,7 +76,9 @@ export function ImportDialog({
             e.preventDefault();
             e.currentTarget.classList.remove("border-ring", "bg-highlight-bg");
             const file = e.dataTransfer.files[0];
-            if (file) handleFile(file);
+            if (file) {
+              handleFile(file);
+            }
           }}
         >
           <p className="mb-2">
@@ -95,7 +99,9 @@ export function ImportDialog({
             data-testid="file-input"
             onChange={(e) => {
               const file = e.target.files?.[0];
-              if (file) handleFile(file);
+              if (file) {
+                handleFile(file);
+              }
             }}
           />
         </div>

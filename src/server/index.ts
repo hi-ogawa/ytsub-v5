@@ -33,7 +33,9 @@ export default {
         prefix: "/api",
         context: {},
       });
-      if (response) return response;
+      if (response) {
+        return response;
+      }
     }
 
     return new Response("Not found", { status: 404 });

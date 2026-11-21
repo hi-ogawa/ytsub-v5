@@ -183,24 +183,34 @@ function printTable(merged: MergedCaption[]) {
   const cue2Claimants = new Map<number, number[]>();
   for (const row of merged) {
     for (const j of row.cue2Indices) {
-      if (!cue2Claimants.has(j)) cue2Claimants.set(j, []);
+      if (!cue2Claimants.has(j)) {
+        cue2Claimants.set(j, []);
+      }
       cue2Claimants.get(j)!.push(row.idx);
     }
   }
 
   const sharedCue2s = new Set<number>();
   for (const [j, claimants] of cue2Claimants) {
-    if (claimants.length > 1) sharedCue2s.add(j);
+    if (claimants.length > 1) {
+      sharedCue2s.add(j);
+    }
   }
 
   function dupeMarker(row: MergedCaption): string {
-    if (row.cue2Indices.length === 0) return "";
+    if (row.cue2Indices.length === 0) {
+      return "";
+    }
     const shared = row.cue2Indices.filter((j) => sharedCue2s.has(j));
-    if (shared.length === 0) return "";
+    if (shared.length === 0) {
+      return "";
+    }
     const others = new Set<number>();
     for (const j of shared) {
       for (const claimant of cue2Claimants.get(j)!) {
-        if (claimant !== row.idx) others.add(claimant);
+        if (claimant !== row.idx) {
+          others.add(claimant);
+        }
       }
     }
     return `= ${[...others].join(",")}`;
@@ -262,7 +272,9 @@ function printStats(merged: MergedCaption[], enCues: CaptionCue[]) {
   for (const row of merged) {
     for (const j of row.cue2Indices) {
       assignedCue2s.add(j);
-      if (!cue2Claimants.has(j)) cue2Claimants.set(j, []);
+      if (!cue2Claimants.has(j)) {
+        cue2Claimants.set(j, []);
+      }
       cue2Claimants.get(j)!.push(row.idx);
     }
   }
@@ -280,7 +292,9 @@ function printStats(merged: MergedCaption[], enCues: CaptionCue[]) {
 
   const dropped: number[] = [];
   for (let j = 0; j < enCues.length; j++) {
-    if (!assignedCue2s.has(j)) dropped.push(j);
+    if (!assignedCue2s.has(j)) {
+      dropped.push(j);
+    }
   }
   if (dropped.length > 0) {
     console.log(`Dropped:  ${dropped.length} cue2s not assigned to any row\n`);

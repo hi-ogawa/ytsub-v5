@@ -278,7 +278,9 @@ export async function fetchPlayerApi(options: {
     const targetLangs: string[] = [];
     for (const lang of userLangs) {
       const base = lang.split("-")[0];
-      if (!targetLangs.includes(base)) targetLangs.push(base);
+      if (!targetLangs.includes(base)) {
+        targetLangs.push(base);
+      }
     }
     // Find best translation source: prefer manual, then ASR
     const source =
@@ -286,7 +288,9 @@ export async function fetchPlayerApi(options: {
       captionTracks.find((t) => t.kind === "asr");
     if (source) {
       for (const tlang of targetLangs) {
-        if (coveredLangs.has(tlang)) continue;
+        if (coveredLangs.has(tlang)) {
+          continue;
+        }
         const tUrl = new URL(source.baseUrl);
         tUrl.searchParams.set("tlang", tlang);
         captionTracks.push({
@@ -322,7 +326,9 @@ export async function fetchPlayerApi(options: {
 export function parseJson3(data: Json3File): CaptionCue[] {
   const cues: CaptionCue[] = [];
   for (const event of data.events) {
-    if (!event.segs || !event.dDurationMs) continue;
+    if (!event.segs || !event.dDurationMs) {
+      continue;
+    }
     const eventBegin = event.tStartMs / 1000;
     const eventEnd = (event.tStartMs + event.dDurationMs) / 1000;
 
@@ -332,7 +338,9 @@ export function parseJson3(data: Json3File): CaptionCue[] {
       .join("")
       .replace(/\n/g, " ")
       .trim();
-    if (!text) continue;
+    if (!text) {
+      continue;
+    }
 
     // Preserve word-level timing as nested data when available
     let words: CaptionWord[] | undefined;
@@ -341,7 +349,9 @@ export function parseJson3(data: Json3File): CaptionCue[] {
       for (let si = 0; si < event.segs.length; si++) {
         const seg = event.segs[si];
         const wordText = (seg.utf8 || "").replace(/\n/g, "").trim();
-        if (!wordText) continue;
+        if (!wordText) {
+          continue;
+        }
         const begin = (event.tStartMs + (seg.tOffsetMs ?? 0)) / 1000;
         let end = eventEnd;
         for (let sj = si + 1; sj < event.segs.length; sj++) {
@@ -370,7 +380,9 @@ export function pickBestTrack(
   }
   // Exact match first
   const exact = tracks.filter((t) => t.languageCode === lang);
-  if (exact.length > 0) return bestOfKind(exact);
+  if (exact.length > 0) {
+    return bestOfKind(exact);
+  }
   // Prefix fallback: "en" matches "en-US", "en-GB", etc.
   const base = lang.split("-")[0];
   const prefix = tracks.filter(

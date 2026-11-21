@@ -14,7 +14,15 @@ export default defineConfig({
     },
     ignorePatterns: ["worker-configuration.d.ts", "scripts/**/*.json"],
   },
+  lint: {
+    categories: {
+      correctness: "off",
+    },
+    rules: {
+      curly: "error",
+    },
+  },
   staged: {
-    "*": "vp fmt --no-error-on-unmatched-pattern",
+    "*": "vp check --fix",
   },
 });

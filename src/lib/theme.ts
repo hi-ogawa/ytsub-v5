@@ -9,8 +9,9 @@ const THEME_KEY = "zamak:theme";
 const THEMES: Theme[] = ["light", "dark", "system"];
 
 function resolveTheme(theme: Theme): boolean {
-  if (theme === "system")
+  if (theme === "system") {
     return matchMedia("(prefers-color-scheme: dark)").matches;
+  }
   return theme === "dark";
 }
 
@@ -26,7 +27,9 @@ function applyDarkClass(dark: boolean) {
 export function useTheme() {
   const [theme, setTheme] = useState<Theme>(() => {
     const stored = localStorage.getItem(THEME_KEY);
-    if (stored === "light" || stored === "dark") return stored;
+    if (stored === "light" || stored === "dark") {
+      return stored;
+    }
     return "system";
   });
 
@@ -40,7 +43,9 @@ export function useTheme() {
   }, [theme]);
 
   useEffect(() => {
-    if (theme !== "system") return;
+    if (theme !== "system") {
+      return;
+    }
     const mql = matchMedia("(prefers-color-scheme: dark)");
     const handler = (e: MediaQueryListEvent) => applyDarkClass(e.matches);
     mql.addEventListener("change", handler);

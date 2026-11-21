@@ -14,7 +14,9 @@ function createExternalStore<T>(initialValue: T): ExternalStore<T> {
   const listeners = new Set<Listener>();
 
   function notify() {
-    for (const l of listeners) l();
+    for (const l of listeners) {
+      l();
+    }
   }
 
   return {

@@ -11,7 +11,9 @@ async function assertVideoOwner(videoId: number, userId: number) {
     .from(videos)
     .where(and(eq(videos.id, videoId), eq(videos.userId, userId)))
     .get();
-  if (!video) throw new Error(`Video ${videoId} not found`);
+  if (!video) {
+    throw new Error(`Video ${videoId} not found`);
+  }
 }
 
 /** Verify bookmark belongs to user (via its video) */
@@ -22,7 +24,9 @@ async function assertBookmarkOwner(bookmarkId: number, userId: number) {
     .innerJoin(videos, eq(bookmarks.videoId, videos.id))
     .where(and(eq(bookmarks.id, bookmarkId), eq(videos.userId, userId)))
     .get();
-  if (!row) throw new Error(`Bookmark ${bookmarkId} not found`);
+  if (!row) {
+    throw new Error(`Bookmark ${bookmarkId} not found`);
+  }
 }
 
 export const bookmarksRouter = authed.router({
@@ -46,7 +50,9 @@ export const bookmarksRouter = authed.router({
       }),
     )
     .handler(async ({ input, context }) => {
-      if (input.bookmarks.length === 0) return { inserted: 0 };
+      if (input.bookmarks.length === 0) {
+        return { inserted: 0 };
+      }
       // Verify all referenced videos belong to user
       const videoIds = [...new Set(input.bookmarks.map((b) => b.videoId))];
       for (const videoId of videoIds) {
@@ -149,7 +155,9 @@ export const bookmarksRouter = authed.router({
         .leftJoin(captions, eq(bookmarks.captionId, captions.id))
         .where(and(eq(bookmarks.id, id), eq(videos.userId, context.userId)))
         .get();
-      if (!current) throw new Error(`Bookmark ${id} not found`);
+      if (!current) {
+        throw new Error(`Bookmark ${id} not found`);
+      }
       if (Object.values(updates).every((v) => v === undefined)) {
         throw new Error("No fields to update");
       }

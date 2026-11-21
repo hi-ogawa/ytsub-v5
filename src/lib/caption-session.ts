@@ -30,7 +30,9 @@ export function getInitialTracks(
       const { vssId1, vssId2 } = JSON.parse(perVideo);
       const valid1 = tracks.some((t) => t.vssId === vssId1);
       const valid2 = tracks.some((t) => t.vssId === vssId2);
-      if (valid1 && valid2) return { vssId1, vssId2 };
+      if (valid1 && valid2) {
+        return { vssId1, vssId2 };
+      }
     }
     const globalPref = localStorage.getItem(LANGS_KEY);
     if (globalPref) {
@@ -194,7 +196,9 @@ export class CaptionSessionManager {
 
   notify() {
     this.version++;
-    for (const cb of this.listeners) cb();
+    for (const cb of this.listeners) {
+      cb();
+    }
   }
 
   subscribe = (cb: () => void) => {
@@ -251,8 +255,12 @@ export class CaptionSessionManager {
   }): Promise<void> {
     this.rows = options.captions;
     this.bookmarks = options.bookmarks;
-    if (options.vssId1 !== undefined) this.vssId1 = options.vssId1;
-    if (options.vssId2 !== undefined) this.vssId2 = options.vssId2;
+    if (options.vssId1 !== undefined) {
+      this.vssId1 = options.vssId1;
+    }
+    if (options.vssId2 !== undefined) {
+      this.vssId2 = options.vssId2;
+    }
     this.notify();
     await this.persistSession();
   }
@@ -297,7 +305,9 @@ export class CaptionSessionManager {
     const indexed = videoIndexStore
       .get()
       .some((e) => e.youtubeId === this.videoMeta.youtubeId);
-    if (this.bookmarks.length === 0 && !indexed) return;
+    if (this.bookmarks.length === 0 && !indexed) {
+      return;
+    }
     updateVideoIndex(
       this.videoMeta.youtubeId,
       this.videoMeta.title,
