@@ -15,6 +15,6 @@ export default defineConfig({
     ignorePatterns: ["worker-configuration.d.ts", "scripts/**/*.json"],
   },
   staged: {
-    "*": "vp fmt",
+    "*": "vp fmt --no-error-on-unmatched-pattern",
   },
 });
