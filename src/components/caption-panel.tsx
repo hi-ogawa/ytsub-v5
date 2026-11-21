@@ -1,6 +1,5 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
-import { z } from "zod";
 import { type MergeStrategy, mergeCaptions } from "../lib/caption-merge.ts";
 import {
   CaptionSessionManager,
@@ -14,33 +13,14 @@ import type {
   YouTubeCaptionTrack,
   YouTubeVideoData,
 } from "../lib/youtube.ts";
-import { createLocalStorageStore } from "../utils/local-storage-store.ts";
 import { CaptionPanelContent } from "./caption-panel-content.tsx";
+import { useAutoScroll } from "./caption-panel-preferences.ts";
 import {
   SettingsDropdown,
   SettingsDropdownSkeleton,
 } from "./settings-menu.tsx";
 import { TrackPicker } from "./track-picker.tsx";
-import { withUseValue } from "./use-store-value.ts";
 import type { YTPlayer } from "./youtube-player.tsx";
-
-const DEFAULT_PREFERENCES = { autoScroll: true, fabOpen: {} };
-
-const preferencesSchema = z
-  .object({
-    autoScroll: z.boolean().catch(DEFAULT_PREFERENCES.autoScroll),
-    fabOpen: z
-      .record(z.string(), z.boolean())
-      .catch(DEFAULT_PREFERENCES.fabOpen),
-  })
-  .catch(DEFAULT_PREFERENCES);
-
-const preferences = withUseValue(
-  createLocalStorageStore({
-    key: "zamak:caption-panel",
-    parse: (stored) => preferencesSchema.parse(stored),
-  }),
-);
 
 type CaptionPanelProps = {
   tracks: YouTubeCaptionTrack[];
@@ -296,7 +276,7 @@ function CaptionPanelWithStore({
 }) {
   useSyncExternalStore(store.subscribe, () => store.version);
 
-  const [autoScroll, setAutoScroll] = preferences.useValue("autoScroll");
+  const [autoScroll, setAutoScroll] = useAutoScroll();
 
   return (
     <div className="flex h-full flex-col">
@@ -340,11 +320,4 @@ const displayNames = new Intl.DisplayNames(["en"], { type: "language" });
 function langName(vssId: string): string {
   const code = vssId.split(".").pop()!;
   return displayNames.of(code) ?? code;
-}
-
-export function useFabOpen(videoId: string) {
-  const [fabOpen, setFabOpen] = preferences.useValue("fabOpen");
-  const open = fabOpen[videoId] ?? false;
-  const toggle = () => setFabOpen((prev) => ({ ...prev, [videoId]: !open }));
-  return [open, toggle] as const;
 }
