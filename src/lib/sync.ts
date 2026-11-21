@@ -96,21 +96,21 @@ export type SyncStatus = {
 
 export type UseSync = (youtubeId: string) => SyncStatus;
 
-export function useIndexEntry(youtubeId: string) {
+export function useVideoIndexEntry(youtubeId: string) {
   const queryClient = useQueryClient();
   const query = useQuery({
-    queryKey: ["index-entry", youtubeId],
+    queryKey: ["video-index-entry", youtubeId],
     // React Query rejects undefined data.
     queryFn: async () =>
-      (await captionStorage.getIndexEntry(youtubeId)) ?? null,
+      (await captionStorage.getVideoIndexEntry(youtubeId)) ?? null,
   });
 
   useEffect(
     () =>
       captionStorage.subscribe((notice) => {
-        if (notice.type === "index") {
+        if (notice.type === "videoIndex") {
           queryClient.invalidateQueries({
-            queryKey: ["index-entry", youtubeId],
+            queryKey: ["video-index-entry", youtubeId],
           });
         }
       }),
@@ -127,7 +127,7 @@ export function useSyncState({
   youtubeId: string;
   onNavigate: () => void;
 }): SyncStatus {
-  const entryQuery = useIndexEntry(youtubeId);
+  const entryQuery = useVideoIndexEntry(youtubeId);
 
   const authQuery = useQuery(orpc.auth.check.queryOptions());
   const authenticated = authQuery.data?.authenticated === true;
