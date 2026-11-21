@@ -25,7 +25,20 @@ const STORE_NAMES: { [K in keyof Stores]: string } = {
   meta: "meta",
 };
 
-const transact = createTransact<Stores>({ openDb, storeNames: STORE_NAMES });
+const transact = createTransact<Stores>({
+  name: DB_NAME,
+  version: DB_VERSION,
+  storeNames: STORE_NAMES,
+  upgrade(db, oldVersion) {
+    if (oldVersion < 1) {
+      db.createObjectStore(STORE_NAMES.sessions, { keyPath: "youtubeId" });
+    }
+    if (oldVersion < 2) {
+      db.createObjectStore(STORE_NAMES.videos, { keyPath: "youtubeId" });
+      db.createObjectStore(STORE_NAMES.meta, { keyPath: "key" });
+    }
+  },
+});
 
 const CHANNEL_NAME = "zamak:storage";
 
@@ -183,33 +196,4 @@ export const idbCaptionStorage = new IdbCaptionStorage();
 
 function importMarkerKey(source: string) {
   return `imported:${source}`;
-}
-
-let dbPromise: Promise<IDBDatabase> | undefined;
-
-function openDb(): Promise<IDBDatabase> {
-  dbPromise ??= new Promise((resolve, reject) => {
-    const req = indexedDB.open(DB_NAME, DB_VERSION);
-    req.onupgradeneeded = (e) => {
-      const db = req.result;
-      if (e.oldVersion < 1) {
-        db.createObjectStore(STORE_NAMES.sessions, { keyPath: "youtubeId" });
-      }
-      if (e.oldVersion < 2) {
-        db.createObjectStore(STORE_NAMES.videos, { keyPath: "youtubeId" });
-        db.createObjectStore(STORE_NAMES.meta, { keyPath: "key" });
-      }
-    };
-    req.onsuccess = () => {
-      const db = req.result;
-      // Let a newer version of the app upgrade the database.
-      db.onversionchange = () => {
-        db.close();
-        dbPromise = undefined;
-      };
-      resolve(db);
-    };
-    req.onerror = () => reject(req.error);
-  });
-  return dbPromise;
 }
