@@ -18,11 +18,15 @@ const handlers: Record<BridgeMethod, (...params: any[]) => Promise<unknown>> = {
   listIndex: () => storage.listIndex(),
 };
 
-function postToPage(message: BridgeMessage) {
-  window.parent.postMessage(message, YOUTUBE_ORIGIN);
+function main() {
+  window.addEventListener("message", onMessage);
+  storage.subscribe((notice) => {
+    postToPage({ type: "zamak-storage:notice", notice });
+  });
+  postToPage({ type: "zamak-storage:ready" });
 }
 
-window.addEventListener("message", async (e) => {
+async function onMessage(e: MessageEvent) {
   if (e.source !== window.parent || e.origin !== YOUTUBE_ORIGIN) {
     return;
   }
@@ -52,10 +56,10 @@ window.addEventListener("message", async (e) => {
       error: err instanceof Error ? err.message : "Unknown error",
     });
   }
-});
+}
 
-storage.subscribe((notice) => {
-  postToPage({ type: "zamak-storage:notice", notice });
-});
+function postToPage(message: BridgeMessage) {
+  window.parent.postMessage(message, YOUTUBE_ORIGIN);
+}
 
-postToPage({ type: "zamak-storage:ready" });
+main();

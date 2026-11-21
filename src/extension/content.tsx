@@ -36,8 +36,6 @@ import { createBridgeStorage } from "./lib/storage-bridge.ts";
 
 const bgRpc = createRuntimeRelayRpc<typeof bgRpcHandlers>();
 
-initCaptionStorage(createBridgeStorage());
-
 let storageReady: Promise<void> | undefined;
 
 function prepareStorage() {
@@ -47,7 +45,6 @@ function prepareStorage() {
 
 declare const __BUILD_TIME__: string;
 declare const __GIT_REV__: string;
-console.log(`[zamak] build: ${__BUILD_TIME__} (${__GIT_REV__})`);
 
 // Adapter: wrap the page's <video> element as YTPlayer
 function getVideoPlayer(): YTPlayer | undefined {
@@ -358,8 +355,11 @@ function remove() {
   document.getElementById("zamak-host")?.remove();
 }
 
-// YouTube SPA navigation
-function init() {
+function main() {
+  console.log(`[zamak] build: ${__BUILD_TIME__} (${__GIT_REV__})`);
+  initCaptionStorage(createBridgeStorage());
+
+  // YouTube SPA navigation
   if (isWatchPage()) {
     inject();
   }
@@ -372,4 +372,4 @@ function init() {
   });
 }
 
-init();
+main();
