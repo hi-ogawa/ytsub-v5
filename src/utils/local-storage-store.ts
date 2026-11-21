@@ -12,14 +12,12 @@ export function createLocalStorageStore<State>({
   key: string;
   parse: (stored: unknown) => State;
 }): Store<State> {
-  const store = createStore<State>(() => {
-    let stored: unknown;
-    try {
-      const json = localStorage.getItem(key);
-      stored = json === null ? undefined : JSON.parse(json);
-    } catch {}
-    return parse(stored);
-  });
+  let stored: unknown;
+  try {
+    const json = localStorage.getItem(key);
+    stored = json === null ? undefined : JSON.parse(json);
+  } catch {}
+  const store = createStore(parse(stored));
   store.subscribe(() => {
     try {
       localStorage.setItem(key, JSON.stringify(store.get()));

@@ -1,49 +1,18 @@
 export interface Store<State> {
   get(): State;
   subscribe(listener: () => void): () => void;
-  /** Notify only when `selector` picks a different value, by `equals` or `Object.is`. */
-  subscribeWithSelector<Selection>(options: {
-    selector: (state: State) => Selection;
-    listener: () => void;
-    equals?: (left: Selection, right: Selection) => boolean;
-  }): () => void;
   update(update: Partial<State>): void;
 }
 
-export function createStore<State>(
-  initialize: (get: () => State) => State,
-): Store<State> {
-  let state: State;
+export function createStore<State>(initialState: State): Store<State> {
+  let state = initialState;
   const listeners = new Set<() => void>();
 
   const get = (): State => state;
-  state = initialize(get);
 
   const subscribe = (listener: () => void): (() => void) => {
     listeners.add(listener);
     return () => listeners.delete(listener);
-  };
-
-  const subscribeWithSelector = <Selection>({
-    selector,
-    listener,
-    equals = Object.is,
-  }: {
-    selector: (state: State) => Selection;
-    listener: () => void;
-    equals?: (left: Selection, right: Selection) => boolean;
-  }): (() => void) => {
-    let selection = selector(state);
-    const storeListener = () => {
-      const nextSelection = selector(state);
-      if (equals(selection, nextSelection)) {
-        return;
-      }
-      selection = nextSelection;
-      listener();
-    };
-    listeners.add(storeListener);
-    return () => listeners.delete(storeListener);
   };
 
   const update = (update: Partial<State>): void => {
@@ -53,16 +22,5 @@ export function createStore<State>(
     }
   };
 
-  return { get, subscribe, subscribeWithSelector, update };
-}
-
-export function shallowEqual(left: object, right: object): boolean {
-  const leftRecord = left as Record<string, unknown>;
-  const rightRecord = right as Record<string, unknown>;
-  const leftKeys = Object.keys(leftRecord);
-  const rightKeys = Object.keys(right);
-  return (
-    leftKeys.length === rightKeys.length &&
-    leftKeys.every((key) => Object.is(leftRecord[key], rightRecord[key]))
-  );
+  return { get, subscribe, update };
 }

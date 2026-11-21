@@ -57,7 +57,7 @@ export let captionStorage: CaptionStorage;
 // In-memory copy of the stored index, for components that read it as they
 // render.
 export const videoIndexStore = withUseValue(
-  createStore<{ entries: VideoIndexEntry[] }>(() => ({ entries: [] })),
+  createStore<{ entries: VideoIndexEntry[] }>({ entries: [] }),
 );
 
 export function initCaptionStorage(storage: CaptionStorage) {
