@@ -58,7 +58,7 @@ const requireAuth = pub.middleware(async ({ context, next }) => {
 /** Protected base — requires valid session, provides userId in context */
 export const authed = pub.use(requireAuth);
 
-export { hashPassword, verifyPassword } from "../lib/password.ts";
+export { hashPassword, verifyPassword } from "../utils/password.ts";
 
 export async function createSessionToken(
   userId: number,

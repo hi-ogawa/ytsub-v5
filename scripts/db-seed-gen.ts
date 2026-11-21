@@ -3,7 +3,7 @@
 // Creates a seed user and assigns all data to it.
 
 import { readFileSync } from "fs";
-import { hashPassword } from "../src/lib/password.ts";
+import { hashPassword } from "../src/utils/password.ts";
 
 interface ImportData {
   video: {

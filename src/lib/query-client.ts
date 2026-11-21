@@ -1,6 +1,6 @@
 import { MutationCache, QueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { assertTypeEqual } from "./type-assert.ts";
+import { assertTypeEqual } from "../utils/type-assert.ts";
 
 export function createAppQueryClient(
   options?: ConstructorParameters<typeof QueryClient>[0],

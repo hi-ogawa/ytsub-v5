@@ -20,7 +20,7 @@ import {
   type SyncState,
   type SyncStatus,
   computeSyncState,
-  useIndexEntry,
+  useVideoIndexEntry,
 } from "../lib/sync.ts";
 import type { YouTubeExtractionResult } from "../lib/youtube.ts";
 import { fetchPlayerApi, fetchTrackJson3 } from "../lib/youtube.ts";
@@ -130,7 +130,7 @@ type SyncAction =
   | { direction: "pull"; store: CaptionSessionManager };
 
 function useExtensionSync(youtubeId: string): SyncStatus {
-  const entryQuery = useIndexEntry(youtubeId);
+  const entryQuery = useVideoIndexEntry(youtubeId);
 
   const serverQuery = useQuery({
     queryKey: ["extension-sync-state", youtubeId],

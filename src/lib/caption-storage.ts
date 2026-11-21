@@ -1,6 +1,7 @@
+import { withUseValue } from "../components/use-store-value.ts";
+import { createStore } from "../utils/store.ts";
 import type { MergeStrategy, MergedCaption } from "./caption-merge.ts";
 import type { ExtensionBookmark } from "./extension-bookmarks.ts";
-import { createExternalStore } from "./external-store.ts";
 
 export interface PersistedCaptionSession {
   youtubeId: string;
@@ -29,7 +30,7 @@ export type VideoIndexEntry = {
   syncedServerUpdatedAt?: string;
 };
 
-export type StorageNotice = { type: "index"; entries: VideoIndexEntry[] };
+export type StorageNotice = { type: "videoIndex"; entries: VideoIndexEntry[] };
 
 export type StorageListener = (notice: StorageNotice) => void;
 
@@ -43,8 +44,8 @@ export interface CaptionStorage {
   ): Promise<void>;
   deleteVideo(youtubeId: string): Promise<void>;
   setSyncedAt(youtubeId: string, serverUpdatedAt: string): Promise<void>;
-  getIndexEntry(youtubeId: string): Promise<VideoIndexEntry | undefined>;
-  listIndex(): Promise<VideoIndexEntry[]>;
+  getVideoIndexEntry(youtubeId: string): Promise<VideoIndexEntry | undefined>;
+  listVideoIndex(): Promise<VideoIndexEntry[]>;
   subscribe(listener: StorageListener): () => void;
 }
 
@@ -55,17 +56,19 @@ export let captionStorage: CaptionStorage;
 
 // In-memory copy of the stored index, for components that read it as they
 // render.
-export const videoIndexStore = createExternalStore<VideoIndexEntry[]>([]);
+export const videoIndexStore = withUseValue(
+  createStore<{ entries: VideoIndexEntry[] }>({ entries: [] }),
+);
 
 export function initCaptionStorage(storage: CaptionStorage) {
   captionStorage = storage;
   storage.subscribe((notice) => {
-    if (notice.type === "index") {
-      videoIndexStore.set(notice.entries);
+    if (notice.type === "videoIndex") {
+      videoIndexStore.update({ entries: notice.entries });
     }
   });
 }
 
 export async function loadVideoIndex() {
-  videoIndexStore.set(await captionStorage.listIndex());
+  videoIndexStore.update({ entries: await captionStorage.listVideoIndex() });
 }

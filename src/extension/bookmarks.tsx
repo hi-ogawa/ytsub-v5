@@ -34,7 +34,6 @@ import {
   loadVideoIndex,
   videoIndexStore,
 } from "../lib/caption-storage.ts";
-import { useStore } from "../lib/external-store.ts";
 import { createAppQueryClient } from "../lib/query-client.ts";
 import { type VideoSyncEntry, useVideoSync } from "../lib/sync.ts";
 import { useTheme } from "../lib/theme.ts";
@@ -115,7 +114,7 @@ const queryClient = createAppQueryClient({
 });
 
 function ExtensionBookmarksPage() {
-  const [entries] = useStore(videoIndexStore);
+  const [entries] = videoIndexStore.useValue("entries");
   const usernameQuery = useQuery(
     chromeStorage.queryOptions<string>("username"),
   );
