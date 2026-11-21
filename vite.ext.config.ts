@@ -39,7 +39,7 @@ export default defineConfig({
         },
       },
     },
-    bookmarks: {
+    pages: {
       consumer: "client",
       build: {
         outDir: "./dist/extension",
@@ -49,6 +49,7 @@ export default defineConfig({
         rolldownOptions: {
           input: {
             bookmarks: "./src/extension/bookmarks.html",
+            "storage-frame": "./src/extension/storage-frame.html",
           },
         },
       },
@@ -63,24 +64,6 @@ export default defineConfig({
         rolldownOptions: {
           input: {
             background: "./src/extension/background.ts",
-          },
-          output: {
-            format: "iife",
-            entryFileNames: "[name].js",
-          },
-        },
-      },
-    },
-    storageFrame: {
-      consumer: "client",
-      build: {
-        outDir: "./dist/extension",
-        minify: false,
-        emptyOutDir: false,
-        copyPublicDir: false,
-        rolldownOptions: {
-          input: {
-            "storage-frame": "./src/extension/storage-frame.ts",
           },
           output: {
             format: "iife",
@@ -123,17 +106,15 @@ export default defineConfig({
   builder: {
     async buildApp(builder) {
       await builder.build(builder.environments.client);
-      await builder.build(builder.environments.bookmarks);
+      await builder.build(builder.environments.pages);
       await builder.build(builder.environments.background);
       await builder.build(builder.environments.relay);
-      await builder.build(builder.environments.storageFrame);
       const outDir = builder.environments.client.config.build.outDir;
 
       // Move html
-      cpSync(
-        resolve(outDir, "src/extension/bookmarks.html"),
-        resolve(outDir, "bookmarks.html"),
-      );
+      for (const page of ["bookmarks.html", "storage-frame.html"]) {
+        cpSync(resolve(outDir, "src/extension", page), resolve(outDir, page));
+      }
       rmSync(resolve(outDir, "src"), { force: true, recursive: true });
 
       // Copy raw assets
