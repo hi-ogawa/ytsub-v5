@@ -8,7 +8,7 @@ import type {
 } from "./caption-storage.ts";
 
 const DB_NAME = "zamak";
-const DB_VERSION = 4;
+const DB_VERSION = 3;
 
 type Stores = { sessions: PersistedCaptionSession; videos: VideoIndexEntry };
 
@@ -28,7 +28,7 @@ const transact = createTransact<Stores>({
     if (oldVersion < 2) {
       db.createObjectStore(STORE_NAMES.videos, { keyPath: "youtubeId" });
     }
-    if (oldVersion < 4) {
+    if (oldVersion < 3) {
       // Entries from before editedAt existed take their last local write.
       // A synced entry's base becomes the server time recorded at its last
       // sync, which the server's edited_at started from. An entry unchanged
