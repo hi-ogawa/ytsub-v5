@@ -31,9 +31,9 @@ export function CaptionPanelContent({
   const captionListRef = useRef<CaptionListHandle>(null);
   const bookmarksListRef = useRef<BookmarksListHandle>(null);
 
-  const loopIndex = useSyncExternalStore(
+  const repeatIndex = useSyncExternalStore(
     runtime.playbackStore.subscribe,
-    () => runtime.playbackStore.get().loopIndex,
+    () => runtime.playbackStore.get().repeatIndex,
   );
 
   const sortedBookmarks = useMemo(
@@ -118,9 +118,11 @@ export function CaptionPanelContent({
               ref={bookmarksListRef}
               bookmarks={sortedBookmarks}
               rows={session.rows}
-              loopIndex={loopIndex}
+              repeatIndex={repeatIndex}
               onPlayBookmark={(bookmark) => runtime.playBookmark(bookmark)}
-              onToggleLoop={(captionIndex) => runtime.toggleLoop(captionIndex)}
+              onToggleRepeat={(captionIndex) =>
+                runtime.toggleRepeat(captionIndex)
+              }
               onDeleteBookmark={(id) => runtime.deleteBookmark(id)}
               onGoToCaption={onGoToCaption}
             />
@@ -252,7 +254,7 @@ function CaptionViewer({
   bookmarks: ExtensionBookmark[];
   onGoToBookmark: (bookmarkId: string) => void;
 }) {
-  const { currentIndex, isPlaying, loopIndex } = useSyncExternalStore(
+  const { currentIndex, isPlaying, repeatIndex } = useSyncExternalStore(
     runtime.playbackStore.subscribe,
     runtime.playbackStore.get,
   );
@@ -263,12 +265,12 @@ function CaptionViewer({
       rows={rows}
       currentIndex={currentIndex}
       isPlaying={isPlaying}
-      loopIndex={loopIndex}
+      repeatIndex={repeatIndex}
       player={player}
       autoScroll={autoScroll}
       bookmarks={bookmarks}
       onPlayRow={(index) => runtime.playRow(index)}
-      onToggleLoop={(index) => runtime.toggleLoop(index)}
+      onToggleRepeat={(index) => runtime.toggleRepeat(index)}
       onGoToBookmark={onGoToBookmark}
     />
   );

@@ -40,7 +40,7 @@ test("clicks inside the bookmark popover don't reach the caption row", async ({
   await expect.poll(isPaused).toBe(false);
 });
 
-test("repeat on a bookmark card loops its row, shared with the Captions tab", async ({
+test("repeat on a bookmark card repeats its row, shared with the Captions tab", async ({
   context,
 }) => {
   const { ytPage, host } = await openPanelWithTracks(context, SEED_YOUTUBE_ID);
@@ -59,7 +59,7 @@ test("repeat on a bookmark card loops its row, shared with the Captions tab", as
   const captionsTab = host.getByRole("tab", { name: "Captions" });
   const bookmarksTab = host.getByRole("tab", { name: /Bookmarks/ });
 
-  // Both cards from row 2 show the loop, which starts at the row's begin
+  // Both cards from row 2 show the repeat, which starts at the row's begin
   await bookmarksTab.click();
   await cardRepeats.nth(0).click();
   await expect.poll(isPaused).toBe(false);
@@ -68,7 +68,7 @@ test("repeat on a bookmark card loops its row, shared with the Captions tab", as
   await expect(cardRepeats.nth(1)).toHaveAttribute("aria-pressed", "true");
   await expect(cardRepeats.nth(2)).toHaveAttribute("aria-pressed", "false");
 
-  // A loop started in the Captions tab replaces it
+  // A repeat started in the Captions tab replaces it
   await captionsTab.click();
   await expect(rowRepeat(2)).toHaveAttribute("aria-pressed", "true");
   await rowRepeat(3).click();
@@ -76,7 +76,7 @@ test("repeat on a bookmark card loops its row, shared with the Captions tab", as
   await expect(cardRepeats.nth(0)).toHaveAttribute("aria-pressed", "false");
   await expect(cardRepeats.nth(2)).toHaveAttribute("aria-pressed", "true");
 
-  // Clicking a card ends the loop
+  // Clicking a card ends the repeat
   await cards.nth(2).click();
   await expect(cardRepeats.nth(2)).toHaveAttribute("aria-pressed", "false");
 });

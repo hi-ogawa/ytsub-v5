@@ -1,12 +1,12 @@
 import { Repeat } from "lucide-react";
 
-/** Toggles a caption row's loop. Its click stays off the row or card it sits on. */
+/** Toggles a caption row's repeat. Its click stays off the row or card it sits on. */
 export function RepeatToggle({
-  isLooping,
+  isRepeating,
   onToggle,
   className,
 }: {
-  isLooping: boolean;
+  isRepeating: boolean;
   onToggle: () => void;
   className?: string;
 }) {
@@ -14,13 +14,13 @@ export function RepeatToggle({
     <button
       className={[
         "rounded border p-0.5",
-        isLooping
+        isRepeating
           ? "border-accent/60 bg-accent/15 text-accent"
           : "border-transparent hover:text-foreground",
         className,
       ].join(" ")}
       title="Repeat"
-      aria-pressed={isLooping}
+      aria-pressed={isRepeating}
       onClick={(e) => {
         e.stopPropagation();
         onToggle();

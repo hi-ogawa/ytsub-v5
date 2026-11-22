@@ -27,24 +27,24 @@ export function CaptionList({
   rows,
   currentIndex,
   isPlaying,
-  loopIndex,
+  repeatIndex,
   player,
   autoScroll,
   bookmarks,
   onPlayRow,
-  onToggleLoop,
+  onToggleRepeat,
   onGoToBookmark,
 }: {
   ref: React.Ref<CaptionListHandle>;
   rows: MergedCaption[];
   currentIndex?: number;
   isPlaying: boolean;
-  loopIndex?: number;
+  repeatIndex?: number;
   player?: YTPlayer;
   autoScroll: boolean;
   bookmarks: ExtensionBookmark[];
   onPlayRow: (index: number) => void;
-  onToggleLoop: (index: number) => void;
+  onToggleRepeat: (index: number) => void;
   onGoToBookmark: (bookmarkId: string) => void;
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -149,13 +149,13 @@ export function CaptionList({
             index={i}
             isCurrent={i === currentIndex}
             isPlaying={isPlaying}
-            isLooping={i === loopIndex}
+            isRepeating={i === repeatIndex}
             bookmarks={bookmarksByIndex.get(i)}
             bookmarkNumberById={bookmarkNumberById}
             onClick={() => onClickRow(i)}
-            onToggleLoop={() => {
+            onToggleRepeat={() => {
               manualScroll.clear();
-              onToggleLoop(i);
+              onToggleRepeat(i);
             }}
             onGoToBookmark={onGoToBookmark}
             onPopoverOpenChange={onPopoverOpenChange}
@@ -171,11 +171,11 @@ function CaptionRow({
   index,
   isCurrent,
   isPlaying,
-  isLooping,
+  isRepeating,
   bookmarks,
   bookmarkNumberById,
   onClick,
-  onToggleLoop,
+  onToggleRepeat,
   onGoToBookmark,
   onPopoverOpenChange,
 }: {
@@ -183,11 +183,11 @@ function CaptionRow({
   index: number;
   isCurrent: boolean;
   isPlaying: boolean;
-  isLooping: boolean;
+  isRepeating: boolean;
   bookmarks?: ExtensionBookmark[];
   bookmarkNumberById: Map<string, number>;
   onClick: () => void;
-  onToggleLoop: () => void;
+  onToggleRepeat: () => void;
   onGoToBookmark: (bookmarkId: string) => void;
   onPopoverOpenChange: (open: boolean) => void;
 }) {
@@ -223,8 +223,8 @@ function CaptionRow({
         </span>
         <RepeatToggle
           className="-my-0.5 ml-auto"
-          isLooping={isLooping}
-          onToggle={onToggleLoop}
+          isRepeating={isRepeating}
+          onToggle={onToggleRepeat}
         />
       </div>
       <div className="flex text-sm">

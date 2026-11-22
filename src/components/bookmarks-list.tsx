@@ -19,18 +19,18 @@ export function ExtensionBookmarksList({
   ref,
   bookmarks,
   rows,
-  loopIndex,
+  repeatIndex,
   onPlayBookmark,
-  onToggleLoop,
+  onToggleRepeat,
   onDeleteBookmark,
   onGoToCaption,
 }: {
   ref: React.Ref<BookmarksListHandle>;
   bookmarks: ExtensionBookmark[];
   rows: MergedCaption[];
-  loopIndex?: number;
+  repeatIndex?: number;
   onPlayBookmark: (bookmark: ExtensionBookmark) => void;
-  onToggleLoop: (captionIndex: number) => void;
+  onToggleRepeat: (captionIndex: number) => void;
   onDeleteBookmark: (id: string) => void;
   onGoToCaption: (captionIndex: number) => void;
 }) {
@@ -56,9 +56,9 @@ export function ExtensionBookmarksList({
           bookmark={bm}
           bookmarkNumber={bmIndex + 1}
           caption={rows[bm.captionIndex]}
-          isLooping={bm.captionIndex === loopIndex}
+          isRepeating={bm.captionIndex === repeatIndex}
           onClick={() => onPlayBookmark(bm)}
-          onToggleLoop={() => onToggleLoop(bm.captionIndex)}
+          onToggleRepeat={() => onToggleRepeat(bm.captionIndex)}
           onDelete={() => onDeleteBookmark(bm.id)}
           onGoToCaption={() => onGoToCaption(bm.captionIndex)}
         />
@@ -71,18 +71,18 @@ function BookmarkCard({
   bookmark,
   bookmarkNumber,
   caption,
-  isLooping,
+  isRepeating,
   onClick,
-  onToggleLoop,
+  onToggleRepeat,
   onDelete,
   onGoToCaption,
 }: {
   bookmark: ExtensionBookmark;
   bookmarkNumber: number;
   caption?: MergedCaption;
-  isLooping: boolean;
+  isRepeating: boolean;
   onClick: () => void;
-  onToggleLoop: () => void;
+  onToggleRepeat: () => void;
   onDelete: () => void;
   onGoToCaption: () => void;
 }) {
@@ -103,8 +103,8 @@ function BookmarkCard({
         {caption && (
           <RepeatToggle
             className="-mt-0.5 shrink-0 text-muted-foreground"
-            isLooping={isLooping}
-            onToggle={onToggleLoop}
+            isRepeating={isRepeating}
+            onToggle={onToggleRepeat}
           />
         )}
         <DropdownMenu>
