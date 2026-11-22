@@ -1,19 +1,16 @@
+import { useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { CaptionPanel } from "../../components/caption-panel.tsx";
-import { useYouTubePlayer } from "../../components/youtube-player.tsx";
-import { videoIndexStore } from "../../lib/caption-storage.ts";
-import { useSyncState } from "../../lib/sync.ts";
-import type { Json3File } from "../../lib/youtube.ts";
+import {
+  type YTPlayer,
+  useYouTubePlayer,
+} from "../../components/youtube-player.tsx";
+import { CaptionPanelRuntime } from "../../lib/caption-panel-runtime.ts";
+import type { CaptionStorage } from "../../lib/caption-storage.ts";
+import { useWebSync } from "../components/use-web-sync.ts";
 
-const neverFetchJson3 = (): Promise<Json3File> => {
-  throw new Error("Cannot fetch captions in web viewer");
-};
-
-export function VideoViewerPage() {
+export function VideoViewerPage({ storage }: { storage: CaptionStorage }) {
   const { youtubeId } = useParams<"youtubeId">();
-
-  const [entries] = videoIndexStore.useValue("entries");
-  const entry = entries.find((e) => e.youtubeId === youtubeId);
 
   const { ref: playerElRef, player } = useYouTubePlayer(youtubeId);
 
@@ -24,14 +21,6 @@ export function VideoViewerPage() {
       </div>
     );
   }
-
-  const videoMeta = {
-    youtubeId,
-    title: entry?.title ?? "",
-    channelName: entry?.channelName ?? "",
-    channelId: "",
-    duration: 0,
-  };
 
   return (
     <div className="flex h-full w-full flex-col lg:flex-row lg:gap-2 lg:p-2">
@@ -48,20 +37,49 @@ export function VideoViewerPage() {
 
       {/* Caption panel */}
       <div className="flex min-h-0 flex-[1_0_0] flex-col border-t lg:w-1/3 lg:flex-none lg:rounded lg:border">
-        <CaptionPanel
-          sessionOnly
-          tracks={[]}
+        <ViewerCaptionPanel
+          key={youtubeId}
+          storage={storage}
+          youtubeId={youtubeId}
           player={player}
-          fetchJson3={neverFetchJson3}
-          videoMeta={videoMeta}
-          useSync={useViewerSync}
         />
       </div>
     </div>
   );
 }
 
-function useViewerSync(youtubeId: string) {
+function ViewerCaptionPanel({
+  storage,
+  youtubeId,
+  player,
+}: {
+  storage: CaptionStorage;
+  youtubeId: string;
+  player?: YTPlayer;
+}) {
+  const [runtime] = useState(
+    () => new CaptionPanelRuntime({ storage, youtubeId }),
+  );
+  return (
+    <CaptionPanel
+      runtime={runtime}
+      player={player}
+      useSync={({ youtubeId }) => useViewerSync({ storage, youtubeId })}
+    />
+  );
+}
+
+function useViewerSync({
+  storage,
+  youtubeId,
+}: {
+  storage: CaptionStorage;
+  youtubeId: string;
+}) {
   const navigate = useNavigate();
-  return useSyncState({ youtubeId, onNavigate: () => navigate("/") });
+  return useWebSync({
+    storage,
+    youtubeId,
+    onNavigate: () => navigate("/"),
+  });
 }

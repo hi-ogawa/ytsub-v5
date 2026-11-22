@@ -1,5 +1,5 @@
 import { ExternalLink } from "lucide-react";
-import type { CaptionSessionManager } from "../lib/caption-session.ts";
+import type { CaptionPanelRuntime } from "../lib/caption-panel-runtime.ts";
 import type { SyncStatus, UseSync } from "../lib/sync.ts";
 import { syncStateDisplay } from "./sync-state.tsx";
 import { DropdownMenuItem } from "./ui/dropdown-menu.tsx";
@@ -8,15 +8,15 @@ import { DropdownMenuItem } from "./ui/dropdown-menu.tsx";
 // queries refetch then.
 export function SyncMenuItem({
   useSync,
-  store,
+  runtime,
 }: {
   useSync: UseSync;
-  store: CaptionSessionManager;
+  runtime: CaptionPanelRuntime;
 }) {
-  const sync = useSync(store.videoMeta.youtubeId);
+  const sync = useSync({ youtubeId: runtime.youtubeId });
   const { state, error, onNavigate } = sync;
   const { icon, label } = syncStateDisplay(state);
-  const action = getSyncMenuAction(sync, store);
+  const action = getSyncMenuAction(sync, runtime);
 
   const content = (
     <>
@@ -83,15 +83,15 @@ export function SyncMenuItem({
 // step lives on the bookmarks page open it.
 function getSyncMenuAction(
   sync: SyncStatus,
-  store: CaptionSessionManager,
+  runtime: CaptionPanelRuntime,
 ): { run: () => void; keepOpen: boolean } | undefined {
   const { onPush, onPull, onNavigate } = sync;
   switch (sync.state) {
     case "push": {
-      return { run: () => onPush(store), keepOpen: true };
+      return { run: () => onPush(runtime), keepOpen: true };
     }
     case "pull": {
-      return { run: () => onPull(store), keepOpen: true };
+      return { run: () => onPull(runtime), keepOpen: true };
     }
     case "conflict":
     case "unauthenticated": {

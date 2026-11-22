@@ -6,13 +6,13 @@ import type { YTPlayer } from "../../components/youtube-player.tsx";
 export function subscribeWatchPage({
   onEnter,
 }: {
-  onEnter: (videoId: string) => () => void;
+  onEnter: (youtubeId: string) => () => void;
 }) {
   let leave: (() => void) | undefined;
   const enter = () => {
-    const videoId = getVideoId();
-    if (isWatchPage() && videoId && !leave) {
-      leave = onEnter(videoId);
+    const youtubeId = getYoutubeId();
+    if (isWatchPage() && youtubeId && !leave) {
+      leave = onEnter(youtubeId);
     }
   };
   enter();
@@ -27,7 +27,7 @@ function isWatchPage() {
   return window.location.pathname === "/watch";
 }
 
-function getVideoId() {
+function getYoutubeId() {
   return new URL(window.location.href).searchParams.get("v");
 }
 

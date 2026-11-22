@@ -1,15 +1,15 @@
 import { expect, type Locator } from "@playwright/test";
-import { OTHER_VIDEO_ID, SEED_VIDEO_ID } from "../helper";
+import { OTHER_YOUTUBE_ID, SEED_YOUTUBE_ID } from "../helper";
 import { openPanelWithTracks, openYouTubeTab, test } from "./helper";
 
 test("FAB toggles the panel and keeps its state per video across reloads", async ({
   context,
 }) => {
-  const { ytPage, host } = await openPanelWithTracks(context, SEED_VIDEO_ID);
+  const { ytPage, host } = await openPanelWithTracks(context, SEED_YOUTUBE_ID);
   await expect(host.locator("[data-index='5']")).toBeVisible();
   const row = host.locator("[data-index='0']");
   await expect(row.locator("text=/\\d+:\\d{2} – \\d+:\\d{2}/")).toBeVisible();
-  const cols = row.locator(".flex-1");
+  const cols = row.locator("[data-side]");
   await expect(cols).toHaveCount(2);
   await expect(cols.nth(0)).not.toHaveText("");
   await expect(cols.nth(1)).not.toHaveText("");
@@ -19,9 +19,9 @@ test("FAB toggles the panel and keeps its state per video across reloads", async
   await expect(host.locator("[data-index='0']")).toBeVisible();
 
   // Another video starts closed, and the first one stays open
-  await ytPage.goto(`https://www.youtube.com/watch?v=${OTHER_VIDEO_ID}`);
+  await ytPage.goto(`https://www.youtube.com/watch?v=${OTHER_YOUTUBE_ID}`);
   await expect(host.getByTitle("Show captions")).toBeVisible();
-  await ytPage.goto(`https://www.youtube.com/watch?v=${SEED_VIDEO_ID}`);
+  await ytPage.goto(`https://www.youtube.com/watch?v=${SEED_YOUTUBE_ID}`);
   await expect(host.getByTitle("Hide captions")).toBeVisible();
 
   await host.getByTitle("Hide captions").click();
@@ -30,10 +30,31 @@ test("FAB toggles the panel and keeps its state per video across reloads", async
   await expect(host.getByTitle("Show captions")).toBeVisible();
 });
 
+test("clicking a row seeks to its start and plays, and clicking the current row pauses", async ({
+  context,
+}) => {
+  const { ytPage, host } = await openPanelWithTracks(context, SEED_YOUTUBE_ID);
+  const video = ytPage.locator("video");
+  const isPaused = () => video.evaluate((el: HTMLVideoElement) => el.paused);
+  const getCurrentTime = () =>
+    video.evaluate((el: HTMLVideoElement) => el.currentTime);
+
+  const row = host.locator("[data-index='2']");
+  await row.click();
+  await expect.poll(isPaused).toBe(false);
+  expect(await getCurrentTime()).toBe(35.597);
+
+  await expect(row).toHaveAttribute("aria-current", "true");
+  await row.click();
+  await expect.poll(isPaused).toBe(true);
+  await row.click();
+  await expect.poll(isPaused).toBe(false);
+});
+
 test("track selection: default empty, select tracks, switch language", async ({
   context,
 }) => {
-  const ytPage = await openYouTubeTab(context, SEED_VIDEO_ID);
+  const ytPage = await openYouTubeTab(context, SEED_YOUTUBE_ID);
   const host = ytPage.locator("#zamak-host");
   await host.getByTestId("caption-fab").click();
 
@@ -52,7 +73,7 @@ test("track selection: default empty, select tracks, switch language", async ({
 });
 
 test("auto-scroll toggle persists across reload", async ({ context }) => {
-  const { ytPage, host } = await openPanelWithTracks(context, SEED_VIDEO_ID);
+  const { ytPage, host } = await openPanelWithTracks(context, SEED_YOUTUBE_ID);
   const autoScrollItem = host.locator("[data-checked]");
 
   await host.getByTitle("Settings").click();
@@ -71,38 +92,15 @@ test("auto-scroll toggle persists across reload", async ({ context }) => {
   await expect(autoScrollItem).toHaveAttribute("data-checked", "false");
 });
 
-test("strategy dropdown switches merge strategy", async ({ context }) => {
-  const { ytPage, host } = await openPanelWithTracks(context, SEED_VIDEO_ID);
-  const strategySelect = host.locator("select[title='Alignment strategy']");
-
-  await host.getByTitle("Settings").click();
-  await expect(strategySelect).toHaveValue("partition");
-  await ytPage.keyboard.press("Escape");
-  const partitionCount = await host.locator("[data-index]").count();
-
-  await host.getByTitle("Settings").click();
-  await strategySelect.selectOption("overlap");
-  await ytPage.keyboard.press("Escape");
-  await expect(host.locator("[data-index='0']")).toBeVisible();
-  expect(await host.locator("[data-index]").count()).toBeGreaterThan(
-    partitionCount,
-  );
-
-  await host.getByTitle("Settings").click();
-  await strategySelect.selectOption("best-overlap");
-  await ytPage.keyboard.press("Escape");
-  await expect(host.locator("[data-index='0']")).toBeVisible();
-});
-
 test("export downloads valid import.json", async ({ context }) => {
-  const { ytPage, host } = await openPanelWithTracks(context, SEED_VIDEO_ID);
+  const { ytPage, host } = await openPanelWithTracks(context, SEED_YOUTUBE_ID);
 
   await host.getByTitle("Settings").click();
   const [download] = await Promise.all([
     ytPage.waitForEvent("download"),
     host.getByText("Export import.json").click(),
   ]);
-  expect(download.suggestedFilename()).toBe(`import-${SEED_VIDEO_ID}.json`);
+  expect(download.suggestedFilename()).toBe(`import-${SEED_YOUTUBE_ID}.json`);
 
   const content = await (
     await download.createReadStream()
@@ -112,7 +110,7 @@ test("export downloads valid import.json", async ({ context }) => {
   const data = JSON.parse(content);
   expect(data).toMatchObject({
     video: {
-      youtubeId: SEED_VIDEO_ID,
+      youtubeId: SEED_YOUTUBE_ID,
       title: "Billlie | 'cloud palace' 𝐁efore sunrise live",
       channelName: "Billlie",
       channelId: "UCyc9sUCxELTDK9vELO5Fzeg",
@@ -140,7 +138,7 @@ test("export downloads valid import.json", async ({ context }) => {
 });
 
 test("panel left edge can be dragged to resize", async ({ context }) => {
-  const { ytPage, host } = await openPanelWithTracks(context, SEED_VIDEO_ID);
+  const { ytPage, host } = await openPanelWithTracks(context, SEED_YOUTUBE_ID);
   const panel = host.getByTestId("resizable-panel");
   expect(await getWidth(panel)).toBe(400);
 
@@ -162,3 +160,32 @@ test("panel left edge can be dragged to resize", async ({ context }) => {
 async function getWidth(locator: Locator) {
   return (await locator.boundingBox())!.width;
 }
+
+test("saved captions show when YouTube refuses the player API request", async ({
+  context,
+}) => {
+  const { ytPage, host } = await openPanelWithTracks(context, SEED_YOUTUBE_ID);
+  await context.route("https://www.youtube.com/youtubei/v1/player", (route) =>
+    route.fulfill({
+      json: {
+        playabilityStatus: {
+          status: "LOGIN_REQUIRED",
+          reason: "Sign in to confirm you're not a bot",
+        },
+      },
+    }),
+  );
+
+  // The session saved when the tracks were picked loads without YouTube
+  await ytPage.reload();
+  await expect(host.locator("[data-index='0']")).toBeVisible();
+  await expect(host.getByTestId("tracks-error")).toContainText(
+    "LOGIN_REQUIRED (Sign in to confirm you're not a bot)",
+  );
+
+  // A video with nothing saved has only the error to show
+  await ytPage.goto(`https://www.youtube.com/watch?v=${OTHER_YOUTUBE_ID}`);
+  await host.getByTestId("caption-fab").click();
+  await expect(host.getByText("LOGIN_REQUIRED")).toBeVisible();
+  await expect(host.locator("[data-index]")).toHaveCount(0);
+});

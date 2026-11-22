@@ -1,9 +1,13 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { ExternalLink } from "lucide-react";
 import { BookmarksPage } from "../../components/bookmarks-page.tsx";
-import { captionStorage, videoIndexStore } from "../../lib/caption-storage.ts";
+import { useVideoListSync } from "../../components/use-video-list-sync.ts";
+import type { VideoListEntry } from "../../components/use-video-list-sync.ts";
+import {
+  type CaptionStorage,
+  videoIndexStore,
+} from "../../lib/caption-storage.ts";
 import { orpc } from "../../lib/rpc-client.ts";
-import { useVideoSync, type VideoSyncEntry } from "../../lib/sync.ts";
 
 const CHROME_STORE_URL =
   "https://chromewebstore.google.com/detail/zamak/gkonhebhbkfoeggebiipfbblfecdbabn";
@@ -32,9 +36,9 @@ function WebAppEmptyState() {
   );
 }
 
-export function VideoListPage() {
+export function VideoListPage({ storage }: { storage: CaptionStorage }) {
   const [entries] = videoIndexStore.useValue("entries");
-  const sync = useVideoSync();
+  const sync = useVideoListSync(storage);
   const queryClient = useQueryClient();
   const deleteMutation = useMutation(
     orpc.videos.deleteVideo.mutationOptions({
@@ -47,11 +51,11 @@ export function VideoListPage() {
     }),
   );
 
-  async function onDelete(entry: VideoSyncEntry) {
+  async function onDelete(entry: VideoListEntry) {
     if (entry.serverId) {
       deleteMutation.mutate({ id: entry.serverId });
     }
-    await captionStorage.deleteVideo(entry.youtubeId);
+    await storage.deleteVideo(entry.youtubeId);
   }
 
   return (

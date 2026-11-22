@@ -46,8 +46,8 @@ function toSql(data: ImportData): string {
   const lines: string[] = [];
 
   lines.push(
-    `INSERT INTO videos (user_id, youtube_id, title, channel_name, channel_id, duration, language1, language2, vss_id1, vss_id2)`,
-    `VALUES ((SELECT id FROM users WHERE username = 'dev'), '${esc(id)}', '${esc(video.title)}', '${esc(video.channelName)}', '${esc(video.channelId)}', ${video.duration}, '${esc(video.language1)}', '${esc(video.language2)}', '${esc(video.vssId1 ?? "")}', '${esc(video.vssId2 ?? "")}');`,
+    `INSERT INTO videos (user_id, youtube_id, title, channel_name, channel_id, duration, language1, language2, vss_id1, vss_id2, edited_at)`,
+    `VALUES ((SELECT id FROM users WHERE username = 'dev'), '${esc(id)}', '${esc(video.title)}', '${esc(video.channelName)}', '${esc(video.channelId)}', ${video.duration}, '${esc(video.language1)}', '${esc(video.language2)}', '${esc(video.vssId1 ?? "")}', '${esc(video.vssId2 ?? "")}', strftime('%Y-%m-%dT%H:%M:%fZ', 'now'));`,
     "",
   );
 
@@ -85,14 +85,12 @@ if (files.length === 0) {
   process.exit(1);
 }
 
-const devPasswordHash = await hashPassword(
-  "devpassword",
-  new Uint8Array(16).fill(0) as Uint8Array<ArrayBuffer>,
-);
-const devEmptyPasswordHash = await hashPassword(
-  "devpassword",
-  new Uint8Array(16).fill(1) as Uint8Array<ArrayBuffer>,
-);
+const devPasswordHash = await hashPassword("devpassword", {
+  salt: new Uint8Array(16).fill(0) as Uint8Array<ArrayBuffer>,
+});
+const devEmptyPasswordHash = await hashPassword("devpassword", {
+  salt: new Uint8Array(16).fill(1) as Uint8Array<ArrayBuffer>,
+});
 // Seed users: "dev" owns videos, "dev-empty" has no data
 const seedUsers = [
   `INSERT OR IGNORE INTO users (username, password_hash) VALUES ('dev', '${devPasswordHash}');`,

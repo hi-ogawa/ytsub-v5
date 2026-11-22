@@ -11,10 +11,10 @@ export const execAsync = promisify(exec);
  * (`scripts/db-seed-json`, owned by the "dev" user), so a test can open it in
  * the extension and pull it from the server.
  */
-export const SEED_VIDEO_ID = "7GU_VQfgMT0";
+export const SEED_YOUTUBE_ID = "7GU_VQfgMT0";
 
 /** A second video in both the YouTube fixtures and the server seed */
-export const OTHER_VIDEO_ID = "DtK-CkwNHSY";
+export const OTHER_YOUTUBE_ID = "DtK-CkwNHSY";
 
 // Write to miniflare's D1 sqlite file directly instead of going through
 // wrangler CLI (0.15s vs 2s per call). WAL mode lets this run alongside the
@@ -31,11 +31,24 @@ export async function setupDb(options: { seed?: boolean } = {}) {
   await execAsync(`cat ${sql} | sqlite3 -cmd ".timeout 5000" ${findDbPath()}`);
 }
 
-/** Bump a video's updated_at to a future time, simulating a push from another device. */
-export async function bumpServerUpdatedAt(youtubeId: string) {
-  await execAsync(
-    `sqlite3 -cmd ".timeout 5000" ${findDbPath()} "UPDATE videos SET updated_at = datetime('now', '+1 hour') WHERE youtube_id = '${youtubeId}'"`,
-  );
+/** Simulate a push from another device, which leaves a new edit time on the server. */
+export async function editOnServer(youtubeId: string) {
+  await runSql(`
+    UPDATE videos SET edited_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
+    WHERE youtube_id = '${youtubeId}'
+  `);
+}
+
+/** Set when a server video's content was last edited, leaving updated_at as is. */
+export async function setServerEditedAt(youtubeId: string, editedAt: string) {
+  await runSql(`
+    UPDATE videos SET edited_at = '${editedAt}'
+    WHERE youtube_id = '${youtubeId}'
+  `);
+}
+
+async function runSql(sql: string) {
+  await execAsync(`sqlite3 -cmd ".timeout 5000" ${findDbPath()} "${sql}"`);
 }
 
 function findDbPath() {

@@ -6,15 +6,15 @@ import {
   parseJson3,
   pickBestTrack,
 } from "../../src/lib/youtube";
-import { SEED_VIDEO_ID } from "../helper";
+import { SEED_YOUTUBE_ID } from "../helper";
 
 test("extractVideoData: metadata + pick tracks", async ({ page }) => {
-  await page.goto(`https://www.youtube.com/watch?v=${SEED_VIDEO_ID}`);
+  await page.goto(`https://www.youtube.com/watch?v=${SEED_YOUTUBE_ID}`);
 
   const result = await page.evaluate(extractVideoData);
 
   expect(result.video).toEqual({
-    youtubeId: SEED_VIDEO_ID,
+    youtubeId: SEED_YOUTUBE_ID,
     title: "Billlie | 'cloud palace' 𝐁efore sunrise live",
     channelName: "Billlie",
     channelId: "UCyc9sUCxELTDK9vELO5Fzeg",
@@ -34,14 +34,14 @@ test("extractVideoData: metadata + pick tracks", async ({ page }) => {
 test("fetchPlayerApi: metadata + fetch & parse both tracks", async ({
   page,
 }) => {
-  await page.goto(`https://www.youtube.com/watch?v=${SEED_VIDEO_ID}`);
+  await page.goto(`https://www.youtube.com/watch?v=${SEED_YOUTUBE_ID}`);
 
   const result = await page.evaluate(fetchPlayerApi, {
-    videoId: SEED_VIDEO_ID,
+    youtubeId: SEED_YOUTUBE_ID,
   });
 
   expect(result.video).toEqual({
-    youtubeId: SEED_VIDEO_ID,
+    youtubeId: SEED_YOUTUBE_ID,
     title: "Billlie | 'cloud palace' 𝐁efore sunrise live",
     channelName: "Billlie",
     channelId: "UCyc9sUCxELTDK9vELO5Fzeg",

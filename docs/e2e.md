@@ -30,6 +30,7 @@ To check a UI change while working on it, run one spec on the surface that shows
 - Prefer one rich flow test over several thin tests with one assertion each. Each test pays about 500ms of navigation, so combining related assertions saves real time.
 - Wrap the body of a helper that performs several page actions in `test.step(name, fn, { box: true })`. Traces and the HTML report then show the helper as one named step, and a failure points at the spec line that called it.
 - Scope selectors to a `data-testid` or a panel container, because text can repeat across the page. For example, the FAB text can match a tab button name. Prefer `getByTestId`, then `getByRole` scoped to a container, then page-wide `getByText`.
+- Locate elements and assert UI state through attributes the component exposes, not styling classes, so a restyle users can't see doesn't break a test. Use an ARIA attribute when one describes the state, such as `aria-selected` on a tab or `aria-current` on the playing caption, and a `data-*` attribute otherwise, such as `data-flash` while a bookmark card flashes. When the component lacks the attribute, add it to the component rather than matching a class.
 
 ## Test the Extension
 
@@ -39,10 +40,10 @@ Extension tests load `dist/extension/`, which `pnpm test-e2e` builds, into a rea
 - `gotoBookmarks(page, extensionId)` opens `chrome-extension://<id>/bookmarks.html` with the test server URL.
 - `seedChromeStorage(context, data)` seeds `chrome.storage.local` through the service worker.
 - `login(page)` logs in through the extension bookmarks page. It is a different helper from the web app `login`.
-- `openPanelWithTracks(context, videoId)` opens a watch page with the caption panel showing the ko and en tracks, and returns the page and the panel's shadow host. `openYouTubeTab(context, videoId)` opens the watch page alone, for tests that start with the panel closed.
+- `openPanelWithTracks(context, youtubeId)` opens a watch page with the caption panel showing the ko and en tracks, and returns the page and the panel's shadow host. `openYouTubeTab(context, youtubeId)` opens the watch page alone, for tests that start with the panel closed.
 - `createBookmarkAt(host, { index, start, end })` selects part of a caption inside the panel's shadow root and bookmarks it.
 
-The tests never load the real youtube.com. The `context` fixture serves `https://www.youtube.com/**` from a route handler in `e2e/ext/youtube-mock.ts`. Chrome injects content scripts by URL, so the mocked watch page still gets them. The page has only what the content script reads, and the player API and caption tracks come from the fixtures in `scripts/youtube-json/<id>/`, so `videoId` must be one of those. Every other youtube.com request is aborted. `pnpm test-youtube` covers changes to the real page and API.
+The tests never load the real youtube.com. The `context` fixture serves `https://www.youtube.com/**` from a route handler in `e2e/ext/youtube-mock.ts`. Chrome injects content scripts by URL, so the mocked watch page still gets them. The page has only what the content script reads, and the player API and caption tracks come from the fixtures in `scripts/youtube-json/<id>/`, so `youtubeId` must be one of those. Every other youtube.com request is aborted. `pnpm test-youtube` covers changes to the real page and API.
 
 A push or pull test needs only the bookmarks page. To give push a session, create a bookmark in the content script panel rather than writing to IndexedDB, so the video reaches the bookmarks page through the same path as in real use. `seedVideoIndex(page, entries)` writes index entries alone, for tests about the list and its sync badges.
 
