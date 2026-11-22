@@ -59,6 +59,8 @@ interface PlaybackState {
   /** Index of the caption row at the playback position */
   currentIndex?: number;
   isPlaying: boolean;
+  /** Index of the caption row playing on repeat */
+  repeatIndex?: number;
 }
 
 /**
@@ -146,7 +148,11 @@ export class CaptionPanelRuntime {
       });
     }
     this.store.update({ session: undefined });
-    this.playbackStore.update({ currentIndex: undefined, isPlaying: false });
+    this.playbackStore.update({
+      currentIndex: undefined,
+      isPlaying: false,
+      repeatIndex: undefined,
+    });
     await this.buildSession(selection);
   }
 
@@ -330,6 +336,12 @@ export class CaptionPanelRuntime {
     let currentIndex = state.currentIndex;
     if (isPlaying) {
       const time = player.getCurrentTime();
+      const repeatRow =
+        state.repeatIndex === undefined ? undefined : rows[state.repeatIndex];
+      if (repeatRow && time >= repeatRow.end) {
+        player.seekTo(repeatRow.begin);
+        return;
+      }
       const index = rows.findLastIndex((row) => row.begin <= time);
       if (index >= 0) {
         currentIndex = index;
@@ -338,6 +350,32 @@ export class CaptionPanelRuntime {
     if (isPlaying !== state.isPlaying || currentIndex !== state.currentIndex) {
       this.playbackStore.update({ isPlaying, currentIndex });
     }
+  }
+
+  /** Seek to the row's begin and play, ending any repeat. */
+  playRow(index: number): void {
+    this.player?.seekTo(this.getSession().rows[index].begin);
+    this.player?.playVideo();
+    this.playbackStore.update({ repeatIndex: undefined });
+  }
+
+  /**
+   * Play the row on repeat from its begin, or stop repeating it if it already
+   * repeats. Only one row repeats at a time.
+   */
+  toggleRepeat(index: number): void {
+    if (this.playbackStore.get().repeatIndex === index) {
+      this.playbackStore.update({ repeatIndex: undefined });
+      return;
+    }
+    this.playRow(index);
+    this.playbackStore.update({ repeatIndex: index, currentIndex: index });
+  }
+
+  /** Seek to the bookmark and play, ending any repeat. */
+  playBookmark(bookmark: ExtensionBookmark): void {
+    this.seekToBookmark(bookmark);
+    this.player?.playVideo();
   }
 
   // Previous and next wrap around. Previous skips a bookmark within the last
@@ -376,7 +414,10 @@ export class CaptionPanelRuntime {
   // sets the current caption itself.
   private seekToBookmark(bookmark: ExtensionBookmark): void {
     this.player?.seekTo(bookmark.timestamp);
-    this.playbackStore.update({ currentIndex: bookmark.captionIndex });
+    this.playbackStore.update({
+      currentIndex: bookmark.captionIndex,
+      repeatIndex: undefined,
+    });
   }
 }
 
