@@ -165,7 +165,7 @@ export async function buildCaptionSession(options: {
     options.fetchJson3(options.track1),
     options.fetchJson3(options.track2),
   ]);
-  const merged = mergeCaptions(
+  const rows = mergeCaptions(
     { json3: json3_1, vssId: options.track1.vssId },
     { json3: json3_2, vssId: options.track2.vssId },
   );
@@ -173,7 +173,7 @@ export async function buildCaptionSession(options: {
     videoMeta: options.videoMeta,
     vssId1: options.track1.vssId,
     vssId2: options.track2.vssId,
-    rows: merged.captions,
+    rows,
     bookmarks: [],
   });
   await store.persistSession();

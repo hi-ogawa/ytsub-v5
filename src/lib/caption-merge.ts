@@ -118,13 +118,6 @@ export function mergePartition(
 
 // === Tiered merge: try strategies in order ===
 
-type MergeStrategy = "strict" | "relaxed-strict" | "partition";
-
-interface MergeResult {
-  strategy: MergeStrategy;
-  captions: MergedCaption[];
-}
-
 interface TrackInput {
   json3: Json3File;
   vssId: string;
@@ -145,7 +138,7 @@ function isTranslatedPair(vssId1: string, vssId2: string): boolean {
 export function mergeCaptions(
   track1: TrackInput,
   track2: TrackInput,
-): MergeResult {
+): MergedCaption[] {
   const cues1 = parseJson3(track1.json3);
   const cues2 = parseJson3(track2.json3);
 
@@ -153,24 +146,24 @@ export function mergeCaptions(
   if (isTranslatedPair(track1.vssId, track2.vssId)) {
     const strict = mergeStrict(cues1, cues2, 0.5);
     if (strict) {
-      return { strategy: "strict", captions: strict };
+      return strict;
     }
     // Fallback to partition if strict fails (count mismatch from dropped events)
-    return { strategy: "partition", captions: mergePartition(cues1, cues2) };
+    return mergePartition(cues1, cues2);
   }
 
   // Try strict first
   const strict = mergeStrict(cues1, cues2);
   if (strict) {
-    return { strategy: "strict", captions: strict };
+    return strict;
   }
 
   // Try relaxed strict
   const relaxed = mergeRelaxedStrict(cues1, cues2);
   if (relaxed) {
-    return { strategy: "relaxed-strict", captions: relaxed };
+    return relaxed;
   }
 
   // Use partition as default (100% coverage, no drops, no duplication)
-  return { strategy: "partition", captions: mergePartition(cues1, cues2) };
+  return mergePartition(cues1, cues2);
 }

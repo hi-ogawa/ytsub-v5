@@ -113,7 +113,7 @@ describe("mergeCaptions (tiered)", () => {
       { json3: cuesToJson3([{ begin: 0, end: 2, text: "a" }]), vssId: ".ko" },
       { json3: cuesToJson3([{ begin: 0, end: 2, text: "x" }]), vssId: ".en" },
     );
-    expect(result.strategy).toBe("strict");
+    expect(result.map((r) => [r.text1, r.text2])).toEqual([["a", "x"]]);
   });
 
   it("falls through to partition on count mismatch", () => {
@@ -130,7 +130,7 @@ describe("mergeCaptions (tiered)", () => {
         vssId: ".en",
       },
     );
-    expect(result.strategy).toBe("partition");
+    expect(result.map((r) => [r.text1, r.text2])).toEqual([["a b", "x"]]);
   });
 });
 
@@ -254,8 +254,7 @@ describe("strategy mapping stats", () => {
         { json3: koJson3, vssId: "a.ko" },
         { json3: enJson3, vssId: "a.ko.t.en" },
       );
-      expect(result.strategy).toBe("partition");
-      expect(result.captions.length).toBe(182);
+      expect(result.length).toBe(182);
     });
   });
 
