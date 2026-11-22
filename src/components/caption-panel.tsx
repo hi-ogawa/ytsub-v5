@@ -1,6 +1,5 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
-import type { MergeStrategy } from "../lib/caption-merge.ts";
 import { captionPanelPreferences } from "../lib/caption-panel-preferences.ts";
 import {
   buildCaptionSession,
@@ -53,7 +52,6 @@ export function CaptionPanel(props: CaptionPanelProps) {
         vssId1: session.vssId1,
         vssId2: session.vssId2,
         rows: session.captions,
-        strategy: session.strategy ?? "partition",
         bookmarks: session.bookmarks,
       });
     },
@@ -96,7 +94,6 @@ function CaptionPanelInner({
       track2: tracks.find((t) => t.vssId === vssId2),
     };
   });
-  const [userStrategy, setUserStrategy] = useState<MergeStrategy>();
 
   const selectTracks = useCallback(
     (v1?: string, v2?: string) => {
@@ -127,7 +124,6 @@ function CaptionPanelInner({
         videoMeta={videoMeta}
         track1={selectedTracks.track1}
         track2={selectedTracks.track2}
-        userStrategy={userStrategy}
         onSelectTracks={selectTracks}
         setStore={setStore}
       />
@@ -141,10 +137,6 @@ function CaptionPanelInner({
       tracks={tracks}
       player={player}
       onSelectTracks={selectTracks}
-      onSelectStrategy={(s) => {
-        setUserStrategy(s);
-        setStore(undefined);
-      }}
       useSync={useSync}
     />
   );
@@ -157,7 +149,6 @@ function CaptionPanelLoading({
   videoMeta,
   track1,
   track2,
-  userStrategy,
   onSelectTracks,
   setStore,
 }: {
@@ -166,7 +157,6 @@ function CaptionPanelLoading({
   videoMeta: YouTubeVideoData;
   track1?: YouTubeCaptionTrack;
   track2?: YouTubeCaptionTrack;
-  userStrategy?: MergeStrategy;
   onSelectTracks: (v1?: string, v2?: string) => void;
   setStore: (store: CaptionSessionManager) => void;
 }) {
@@ -177,14 +167,12 @@ function CaptionPanelLoading({
       videoMeta.youtubeId,
       track1?.vssId,
       track2?.vssId,
-      userStrategy,
     ],
     queryFn: () => {
       return buildCaptionSession({
         track1: track1!,
         track2: track2!,
         videoMeta,
-        strategy: userStrategy,
         fetchJson3: (track) => {
           return queryClient.fetchQuery({
             queryKey: ["json3", videoMeta.youtubeId, track.vssId],
@@ -237,7 +225,6 @@ function CaptionPanelWithStore({
   tracks,
   player,
   onSelectTracks,
-  onSelectStrategy,
   useSync,
 }: {
   store: CaptionSessionManager;
@@ -245,7 +232,6 @@ function CaptionPanelWithStore({
   tracks: YouTubeCaptionTrack[];
   player?: YTPlayer;
   onSelectTracks: (v1?: string, v2?: string) => void;
-  onSelectStrategy: (s: MergeStrategy) => void;
   useSync: UseSync;
 }) {
   useSyncExternalStore(store.subscribe, () => store.version);
@@ -276,9 +262,7 @@ function CaptionPanelWithStore({
           tracks={tracks}
           autoScroll={autoScroll}
           onSetAutoScroll={setAutoScroll}
-          onSelectStrategy={onSelectStrategy}
           useSync={useSync}
-          sessionOnly={sessionOnly}
         />
       </div>
       <CaptionPanelContent

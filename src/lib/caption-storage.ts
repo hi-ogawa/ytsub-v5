@@ -1,6 +1,6 @@
 import { withUseValue } from "../components/use-store-value.ts";
 import { createStore } from "../utils/store.ts";
-import type { MergeStrategy, MergedCaption } from "./caption-merge.ts";
+import type { MergedCaption } from "./caption-merge.ts";
 import type { ExtensionBookmark } from "./extension-bookmarks.ts";
 
 export interface PersistedCaptionSession {
@@ -13,7 +13,6 @@ export interface PersistedCaptionSession {
   vssId2: string;
   language1: string;
   language2: string;
-  strategy?: MergeStrategy;
   captions: MergedCaption[];
   bookmarks: ExtensionBookmark[];
 }
