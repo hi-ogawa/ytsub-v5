@@ -71,7 +71,7 @@ test("bookmark arrows keep the play state", async ({ context }) => {
 });
 
 test("bookmark arrows wrap around at the ends", async ({ context }) => {
-  const { ytPage, host } = await openPanelWithTracks(context, SEED_VIDEO_ID);
+  const { ytPage, host } = await openPanelWithTracks(context, SEED_YOUTUBE_ID);
   await createBookmarkAt(host, { index: 1, start: 0, end: 3 });
   await createBookmarkAt(host, { index: 3, start: 0, end: 3 });
   const video = ytPage.locator("video");

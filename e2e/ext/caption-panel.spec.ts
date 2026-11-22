@@ -33,7 +33,7 @@ test("FAB toggles the panel and keeps its state per video across reloads", async
 test("clicking a row seeks to its start and plays, and clicking the current row pauses", async ({
   context,
 }) => {
-  const { ytPage, host } = await openPanelWithTracks(context, SEED_VIDEO_ID);
+  const { ytPage, host } = await openPanelWithTracks(context, SEED_YOUTUBE_ID);
   const video = ytPage.locator("video");
   const isPaused = () => video.evaluate((el: HTMLVideoElement) => el.paused);
   const getCurrentTime = () =>
