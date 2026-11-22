@@ -13,7 +13,7 @@
 
 ## Key Docs
 
-Read the [product overview](docs/product.md) and the [architecture overview](docs/architecture.md) before implementing features. It also lists the UI surfaces and the `/dev` routes that mirror the extension. Read [extension runtime](docs/extension-runtime.md) and [data and sync](docs/data-and-sync.md) before changing extension messaging or storage. [docs/README.md](docs/README.md) indexes the rest of the docs.
+Read the [product overview](docs/product.md) and the [architecture overview](docs/architecture.md) before implementing features. It also lists the UI surfaces. Read [extension runtime](docs/extension-runtime.md) and [data and sync](docs/data-and-sync.md) before changing extension messaging or storage. [docs/README.md](docs/README.md) indexes the rest of the docs.
 
 ## Conventions
 
@@ -35,7 +35,7 @@ Read the [product overview](docs/product.md) and the [architecture overview](doc
 - Prefer `undefined` over `null`
 - Prefer optional properties (`{ x?: T }`) over explicit undefined (`{ x: T | undefined }`)
 - Make props/params required when all call sites always pass them
-- Shape arguments the way a reader expects from the operation. Take a value positionally when the operation conventionally takes just that value. Use an options object when a call site would be ambiguous without names
+- Shape arguments so a call site reads clearly without the signature. Pass a value positionally only when the operation or the value's type makes its role obvious. Otherwise take an options object, so the names say what each value is
 - Use braces for every `switch` case body (`case "x": { ... }`, `default: { ... }`)
 - Write docs, code comments, commit messages, and PR descriptions naturally for a first-time reader, without the awkward or defensive tone that builds up when text is revised alongside code changes
 - Docs: follow the writing conventions in [docs/AGENTS.md](docs/AGENTS.md)

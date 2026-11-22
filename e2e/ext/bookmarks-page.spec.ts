@@ -1,10 +1,15 @@
 import { expect } from "@playwright/test";
-import { createCheckpoint, setupDb } from "../helper";
 import {
+  bumpServerUpdatedAt,
+  createCheckpoint,
+  SEED_YOUTUBE_ID,
+  setupDb,
+} from "../helper";
+import {
+  createBookmarkAt,
   gotoBookmarks,
   login,
   openPanelWithTracks,
-  openYouTubeTab,
   seedVideoIndex,
   test,
 } from "./helper";
@@ -26,10 +31,7 @@ const fixtureEntries = [
   },
 ];
 
-// Billlie - cloud palace (seeded on server for "dev" user)
-const SEED_VIDEO_ID = "7GU_VQfgMT0";
-
-test("bookmark a caption, then push it from the bookmarks page", async ({
+test("bookmark captions, then push them from the bookmarks page", async ({
   context,
   page,
   extensionId,
@@ -37,13 +39,8 @@ test("bookmark a caption, then push it from the bookmarks page", async ({
   await setupDb({ seed: true });
 
   // Bookmark the first Korean caption in the content script panel
-  const ytPage = await openYouTubeTab(context, SEED_VIDEO_ID);
-  await openPanelWithTracks(ytPage);
-  const host = ytPage.locator("#zamak-host");
-  await host
-    .locator("[data-index='0'] [data-side='0'] [data-offset]")
-    .selectText();
-  await host.getByRole("button", { name: "Create bookmark" }).click();
+  const { host } = await openPanelWithTracks(context, SEED_YOUTUBE_ID);
+  await createBookmarkAt(host, { index: 0, start: 0, end: 3 });
   await expect(
     host.getByRole("button", { name: "Bookmarks (1)" }),
   ).toBeVisible();
@@ -51,9 +48,18 @@ test("bookmark a caption, then push it from the bookmarks page", async ({
   // The video reaches the bookmarks page without login
   await gotoBookmarks(page, extensionId);
   await page.bringToFront();
-  const card = page.getByTestId(`video-card-${SEED_VIDEO_ID}`);
+  const card = page.getByTestId(`video-card-${SEED_YOUTUBE_ID}`);
   await expect(card).toContainText("cloud palace");
+  await expect(card).toContainText("Billlie");
   await expect(card.getByTestId("video-card-badge")).toHaveText("1 bookmark");
+
+  // Another bookmark updates the count
+  await createBookmarkAt(host, { index: 1, start: 0, end: 2 });
+  await expect(
+    host.getByRole("button", { name: "Bookmarks (2)" }),
+  ).toBeVisible();
+  await page.reload();
+  await expect(card.getByTestId("video-card-badge")).toHaveText("2 bookmarks");
 
   // Push the session the content script saved
   await login(page, { username: "dev-empty" });
@@ -63,7 +69,83 @@ test("bookmark a caption, then push it from the bookmarks page", async ({
   await badge.click();
   await expect(badge).toHaveAttribute("data-sync-status", "synced");
   checkpoint("push synced");
+  await page.reload();
+  await expect(badge).toHaveAttribute("data-sync-status", "synced");
 });
+
+test("opening a video without bookmarking keeps it off the list", async ({
+  context,
+  page,
+  extensionId,
+}) => {
+  await openPanelWithTracks(context, SEED_YOUTUBE_ID);
+
+  await gotoBookmarks(page, extensionId);
+  await expect(page.getByText("No bookmarked videos yet")).toBeVisible();
+});
+
+test("detects pull after push and a remote update", async ({
+  context,
+  page,
+  extensionId,
+}) => {
+  await setupDb({ seed: true });
+  await gotoBookmarks(page, extensionId);
+  await login(page, { username: "dev-empty" });
+
+  const { host } = await openPanelWithTracks(context, SEED_YOUTUBE_ID);
+  await createBookmarkAt(host, {
+    index: 0,
+    start: 0,
+    end: 3,
+  });
+
+  await page.reload();
+  const badge = page
+    .getByTestId(`video-card-${SEED_YOUTUBE_ID}`)
+    .getByTestId("video-sync-badge");
+  await expect(badge).toHaveAttribute("data-sync-status", "push");
+  await badge.click();
+  await expect(badge).toHaveAttribute("data-sync-status", "synced");
+
+  // Simulate a push from another device
+  await bumpServerUpdatedAt(SEED_YOUTUBE_ID);
+  await page.reload();
+  await expect(badge).toHaveAttribute("data-sync-status", "pull");
+});
+
+for (const { choice, button } of [
+  { choice: "upload", button: "Upload local" },
+  { choice: "download", button: "Download server" },
+]) {
+  test(`conflict badge resolves via dialog: ${choice}`, async ({
+    context,
+    page,
+    extensionId,
+  }) => {
+    await setupDb({ seed: true });
+    await gotoBookmarks(page, extensionId);
+    await login(page);
+
+    // A local bookmark on a video the server already has, never synced
+    const { host } = await openPanelWithTracks(context, SEED_YOUTUBE_ID);
+    await createBookmarkAt(host, {
+      index: 0,
+      start: 0,
+      end: 3,
+    });
+
+    await page.bringToFront();
+    await page.reload();
+    const badge = page
+      .getByTestId(`video-card-${SEED_YOUTUBE_ID}`)
+      .getByTestId("video-sync-badge");
+    await expect(badge).toHaveAttribute("data-sync-status", "conflict");
+    await badge.click();
+    await page.getByRole("button", { name: button }).click();
+    await expect(badge).toHaveAttribute("data-sync-status", "synced");
+  });
+}
 
 test("shows local entries without login", async ({ page, extensionId }) => {
   await gotoBookmarks(page, extensionId);
@@ -157,7 +239,7 @@ test("sync badges show correct states per entry", async ({
   // one local-only (push)
   const localEntries = [
     {
-      youtubeId: SEED_VIDEO_ID,
+      youtubeId: SEED_YOUTUBE_ID,
       title: "cloud palace",
       channelName: "Billlie",
       bookmarkCount: 2,
@@ -177,7 +259,7 @@ test("sync badges show correct states per entry", async ({
 
   // Seed video exists on both server and local → conflict
   const seedBadge = page
-    .getByTestId(`video-card-${SEED_VIDEO_ID}`)
+    .getByTestId(`video-card-${SEED_YOUTUBE_ID}`)
     .getByTestId("video-sync-badge");
   await expect(seedBadge).toHaveAttribute("data-sync-status", "conflict");
 
@@ -195,7 +277,7 @@ test("server-only entries show pull badge", async ({ page, extensionId }) => {
 
   // No local entries — server seed video should appear with pull badge
   const badge = page
-    .getByTestId(`video-card-${SEED_VIDEO_ID}`)
+    .getByTestId(`video-card-${SEED_YOUTUBE_ID}`)
     .getByTestId("video-sync-badge");
   await expect(badge).toHaveAttribute("data-sync-status", "pull");
 });
@@ -237,7 +319,7 @@ test("pull works without a YouTube tab", async ({ page, extensionId }) => {
   await gotoBookmarks(page, extensionId);
   await login(page);
 
-  const card = page.getByTestId(`video-card-${SEED_VIDEO_ID}`);
+  const card = page.getByTestId(`video-card-${SEED_YOUTUBE_ID}`);
   const badge = card.getByTestId("video-sync-badge");
   await expect(badge).toHaveAttribute("data-sync-status", "pull");
   const checkpoint = createCheckpoint();
@@ -271,7 +353,7 @@ test("pull keeps the video's place in the list", async ({
   await expect(firstTitle).toHaveText("Local Only Video");
 
   const badge = page
-    .getByTestId(`video-card-${SEED_VIDEO_ID}`)
+    .getByTestId(`video-card-${SEED_YOUTUBE_ID}`)
     .getByTestId("video-sync-badge");
   await badge.click();
   await expect(badge).toHaveAttribute("data-sync-status", "synced");

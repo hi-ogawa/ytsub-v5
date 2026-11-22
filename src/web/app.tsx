@@ -1,14 +1,13 @@
 import { QueryClientProvider } from "@tanstack/react-query";
+import { useState } from "react";
 import { createBrowserRouter, RouterProvider } from "react-router";
 import { Toaster } from "sonner";
+import type { CaptionStorage } from "../lib/caption-storage.ts";
 import { createAppQueryClient } from "../lib/query-client.ts";
-import { DevFixturesPage } from "./routes/dev-fixtures.tsx";
-import { DevViewerPage } from "./routes/dev-viewer.tsx";
 import { LoginPage, RegisterPage } from "./routes/login.tsx";
 import {
   AuthLayout,
   authLoader,
-  DevLayout,
   GuestLayout,
   RootLayout,
 } from "./routes/root.tsx";
@@ -17,45 +16,42 @@ import { VideoViewerPage } from "./routes/video-viewer.tsx";
 
 const queryClient = createAppQueryClient();
 
-const router = createBrowserRouter([
-  {
-    path: "/dev",
-    Component: DevLayout,
-    children: [
-      { index: true, Component: VideoListPage },
-      { path: "fixtures", Component: DevFixturesPage },
-      { path: "videos/:videoId", Component: DevViewerPage },
-    ],
-  },
-  {
-    id: "root",
-    Component: RootLayout,
-    loader: authLoader,
-    HydrateFallback: () => null,
-    children: [
-      {
-        Component: GuestLayout,
-        children: [
-          { path: "/login", Component: LoginPage },
-          { path: "/register", Component: RegisterPage },
-        ],
-      },
-      {
-        Component: AuthLayout,
-        children: [
-          { path: "/", Component: VideoListPage },
-          { path: "/videos/:youtubeId", Component: VideoViewerPage },
-        ],
-      },
-    ],
-  },
-]);
-
-export function App() {
+export function App({ storage }: { storage: CaptionStorage }) {
+  const [router] = useState(() => createAppRouter(storage));
   return (
     <QueryClientProvider client={queryClient}>
       <RouterProvider router={router} />
       <Toaster position="top-right" richColors />
     </QueryClientProvider>
   );
+}
+
+function createAppRouter(storage: CaptionStorage) {
+  return createBrowserRouter([
+    {
+      id: "root",
+      element: <RootLayout storage={storage} />,
+      loader: authLoader,
+      HydrateFallback: () => null,
+      children: [
+        {
+          Component: GuestLayout,
+          children: [
+            { path: "/login", Component: LoginPage },
+            { path: "/register", Component: RegisterPage },
+          ],
+        },
+        {
+          Component: AuthLayout,
+          children: [
+            { path: "/", element: <VideoListPage storage={storage} /> },
+            {
+              path: "/videos/:youtubeId",
+              element: <VideoViewerPage storage={storage} />,
+            },
+          ],
+        },
+      ],
+    },
+  ]);
 }

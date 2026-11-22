@@ -7,19 +7,22 @@ import {
 import { CaptionPanel } from "../../components/caption-panel.tsx";
 import { ResizablePanel } from "../../components/resizable-panel.tsx";
 import type { YTPlayer } from "../../components/youtube-player.tsx";
+import type { CaptionStorage } from "../../lib/caption-storage.ts";
 import type { UseSync } from "../../lib/sync.ts";
 import type { YouTubeExtractionResult } from "../../lib/youtube.ts";
 import { fetchPlayerApi, fetchTrackJson3 } from "../../lib/youtube.ts";
 import { getVideoPlayer } from "../lib/youtube-page.ts";
 
 export function CaptionOverlay({
-  videoId,
+  storage,
+  youtubeId,
   useSync,
 }: {
-  videoId: string;
+  storage: CaptionStorage;
+  youtubeId: string;
   useSync: UseSync;
 }) {
-  const [open, toggleOpen] = useFabOpen(videoId);
+  const [open, toggleOpen] = useFabOpen(youtubeId);
 
   return (
     <div>
@@ -34,7 +37,11 @@ export function CaptionOverlay({
             pointerEvents: "auto",
           }}
         >
-          <ExtensionViewer videoId={videoId} useSync={useSync} />
+          <ExtensionViewer
+            storage={storage}
+            youtubeId={youtubeId}
+            useSync={useSync}
+          />
         </ResizablePanel>
       )}
       <CaptionPanelFab open={open} onClick={toggleOpen} />
@@ -43,17 +50,19 @@ export function CaptionOverlay({
 }
 
 function ExtensionViewer({
-  videoId,
+  storage,
+  youtubeId,
   useSync,
 }: {
-  videoId: string;
+  storage: CaptionStorage;
+  youtubeId: string;
   useSync: UseSync;
 }) {
   const [player] = useState(() => getVideoPlayer());
 
   const metadataQuery = useQuery({
-    queryKey: ["extension-metadata", videoId],
-    queryFn: () => fetchPlayerApi({ videoId, userLangs: getUserLangs() }),
+    queryKey: ["extension-metadata", youtubeId],
+    queryFn: () => fetchPlayerApi({ youtubeId, userLangs: getUserLangs() }),
   });
   const { data, isLoading, error } = metadataQuery;
 
@@ -76,23 +85,31 @@ function ExtensionViewer({
   return (
     <div className="flex h-full flex-col">
       {data && (
-        <ExtensionSession data={data} player={player} useSync={useSync} />
+        <ExtensionSession
+          storage={storage}
+          data={data}
+          player={player}
+          useSync={useSync}
+        />
       )}
     </div>
   );
 }
 
 function ExtensionSession({
+  storage,
   data,
   player,
   useSync,
 }: {
+  storage: CaptionStorage;
   data: YouTubeExtractionResult;
   player?: YTPlayer;
   useSync: UseSync;
 }) {
   return (
     <CaptionPanel
+      storage={storage}
       tracks={data.captionTracks}
       player={player}
       fetchJson3={(track) => fetchTrackJson3(track.baseUrl)}

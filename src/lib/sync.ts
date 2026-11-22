@@ -8,8 +8,8 @@ import {
   sessionToExportData,
 } from "./caption-session.ts";
 import {
+  type CaptionStorage,
   type PersistedCaptionSession,
-  captionStorage,
   type VideoIndexEntry,
   videoIndexStore,
 } from "./caption-storage.ts";
@@ -95,38 +95,39 @@ export type SyncStatus = {
 
 export type UseSync = (youtubeId: string) => SyncStatus;
 
-export function useVideoIndexEntry(youtubeId: string) {
+export function useVideoIndexEntry(storage: CaptionStorage, youtubeId: string) {
   const queryClient = useQueryClient();
   const query = useQuery({
     queryKey: ["video-index-entry", youtubeId],
     // React Query rejects undefined data.
-    queryFn: async () =>
-      (await captionStorage.getVideoIndexEntry(youtubeId)) ?? null,
+    queryFn: async () => (await storage.getVideoIndexEntry(youtubeId)) ?? null,
   });
 
   useEffect(
     () =>
-      captionStorage.subscribe((notice) => {
+      storage.subscribe((notice) => {
         if (notice.type === "videoIndex") {
           queryClient.invalidateQueries({
             queryKey: ["video-index-entry", youtubeId],
           });
         }
       }),
-    [queryClient, youtubeId],
+    [storage, queryClient, youtubeId],
   );
 
   return query;
 }
 
 export function useSyncState({
+  storage,
   youtubeId,
   onNavigate,
 }: {
+  storage: CaptionStorage;
   youtubeId: string;
   onNavigate: () => void;
 }): SyncStatus {
-  const entryQuery = useVideoIndexEntry(youtubeId);
+  const entryQuery = useVideoIndexEntry(storage, youtubeId);
 
   const authQuery = useQuery(orpc.auth.check.queryOptions());
   const authenticated = authQuery.data?.authenticated === true;
@@ -147,14 +148,17 @@ export function useSyncState({
         const result = await orpc.videos.importVideo.call(
           action.store.toExportData(),
         );
-        await captionStorage.setSyncedAt(youtubeId, result.updatedAt);
+        await storage.markSynced({
+          youtubeId,
+          serverUpdatedAt: result.updatedAt,
+        });
       } else {
         const data = await orpc.videos.getFullSession.call({ youtubeId });
         if (!data) {
           throw new Error("Video not found on server");
         }
         const session = serverSessionToLocal(data);
-        // replace() bumps the index entry's updatedAt, so setSyncedAt must follow it.
+        // replace() bumps the index entry's updatedAt, so markSynced must follow it.
         await action.store.replace({
           vssId1: session.vssId1,
           vssId2: session.vssId2,
@@ -162,7 +166,10 @@ export function useSyncState({
           bookmarks: session.bookmarks,
           editedAt: data.video.updatedAt,
         });
-        await captionStorage.setSyncedAt(youtubeId, data.video.updatedAt);
+        await storage.markSynced({
+          youtubeId,
+          serverUpdatedAt: data.video.updatedAt,
+        });
       }
     },
     onSuccess: () => serverQuery.refetch(),
@@ -259,7 +266,7 @@ function mergeVideoEntries(
 
 export type VideoSyncHandle = ReturnType<typeof useVideoSync>;
 
-export function useVideoSync() {
+export function useVideoSync(storage: CaptionStorage) {
   const [videoIndex] = videoIndexStore.useValue("entries");
 
   const authQuery = useQuery(orpc.auth.check.queryOptions());
@@ -292,14 +299,17 @@ export function useVideoSync() {
 
   const onPush = async (youtubeId: string) => {
     await withSyncing(youtubeId, async () => {
-      const session = await captionStorage.getSession(youtubeId);
+      const session = await storage.getSession(youtubeId);
       if (!session) {
         throw new Error("No local session found");
       }
       const result = await orpc.videos.importVideo.call(
         sessionToExportData(session),
       );
-      await captionStorage.setSyncedAt(youtubeId, result.updatedAt);
+      await storage.markSynced({
+        youtubeId,
+        serverUpdatedAt: result.updatedAt,
+      });
     });
   };
 
@@ -309,11 +319,14 @@ export function useVideoSync() {
       if (!data) {
         throw new Error("Video not found on server");
       }
-      await captionStorage.saveSession(serverSessionToLocal(data), {
+      await storage.saveSession(serverSessionToLocal(data), {
         forceIndex: true,
         editedAt: data.video.updatedAt,
       });
-      await captionStorage.setSyncedAt(youtubeId, data.video.updatedAt);
+      await storage.markSynced({
+        youtubeId,
+        serverUpdatedAt: data.video.updatedAt,
+      });
     });
   };
 

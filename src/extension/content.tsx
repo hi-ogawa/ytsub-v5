@@ -2,7 +2,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { PortalContainerProvider } from "../components/ui/portal-container.tsx";
-import { initCaptionStorage } from "../lib/caption-storage.ts";
+import type { CaptionStorage } from "../lib/caption-storage.ts";
 import { createShadowHost } from "../utils/shadow-root.ts";
 import type { bgRpcHandlers } from "./background.ts";
 import { CaptionOverlay } from "./components/caption-overlay.tsx";
@@ -30,12 +30,20 @@ const bgRpc = createRuntimeRelayRpc<typeof bgRpcHandlers>();
 
 function main() {
   console.log(`[zamak] build: ${__BUILD_TIME__} (${__GIT_REV__})`);
-  initCaptionStorage(createBridgeStorage());
+  const storage = createBridgeStorage();
 
-  subscribeWatchPage({ onEnter: mountOverlay });
+  subscribeWatchPage({
+    onEnter: (youtubeId) => mountOverlay({ storage, youtubeId }),
+  });
 }
 
-function mountOverlay(videoId: string) {
+function mountOverlay({
+  storage,
+  youtubeId,
+}: {
+  storage: CaptionStorage;
+  youtubeId: string;
+}) {
   const { host, container } = createShadowHost({
     id: "zamak-host",
     css: contentCss,
@@ -59,8 +67,11 @@ function mountOverlay(videoId: string) {
       <PortalContainerProvider value={container}>
         <QueryClientProvider client={queryClient}>
           <CaptionOverlay
-            videoId={videoId}
-            useSync={(youtubeId) => useExtensionSync({ bgRpc, youtubeId })}
+            storage={storage}
+            youtubeId={youtubeId}
+            useSync={(youtubeId) =>
+              useExtensionSync({ storage, bgRpc, youtubeId })
+            }
           />
         </QueryClientProvider>
       </PortalContainerProvider>

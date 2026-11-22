@@ -2,7 +2,6 @@
 
 import { sessionToExportData } from "../lib/caption-session.ts";
 import { idbCaptionStorage } from "../lib/caption-storage-idb.ts";
-import { captionStorage, initCaptionStorage } from "../lib/caption-storage.ts";
 import { orpc, setRpcConfig } from "../lib/rpc-client.ts";
 import { serverSessionToLocal } from "../lib/sync.ts";
 import { chromeStorage } from "./lib/chrome-storage.ts";
@@ -28,7 +27,7 @@ export const bgRpcHandlers = {
 
   // The caption panel pushes with this, because the session token stays here.
   async pushSession({ youtubeId }: { youtubeId: string }) {
-    const session = await captionStorage.getSession(youtubeId);
+    const session = await idbCaptionStorage.getSession(youtubeId);
     if (!session) {
       throw new Error("No local session found");
     }
@@ -52,7 +51,6 @@ export const bgRpcHandlers = {
 };
 
 async function main() {
-  initCaptionStorage(idbCaptionStorage);
   setRpcConfig({
     url: async () => new URL("/api", await getServerUrl()),
     fetch: async (request) => {

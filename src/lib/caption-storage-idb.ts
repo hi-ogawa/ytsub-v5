@@ -81,10 +81,10 @@ class IdbCaptionStorage implements CaptionStorage {
     this.notify({ type: "videoIndex", entries });
   };
 
-  setSyncedAt: CaptionStorage["setSyncedAt"] = async (
+  markSynced: CaptionStorage["markSynced"] = async ({
     youtubeId,
     serverUpdatedAt,
-  ) => {
+  }) => {
     const entries = await transact(
       ["videos"],
       "readwrite",

@@ -1,6 +1,6 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import type { CaptionSessionManager } from "../../lib/caption-session.ts";
-import { captionStorage } from "../../lib/caption-storage.ts";
+import type { CaptionStorage } from "../../lib/caption-storage.ts";
 import {
   type SyncState,
   type SyncStatus,
@@ -15,13 +15,15 @@ type SyncAction =
   | { direction: "pull"; store: CaptionSessionManager };
 
 export function useExtensionSync({
+  storage,
   bgRpc,
   youtubeId,
 }: {
+  storage: CaptionStorage;
   bgRpc: RpcClient<typeof bgRpcHandlers>;
   youtubeId: string;
 }): SyncStatus {
-  const entryQuery = useVideoIndexEntry(youtubeId);
+  const entryQuery = useVideoIndexEntry(storage, youtubeId);
 
   const serverQuery = useQuery({
     queryKey: ["extension-sync-state", youtubeId],
@@ -32,12 +34,12 @@ export function useExtensionSync({
     mutationFn: async (action: SyncAction) => {
       if (action.direction === "push") {
         const { serverUpdatedAt } = await bgRpc.pushSession({ youtubeId });
-        await captionStorage.setSyncedAt(youtubeId, serverUpdatedAt);
+        await storage.markSynced({ youtubeId, serverUpdatedAt });
       } else {
         const { session, serverUpdatedAt } = await bgRpc.fetchSession({
           youtubeId,
         });
-        // replace() bumps the index entry's updatedAt, so setSyncedAt must follow it.
+        // replace() bumps the index entry's updatedAt, so markSynced must follow it.
         await action.store.replace({
           vssId1: session.vssId1,
           vssId2: session.vssId2,
@@ -45,7 +47,7 @@ export function useExtensionSync({
           bookmarks: session.bookmarks,
           editedAt: serverUpdatedAt,
         });
-        await captionStorage.setSyncedAt(youtubeId, serverUpdatedAt);
+        await storage.markSynced({ youtubeId, serverUpdatedAt });
       }
     },
     onSuccess: () => serverQuery.refetch(),

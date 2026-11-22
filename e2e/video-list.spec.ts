@@ -1,6 +1,6 @@
 import path from "node:path";
 import { expect, test } from "@playwright/test";
-import { login, setupDb } from "./helper.ts";
+import { login, SEED_YOUTUBE_ID, setupDb } from "./helper.ts";
 
 test("video card shows thumbnail and channel, clicking navigates to viewer", async ({
   page,
@@ -47,7 +47,7 @@ test("import JSON file adds video to list with captions and bookmarks", async ({
   page,
 }) => {
   const fixturePath = path.resolve(
-    "scripts/db-seed-json/7GU_VQfgMT0/import.json",
+    `scripts/db-seed-json/${SEED_YOUTUBE_ID}/import.json`,
   );
 
   await setupDb({ seed: true });
@@ -71,7 +71,7 @@ test("import JSON file adds video to list with captions and bookmarks", async ({
   await expect(page.getByRole("link", { name: /cloud palace/ })).toBeVisible();
 
   // Navigate to viewer — session loaded from IndexedDB
-  await page.goto("/videos/7GU_VQfgMT0");
+  await page.goto(`/videos/${SEED_YOUTUBE_ID}`);
   await expect(page.locator("[data-index='0']")).toBeVisible();
   await expect(
     page
@@ -82,16 +82,4 @@ test("import JSON file adds video to list with captions and bookmarks", async ({
   // Bookmarks tab shows imported bookmarks
   await page.getByRole("button", { name: /Bookmarks/ }).click();
   await expect(page.locator("[data-bookmark-id]").first()).toBeVisible();
-});
-
-test("no sync badges when unauthenticated", async ({ page }) => {
-  await page.goto("/dev");
-  await expect(page.getByText("No bookmarked videos yet")).toBeVisible();
-
-  // Bootstrap fixtures to populate video index
-  await page.getByTestId("header-menu").click();
-  await page.getByTestId("bootstrap-fixtures").click();
-
-  await expect(page.getByTestId("video-card-7GU_VQfgMT0")).toBeVisible();
-  await expect(page.getByTestId("video-sync-badge")).toHaveCount(0);
 });
