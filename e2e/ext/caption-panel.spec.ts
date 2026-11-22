@@ -176,6 +176,7 @@ test("saved captions show when YouTube refuses the player API request", async ({
     }),
   );
 
+  // The session saved when the tracks were picked loads without YouTube
   await ytPage.reload();
   await expect(host.locator("[data-index='0']")).toBeVisible();
   await expect(host.getByTestId("tracks-error")).toContainText(
