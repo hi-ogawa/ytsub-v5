@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { openPulledVideo, SEED_VIDEO_ID, setupDb } from "./helper.ts";
+import { openPulledVideo, SEED_YOUTUBE_ID, setupDb } from "./helper.ts";
 
 test.beforeAll(async () => {
   await setupDb({ seed: true });
@@ -8,7 +8,7 @@ test.beforeAll(async () => {
 test("pulled video opens in the viewer with its bookmarks and session-only settings", async ({
   page,
 }) => {
-  await openPulledVideo(page, SEED_VIDEO_ID);
+  await openPulledVideo(page, SEED_YOUTUBE_ID);
 
   // Track label shows the session's languages instead of a track picker
   await expect(page.getByText("Korean · English")).toBeVisible();
