@@ -23,10 +23,10 @@ const LANGS_KEY = "zamak:preferred-langs";
 
 export function getInitialTracks(
   tracks: YouTubeCaptionTrack[],
-  videoId: string,
+  youtubeId: string,
 ): { vssId1?: string; vssId2?: string } {
   try {
-    const perVideo = localStorage.getItem(`${TRACKS_KEY}:${videoId}`);
+    const perVideo = localStorage.getItem(`${TRACKS_KEY}:${youtubeId}`);
     if (perVideo) {
       const { vssId1, vssId2 } = JSON.parse(perVideo);
       const valid1 = tracks.some((t) => t.vssId === vssId1);

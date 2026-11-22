@@ -13,13 +13,13 @@ import { fetchPlayerApi, fetchTrackJson3 } from "../../lib/youtube.ts";
 import { getVideoPlayer } from "../lib/youtube-page.ts";
 
 export function CaptionOverlay({
-  videoId,
+  youtubeId,
   useSync,
 }: {
-  videoId: string;
+  youtubeId: string;
   useSync: UseSync;
 }) {
-  const [open, toggleOpen] = useFabOpen(videoId);
+  const [open, toggleOpen] = useFabOpen(youtubeId);
 
   return (
     <div>
@@ -34,7 +34,7 @@ export function CaptionOverlay({
             pointerEvents: "auto",
           }}
         >
-          <ExtensionViewer videoId={videoId} useSync={useSync} />
+          <ExtensionViewer youtubeId={youtubeId} useSync={useSync} />
         </ResizablePanel>
       )}
       <CaptionPanelFab open={open} onClick={toggleOpen} />
@@ -43,17 +43,17 @@ export function CaptionOverlay({
 }
 
 function ExtensionViewer({
-  videoId,
+  youtubeId,
   useSync,
 }: {
-  videoId: string;
+  youtubeId: string;
   useSync: UseSync;
 }) {
   const [player] = useState(() => getVideoPlayer());
 
   const metadataQuery = useQuery({
-    queryKey: ["extension-metadata", videoId],
-    queryFn: () => fetchPlayerApi({ videoId, userLangs: getUserLangs() }),
+    queryKey: ["extension-metadata", youtubeId],
+    queryFn: () => fetchPlayerApi({ youtubeId, userLangs: getUserLangs() }),
   });
   const { data, isLoading, error } = metadataQuery;
 
