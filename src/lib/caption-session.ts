@@ -1,10 +1,6 @@
 import type { InferRouterInputs } from "@orpc/server";
 import type { Router } from "../server/rpc.ts";
-import {
-  type MergeStrategy,
-  type MergedCaption,
-  mergeCaptions,
-} from "./caption-merge.ts";
+import { type MergedCaption, mergeCaptions } from "./caption-merge.ts";
 import {
   type PersistedCaptionSession,
   captionStorage,
@@ -164,7 +160,6 @@ export async function buildCaptionSession(options: {
   track2: YouTubeCaptionTrack;
   fetchJson3: (track: YouTubeCaptionTrack) => Promise<Json3File>;
   videoMeta: YouTubeVideoData;
-  strategy?: MergeStrategy;
 }): Promise<CaptionSessionManager> {
   const [json3_1, json3_2] = await Promise.all([
     options.fetchJson3(options.track1),
@@ -173,14 +168,12 @@ export async function buildCaptionSession(options: {
   const merged = mergeCaptions(
     { json3: json3_1, vssId: options.track1.vssId },
     { json3: json3_2, vssId: options.track2.vssId },
-    options.strategy,
   );
   const store = new CaptionSessionManager({
     videoMeta: options.videoMeta,
     vssId1: options.track1.vssId,
     vssId2: options.track2.vssId,
     rows: merged.captions,
-    strategy: merged.strategy,
     bookmarks: [],
   });
   await store.persistSession();
@@ -194,7 +187,6 @@ export class CaptionSessionManager {
   vssId1: string;
   vssId2: string;
   rows: MergedCaption[];
-  readonly strategy: MergeStrategy; // TODO: smells
   bookmarks: ExtensionBookmark[];
   version = 0;
   private listeners = new Set<() => void>();
@@ -204,14 +196,12 @@ export class CaptionSessionManager {
     vssId1: string;
     vssId2: string;
     rows: MergedCaption[];
-    strategy: MergeStrategy;
     bookmarks: ExtensionBookmark[];
   }) {
     this.videoMeta = params.videoMeta;
     this.vssId1 = params.vssId1;
     this.vssId2 = params.vssId2;
     this.rows = params.rows;
-    this.strategy = params.strategy;
     this.bookmarks = params.bookmarks;
   }
 
@@ -313,7 +303,6 @@ export class CaptionSessionManager {
       vssId2: this.vssId2,
       language1: langFromVssId(this.vssId1),
       language2: langFromVssId(this.vssId2),
-      strategy: this.strategy,
       captions: this.rows,
       bookmarks: this.bookmarks,
     };

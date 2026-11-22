@@ -32,7 +32,7 @@ export async function bootstrapFixtures() {
     }
 
     const [mod1, mod2] = await Promise.all([loader1(), loader2()]);
-    const { strategy, captions } = mergeCaptions(
+    const { captions } = mergeCaptions(
       { json3: mod1.default, vssId: track1.vssId },
       { json3: mod2.default, vssId: track2.vssId },
     );
@@ -48,7 +48,6 @@ export async function bootstrapFixtures() {
         vssId2: track2.vssId,
         language1: track1.languageCode,
         language2: track2.languageCode,
-        strategy,
         captions,
         bookmarks: [],
       },

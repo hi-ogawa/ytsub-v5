@@ -106,37 +106,6 @@ test("settings menu with auto-scroll toggle", async ({ page }) => {
   await expect(autoScrollItem).toHaveAttribute("data-checked", "false");
 });
 
-test("strategy dropdown switches merge strategy", async ({ page }) => {
-  await openPanelWithTracks(page);
-
-  // Open settings menu to access strategy select
-  await page.getByTitle("Settings").click();
-  const strategySelect = page.locator("select[title='Alignment strategy']");
-  await expect(strategySelect).toBeVisible();
-  await expect(strategySelect).toHaveValue("partition");
-
-  // Count rows with partition strategy (default)
-  // Close menu first to count rows
-  await page.keyboard.press("Escape");
-  const partitionCount = await page.locator("[data-index]").count();
-
-  // Reopen and switch to overlap — should produce more rows
-  await page.getByTitle("Settings").click();
-  await strategySelect.selectOption("overlap");
-  await page.keyboard.press("Escape");
-  await expect(page.locator("[data-index='0']")).toBeVisible();
-  const overlapCount = await page.locator("[data-index]").count();
-  expect(overlapCount).toBeGreaterThan(partitionCount);
-
-  // Switch to best-overlap
-  await page.getByTitle("Settings").click();
-  await page
-    .locator("select[title='Alignment strategy']")
-    .selectOption("best-overlap");
-  await page.keyboard.press("Escape");
-  await expect(page.locator("[data-index='0']")).toBeVisible();
-});
-
 test("export downloads valid import.json", async ({ page }) => {
   await openPanelWithTracks(page);
 

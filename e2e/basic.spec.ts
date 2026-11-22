@@ -148,11 +148,6 @@ test("video-viewer settings dropdown and track label", async ({ page }) => {
   await page.getByTitle("Settings").click();
   await expect(page.getByText("Auto-scroll")).toBeVisible();
   await expect(page.getByTestId("sync-status")).toBeVisible();
-
-  // Track alignment select is NOT shown in sessionOnly mode
-  await expect(
-    page.locator("select[title='Alignment strategy']"),
-  ).not.toBeVisible();
 });
 
 test("theme toggle: cycle, persist, and system default", async ({ page }) => {
