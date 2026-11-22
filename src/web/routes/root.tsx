@@ -1,11 +1,5 @@
-import { useMutation, useQuery } from "@tanstack/react-query";
-import {
-  Database,
-  EllipsisVertical,
-  LogIn,
-  LogOut,
-  Upload,
-} from "lucide-react";
+import { useMutation } from "@tanstack/react-query";
+import { EllipsisVertical, Upload } from "lucide-react";
 import { useState } from "react";
 import {
   Link,
@@ -15,14 +9,12 @@ import {
   useRouteLoaderData,
 } from "react-router";
 import { ImportDialog } from "../../components/import-dialog.tsx";
-import { LoginDialog } from "../../components/login-dialog.tsx";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "../../components/ui/dropdown-menu.tsx";
-import { idbCaptionStorage } from "../../lib/caption-storage-idb.ts";
 import { orpc } from "../../lib/rpc-client.ts";
 import { useTheme } from "../../lib/theme.ts";
 
@@ -78,106 +70,6 @@ export function AuthLayout() {
   return <Outlet />;
 }
 
-export function DevLayout() {
-  const authQuery = useQuery(orpc.auth.check.queryOptions());
-  const authenticated = authQuery.data?.authenticated === true;
-  const [showLogin, setShowLogin] = useState(false);
-  const { theme, cycle, Icon } = useTheme();
-
-  const logoutMutation = useMutation(
-    orpc.auth.logout.mutationOptions({
-      onSuccess: () => authQuery.refetch(),
-    }),
-  );
-
-  return (
-    <div className="flex h-dvh flex-col">
-      <header className="flex h-10 flex-none items-center justify-between border-b px-3">
-        <span className="flex items-center gap-1.5 text-sm font-semibold">
-          <Link to="/">Zamak</Link>
-          <span className="rounded bg-amber-100 px-1.5 py-0.5 text-xs font-medium uppercase leading-none text-amber-700 dark:bg-amber-900 dark:text-amber-300">
-            dev
-          </span>
-        </span>
-        <div className="flex items-center gap-2">
-          {!authenticated && (
-            <button
-              type="button"
-              data-testid="sign-in"
-              onClick={() => setShowLogin(true)}
-              className="flex items-center gap-1 rounded px-2 py-1 text-sm text-muted-foreground hover:bg-muted"
-            >
-              <LogIn className="size-3" />
-              Sign in to sync
-            </button>
-          )}
-          <DropdownMenu>
-            <DropdownMenuTrigger
-              data-testid="header-menu"
-              className="flex h-7 w-7 items-center justify-center rounded text-muted-foreground hover:bg-muted"
-            >
-              <EllipsisVertical className="size-4" />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-44">
-              <DropdownMenuItem
-                data-testid="theme-toggle"
-                data-theme={theme}
-                onSelect={(e) => {
-                  e.preventDefault();
-                  cycle();
-                }}
-                className="gap-2"
-              >
-                <Icon className="size-4" />
-                <span className="capitalize">{theme}</span>
-              </DropdownMenuItem>
-              <DevMenuItems />
-              {authenticated && (
-                <>
-                  <div className="my-1 h-px bg-border" />
-                  <DropdownMenuItem
-                    data-testid="sign-out"
-                    onSelect={() => logoutMutation.mutate({})}
-                    className="gap-2"
-                  >
-                    <LogOut className="size-4" />
-                    Sign out
-                  </DropdownMenuItem>
-                </>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      </header>
-      <LoginDialog
-        open={showLogin}
-        onOpenChange={setShowLogin}
-        description={
-          <>
-            Sync your bookmarks to access them on any device via the{" "}
-            <a
-              href="/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-primary underline"
-            >
-              web app
-            </a>
-            .
-          </>
-        }
-        onLogin={async (input) => {
-          await orpc.auth.login.call(input);
-          authQuery.refetch();
-        }}
-      />
-      <main className="flex-1 overflow-auto">
-        <Outlet />
-      </main>
-    </div>
-  );
-}
-
 function HeaderMenu({ authenticated }: { authenticated: boolean }) {
   const { theme, cycle, Icon } = useTheme();
   const [showImport, setShowImport] = useState(false);
@@ -221,7 +113,6 @@ function HeaderMenu({ authenticated }: { authenticated: boolean }) {
             <Icon className="size-4" />
             <span className="capitalize">{theme}</span>
           </DropdownMenuItem>
-          {import.meta.env.DEV && <DevMenuItems />}
           {authenticated && (
             <DropdownMenuItem onSelect={() => logoutMutation.mutate({})}>
               Log out
@@ -232,31 +123,6 @@ function HeaderMenu({ authenticated }: { authenticated: boolean }) {
       {authenticated && (
         <ImportDialog open={showImport} onOpenChange={setShowImport} />
       )}
-    </>
-  );
-}
-
-function DevMenuItems() {
-  return (
-    <>
-      <DropdownMenuItem
-        data-testid="bootstrap-fixtures"
-        onSelect={async () => {
-          const { bootstrapFixtures } =
-            await import("../../lib/dev-fixtures.ts");
-          await bootstrapFixtures(idbCaptionStorage);
-        }}
-        className="gap-2"
-      >
-        <Database className="size-4" />
-        Dev Bootstrap
-      </DropdownMenuItem>
-      <DropdownMenuItem asChild>
-        <Link to="/dev">/dev</Link>
-      </DropdownMenuItem>
-      <DropdownMenuItem asChild>
-        <Link to="/dev/fixtures">/dev/fixtures</Link>
-      </DropdownMenuItem>
     </>
   );
 }
