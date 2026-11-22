@@ -97,7 +97,7 @@
 
   /* Muted (subtle bg, dimmed text) */
   --muted: #272727;
-  --muted-foreground: #aaa;
+  --muted-foreground: #ccc;
 
   /* Accent (blue interactive) */
   --accent: #3ea6ff;
