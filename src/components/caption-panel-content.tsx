@@ -245,7 +245,7 @@ function CaptionViewer({
   bookmarks: ExtensionBookmark[];
   onGoToBookmark: (bookmarkId: string) => void;
 }) {
-  const { currentIndex, isPlaying, loopIndex } = useSyncExternalStore(
+  const { currentIndex, isPlaying, repeatIndex } = useSyncExternalStore(
     runtime.playbackStore.subscribe,
     runtime.playbackStore.get,
   );
@@ -256,12 +256,12 @@ function CaptionViewer({
       rows={rows}
       currentIndex={currentIndex}
       isPlaying={isPlaying}
-      loopIndex={loopIndex}
+      repeatIndex={repeatIndex}
       player={player}
       autoScroll={autoScroll}
       bookmarks={bookmarks}
       onPlayRow={(index) => runtime.playRow(index)}
-      onToggleLoop={(index) => runtime.toggleLoop(index)}
+      onToggleRepeat={(index) => runtime.toggleRepeat(index)}
       onGoToBookmark={onGoToBookmark}
     />
   );

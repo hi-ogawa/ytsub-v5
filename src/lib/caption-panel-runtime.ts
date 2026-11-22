@@ -60,13 +60,13 @@ interface PlaybackState {
   currentIndex?: number;
   isPlaying: boolean;
   /** Index of the caption row playing on repeat */
-  loopIndex?: number;
+  repeatIndex?: number;
 }
 
-// How far before a looping row's end playback jumps back to its begin. A row's
+// How far before a repeating row's end playback jumps back to its begin. A row's
 // end is often the next row's begin, so jumping at the end itself lets the next
 // line's first sound slip in.
-const LOOP_END_MARGIN = 0.2;
+const REPEAT_END_MARGIN = 0.2;
 
 /**
  * The caption panel's data and operations for one video: the session of merged
@@ -156,7 +156,7 @@ export class CaptionPanelRuntime {
     this.playbackStore.update({
       currentIndex: undefined,
       isPlaying: false,
-      loopIndex: undefined,
+      repeatIndex: undefined,
     });
     await this.buildSession(selection);
   }
@@ -341,10 +341,10 @@ export class CaptionPanelRuntime {
     let currentIndex = state.currentIndex;
     if (isPlaying) {
       const time = player.getCurrentTime();
-      const loopRow =
-        state.loopIndex === undefined ? undefined : rows[state.loopIndex];
-      if (loopRow && time >= loopRow.end - LOOP_END_MARGIN) {
-        player.seekTo(loopRow.begin);
+      const repeatRow =
+        state.repeatIndex === undefined ? undefined : rows[state.repeatIndex];
+      if (repeatRow && time >= repeatRow.end - REPEAT_END_MARGIN) {
+        player.seekTo(repeatRow.begin);
         return;
       }
       const index = rows.findLastIndex((row) => row.begin <= time);
@@ -357,27 +357,27 @@ export class CaptionPanelRuntime {
     }
   }
 
-  /** Seek to the row's begin and play, ending any loop. */
+  /** Seek to the row's begin and play, ending any repeat. */
   playRow(index: number): void {
     this.player?.seekTo(this.getSession().rows[index].begin);
     this.player?.playVideo();
-    this.playbackStore.update({ loopIndex: undefined });
+    this.playbackStore.update({ repeatIndex: undefined });
   }
 
   /**
-   * Play the row on repeat from its begin, or end its loop if it already
+   * Play the row on repeat from its begin, or stop repeating it if it already
    * repeats. Only one row repeats at a time.
    */
-  toggleLoop(index: number): void {
-    if (this.playbackStore.get().loopIndex === index) {
-      this.playbackStore.update({ loopIndex: undefined });
+  toggleRepeat(index: number): void {
+    if (this.playbackStore.get().repeatIndex === index) {
+      this.playbackStore.update({ repeatIndex: undefined });
       return;
     }
     this.playRow(index);
-    this.playbackStore.update({ loopIndex: index, currentIndex: index });
+    this.playbackStore.update({ repeatIndex: index, currentIndex: index });
   }
 
-  /** Seek to the bookmark and play, ending any loop. */
+  /** Seek to the bookmark and play, ending any repeat. */
   playBookmark(bookmark: ExtensionBookmark): void {
     this.seekToBookmark(bookmark);
     this.player?.playVideo();
@@ -421,7 +421,7 @@ export class CaptionPanelRuntime {
     this.player?.seekTo(bookmark.timestamp);
     this.playbackStore.update({
       currentIndex: bookmark.captionIndex,
-      loopIndex: undefined,
+      repeatIndex: undefined,
     });
   }
 }
