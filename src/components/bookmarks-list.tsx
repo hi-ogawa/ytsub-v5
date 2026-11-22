@@ -3,6 +3,7 @@ import { useImperativeHandle, useRef } from "react";
 import type { MergedCaption } from "../lib/caption-merge.ts";
 import type { ExtensionBookmark } from "../lib/extension-bookmarks.ts";
 import { flashHighlight } from "../lib/flash-highlight.ts";
+import { RepeatToggle } from "./repeat-toggle.tsx";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,14 +19,18 @@ export function ExtensionBookmarksList({
   ref,
   bookmarks,
   rows,
+  loopIndex,
   onPlayBookmark,
+  onToggleLoop,
   onDeleteBookmark,
   onGoToCaption,
 }: {
   ref: React.Ref<BookmarksListHandle>;
   bookmarks: ExtensionBookmark[];
   rows: MergedCaption[];
+  loopIndex?: number;
   onPlayBookmark: (bookmark: ExtensionBookmark) => void;
+  onToggleLoop: (captionIndex: number) => void;
   onDeleteBookmark: (id: string) => void;
   onGoToCaption: (captionIndex: number) => void;
 }) {
@@ -51,7 +56,9 @@ export function ExtensionBookmarksList({
           bookmark={bm}
           bookmarkNumber={bmIndex + 1}
           caption={rows[bm.captionIndex]}
+          isLooping={bm.captionIndex === loopIndex}
           onClick={() => onPlayBookmark(bm)}
+          onToggleLoop={() => onToggleLoop(bm.captionIndex)}
           onDelete={() => onDeleteBookmark(bm.id)}
           onGoToCaption={() => onGoToCaption(bm.captionIndex)}
         />
@@ -64,14 +71,18 @@ function BookmarkCard({
   bookmark,
   bookmarkNumber,
   caption,
+  isLooping,
   onClick,
+  onToggleLoop,
   onDelete,
   onGoToCaption,
 }: {
   bookmark: ExtensionBookmark;
   bookmarkNumber: number;
   caption?: MergedCaption;
+  isLooping: boolean;
   onClick: () => void;
+  onToggleLoop: () => void;
   onDelete: () => void;
   onGoToCaption: () => void;
 }) {
@@ -89,6 +100,13 @@ function BookmarkCard({
         <span className="shrink-0 text-xs text-muted-foreground">
           {formatTimestamp(bookmark.timestamp)}
         </span>
+        {caption && (
+          <RepeatToggle
+            className="-mt-0.5 shrink-0 text-muted-foreground"
+            isLooping={isLooping}
+            onToggle={onToggleLoop}
+          />
+        )}
         <DropdownMenu>
           <DropdownMenuTrigger
             className="-mr-1 -mt-0.5 shrink-0 rounded p-1 text-muted-foreground hover:bg-muted"

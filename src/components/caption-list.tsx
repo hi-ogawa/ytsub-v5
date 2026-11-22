@@ -1,4 +1,4 @@
-import { ExternalLink, Repeat } from "lucide-react";
+import { ExternalLink } from "lucide-react";
 import {
   useEffect,
   useImperativeHandle,
@@ -13,6 +13,7 @@ import {
 } from "../lib/extension-bookmarks.ts";
 import { flashHighlight } from "../lib/flash-highlight.ts";
 import { getSelectionAt } from "../utils/get-selection.ts";
+import { RepeatToggle } from "./repeat-toggle.tsx";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover.tsx";
 import { useTimedFlag } from "./use-timed-flag.ts";
 import type { YTPlayer } from "./youtube-player.tsx";
@@ -220,22 +221,11 @@ function CaptionRow({
         <span>
           {formatTimestamp(row.begin)} – {formatTimestamp(row.end)}
         </span>
-        <button
-          className={[
-            "-my-0.5 ml-auto rounded border p-0.5",
-            isLooping
-              ? "border-accent/60 bg-accent/15 text-accent"
-              : "border-transparent hover:text-foreground",
-          ].join(" ")}
-          title="Repeat"
-          aria-pressed={isLooping}
-          onClick={(e) => {
-            e.stopPropagation();
-            onToggleLoop();
-          }}
-        >
-          <Repeat className="size-3.5" />
-        </button>
+        <RepeatToggle
+          className="-my-0.5 ml-auto"
+          isLooping={isLooping}
+          onToggle={onToggleLoop}
+        />
       </div>
       <div className="flex text-sm">
         <div className="flex-1 border-r pr-2" data-side="0">
