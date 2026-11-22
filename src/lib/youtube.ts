@@ -237,9 +237,17 @@ export async function fetchPlayerApi(options: {
   const data = (await res.json()) as Record<string, unknown>;
 
   // Parse response (inlined — page.evaluate can't see external functions)
+  // YouTube leaves out videoDetails when it refuses playback, such as with
+  // "Sign in to confirm you're not a bot", and gives the reason here instead.
   const details = data.videoDetails as Record<string, unknown>;
   if (!details) {
-    throw new Error("videoDetails not found in player API response");
+    const playability = data.playabilityStatus as
+      | { status?: string; reason?: string }
+      | undefined;
+    throw new Error(
+      `Player API refused the video: ${playability?.status ?? "no status"}` +
+        (playability?.reason ? ` (${playability.reason})` : ""),
+    );
   }
 
   const captions = data.captions as Record<string, unknown> | undefined;
