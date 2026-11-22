@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import { importExportData } from "../lib/caption-session.ts";
-import { idbCaptionStorage } from "../lib/caption-storage-idb.ts";
+import type { CaptionStorage } from "../lib/caption-storage.ts";
 import { Dialog, DialogContent, DialogTitle } from "./ui/dialog.tsx";
 
 interface ImportData {
@@ -10,9 +10,11 @@ interface ImportData {
 }
 
 export function ImportDialog({
+  storage,
   open,
   onOpenChange,
 }: {
+  storage: CaptionStorage;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
@@ -50,7 +52,7 @@ export function ImportDialog({
     setImportError("");
     try {
       await importExportData(
-        idbCaptionStorage,
+        storage,
         parsed as Parameters<typeof importExportData>[1],
       );
       onOpenChange(false);

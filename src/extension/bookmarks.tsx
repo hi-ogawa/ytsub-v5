@@ -43,6 +43,7 @@ async function main() {
       <MemoryRouter>
         <QueryClientProvider client={queryClient}>
           <ExtensionBookmarksPage
+            storage={idbCaptionStorage}
             serverUrl={serverUrl}
             isDevelopment={__DEV_EXT__}
           />
