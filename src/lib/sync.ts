@@ -66,7 +66,7 @@ export function computeSyncState(params: {
   }
 
   // serverUpdatedAt is from the server clock and syncedAt from the client
-  // clock. Comparing them assumes the clocks agree within a second or two.
+  // clock, so a client clock running behind can read as a server change.
   const localChanged = localUpdatedAt > syncedAt;
   const serverChanged = serverUpdatedAt > syncedAt;
 

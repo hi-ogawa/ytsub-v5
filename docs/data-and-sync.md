@@ -25,7 +25,9 @@ The sync status of a video asks two questions, and both compare against when the
 - **Did the local session change?** Compare when it last changed with the last sync.
 - **Did the server's copy change?** Compare the server's timestamp for the video with the last sync.
 
-The second question compares the server's clock with the browser's clock. That works because the two usually agree within a second or two, and a push or pull records its sync time after the server write it follows, so the write still reads as before the sync.
+The second question compares the server's clock with the browser's clock. A push or pull records its sync time after the server write it follows, so the write reads as before the sync while the browser's clock isn't behind the server's by more than the time between the two. After a pull, that is the time since the last push. Right after a push, it is only the request's round trip plus the part of a second that the server's timestamp drops, so a browser clock running behind by more than that can show a pull for a video it just pushed.
+
+![Device A pushes, and the server saves serverUpdatedAt at 10:53:10. Device B, whose clock is 2 seconds behind, pulls 5 seconds later and saves syncedAt at 10:53:13 by its own clock, then edits, which sets localUpdatedAt. Right after the pull, localUpdatedAt > syncedAt and serverUpdatedAt > syncedAt are both false, so the video is synced. After the edit, only the local check is true, so the video needs a push. The server check holds while device B's clock is behind by less than the 5 seconds between the push and the pull.](images/sync-state-clocks.svg)
 
 The answers decide the status:
 
