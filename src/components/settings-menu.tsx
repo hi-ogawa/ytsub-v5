@@ -61,7 +61,7 @@ export function SettingsDropdown({
           Auto-scroll
         </DropdownMenuItem>
         <AiPromptCopy session={session} tracks={tracks} />
-        <DropdownMenuItem onSelect={() => importAiResult(runtime)}>
+        <DropdownMenuItem onSelect={() => importAiResult({ runtime, session })}>
           <ClipboardPaste className="mr-2 size-4" />
           Import AI result
         </DropdownMenuItem>

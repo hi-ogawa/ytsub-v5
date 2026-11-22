@@ -110,12 +110,17 @@ export function AiPromptCopy({
   );
 }
 
-export function importAiResult(runtime: CaptionPanelRuntime): void {
+export function importAiResult({
+  runtime,
+  session,
+}: {
+  runtime: CaptionPanelRuntime;
+  session: CaptionSession;
+}): void {
   const raw = window.prompt("Paste AI result JSON");
   if (!raw) {
     return;
   }
-  const session = runtime.getSession();
   try {
     const result = parseAiResult(raw);
     switch (result.type) {

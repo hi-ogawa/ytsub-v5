@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import type { MergedCaption } from "../lib/caption-merge.ts";
 import type { CaptionPanelRuntime } from "../lib/caption-panel-runtime.ts";
 import {
   type BookmarkSelection,
@@ -10,10 +11,15 @@ import { getSelectionAt } from "../utils/get-selection.ts";
  * Tracks text selected inside `contentRef` as a bookmark candidate, and
  * creates the bookmark from it on `create()`.
  */
-export function useBookmarkSelection(
-  contentRef: React.RefObject<HTMLElement | null>,
-  runtime: CaptionPanelRuntime,
-) {
+export function useBookmarkSelection({
+  contentRef,
+  runtime,
+  rows,
+}: {
+  contentRef: React.RefObject<HTMLElement | null>;
+  runtime: CaptionPanelRuntime;
+  rows: MergedCaption[];
+}) {
   const [selection, setSelection] = useState<BookmarkSelection>();
 
   useEffect(() => {
@@ -29,7 +35,7 @@ export function useBookmarkSelection(
     if (!selection) {
       return;
     }
-    const row = runtime.getSession().rows[selection.captionIndex];
+    const row = rows[selection.captionIndex];
     if (!row) {
       return;
     }

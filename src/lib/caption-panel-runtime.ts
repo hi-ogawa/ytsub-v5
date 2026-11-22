@@ -142,14 +142,6 @@ export class CaptionPanelRuntime {
     }
   }
 
-  getSession(): CaptionSession {
-    const { session } = this.store.get();
-    if (!session) {
-      throw new Error("No caption session");
-    }
-    return session;
-  }
-
   // --- Building a session from tracks ---
 
   /** Replace the session with one built from these tracks, once both are picked. */
@@ -281,6 +273,14 @@ export class CaptionPanelRuntime {
       captions: session.rows,
       bookmarks: session.bookmarks,
     });
+  }
+
+  private getSession(): CaptionSession {
+    const { session } = this.store.get();
+    if (!session) {
+      throw new Error("No caption session");
+    }
+    return session;
   }
 
   private async updateSession(update: Partial<CaptionSession>): Promise<void> {

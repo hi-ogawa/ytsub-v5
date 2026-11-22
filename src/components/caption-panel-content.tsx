@@ -58,7 +58,11 @@ export function CaptionPanelContent({
     });
   }
 
-  const bookmarkSelection = useBookmarkSelection(contentRef, runtime);
+  const bookmarkSelection = useBookmarkSelection({
+    contentRef,
+    runtime,
+    rows: session.rows,
+  });
 
   return (
     <div ref={contentRef} className="flex min-h-0 flex-[1_0_0] flex-col">
