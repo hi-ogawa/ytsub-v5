@@ -1,4 +1,4 @@
-import type { InferRouterInputs } from "@orpc/server";
+import type { InferRouterInputs, InferRouterOutputs } from "@orpc/server";
 import type { Router } from "../server/rpc.ts";
 import type { MergedCaption } from "./caption-merge.ts";
 import type {
@@ -9,6 +9,9 @@ import type { ExtensionBookmark } from "./extension-bookmarks.ts";
 import { type YouTubeCaptionTrack, pickBestTrack } from "./youtube.ts";
 
 export type ExportData = InferRouterInputs<Router>["videos"]["importVideo"];
+type GetFullSessionOutput = NonNullable<
+  InferRouterOutputs<Router>["videos"]["getFullSession"]
+>;
 
 // --- Track preference persistence ---
 
@@ -159,4 +162,44 @@ export async function importExportData(
     })),
   };
   await storage.saveSession(session);
+}
+
+export function serverSessionToLocal(
+  data: GetFullSessionOutput,
+): PersistedCaptionSession {
+  return {
+    youtubeId: data.video.youtubeId,
+    title: data.video.title,
+    channelName: data.video.channelName,
+    channelId: data.video.channelId,
+    duration: data.video.duration,
+    vssId1: data.video.vssId1,
+    vssId2: data.video.vssId2,
+    language1: data.video.language1,
+    language2: data.video.language2,
+    captions: data.captions.map((c) => ({
+      idx: c.idx,
+      begin: c.begin,
+      end: c.end,
+      text1: c.text1,
+      text2: c.text2,
+      cue1Indices: [] as number[],
+      cue2Indices: [] as number[],
+      text1Segments: [c.text1],
+      text2Segments: [c.text2],
+    })),
+    bookmarks: data.bookmarks.map((b) => ({
+      id: String(b.id),
+      text: b.text,
+      side: b.side,
+      offset: b.offset,
+      captionIndex: data.captions.findIndex((c) => c.id === b.captionId),
+      timestamp: b.timestamp,
+      context: b.context,
+      translation: b.translation,
+      etymology: b.etymology,
+      notes: b.notes,
+      createdAt: b.createdAt,
+    })),
+  };
 }

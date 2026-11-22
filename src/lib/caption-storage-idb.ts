@@ -17,6 +17,17 @@ const STORE_NAMES: { [K in keyof Stores]: string } = {
   videos: "videos",
 };
 
+// A video index entry as stored before version 3
+type VideoIndexEntryV2 = {
+  youtubeId: string;
+  title: string;
+  channelName: string;
+  bookmarkCount: number;
+  updatedAt: string;
+  syncedAt?: string;
+  syncedServerUpdatedAt?: string;
+};
+
 const transact = createTransact<Stores>({
   name: DB_NAME,
   version: DB_VERSION,
@@ -40,14 +51,14 @@ const transact = createTransact<Stores>({
           return;
         }
         const { updatedAt, syncedAt, syncedServerUpdatedAt, ...entry } =
-          cursor.value;
+          cursor.value as VideoIndexEntryV2;
         const unchanged =
           syncedServerUpdatedAt && syncedAt && updatedAt <= syncedAt;
         cursor.update({
           ...entry,
           editedAt: unchanged ? syncedServerUpdatedAt : updatedAt,
           syncedEditedAt: syncedServerUpdatedAt,
-        });
+        } satisfies VideoIndexEntry);
         cursor.continue();
       };
     }

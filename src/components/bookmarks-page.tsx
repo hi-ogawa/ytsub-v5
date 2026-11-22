@@ -7,7 +7,6 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import type { VideoIndexEntry } from "../lib/caption-storage.ts";
-import type { VideoSyncEntry, VideoSyncHandle } from "../lib/sync.ts";
 import { formatRelativeTime } from "../utils/relative-time.ts";
 import { syncStateDisplay } from "./sync-state.tsx";
 import { Dialog, DialogContent, DialogTitle } from "./ui/dialog.tsx";
@@ -17,6 +16,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu.tsx";
+import type { VideoListEntry } from "./use-video-list-sync.ts";
+import type { VideoListSync } from "./use-video-list-sync.ts";
 import { VideoCard } from "./video-card.tsx";
 
 export function BookmarksPage({
@@ -28,11 +29,11 @@ export function BookmarksPage({
 }: {
   entries: VideoIndexEntry[];
   videoHref: (youtubeId: string) => string;
-  onDelete?: (entry: VideoSyncEntry) => void;
-  sync?: VideoSyncHandle;
+  onDelete?: (entry: VideoListEntry) => void;
+  sync?: VideoListSync;
   emptyState?: React.ReactNode;
 }) {
-  const displayEntries: VideoSyncEntry[] = sync?.isPending
+  const displayEntries: VideoListEntry[] = sync?.isPending
     ? []
     : (sync?.entries ?? entries);
   const sorted = [...displayEntries].sort((a, b) =>
@@ -118,7 +119,7 @@ function CardMenu({
   entry,
   onDelete,
 }: {
-  entry: VideoSyncEntry;
+  entry: VideoListEntry;
   onDelete: () => void;
 }) {
   return (
@@ -164,7 +165,7 @@ function SyncBadge({
   onPull,
   onPush,
 }: {
-  status: NonNullable<VideoSyncEntry["syncStatus"]>;
+  status: NonNullable<VideoListEntry["syncStatus"]>;
   localEditedAt: string;
   serverEditedAt?: string;
   syncing: boolean;
