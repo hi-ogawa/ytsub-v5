@@ -60,7 +60,7 @@ function mountOverlay(youtubeId: string) {
         <QueryClientProvider client={queryClient}>
           <CaptionOverlay
             youtubeId={youtubeId}
-            useSync={(youtubeId) => useExtensionSync({ bgRpc, youtubeId })}
+            useSync={({ youtubeId }) => useExtensionSync({ bgRpc, youtubeId })}
           />
         </QueryClientProvider>
       </PortalContainerProvider>

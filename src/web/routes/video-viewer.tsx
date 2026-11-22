@@ -58,7 +58,7 @@ export function VideoViewerPage() {
   );
 }
 
-function useViewerSync(youtubeId: string) {
+function useViewerSync({ youtubeId }: { youtubeId: string }) {
   const navigate = useNavigate();
   return useSyncState({ youtubeId, onNavigate: () => navigate("/") });
 }

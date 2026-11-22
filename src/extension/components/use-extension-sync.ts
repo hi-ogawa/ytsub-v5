@@ -21,7 +21,7 @@ export function useExtensionSync({
   bgRpc: RpcClient<typeof bgRpcHandlers>;
   youtubeId: string;
 }): SyncStatus {
-  const entryQuery = useVideoIndexEntry(youtubeId);
+  const entryQuery = useVideoIndexEntry({ youtubeId });
 
   const serverQuery = useQuery({
     queryKey: ["extension-sync-state", youtubeId],
