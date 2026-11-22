@@ -1,4 +1,5 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
+import { useVideoIndexEntry } from "../../components/use-video-index-entry.ts";
 import type { CaptionPanelRuntime } from "../../lib/caption-panel-runtime.ts";
 import type { CaptionStorage } from "../../lib/caption-storage.ts";
 import {
@@ -6,7 +7,6 @@ import {
   type SyncStatus,
   computeSyncState,
 } from "../../lib/sync.ts";
-import { useVideoIndexEntry } from "../../lib/use-video-index-entry.ts";
 import type { bgRpcHandlers } from "../background.ts";
 import type { RpcClient } from "../lib/extension-rpc.ts";
 
