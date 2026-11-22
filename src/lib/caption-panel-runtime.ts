@@ -1,4 +1,5 @@
 import type { YTPlayer } from "../components/youtube-player.tsx";
+import { createAbortableStep } from "../utils/abortable-step.ts";
 import { createStore } from "../utils/store.ts";
 import { type MergedCaption, mergeCaptions } from "./caption-merge.ts";
 import {
@@ -201,13 +202,14 @@ export class CaptionPanelRuntime {
     if (!track1 || !track2 || !this.trackSource || !video) {
       return;
     }
-    const { signal } = controller;
+    const step = createAbortableStep(controller.signal);
     try {
-      const [json3_1, json3_2] = await Promise.all([
-        this.trackSource.fetchJson3(track1),
-        this.trackSource.fetchJson3(track2),
-      ]);
-      signal.throwIfAborted();
+      const [json3_1, json3_2] = await step(
+        Promise.all([
+          this.trackSource.fetchJson3(track1),
+          this.trackSource.fetchJson3(track2),
+        ]),
+      );
       const session: CaptionSession = {
         video,
         vssId1: track1.vssId,
@@ -218,11 +220,10 @@ export class CaptionPanelRuntime {
         ),
         bookmarks: [],
       };
-      await this.saveSession(session);
-      signal.throwIfAborted();
+      await step(this.saveSession(session));
       this.store.update({ session, building: false });
     } catch (error) {
-      if (!signal.aborted) {
+      if (!controller.signal.aborted) {
         this.store.update({ building: false, buildError: error });
       }
     }
