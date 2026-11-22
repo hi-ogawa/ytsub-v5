@@ -7,15 +7,18 @@ import {
 import { CaptionPanel } from "../../components/caption-panel.tsx";
 import { ResizablePanel } from "../../components/resizable-panel.tsx";
 import type { YTPlayer } from "../../components/youtube-player.tsx";
+import type { CaptionStorage } from "../../lib/caption-storage.ts";
 import type { UseSync } from "../../lib/sync.ts";
 import type { YouTubeExtractionResult } from "../../lib/youtube.ts";
 import { fetchPlayerApi, fetchTrackJson3 } from "../../lib/youtube.ts";
 import { getVideoPlayer } from "../lib/youtube-page.ts";
 
 export function CaptionOverlay({
+  storage,
   youtubeId,
   useSync,
 }: {
+  storage: CaptionStorage;
   youtubeId: string;
   useSync: UseSync;
 }) {
@@ -34,7 +37,11 @@ export function CaptionOverlay({
             pointerEvents: "auto",
           }}
         >
-          <ExtensionViewer youtubeId={youtubeId} useSync={useSync} />
+          <ExtensionViewer
+            storage={storage}
+            youtubeId={youtubeId}
+            useSync={useSync}
+          />
         </ResizablePanel>
       )}
       <CaptionPanelFab open={open} onClick={toggleOpen} />
@@ -43,9 +50,11 @@ export function CaptionOverlay({
 }
 
 function ExtensionViewer({
+  storage,
   youtubeId,
   useSync,
 }: {
+  storage: CaptionStorage;
   youtubeId: string;
   useSync: UseSync;
 }) {
@@ -76,23 +85,31 @@ function ExtensionViewer({
   return (
     <div className="flex h-full flex-col">
       {data && (
-        <ExtensionSession data={data} player={player} useSync={useSync} />
+        <ExtensionSession
+          storage={storage}
+          data={data}
+          player={player}
+          useSync={useSync}
+        />
       )}
     </div>
   );
 }
 
 function ExtensionSession({
+  storage,
   data,
   player,
   useSync,
 }: {
+  storage: CaptionStorage;
   data: YouTubeExtractionResult;
   player?: YTPlayer;
   useSync: UseSync;
 }) {
   return (
     <CaptionPanel
+      storage={storage}
       tracks={data.captionTracks}
       player={player}
       fetchJson3={(track) => fetchTrackJson3(track.baseUrl)}

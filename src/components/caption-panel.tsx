@@ -7,7 +7,7 @@ import {
   getInitialTracks,
   saveSelectedTracks,
 } from "../lib/caption-session.ts";
-import { captionStorage } from "../lib/caption-storage.ts";
+import type { CaptionStorage } from "../lib/caption-storage.ts";
 import type { UseSync } from "../lib/sync.ts";
 import {
   type Json3File,
@@ -24,6 +24,7 @@ import { TrackPicker } from "./track-picker.tsx";
 import type { YTPlayer } from "./youtube-player.tsx";
 
 type CaptionPanelProps = {
+  storage: CaptionStorage;
   tracks: YouTubeCaptionTrack[];
   player?: YTPlayer;
   fetchJson3: (track: YouTubeCaptionTrack) => Promise<Json3File>;
@@ -43,11 +44,12 @@ export function CaptionPanel(props: CaptionPanelProps) {
   const initialStoreQuery = useQuery({
     queryKey: ["caption-session", youtubeId],
     queryFn: async () => {
-      const session = await captionStorage.getSession(youtubeId);
+      const session = await props.storage.getSession(youtubeId);
       if (!session) {
         return null;
       }
       return new CaptionSessionManager({
+        storage: props.storage,
         videoMeta: props.videoMeta,
         vssId1: session.vssId1,
         vssId2: session.vssId2,
@@ -73,6 +75,7 @@ export function CaptionPanel(props: CaptionPanelProps) {
 }
 
 function CaptionPanelInner({
+  storage,
   tracks,
   player,
   fetchJson3,
@@ -119,6 +122,7 @@ function CaptionPanelInner({
     }
     return (
       <CaptionPanelLoading
+        storage={storage}
         tracks={tracks}
         fetchJson3={fetchJson3}
         videoMeta={videoMeta}
@@ -144,6 +148,7 @@ function CaptionPanelInner({
 
 // Builds a new session from the selected tracks and hands it up with setStore.
 function CaptionPanelLoading({
+  storage,
   tracks,
   fetchJson3,
   videoMeta,
@@ -152,6 +157,7 @@ function CaptionPanelLoading({
   onSelectTracks,
   setStore,
 }: {
+  storage: CaptionStorage;
   tracks: YouTubeCaptionTrack[];
   fetchJson3: (track: YouTubeCaptionTrack) => Promise<Json3File>;
   videoMeta: YouTubeVideoData;
@@ -170,6 +176,7 @@ function CaptionPanelLoading({
     ],
     queryFn: () => {
       return buildCaptionSession({
+        storage,
         track1: track1!,
         track2: track2!,
         videoMeta,
