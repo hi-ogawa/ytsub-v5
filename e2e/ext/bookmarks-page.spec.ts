@@ -346,22 +346,16 @@ test("a pulled video keeps the place its edit time gives it", async ({
   await seedVideoIndex(page, localEntries);
   await login(page);
 
-  // The other seed videos were edited just now and sort above both
-  const upperCard = page
-    .getByTestId(new RegExp(`^video-card-(local-only-123|${SEED_YOUTUBE_ID})$`))
-    .first();
-  await expect(upperCard).toHaveAttribute(
-    "data-testid",
-    "video-card-local-only-123",
-  );
+  // The other seed videos were edited just now and sort above both, so only
+  // the order of these two cards is checked
+  const localCard = page.getByTestId("video-card-local-only-123");
+  const seedCard = page.getByTestId(`video-card-${SEED_YOUTUBE_ID}`);
+  const bothCards = localCard.or(seedCard);
+  await expect(bothCards).toHaveCount(2);
+  await expect(bothCards.first()).toContainText("Local Only Video");
 
-  const badge = page
-    .getByTestId(`video-card-${SEED_YOUTUBE_ID}`)
-    .getByTestId("video-sync-badge");
+  const badge = seedCard.getByTestId("video-sync-badge");
   await badge.click();
   await expect(badge).toHaveAttribute("data-sync-status", "synced");
-  await expect(upperCard).toHaveAttribute(
-    "data-testid",
-    "video-card-local-only-123",
-  );
+  await expect(bothCards.first()).toContainText("Local Only Video");
 });
