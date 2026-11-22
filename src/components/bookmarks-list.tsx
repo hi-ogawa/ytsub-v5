@@ -3,6 +3,7 @@ import { useImperativeHandle, useRef } from "react";
 import type { MergedCaption } from "../lib/caption-merge.ts";
 import type { ExtensionBookmark } from "../lib/extension-bookmarks.ts";
 import { flashHighlight } from "../lib/flash-highlight.ts";
+import { RepeatToggle } from "./repeat-toggle.tsx";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,7 +21,9 @@ export function ExtensionBookmarksList({
   rows,
   currentIndex,
   isPlaying,
+  repeatIndex,
   onClickBookmark,
+  onToggleRepeat,
   onDeleteBookmark,
   onGoToCaption,
 }: {
@@ -29,7 +32,9 @@ export function ExtensionBookmarksList({
   rows: MergedCaption[];
   currentIndex?: number;
   isPlaying: boolean;
+  repeatIndex?: number;
   onClickBookmark: (bookmark: ExtensionBookmark) => void;
+  onToggleRepeat: (captionIndex: number) => void;
   onDeleteBookmark: (id: string) => void;
   onGoToCaption: (captionIndex: number) => void;
 }) {
@@ -57,7 +62,9 @@ export function ExtensionBookmarksList({
           caption={rows[bm.captionIndex]}
           isCurrent={bm.captionIndex === currentIndex}
           isPlaying={isPlaying}
+          isRepeating={bm.captionIndex === repeatIndex}
           onClick={() => onClickBookmark(bm)}
+          onToggleRepeat={() => onToggleRepeat(bm.captionIndex)}
           onDelete={() => onDeleteBookmark(bm.id)}
           onGoToCaption={() => onGoToCaption(bm.captionIndex)}
         />
@@ -72,7 +79,9 @@ function BookmarkCard({
   caption,
   isCurrent,
   isPlaying,
+  isRepeating,
   onClick,
+  onToggleRepeat,
   onDelete,
   onGoToCaption,
 }: {
@@ -81,7 +90,9 @@ function BookmarkCard({
   caption?: MergedCaption;
   isCurrent: boolean;
   isPlaying: boolean;
+  isRepeating: boolean;
   onClick: () => void;
+  onToggleRepeat: () => void;
   onDelete: () => void;
   onGoToCaption: () => void;
 }) {
@@ -106,9 +117,17 @@ function BookmarkCard({
         <span className="shrink-0 text-xs text-muted-foreground">
           {formatTimestamp(bookmark.timestamp)}
         </span>
+        {caption && (
+          <RepeatToggle
+            className="-mt-0.5 shrink-0 text-muted-foreground"
+            isRepeating={isRepeating}
+            onToggle={onToggleRepeat}
+          />
+        )}
         <DropdownMenu>
           <DropdownMenuTrigger
             className="-mr-1 -mt-0.5 shrink-0 rounded p-1 text-muted-foreground hover:bg-muted"
+            title="Bookmark actions"
             onClick={(e) => e.stopPropagation()}
           >
             <EllipsisVertical className="size-3.5" />

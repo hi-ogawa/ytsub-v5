@@ -40,6 +40,47 @@ test("clicks inside the bookmark popover don't reach the caption row", async ({
   await expect.poll(isPaused).toBe(false);
 });
 
+test("repeat on a bookmark card repeats its row, shared with the Captions tab", async ({
+  context,
+}) => {
+  const { ytPage, host } = await openPanelWithTracks(context, SEED_YOUTUBE_ID);
+  // The later selection goes first, because a bookmark splits the row's text
+  await createBookmarkAt(host, { index: 2, start: 4, end: 6 });
+  await createBookmarkAt(host, { index: 2, start: 0, end: 2 });
+  await createBookmarkAt(host, { index: 3, start: 0, end: 2 });
+  const video = ytPage.locator("video");
+  const isPaused = () => video.evaluate((el: HTMLVideoElement) => el.paused);
+  const getCurrentTime = () =>
+    video.evaluate((el: HTMLVideoElement) => el.currentTime);
+  const cards = host.locator("[data-bookmark-id]");
+  const cardRepeats = cards.getByTitle("Repeat");
+  const rowRepeat = (index: number) =>
+    host.locator(`[data-index='${index}']`).getByTitle("Repeat");
+  const captionsTab = host.getByRole("tab", { name: "Captions" });
+  const bookmarksTab = host.getByRole("tab", { name: /Bookmarks/ });
+
+  // Both cards from row 2 show the repeat, which starts at the row's begin
+  await bookmarksTab.click();
+  await cardRepeats.nth(0).click();
+  await expect.poll(isPaused).toBe(false);
+  expect(await getCurrentTime()).toBe(35.597);
+  await expect(cardRepeats.nth(0)).toHaveAttribute("aria-pressed", "true");
+  await expect(cardRepeats.nth(1)).toHaveAttribute("aria-pressed", "true");
+  await expect(cardRepeats.nth(2)).toHaveAttribute("aria-pressed", "false");
+
+  // A repeat started in the Captions tab replaces it
+  await captionsTab.click();
+  await expect(rowRepeat(2)).toHaveAttribute("aria-pressed", "true");
+  await rowRepeat(3).click();
+  await bookmarksTab.click();
+  await expect(cardRepeats.nth(0)).toHaveAttribute("aria-pressed", "false");
+  await expect(cardRepeats.nth(2)).toHaveAttribute("aria-pressed", "true");
+
+  // Clicking a card from another row ends the repeat
+  await cards.nth(0).click();
+  await expect(cardRepeats.nth(2)).toHaveAttribute("aria-pressed", "false");
+});
+
 test("bookmark arrows keep the play state", async ({ context }) => {
   const { ytPage, host } = await openPanelWithTracks(context, SEED_YOUTUBE_ID);
   const prevButton = host.getByRole("button", { name: "Previous bookmark" });
@@ -341,11 +382,7 @@ test("delete bookmark from bookmarks tab", async ({ context }) => {
   // Open dropdown and delete
   ytPage.on("dialog", (d) => d.accept());
   const bookmarkCard = host.locator("[data-bookmark-id]").first();
-  await bookmarkCard
-    .getByRole("button")
-    .filter({ has: ytPage.locator("svg") })
-    .first()
-    .click();
+  await bookmarkCard.getByTitle("Bookmark actions").click();
   await host.getByRole("menuitem", { name: "Delete" }).click();
 
   // Should show empty state
@@ -385,12 +422,7 @@ test("bookmark numbers in popover and bookmarks tab", async ({ context }) => {
 
   // Deleting the first bookmark renumbers the rest
   ytPage.on("dialog", (d) => d.accept());
-  await cards
-    .nth(0)
-    .getByRole("button")
-    .filter({ has: ytPage.locator("svg") })
-    .first()
-    .click();
+  await cards.nth(0).getByTitle("Bookmark actions").click();
   await host.getByRole("menuitem", { name: "Delete" }).click();
   await expect(cards).toHaveCount(2);
   await expect(cards.nth(0)).toContainText("#1널");

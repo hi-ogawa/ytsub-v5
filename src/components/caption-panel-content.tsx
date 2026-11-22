@@ -28,7 +28,7 @@ export function CaptionPanelContent({
   const captionListRef = useRef<CaptionListHandle>(null);
   const bookmarksListRef = useRef<BookmarksListHandle>(null);
 
-  const { currentIndex, isPlaying } = useSyncExternalStore(
+  const { currentIndex, isPlaying, repeatIndex } = useSyncExternalStore(
     runtime.playbackStore.subscribe,
     runtime.playbackStore.get,
   );
@@ -116,8 +116,12 @@ export function CaptionPanelContent({
               rows={session.rows}
               currentIndex={currentIndex}
               isPlaying={isPlaying}
+              repeatIndex={repeatIndex}
               onClickBookmark={(bookmark) =>
                 runtime.playOrToggleRow(bookmark.captionIndex)
+              }
+              onToggleRepeat={(captionIndex) =>
+                runtime.toggleRepeat(captionIndex)
               }
               onDeleteBookmark={(id) => runtime.deleteBookmark(id)}
               onGoToCaption={onGoToCaption}
