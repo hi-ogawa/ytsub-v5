@@ -20,12 +20,12 @@ import { orpc } from "../../lib/rpc-client.ts";
 import { useTheme } from "../../lib/theme.ts";
 
 export async function authLoader() {
-  const res = await fetch("/api/auth/check", {
+  const response = await fetch("/api/auth/check", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ json: {} }),
   });
-  const data = (await res.json()) as { json: { authenticated: boolean } };
+  const data = (await response.json()) as { json: { authenticated: boolean } };
   return { authenticated: data.json.authenticated };
 }
 
@@ -111,8 +111,8 @@ function HeaderMenu({
           <DropdownMenuItem
             data-testid="theme-toggle"
             data-theme={theme}
-            onSelect={(e) => {
-              e.preventDefault();
+            onSelect={(event) => {
+              event.preventDefault();
               cycle();
             }}
             className="gap-2"

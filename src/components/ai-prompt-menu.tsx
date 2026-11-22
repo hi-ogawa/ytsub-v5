@@ -74,9 +74,9 @@ export function AiPromptCopy({
         <select
           className="min-w-0 flex-1 rounded border bg-background px-1 py-0.5 text-sm"
           value={selected}
-          onChange={(e) => {
-            setSelected(e.target.value as AiTask);
-            copyPrompt(e.target.value as AiTask);
+          onChange={(event) => {
+            setSelected(event.target.value as AiTask);
+            copyPrompt(event.target.value as AiTask);
           }}
         >
           {AI_TASKS.map((p) => (
@@ -163,7 +163,7 @@ export function importAiResult({
         break;
       }
     }
-  } catch (e) {
-    alert(e instanceof Error ? e.message : "Invalid JSON");
+  } catch (error) {
+    alert(error instanceof Error ? error.message : "Invalid JSON");
   }
 }

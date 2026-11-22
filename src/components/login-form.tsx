@@ -16,9 +16,9 @@ export function LoginForm({
   errorMessage?: string;
   footer?: React.ReactNode;
 }) {
-  function handleSubmit(e: SubmitEvent<HTMLFormElement>) {
-    e.preventDefault();
-    const form = new FormData(e.currentTarget);
+  function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
     mutation.mutate({
       username: form.get("username") as string,
       password: form.get("password") as string,

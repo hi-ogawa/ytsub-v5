@@ -45,9 +45,9 @@ function listenWorldMessage(
 ) {
   window.addEventListener(
     "message",
-    (e) => {
-      const message = e.data as WorldMessage | undefined;
-      if (e.source !== window) {
+    (event) => {
+      const message = event.data as WorldMessage | undefined;
+      if (event.source !== window) {
         return;
       }
       if (message?.channel !== channel || message.kind !== kind) {
@@ -96,7 +96,7 @@ export function createRuntimeRelayRpc<
   return createRpcProxy<Handlers>((method, params) => {
     const id = crypto.randomUUID();
     return new Promise((resolve, reject) => {
-      const ac = new AbortController();
+      const controller = new AbortController();
       listenWorldMessage(
         RPC_CHANNEL,
         "response",
@@ -104,14 +104,14 @@ export function createRuntimeRelayRpc<
           if (response.id !== id) {
             return;
           }
-          ac.abort();
+          controller.abort();
           if (response.error) {
             reject(new Error(response.error));
           } else {
             resolve(response.result);
           }
         },
-        { signal: ac.signal },
+        { signal: controller.signal },
       );
       postWorldMessage(RPC_CHANNEL, "request", { id, method, params });
     });
@@ -129,10 +129,10 @@ export function setupRpcRelay() {
         ? { id, error: result.__error }
         : { id, result };
       postWorldMessage(RPC_CHANNEL, "response", response);
-    } catch (err) {
+    } catch (error) {
       const response: RpcResponse = {
         id,
-        error: err instanceof Error ? err.message : "Unknown error",
+        error: error instanceof Error ? error.message : "Unknown error",
       };
       postWorldMessage(RPC_CHANNEL, "response", response);
     }
@@ -142,20 +142,20 @@ export function setupRpcRelay() {
 // --- Background: handler registration ---
 
 export function registerRpcHandlers(handlers: Record<string, Function>) {
-  chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
-    if (msg?.type !== "zamak-rpc") {
+  chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+    if (message?.type !== "zamak-rpc") {
       return;
     }
-    const { method, params } = msg as RpcRequest;
+    const { method, params } = message as RpcRequest;
     const handler = handlers[method];
     if (!handler) {
       sendResponse(undefined);
       return;
     }
-    handler(params).then(sendResponse, (err: unknown) => {
-      console.error(`[zamak rpc] ${method}:`, err);
+    handler(params).then(sendResponse, (error: unknown) => {
+      console.error(`[zamak rpc] ${method}:`, error);
       sendResponse({
-        __error: err instanceof Error ? err.message : "Unknown error",
+        __error: error instanceof Error ? error.message : "Unknown error",
       });
     });
     return true; // keep channel open for async response

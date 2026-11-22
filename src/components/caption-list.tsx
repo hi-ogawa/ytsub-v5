@@ -66,12 +66,12 @@ export function CaptionList({
   // scroll, so auto-scroll doesn't pull the list away from it right after.
   useImperativeHandle(ref, () => ({
     scrollToIndex: (index: number) => {
-      const el = scrollRef.current?.querySelector(
+      const element = scrollRef.current?.querySelector(
         `[data-index="${index}"]`,
       ) as HTMLElement | null;
-      if (el) {
-        el.scrollIntoView({ behavior: "smooth", block: "center" });
-        flashHighlight(el);
+      if (element) {
+        element.scrollIntoView({ behavior: "smooth", block: "center" });
+        flashHighlight(element);
       }
       manualScroll.trigger();
     },
@@ -79,38 +79,41 @@ export function CaptionList({
 
   // Follows the current caption, scrolling only when it drifts more than a
   // sixth of the viewport from the center.
-  const prevScrollIndex = useRef<number | undefined>(undefined);
+  const previousScrollIndex = useRef<number | undefined>(undefined);
   useEffect(() => {
     if (
       currentIndex === undefined ||
-      currentIndex === prevScrollIndex.current
+      currentIndex === previousScrollIndex.current
     ) {
       return;
     }
-    prevScrollIndex.current = currentIndex;
+    previousScrollIndex.current = currentIndex;
 
     if (!autoScroll || manualScroll.isActive() || isPopoverOpenRef.current) {
       return;
     }
 
-    const scrollEl = scrollRef.current;
-    if (!scrollEl) {
+    const scrollElement = scrollRef.current;
+    if (!scrollElement) {
       return;
     }
 
-    const el = scrollEl.querySelector(`[data-index="${currentIndex}"]`);
-    if (!el) {
+    const element = scrollElement.querySelector(
+      `[data-index="${currentIndex}"]`,
+    );
+    if (!element) {
       return;
     }
 
-    const { scrollTop, clientHeight } = scrollEl;
+    const { scrollTop, clientHeight } = scrollElement;
     const currentCenter = scrollTop + clientHeight / 2;
-    const itemRect =
-      (el as HTMLElement).offsetTop + (el as HTMLElement).offsetHeight / 2;
+    const itemCenter =
+      (element as HTMLElement).offsetTop +
+      (element as HTMLElement).offsetHeight / 2;
     const threshold = clientHeight / 6;
 
-    if (Math.abs(itemRect - currentCenter) > threshold) {
-      el.scrollIntoView({ behavior: "smooth", block: "center" });
+    if (Math.abs(itemCenter - currentCenter) > threshold) {
+      element.scrollIntoView({ behavior: "smooth", block: "center" });
     }
   }, [currentIndex]);
 
@@ -229,8 +232,8 @@ function CaptionRow({
           ].join(" ")}
           title="Repeat"
           aria-pressed={isRepeating}
-          onClick={(e) => {
-            e.stopPropagation();
+          onClick={(event) => {
+            event.stopPropagation();
             onToggleRepeat();
           }}
         >
@@ -360,15 +363,15 @@ function BookmarkWord({
         avoidCollisions
         onOpenAutoFocus={(e) => e.preventDefault()}
         onClick={(e) => e.stopPropagation()}
-        onPointerDownOutside={(e) => {
+        onPointerDownOutside={(event) => {
           // When modal=false (extension shadow DOM), DismissableLayer closes
           // on pointerdown before the trigger's click can toggle. Prevent the
           // dismiss when clicking the trigger so the toggle handles it.
           // Use composedPath() because shadow DOM retargets event.target to
           // the host element.
-          const target = e.detail.originalEvent.composedPath()[0] as Node;
+          const target = event.detail.originalEvent.composedPath()[0] as Node;
           if (triggerRef.current?.contains(target)) {
-            e.preventDefault();
+            event.preventDefault();
           }
         }}
       >
@@ -403,8 +406,8 @@ function BookmarkWord({
           <button
             className="mt-1 rounded p-0.5 text-muted-foreground hover:bg-accent hover:text-foreground"
             title="Go to bookmark"
-            onMouseDown={(e) => {
-              e.stopPropagation();
+            onMouseDown={(event) => {
+              event.stopPropagation();
               // The Captions tab gets hidden rather than unmounted, so an open
               // popover would stay on screen, anchored to a zero-size trigger.
               changeOpen(false);
@@ -420,7 +423,7 @@ function BookmarkWord({
 }
 
 function formatTimestamp(seconds: number): string {
-  const m = Math.floor(seconds / 60);
-  const s = Math.floor(seconds % 60);
-  return `${m}:${String(s).padStart(2, "0")}`;
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = Math.floor(seconds % 60);
+  return `${minutes}:${String(remainingSeconds).padStart(2, "0")}`;
 }

@@ -33,7 +33,7 @@ export function SettingsDropdown({
   session: CaptionSession;
   tracks: YouTubeCaptionTrack[];
   autoScroll: boolean;
-  onSetAutoScroll: (value: boolean | ((prev: boolean) => boolean)) => void;
+  onSetAutoScroll: (value: boolean | ((previous: boolean) => boolean)) => void;
   useSync: UseSync;
 }) {
   const hasBookmarks = session.bookmarks.length > 0;
@@ -50,8 +50,8 @@ export function SettingsDropdown({
         <SyncMenuItem useSync={useSync} runtime={runtime} />
         <DropdownMenuItem
           data-checked={autoScroll}
-          onSelect={(e) => {
-            e.preventDefault();
+          onSelect={(event) => {
+            event.preventDefault();
             onSetAutoScroll((v) => !v);
           }}
         >

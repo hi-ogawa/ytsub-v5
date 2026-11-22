@@ -8,7 +8,7 @@ import { chromeStorage } from "./lib/chrome-storage.ts";
 import { registerRpcHandlers } from "./lib/extension-rpc.ts";
 import { getServerUrl } from "./lib/server-url.ts";
 
-export const bgRpcHandlers = {
+export const backgroundRpcHandlers = {
   async getSyncState({ youtubeId }: { youtubeId: string }) {
     const { authenticated } = await orpc.auth.check.call({});
     if (!authenticated) {
@@ -70,7 +70,7 @@ async function main() {
     },
   });
 
-  registerRpcHandlers(bgRpcHandlers);
+  registerRpcHandlers(backgroundRpcHandlers);
 
   // Open bookmarks page in a new tab when extension icon is clicked.
   chrome.action.onClicked.addListener(() => {
