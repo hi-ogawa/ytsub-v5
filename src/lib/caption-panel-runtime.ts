@@ -7,7 +7,10 @@ import {
   saveSelectedTracks,
   sessionToExportData,
 } from "./caption-session.ts";
-import type { CaptionStorage } from "./caption-storage.ts";
+import type {
+  CaptionStorage,
+  PersistedCaptionSession,
+} from "./caption-storage.ts";
 import type { ExtensionBookmark } from "./extension-bookmarks.ts";
 import {
   type Json3File,
@@ -82,9 +85,9 @@ export class CaptionPanelRuntime {
   readonly youtubeId: string;
   readonly trackSource?: CaptionTrackSource;
   private restorePromise?: Promise<void>;
-  // Each build takes the next id, so a build that finishes after the tracks
-  // changed again is dropped.
-  private lastBuildId = 0;
+  // A new build aborts the running one, so a build that finishes after the
+  // tracks changed again is dropped.
+  private buildController?: AbortController;
 
   constructor(options: {
     storage: CaptionStorage;
@@ -185,7 +188,9 @@ export class CaptionPanelRuntime {
     vssId1?: string;
     vssId2?: string;
   }): Promise<void> {
-    const buildId = ++this.lastBuildId;
+    this.buildController?.abort();
+    const controller = new AbortController();
+    this.buildController = controller;
     const { tracks, video } = this.store.get();
     const track1 = tracks.find((t) => t.vssId === selection.vssId1);
     const track2 = tracks.find((t) => t.vssId === selection.vssId2);
@@ -200,33 +205,19 @@ export class CaptionPanelRuntime {
       return;
     }
     try {
-      const [json3_1, json3_2] = await Promise.all([
-        this.trackSource.fetchJson3(track1),
-        this.trackSource.fetchJson3(track2),
-      ]);
-      const session: CaptionSession = {
+      const session = await buildCaptionSession({
+        storage: this.storage,
+        trackSource: this.trackSource,
         video,
-        vssId1: track1.vssId,
-        vssId2: track2.vssId,
-        rows: mergeCaptions(
-          { json3: json3_1, vssId: track1.vssId },
-          { json3: json3_2, vssId: track2.vssId },
-        ),
-        bookmarks: [],
-      };
-      if (buildId !== this.lastBuildId) {
-        return;
-      }
-      await this.saveSession(session);
-      if (buildId !== this.lastBuildId) {
-        return;
-      }
+        track1,
+        track2,
+        signal: controller.signal,
+      });
       this.store.update({ session, building: false });
     } catch (error) {
-      if (buildId !== this.lastBuildId) {
-        return;
+      if (!controller.signal.aborted) {
+        this.store.update({ building: false, buildError: error });
       }
-      this.store.update({ building: false, buildError: error });
     }
   }
 
@@ -305,15 +296,7 @@ export class CaptionPanelRuntime {
   }
 
   private async saveSession(session: CaptionSession): Promise<void> {
-    await this.storage.saveSession({
-      ...session.video,
-      vssId1: session.vssId1,
-      vssId2: session.vssId2,
-      language1: langFromVssId(session.vssId1),
-      language2: langFromVssId(session.vssId2),
-      captions: session.rows,
-      bookmarks: session.bookmarks,
-    });
+    await this.storage.saveSession(toPersistedSession(session));
   }
 
   // --- Playback ---
@@ -404,4 +387,49 @@ export function sortBookmarks(
   return [...bookmarks].sort(
     (a, b) => a.timestamp - b.timestamp || a.offset - b.offset,
   );
+}
+
+/**
+ * Fetch and merge two tracks into a new session, and save it. Throws once
+ * `signal` aborts, so an aborted build never returns its session.
+ */
+async function buildCaptionSession(options: {
+  storage: CaptionStorage;
+  trackSource: CaptionTrackSource;
+  video: YouTubeVideoData;
+  track1: YouTubeCaptionTrack;
+  track2: YouTubeCaptionTrack;
+  signal: AbortSignal;
+}): Promise<CaptionSession> {
+  const { trackSource, track1, track2, signal } = options;
+  const [json3_1, json3_2] = await Promise.all([
+    trackSource.fetchJson3(track1),
+    trackSource.fetchJson3(track2),
+  ]);
+  signal.throwIfAborted();
+  const session: CaptionSession = {
+    video: options.video,
+    vssId1: track1.vssId,
+    vssId2: track2.vssId,
+    rows: mergeCaptions(
+      { json3: json3_1, vssId: track1.vssId },
+      { json3: json3_2, vssId: track2.vssId },
+    ),
+    bookmarks: [],
+  };
+  await options.storage.saveSession(toPersistedSession(session));
+  signal.throwIfAborted();
+  return session;
+}
+
+function toPersistedSession(session: CaptionSession): PersistedCaptionSession {
+  return {
+    ...session.video,
+    vssId1: session.vssId1,
+    vssId2: session.vssId2,
+    language1: langFromVssId(session.vssId1),
+    language2: langFromVssId(session.vssId2),
+    captions: session.rows,
+    bookmarks: session.bookmarks,
+  };
 }
