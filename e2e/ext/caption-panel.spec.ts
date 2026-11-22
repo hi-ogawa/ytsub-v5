@@ -9,7 +9,7 @@ test("FAB toggles the panel and keeps its state per video across reloads", async
   await expect(host.locator("[data-index='5']")).toBeVisible();
   const row = host.locator("[data-index='0']");
   await expect(row.locator("text=/\\d+:\\d{2} – \\d+:\\d{2}/")).toBeVisible();
-  const cols = row.locator(".flex-1");
+  const cols = row.locator("[data-side]");
   await expect(cols).toHaveCount(2);
   await expect(cols.nth(0)).not.toHaveText("");
   await expect(cols.nth(1)).not.toHaveText("");
@@ -28,6 +28,27 @@ test("FAB toggles the panel and keeps its state per video across reloads", async
   await expect(host.locator("[data-index='0']")).not.toBeVisible();
   await ytPage.reload();
   await expect(host.getByTitle("Show captions")).toBeVisible();
+});
+
+test("clicking a row seeks to its start and plays, and clicking the current row pauses", async ({
+  context,
+}) => {
+  const { ytPage, host } = await openPanelWithTracks(context, SEED_YOUTUBE_ID);
+  const video = ytPage.locator("video");
+  const isPaused = () => video.evaluate((el: HTMLVideoElement) => el.paused);
+  const getCurrentTime = () =>
+    video.evaluate((el: HTMLVideoElement) => el.currentTime);
+
+  const row = host.locator("[data-index='2']");
+  await row.click();
+  await expect.poll(isPaused).toBe(false);
+  expect(await getCurrentTime()).toBe(35.597);
+
+  await expect(row).toHaveAttribute("aria-current", "true");
+  await row.click();
+  await expect.poll(isPaused).toBe(true);
+  await row.click();
+  await expect.poll(isPaused).toBe(false);
 });
 
 test("track selection: default empty, select tracks, switch language", async ({

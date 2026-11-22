@@ -56,7 +56,7 @@ test("pull from the sync menu replaces captions and bookmarks in place", async (
 
   const { ytPage, host } = await openPanelWithTracks(context, SEED_YOUTUBE_ID);
   await expect(
-    host.getByRole("button", { name: "Bookmarks", exact: true }),
+    host.getByRole("tab", { name: "Bookmarks", exact: true }),
   ).toBeVisible();
 
   const status = await openSyncMenu(host);
@@ -67,9 +67,7 @@ test("pull from the sync menu replaces captions and bookmarks in place", async (
   checkpoint("pull synced");
 
   await ytPage.keyboard.press("Escape");
-  await expect(
-    host.getByRole("button", { name: "Bookmarks (15)" }),
-  ).toBeVisible();
+  await expect(host.getByRole("tab", { name: "Bookmarks (15)" })).toBeVisible();
 });
 
 test("shows conflict when local bookmarks and server data both exist", async ({

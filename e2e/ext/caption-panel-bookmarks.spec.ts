@@ -70,6 +70,33 @@ test("bookmark arrows keep the play state", async ({ context }) => {
   expect(await isPaused()).toBe(false);
 });
 
+test("bookmark arrows wrap around at the ends", async ({ context }) => {
+  const { ytPage, host } = await openPanelWithTracks(context, SEED_YOUTUBE_ID);
+  await createBookmarkAt(host, { index: 1, start: 0, end: 3 });
+  await createBookmarkAt(host, { index: 3, start: 0, end: 3 });
+  const video = ytPage.locator("video");
+  const getCurrentTime = () =>
+    video.evaluate((el: HTMLVideoElement) => el.currentTime);
+  async function clickAndGetTime(name: string) {
+    return await test.step(
+      `Click ${name}`,
+      async () => {
+        const before = await getCurrentTime();
+        await host.getByRole("button", { name }).click();
+        await expect.poll(getCurrentTime).not.toBe(before);
+        return getCurrentTime();
+      },
+      { box: true },
+    );
+  }
+
+  const first = await clickAndGetTime("Next bookmark");
+  const second = await clickAndGetTime("Next bookmark");
+  expect(second).toBeGreaterThan(first);
+  expect(await clickAndGetTime("Next bookmark")).toBe(first);
+  expect(await clickAndGetTime("Previous bookmark")).toBe(second);
+});
+
 test("bookmark arrows show the caption while paused", async ({ context }) => {
   const { host } = await openPanelWithTracks(context, SEED_YOUTUBE_ID);
   const row = host.locator("[data-index='30']");
@@ -81,14 +108,16 @@ test("bookmark arrows show the caption while paused", async ({ context }) => {
   await host.getByRole("button", { name: "Next bookmark" }).click();
   const getOffsetFromCenter = () =>
     row.evaluate((el) => {
-      const list = el.closest(".overflow-y-auto")!.getBoundingClientRect();
+      const list = el
+        .closest("[data-testid='caption-list']")!
+        .getBoundingClientRect();
       const rect = el.getBoundingClientRect();
       return Math.abs(
         rect.top + rect.height / 2 - (list.top + list.height / 2),
       );
     });
   await expect.poll(getOffsetFromCenter).toBeLessThan(2);
-  await expect(row).toHaveClass(/border-ring/);
+  await expect(row).toHaveAttribute("aria-current", "true");
 });
 
 test("manual bookmark: cancel selection, create, highlight, and export", async ({
@@ -192,22 +221,20 @@ test("bookmarks tab: empty state, create bookmark, count and context", async ({
   const panel = host.getByTestId("resizable-panel");
 
   // Tab bar visible
-  await expect(panel.getByRole("button", { name: "Captions" })).toBeVisible();
-  await expect(panel.getByRole("button", { name: /Bookmarks/ })).toBeVisible();
+  await expect(panel.getByRole("tab", { name: "Captions" })).toBeVisible();
+  await expect(panel.getByRole("tab", { name: /Bookmarks/ })).toBeVisible();
 
   // Empty state
-  await panel.getByRole("button", { name: /Bookmarks/ }).click();
+  await panel.getByRole("tab", { name: /Bookmarks/ }).click();
   await expect(host.getByText("No bookmarks yet")).toBeVisible();
 
   // Create bookmark and verify count
-  await panel.getByRole("button", { name: "Captions" }).click();
+  await panel.getByRole("tab", { name: "Captions" }).click();
   await createBookmarkAt(host, { index: 0, start: 0, end: 3 });
-  await expect(
-    panel.getByRole("button", { name: "Bookmarks (1)" }),
-  ).toBeVisible();
+  await expect(panel.getByRole("tab", { name: "Bookmarks (1)" })).toBeVisible();
 
   // Bookmark card with caption context
-  await panel.getByRole("button", { name: /Bookmarks/ }).click();
+  await panel.getByRole("tab", { name: /Bookmarks/ }).click();
   const bookmarkCard = host.locator("[data-bookmark-id]").first();
   await expect(bookmarkCard).toBeVisible();
   await expect(bookmarkCard.getByText("꼬집어").first()).toBeVisible();
@@ -226,7 +253,7 @@ test("bookmarks tab orders bookmarks in one row by offset", async ({
   await createBookmarkAt(host, { index: 0, start: 8, end: 10 });
   await createBookmarkAt(host, { index: 0, start: 0, end: 3 });
 
-  await panel.getByRole("button", { name: "Bookmarks (2)" }).click();
+  await panel.getByRole("tab", { name: "Bookmarks (2)" }).click();
   const cards = host.locator("[data-bookmark-id] .font-medium");
   await expect(cards).toHaveText(["꼬집어", "꿈인"]);
 });
@@ -239,15 +266,16 @@ test("go-to-caption button switches from bookmarks to captions tab", async ({
   await createBookmarkAt(host, { index: 0, start: 0, end: 3 });
 
   // Switch to bookmarks tab
-  await panel.getByRole("button", { name: /Bookmarks/ }).click();
+  await panel.getByRole("tab", { name: /Bookmarks/ }).click();
   await expect(host.locator("[data-bookmark-id]").first()).toBeVisible();
 
   // Click go-to-caption
   await host.getByRole("button", { name: "Go to caption" }).first().click();
 
   // Should switch back to captions tab
-  await expect(panel.getByRole("button", { name: "Captions" })).toHaveClass(
-    /font-medium/,
+  await expect(panel.getByRole("tab", { name: "Captions" })).toHaveAttribute(
+    "aria-selected",
+    "true",
   );
   await expect(host.locator("[data-index='0']")).toBeVisible();
 });
@@ -257,7 +285,7 @@ test("delete bookmark from bookmarks tab", async ({ context }) => {
   const panel = host.getByTestId("resizable-panel");
   await createBookmarkAt(host, { index: 0, start: 0, end: 3 });
 
-  await panel.getByRole("button", { name: /Bookmarks/ }).click();
+  await panel.getByRole("tab", { name: /Bookmarks/ }).click();
   await expect(host.locator("[data-bookmark-id]").first()).toBeVisible();
 
   // Open dropdown and delete
@@ -274,7 +302,7 @@ test("delete bookmark from bookmarks tab", async ({ context }) => {
   await expect(host.getByText("No bookmarks yet")).toBeVisible();
 
   // Highlight should be gone from captions
-  await panel.getByRole("button", { name: "Captions" }).click();
+  await panel.getByRole("tab", { name: "Captions" }).click();
   await expect(
     host.locator("[data-index='0'] .bg-highlight-bg"),
   ).not.toBeVisible();
@@ -298,7 +326,7 @@ test("bookmark numbers in popover and bookmarks tab", async ({ context }) => {
   await ytPage.keyboard.press("Escape");
 
   // Bookmark cards are numbered in order
-  await panel.getByRole("button", { name: /Bookmarks/ }).click();
+  await panel.getByRole("tab", { name: /Bookmarks/ }).click();
   const cards = host.locator("[data-bookmark-id]");
   await expect(cards).toHaveCount(3);
   await expect(cards.nth(0)).toContainText("#1꼬집어");
@@ -319,7 +347,7 @@ test("bookmark numbers in popover and bookmarks tab", async ({ context }) => {
   await expect(cards.nth(1)).toContainText("#2아직");
 });
 
-test("popover go-to-bookmark switches to bookmarks tab with flash-highlight", async ({
+test("popover go-to-bookmark switches to bookmarks tab and flashes the card", async ({
   context,
 }) => {
   const { host } = await openPanelWithTracks(context, SEED_YOUTUBE_ID);
@@ -349,18 +377,19 @@ test("popover go-to-bookmark switches to bookmarks tab with flash-highlight", as
   await goToBookmark(0);
 
   // Should switch to bookmarks tab and close the popover
-  await expect(panel.getByRole("button", { name: /Bookmarks/ })).toHaveClass(
-    /font-medium/,
+  await expect(panel.getByRole("tab", { name: /Bookmarks/ })).toHaveAttribute(
+    "aria-selected",
+    "true",
   );
   await expect(host.getByTestId("bookmark-popover")).toHaveCount(0);
 
-  // Bookmark card should be visible with flash-highlight animation
+  // Bookmark card should be visible and flashing
   await expect(cards.nth(0)).toBeVisible();
-  await expect(cards.nth(0)).toHaveClass(/flash-highlight/);
+  await expect(cards.nth(0)).toHaveAttribute("data-flash");
 
-  // Hiding the tab mid-flash must not leave the class to replay later
-  await panel.getByRole("button", { name: /Captions/ }).click();
+  // Hiding the tab mid-flash must not leave the flash to replay later
+  await panel.getByRole("tab", { name: /Captions/ }).click();
   await goToBookmark(2);
-  await expect(cards.nth(1)).toHaveClass(/flash-highlight/);
-  await expect(cards.nth(0)).not.toHaveClass(/flash-highlight/);
+  await expect(cards.nth(1)).toHaveAttribute("data-flash");
+  await expect(cards.nth(0)).not.toHaveAttribute("data-flash");
 });

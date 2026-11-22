@@ -55,7 +55,7 @@ export function VideoViewerPage({ storage }: { storage: CaptionStorage }) {
             throw new Error("Cannot fetch captions in web viewer");
           }}
           videoMeta={videoMeta}
-          useSync={(youtubeId) => useViewerSync({ storage, youtubeId })}
+          useSync={({ youtubeId }) => useViewerSync({ storage, youtubeId })}
         />
       </div>
     </div>

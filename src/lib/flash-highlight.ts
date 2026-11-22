@@ -1,7 +1,7 @@
-// The class comes off once the flash ends or is cancelled. Otherwise hiding
+// The attribute comes off once the flash ends or is cancelled. Otherwise hiding
 // the tab with `display: none` and showing it again replays the flash.
 export function flashHighlight(el: HTMLElement) {
-  el.classList.add("flash-highlight");
+  el.dataset.flash = "";
   const animation = el
     .getAnimations()
     .find(
@@ -11,6 +11,6 @@ export function flashHighlight(el: HTMLElement) {
     return;
   }
   animation.currentTime = 0;
-  const remove = () => el.classList.remove("flash-highlight");
+  const remove = () => delete el.dataset.flash;
   animation.finished.then(remove, remove);
 }

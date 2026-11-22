@@ -164,29 +164,35 @@ function TabBar({
 }) {
   return (
     <div className="flex flex-none items-center gap-1 border-b px-2 py-0.5 lg:py-1">
-      <button
-        className={[
-          "rounded px-2 py-0.5 text-sm",
-          activeTab === "captions"
-            ? "bg-muted font-medium"
-            : "text-muted-foreground hover:bg-muted",
-        ].join(" ")}
-        onClick={() => onSelectTab("captions")}
-      >
-        Captions
-      </button>
-      <button
-        className={[
-          "rounded px-2 py-0.5 text-sm",
-          activeTab === "bookmarks"
-            ? "bg-muted font-medium"
-            : "text-muted-foreground hover:bg-muted",
-        ].join(" ")}
-        onClick={() => onSelectTab("bookmarks")}
-      >
-        Bookmarks
-        {bookmarkCount > 0 && ` (${bookmarkCount})`}
-      </button>
+      <div role="tablist" className="flex gap-1">
+        <button
+          role="tab"
+          aria-selected={activeTab === "captions"}
+          className={[
+            "rounded px-2 py-0.5 text-sm",
+            activeTab === "captions"
+              ? "bg-muted font-medium"
+              : "text-muted-foreground hover:bg-muted",
+          ].join(" ")}
+          onClick={() => onSelectTab("captions")}
+        >
+          Captions
+        </button>
+        <button
+          role="tab"
+          aria-selected={activeTab === "bookmarks"}
+          className={[
+            "rounded px-2 py-0.5 text-sm",
+            activeTab === "bookmarks"
+              ? "bg-muted font-medium"
+              : "text-muted-foreground hover:bg-muted",
+          ].join(" ")}
+          onClick={() => onSelectTab("bookmarks")}
+        >
+          Bookmarks
+          {bookmarkCount > 0 && ` (${bookmarkCount})`}
+        </button>
+      </div>
       <div className="ml-auto flex items-center gap-0.5">
         <div className="flex gap-0.5">
           <button

@@ -69,7 +69,7 @@ function mountOverlay({
           <CaptionOverlay
             storage={storage}
             youtubeId={youtubeId}
-            useSync={(youtubeId) =>
+            useSync={({ youtubeId }) =>
               useExtensionSync({ storage, bgRpc, youtubeId })
             }
           />

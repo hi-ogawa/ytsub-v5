@@ -93,9 +93,15 @@ export type SyncStatus = {
   onPull: (store: CaptionSessionManager) => void;
 };
 
-export type UseSync = (youtubeId: string) => SyncStatus;
+export type UseSync = (options: { youtubeId: string }) => SyncStatus;
 
-export function useVideoIndexEntry(storage: CaptionStorage, youtubeId: string) {
+export function useVideoIndexEntry({
+  storage,
+  youtubeId,
+}: {
+  storage: CaptionStorage;
+  youtubeId: string;
+}) {
   const queryClient = useQueryClient();
   const query = useQuery({
     queryKey: ["video-index-entry", youtubeId],
@@ -127,7 +133,7 @@ export function useSyncState({
   youtubeId: string;
   onNavigate: () => void;
 }): SyncStatus {
-  const entryQuery = useVideoIndexEntry(storage, youtubeId);
+  const entryQuery = useVideoIndexEntry({ storage, youtubeId });
 
   const authQuery = useQuery(orpc.auth.check.queryOptions());
   const authenticated = authQuery.data?.authenticated === true;
