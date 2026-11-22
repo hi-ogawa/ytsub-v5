@@ -52,9 +52,16 @@ export function CaptionPanel({
     return <PanelMessage error>{String(restoreQuery.error)}</PanelMessage>;
   }
 
-  // TODO: better indicator?
+  // Restoring is only the storage read, which usually ends before the message
+  // appears. In the extension, the first read can wait on the storage frame
+  // until it times out, and the message keeps that wait from looking like a
+  // blank, broken panel.
   if (state.restoring) {
-    return null;
+    return (
+      <div className="h-full" data-delayed-reveal>
+        <PanelMessage>Loading…</PanelMessage>
+      </div>
+    );
   }
 
   if (state.session) {
