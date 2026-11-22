@@ -358,17 +358,25 @@ export function parseJson3(data: Json3File): CaptionCue[] {
     let words: CaptionWord[] | undefined;
     if (event.segs.some((s) => s.tOffsetMs != null)) {
       words = [];
-      for (let si = 0; si < event.segs.length; si++) {
-        const seg = event.segs[si];
-        const wordText = (seg.utf8 || "").replace(/\n/g, "").trim();
+      for (
+        let segmentIndex = 0;
+        segmentIndex < event.segs.length;
+        segmentIndex++
+      ) {
+        const segment = event.segs[segmentIndex];
+        const wordText = (segment.utf8 || "").replace(/\n/g, "").trim();
         if (!wordText) {
           continue;
         }
-        const begin = (event.tStartMs + (seg.tOffsetMs ?? 0)) / 1000;
+        const begin = (event.tStartMs + (segment.tOffsetMs ?? 0)) / 1000;
         let end = eventEnd;
-        for (let sj = si + 1; sj < event.segs.length; sj++) {
-          if (event.segs[sj].tOffsetMs != null) {
-            end = (event.tStartMs + event.segs[sj].tOffsetMs!) / 1000;
+        for (
+          let nextIndex = segmentIndex + 1;
+          nextIndex < event.segs.length;
+          nextIndex++
+        ) {
+          if (event.segs[nextIndex].tOffsetMs != null) {
+            end = (event.tStartMs + event.segs[nextIndex].tOffsetMs!) / 1000;
             break;
           }
         }

@@ -74,9 +74,9 @@ export function extractBookmarkSelection(
 export function indexBookmarks(bookmarks: ExtensionBookmark[]) {
   const bookmarksByIndex = new Map<number, ExtensionBookmark[]>();
   const bookmarkNumberById = new Map<string, number>();
-  for (let i = 0; i < bookmarks.length; i++) {
-    const bm = bookmarks[i];
-    bookmarkNumberById.set(bm.id, i + 1);
+  for (let index = 0; index < bookmarks.length; index++) {
+    const bm = bookmarks[index];
+    bookmarkNumberById.set(bm.id, index + 1);
     const list = bookmarksByIndex.get(bm.captionIndex);
     if (list) {
       list.push(bm);

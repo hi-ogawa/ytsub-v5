@@ -12,8 +12,8 @@ function toHex(buf: ArrayBuffer): string {
 
 function fromHex(hex: string): Uint8Array {
   const bytes = new Uint8Array(hex.length / 2);
-  for (let i = 0; i < hex.length; i += 2) {
-    bytes[i / 2] = parseInt(hex.slice(i, i + 2), 16);
+  for (let index = 0; index < hex.length; index += 2) {
+    bytes[index / 2] = parseInt(hex.slice(index, index + 2), 16);
   }
   return bytes;
 }
@@ -65,8 +65,8 @@ export async function verifyPassword(
     return false;
   }
   let result = 0;
-  for (let i = 0; i < expectedHash.length; i++) {
-    result |= expectedHash[i] ^ actualHash[i];
+  for (let index = 0; index < expectedHash.length; index++) {
+    result |= expectedHash[index] ^ actualHash[index];
   }
   return result === 0;
 }

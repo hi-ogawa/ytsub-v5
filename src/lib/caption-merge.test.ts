@@ -161,18 +161,18 @@ function mergeStats(merged: MergedCaption[], enCues: CaptionCue[]) {
 
   // Shared cue2s: how many cue2 indices are claimed by multiple rows
   const cue2Claimants = new Map<number, number>();
-  for (const m of merged) {
-    for (const j of m.cue2Indices) {
-      cue2Claimants.set(j, (cue2Claimants.get(j) ?? 0) + 1);
+  for (const row of merged) {
+    for (const cueIndex of row.cue2Indices) {
+      cue2Claimants.set(cueIndex, (cue2Claimants.get(cueIndex) ?? 0) + 1);
     }
   }
   const sharedCue2s = [...cue2Claimants.values()].filter((c) => c > 1).length;
 
   // Dropped cue2s: not assigned to any row
   const assignedCue2s = new Set<number>();
-  for (const m of merged) {
-    for (const j of m.cue2Indices) {
-      assignedCue2s.add(j);
+  for (const row of merged) {
+    for (const cueIndex of row.cue2Indices) {
+      assignedCue2s.add(cueIndex);
     }
   }
   const droppedCue2s = enCues.length - assignedCue2s.size;
