@@ -36,20 +36,20 @@ export function mergeStrict(
   if (cues1.length !== cues2.length) {
     return undefined;
   }
-  for (let i = 0; i < cues1.length; i++) {
-    if (Math.abs(cues1[i].begin - cues2[i].begin) > tolerance) {
+  for (let index = 0; index < cues1.length; index++) {
+    if (Math.abs(cues1[index].begin - cues2[index].begin) > tolerance) {
       return undefined;
     }
   }
-  return cues1.map((c1, i) => ({
+  return cues1.map((cue1, i) => ({
     idx: i,
-    begin: c1.begin,
-    end: c1.end,
-    text1: c1.text,
+    begin: cue1.begin,
+    end: cue1.end,
+    text1: cue1.text,
     text2: cues2[i].text,
     cue1Indices: [i],
     cue2Indices: [i],
-    text1Segments: [c1.text],
+    text1Segments: [cue1.text],
     text2Segments: [cues2[i].text],
   }));
 }
@@ -78,40 +78,47 @@ export function mergePartition(
   const followers = cue1Drives ? cues2 : cues1;
 
   // Assign each follower to the driver whose midpoint is closest
-  const driverMids = drivers.map((c) => (c.begin + c.end) / 2);
+  const driverMidpoints = drivers.map((c) => (c.begin + c.end) / 2);
   const assignments = new Map<number, number[]>();
 
-  for (let f = 0; f < followers.length; f++) {
-    const fMid = (followers[f].begin + followers[f].end) / 2;
-    let bestD = 0;
-    let bestDist = Math.abs(fMid - driverMids[0]);
-    for (let d = 1; d < drivers.length; d++) {
-      const dist = Math.abs(fMid - driverMids[d]);
-      if (dist < bestDist) {
-        bestDist = dist;
-        bestD = d;
+  for (
+    let followerIndex = 0;
+    followerIndex < followers.length;
+    followerIndex++
+  ) {
+    const followerMidpoint =
+      (followers[followerIndex].begin + followers[followerIndex].end) / 2;
+    let bestDriverIndex = 0;
+    let bestDistance = Math.abs(followerMidpoint - driverMidpoints[0]);
+    for (let driverIndex = 1; driverIndex < drivers.length; driverIndex++) {
+      const distance = Math.abs(
+        followerMidpoint - driverMidpoints[driverIndex],
+      );
+      if (distance < bestDistance) {
+        bestDistance = distance;
+        bestDriverIndex = driverIndex;
       }
     }
-    if (!assignments.has(bestD)) {
-      assignments.set(bestD, []);
+    if (!assignments.has(bestDriverIndex)) {
+      assignments.set(bestDriverIndex, []);
     }
-    assignments.get(bestD)!.push(f);
+    assignments.get(bestDriverIndex)!.push(followerIndex);
   }
 
-  return drivers.map((drv, d) => {
-    const assigned = assignments.get(d) ?? [];
+  return drivers.map((driver, driverIndex) => {
+    const assigned = assignments.get(driverIndex) ?? [];
     const followerSegments = assigned.map((f) => followers[f].text);
     const followerText = followerSegments.join(" ");
     return {
-      idx: d,
-      begin: drv.begin,
-      end: drv.end,
-      text1: cue1Drives ? drv.text : followerText,
-      text2: cue1Drives ? followerText : drv.text,
-      cue1Indices: cue1Drives ? [d] : assigned,
-      cue2Indices: cue1Drives ? assigned : [d],
-      text1Segments: cue1Drives ? [drv.text] : followerSegments,
-      text2Segments: cue1Drives ? followerSegments : [drv.text],
+      idx: driverIndex,
+      begin: driver.begin,
+      end: driver.end,
+      text1: cue1Drives ? driver.text : followerText,
+      text2: cue1Drives ? followerText : driver.text,
+      cue1Indices: cue1Drives ? [driverIndex] : assigned,
+      cue2Indices: cue1Drives ? assigned : [driverIndex],
+      text1Segments: cue1Drives ? [driver.text] : followerSegments,
+      text2Segments: cue1Drives ? followerSegments : [driver.text],
     };
   });
 }

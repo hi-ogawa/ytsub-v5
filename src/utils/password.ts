@@ -4,16 +4,16 @@ const PBKDF2_ITERATIONS = 100_000;
 const SALT_BYTES = 16;
 const HASH_BYTES = 32;
 
-function toHex(buf: ArrayBuffer): string {
-  return [...new Uint8Array(buf)]
+function toHex(buffer: ArrayBuffer): string {
+  return [...new Uint8Array(buffer)]
     .map((b) => b.toString(16).padStart(2, "0"))
     .join("");
 }
 
 function fromHex(hex: string): Uint8Array {
   const bytes = new Uint8Array(hex.length / 2);
-  for (let i = 0; i < hex.length; i += 2) {
-    bytes[i / 2] = parseInt(hex.slice(i, i + 2), 16);
+  for (let index = 0; index < hex.length; index += 2) {
+    bytes[index / 2] = parseInt(hex.slice(index, index + 2), 16);
   }
   return bytes;
 }
@@ -54,19 +54,21 @@ export async function verifyPassword(
   password: string,
   stored: string,
 ): Promise<boolean> {
-  const sep = stored.indexOf(":");
-  if (sep === -1) {
+  const separatorIndex = stored.indexOf(":");
+  if (separatorIndex === -1) {
     return false;
   }
-  const salt = fromHex(stored.slice(0, sep)) as Uint8Array<ArrayBuffer>;
-  const expectedHash = fromHex(stored.slice(sep + 1));
+  const salt = fromHex(
+    stored.slice(0, separatorIndex),
+  ) as Uint8Array<ArrayBuffer>;
+  const expectedHash = fromHex(stored.slice(separatorIndex + 1));
   const actualHash = new Uint8Array<ArrayBuffer>(await pbkdf2(password, salt));
   if (expectedHash.length !== actualHash.length) {
     return false;
   }
   let result = 0;
-  for (let i = 0; i < expectedHash.length; i++) {
-    result |= expectedHash[i] ^ actualHash[i];
+  for (let index = 0; index < expectedHash.length; index++) {
+    result |= expectedHash[index] ^ actualHash[index];
   }
   return result === 0;
 }

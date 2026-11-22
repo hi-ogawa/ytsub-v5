@@ -36,8 +36,8 @@ interface ImportData {
   }[];
 }
 
-function esc(s: string): string {
-  return s.replace(/'/g, "''");
+function esc(value: string): string {
+  return value.replace(/'/g, "''");
 }
 
 function toSql(data: ImportData): string {
@@ -63,12 +63,12 @@ function toSql(data: ImportData): string {
     );
   }
 
-  for (const b of bookmarks) {
-    const cue = captions[b.captionIdx];
+  for (const bookmark of bookmarks) {
+    const cue = captions[bookmark.captionIdx];
     lines.push(
       `INSERT INTO bookmarks (video_id, caption_id, text, side, offset, translation, context, timestamp, etymology, notes)`,
-      `SELECT v.id, c.id, '${esc(b.text)}', ${b.side}, ${b.offset}, '${esc(b.translation)}', '${esc(b.context)}', ${cue.begin}, '${esc(b.etymology ?? "")}', '${esc(b.notes ?? "")}'`,
-      `  FROM videos v JOIN captions c ON c.video_id = v.id AND c.idx = ${b.captionIdx}`,
+      `SELECT v.id, c.id, '${esc(bookmark.text)}', ${bookmark.side}, ${bookmark.offset}, '${esc(bookmark.translation)}', '${esc(bookmark.context)}', ${cue.begin}, '${esc(bookmark.etymology ?? "")}', '${esc(bookmark.notes ?? "")}'`,
+      `  FROM videos v JOIN captions c ON c.video_id = v.id AND c.idx = ${bookmark.captionIdx}`,
       `  WHERE v.youtube_id = '${esc(id)}';`,
       "",
     );
