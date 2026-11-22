@@ -18,13 +18,12 @@ const traceEnabled =
   process.env.E2E_TRACE === "1" ||
   (!process.env.CI && process.env.E2E_TRACE !== "0");
 
-// These specs never touch the database, so their tests run in parallel. The
-// other specs share one local D1 database that setupDb() clears, so the db
-// project runs them one at a time.
-const noDbSpecs = [
-  "e2e/ext/caption-panel.spec.ts",
-  "e2e/ext/caption-panel-bookmarks.spec.ts",
-  "e2e/ext/caption-panel-ai-prompts.spec.ts",
+// The web app specs and these extension specs share one local D1 database that
+// setupDb() clears, so the db project runs them one at a time. The other
+// extension specs never touch the database, so their tests run in parallel.
+const dbExtSpecs = [
+  "e2e/ext/bookmarks-page.spec.ts",
+  "e2e/ext/caption-panel-sync.spec.ts",
 ];
 
 export default defineConfig({
@@ -64,13 +63,13 @@ export default defineConfig({
     {
       name: "db",
       testDir: "./e2e",
-      testIgnore: ["e2e/youtube/**", ...noDbSpecs],
+      testMatch: ["e2e/*.spec.ts", ...dbExtSpecs],
       workers: 1,
     },
     {
       name: "no-db",
-      testDir: "./e2e",
-      testMatch: noDbSpecs,
+      testDir: "./e2e/ext",
+      testIgnore: dbExtSpecs,
       fullyParallel: true,
     },
   ],

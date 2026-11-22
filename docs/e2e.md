@@ -10,13 +10,13 @@ E2E_SERVER=dev pnpm test-e2e           # against the dev server
 pnpm test-youtube                      # real YouTube pages
 ```
 
-`pnpm test-e2e` builds the extension into `dist/extension/`, then runs Playwright. Playwright builds the web app and serves it with `vite preview`, so the tests run the worker that ships. Set `E2E_SERVER=dev` to serve the web app with `pnpm dev` instead, which skips the web app build. Both servers persist local state to `.wrangler/state/e2e`, separate from the dev database. The `db` project runs one test at a time, because its tests share that state and `setupDb()` clears it. The `no-db` project lists the extension specs that never call `setupDb()` and runs their tests in parallel alongside the `db` project, which shortens the run. `setupDb()` throws outside the `db` project, so a spec that needs the database fails until it is moved out of the `no-db` list.
+`pnpm test-e2e` builds the extension into `dist/extension/`, then runs Playwright. Playwright builds the web app and serves it with `vite preview`, so the tests run the worker that ships. Set `E2E_SERVER=dev` to serve the web app with `pnpm dev` instead, which skips the web app build. Both servers persist local state to `.wrangler/state/e2e`, separate from the dev database. The `db` project holds the web app specs and the extension specs listed in `dbExtSpecs`, and runs one test at a time, because its tests share that state and `setupDb()` clears it. The `no-db` project holds the other extension specs and runs their tests in parallel alongside the `db` project, which shortens the run. `setupDb()` throws outside the `db` project, so an extension spec that needs the database fails until it is added to `dbExtSpecs` in `playwright.config.ts`.
 
 ## Choose Between the Extension and the Web App
 
 [Architecture overview](architecture.md#share-one-ui-across-the-extension-and-the-web-app) lists what each surface can do, which decides where a test can run.
 
-Test the caption panel and the bookmarks page in the extension tests, `e2e/ext`, because desktop users run them there and bookmarks are created there. These tests need no login or server state unless they sync, so add a new spec that doesn't sync to the `noDbSpecs` list in `playwright.config.ts`.
+Test the caption panel and the bookmarks page in the extension tests, `e2e/ext`, because desktop users run them there and bookmarks are created there. These tests need no login or server state unless they sync.
 
 Test the web app for what only it does: login and registration, the server APIs, importing, and the viewer for pulled videos that phones use. These tests need a user in the database. Call `setupDb({ seed: true })` and then `login(page)`, because login needs the seed user. `setupDb()` writes to SQLite directly and takes about 0.15s. The web viewer shows only pulled videos, so `openPulledVideo(page, youtubeId)` logs in, pulls a seed video, and opens it.
 
