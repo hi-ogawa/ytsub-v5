@@ -3,8 +3,12 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { MemoryRouter } from "react-router";
 import { Toaster } from "sonner";
+import { CaptionStorageProvider } from "../components/caption-storage-context.ts";
 import { idbCaptionStorage } from "../lib/caption-storage-idb.ts";
-import { initCaptionStorage, loadVideoIndex } from "../lib/caption-storage.ts";
+import {
+  loadVideoIndex,
+  updateVideoIndexStore,
+} from "../lib/caption-storage.ts";
 import { createAppQueryClient } from "../lib/query-client.ts";
 import { setRpcConfig } from "../lib/rpc-client.ts";
 import { ExtensionBookmarksPage } from "./components/bookmarks-page.tsx";
@@ -19,8 +23,9 @@ const queryClient = createAppQueryClient({
 });
 
 async function main() {
-  initCaptionStorage(idbCaptionStorage);
-  await loadVideoIndex();
+  const storage = idbCaptionStorage;
+  storage.subscribe(updateVideoIndexStore);
+  await loadVideoIndex(storage);
   const serverUrl = await getServerUrl();
 
   // Configure RPC to use extension server URL + bearer token auth
@@ -43,10 +48,12 @@ async function main() {
     <StrictMode>
       <MemoryRouter>
         <QueryClientProvider client={queryClient}>
-          <ExtensionBookmarksPage
-            serverUrl={serverUrl}
-            isDevelopment={__DEV_EXT__}
-          />
+          <CaptionStorageProvider value={storage}>
+            <ExtensionBookmarksPage
+              serverUrl={serverUrl}
+              isDevelopment={__DEV_EXT__}
+            />
+          </CaptionStorageProvider>
           <Toaster position="top-right" richColors />
         </QueryClientProvider>
       </MemoryRouter>

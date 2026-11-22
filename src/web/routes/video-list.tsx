@@ -1,7 +1,8 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { ExternalLink } from "lucide-react";
 import { BookmarksPage } from "../../components/bookmarks-page.tsx";
-import { captionStorage, videoIndexStore } from "../../lib/caption-storage.ts";
+import { useCaptionStorage } from "../../components/caption-storage-context.ts";
+import { videoIndexStore } from "../../lib/caption-storage.ts";
 import { orpc } from "../../lib/rpc-client.ts";
 import { useVideoSync, type VideoSyncEntry } from "../../lib/sync.ts";
 
@@ -33,6 +34,7 @@ function WebAppEmptyState() {
 }
 
 export function VideoListPage() {
+  const storage = useCaptionStorage();
   const [entries] = videoIndexStore.useValue("entries");
   const sync = useVideoSync();
   const queryClient = useQueryClient();
@@ -51,7 +53,7 @@ export function VideoListPage() {
     if (entry.serverId) {
       deleteMutation.mutate({ id: entry.serverId });
     }
-    await captionStorage.deleteVideo(entry.youtubeId);
+    await storage.deleteVideo(entry.youtubeId);
   }
 
   return (

@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
 import { importExportData } from "../lib/caption-session.ts";
+import { useCaptionStorage } from "./caption-storage-context.ts";
 import { Dialog, DialogContent, DialogTitle } from "./ui/dialog.tsx";
 
 interface ImportData {
@@ -15,6 +16,7 @@ export function ImportDialog({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
+  const storage = useCaptionStorage();
   const fileRef = useRef<HTMLInputElement>(null);
   const [parsed, setParsed] = useState<ImportData>();
   const [parseError, setParseError] = useState("");
@@ -48,7 +50,10 @@ export function ImportDialog({
     setImporting(true);
     setImportError("");
     try {
-      await importExportData(parsed as Parameters<typeof importExportData>[0]);
+      await importExportData(
+        storage,
+        parsed as Parameters<typeof importExportData>[1],
+      );
       onOpenChange(false);
       setParsed(undefined);
     } catch (e) {

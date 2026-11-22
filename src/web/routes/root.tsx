@@ -14,6 +14,7 @@ import {
   useLoaderData,
   useRouteLoaderData,
 } from "react-router";
+import { useCaptionStorage } from "../../components/caption-storage-context.ts";
 import { ImportDialog } from "../../components/import-dialog.tsx";
 import { LoginDialog } from "../../components/login-dialog.tsx";
 import {
@@ -236,6 +237,7 @@ function HeaderMenu({ authenticated }: { authenticated: boolean }) {
 }
 
 function DevMenuItems() {
+  const storage = useCaptionStorage();
   return (
     <>
       <DropdownMenuItem
@@ -243,7 +245,7 @@ function DevMenuItems() {
         onSelect={async () => {
           const { bootstrapFixtures } =
             await import("../../lib/dev-fixtures.ts");
-          await bootstrapFixtures();
+          await bootstrapFixtures(storage);
         }}
         className="gap-2"
       >

@@ -1,10 +1,11 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
+import { CaptionStorageProvider } from "../components/caption-storage-context.ts";
 import { PortalContainerProvider } from "../components/ui/portal-container.tsx";
-import { initCaptionStorage } from "../lib/caption-storage.ts";
+import type { CaptionStorage } from "../lib/caption-storage.ts";
 import { createShadowHost } from "../utils/shadow-root.ts";
-import type { bgRpcHandlers } from "./background.ts";
+import type { BgRpcHandlers } from "./background.ts";
 import { CaptionOverlay } from "./components/caption-overlay.tsx";
 import { useExtensionSync } from "./components/use-extension-sync.ts";
 import contentCss from "./content.css?inline";
@@ -26,16 +27,24 @@ const queryClient = new QueryClient({
   },
 });
 
-const bgRpc = createRuntimeRelayRpc<typeof bgRpcHandlers>();
+const bgRpc = createRuntimeRelayRpc<BgRpcHandlers>();
 
 function main() {
   console.log(`[zamak] build: ${__BUILD_TIME__} (${__GIT_REV__})`);
-  initCaptionStorage(createBridgeStorage());
+  const storage = createBridgeStorage();
 
-  subscribeWatchPage({ onEnter: mountOverlay });
+  subscribeWatchPage({
+    onEnter: (videoId) => mountOverlay({ storage, videoId }),
+  });
 }
 
-function mountOverlay(videoId: string) {
+function mountOverlay({
+  storage,
+  videoId,
+}: {
+  storage: CaptionStorage;
+  videoId: string;
+}) {
   const { host, container } = createShadowHost({
     id: "zamak-host",
     css: contentCss,
@@ -58,10 +67,12 @@ function mountOverlay(videoId: string) {
     <StrictMode>
       <PortalContainerProvider value={container}>
         <QueryClientProvider client={queryClient}>
-          <CaptionOverlay
-            videoId={videoId}
-            useSync={(youtubeId) => useExtensionSync({ bgRpc, youtubeId })}
-          />
+          <CaptionStorageProvider value={storage}>
+            <CaptionOverlay
+              videoId={videoId}
+              useSync={(youtubeId) => useExtensionSync({ bgRpc, youtubeId })}
+            />
+          </CaptionStorageProvider>
         </QueryClientProvider>
       </PortalContainerProvider>
     </StrictMode>,

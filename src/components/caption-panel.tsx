@@ -8,7 +8,6 @@ import {
   getInitialTracks,
   saveSelectedTracks,
 } from "../lib/caption-session.ts";
-import { captionStorage } from "../lib/caption-storage.ts";
 import type { UseSync } from "../lib/sync.ts";
 import {
   type Json3File,
@@ -17,6 +16,7 @@ import {
   langFromVssId,
 } from "../lib/youtube.ts";
 import { CaptionPanelContent } from "./caption-panel-content.tsx";
+import { useCaptionStorage } from "./caption-storage-context.ts";
 import {
   SettingsDropdown,
   SettingsDropdownSkeleton,
@@ -36,6 +36,7 @@ type CaptionPanelProps = {
 
 export function CaptionPanel(props: CaptionPanelProps) {
   const { youtubeId } = props.videoMeta;
+  const storage = useCaptionStorage();
 
   // Restore last session
   // - always fetch on mount
@@ -44,11 +45,12 @@ export function CaptionPanel(props: CaptionPanelProps) {
   const initialStoreQuery = useQuery({
     queryKey: ["caption-session", youtubeId],
     queryFn: async () => {
-      const session = await captionStorage.getSession(youtubeId);
+      const session = await storage.getSession(youtubeId);
       if (!session) {
         return null;
       }
       return new CaptionSessionManager({
+        storage,
         videoMeta: props.videoMeta,
         vssId1: session.vssId1,
         vssId2: session.vssId2,
@@ -170,6 +172,7 @@ function CaptionPanelLoading({
   onSelectTracks: (v1?: string, v2?: string) => void;
   setStore: (store: CaptionSessionManager) => void;
 }) {
+  const storage = useCaptionStorage();
   const queryClient = useQueryClient();
   const storeQuery = useQuery({
     queryKey: [
@@ -181,6 +184,7 @@ function CaptionPanelLoading({
     ],
     queryFn: () => {
       return buildCaptionSession({
+        storage,
         track1: track1!,
         track2: track2!,
         videoMeta,

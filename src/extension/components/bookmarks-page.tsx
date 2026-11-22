@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { BookmarksPage } from "../../components/bookmarks-page.tsx";
+import { useCaptionStorage } from "../../components/caption-storage-context.ts";
 import { LoginDialog } from "../../components/login-dialog.tsx";
 import {
   Dialog,
@@ -20,7 +21,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "../../components/ui/dropdown-menu.tsx";
-import { captionStorage, videoIndexStore } from "../../lib/caption-storage.ts";
+import { videoIndexStore } from "../../lib/caption-storage.ts";
 import { orpc } from "../../lib/rpc-client.ts";
 import { type VideoSyncEntry, useVideoSync } from "../../lib/sync.ts";
 import { useTheme } from "../../lib/theme.ts";
@@ -33,6 +34,7 @@ export function ExtensionBookmarksPage({
   serverUrl: string;
   isDevelopment: boolean;
 }) {
+  const storage = useCaptionStorage();
   const [entries] = videoIndexStore.useValue("entries");
   const usernameQuery = useQuery(
     chromeStorage.queryOptions<string>("username"),
@@ -51,7 +53,7 @@ export function ExtensionBookmarksPage({
     if (entry.serverId) {
       deleteMutation.mutate({ id: entry.serverId });
     }
-    await captionStorage.deleteVideo(entry.youtubeId);
+    await storage.deleteVideo(entry.youtubeId);
   }
 
   const handleLogout = async () => {
