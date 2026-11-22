@@ -13,6 +13,7 @@ import type {
   CaptionSession,
 } from "../lib/caption-panel-runtime.ts";
 import { downloadText } from "../utils/download-text.ts";
+import { useStoreSelector } from "./use-store-value.ts";
 
 export function AiPromptCopy({
   runtime,
@@ -23,7 +24,8 @@ export function AiPromptCopy({
 }) {
   const [selected, setSelected] = useState<AiTask>(AI_TASKS[0].task);
   const [copied, setCopied] = useState(false);
-  const { youtubeId, title } = runtime.videoMeta;
+  const { youtubeId, title } = session.video;
+  const tracks = useStoreSelector(runtime.store, (s) => s.tracks);
 
   function getPrompt(task: AiTask) {
     return makeAiPrompt(task, {
@@ -31,7 +33,7 @@ export function AiPromptCopy({
       title,
       rows: session.rows,
       bookmarks: session.bookmarks,
-      tracks: runtime.tracks,
+      tracks,
       vssId1: session.vssId1,
       vssId2: session.vssId2,
     });

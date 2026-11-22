@@ -65,7 +65,7 @@ export function SettingsDropdown({
         <DropdownMenuItem
           onClick={() => {
             downloadText({
-              filename: `import-${runtime.videoMeta.youtubeId}.json`,
+              filename: `import-${runtime.youtubeId}.json`,
               text: JSON.stringify(runtime.toExportData(), null, 2),
               type: "application/json",
             });

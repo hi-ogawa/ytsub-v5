@@ -12,11 +12,19 @@ import type { ExtensionBookmark } from "./extension-bookmarks.ts";
 import {
   type Json3File,
   type YouTubeCaptionTrack,
+  type YouTubeExtractionResult,
   type YouTubeVideoData,
   langFromVssId,
 } from "./youtube.ts";
 
+/** Where a new session's captions come from */
+export interface CaptionTrackSource {
+  fetchTracks(): Promise<YouTubeExtractionResult>;
+  fetchJson3(track: YouTubeCaptionTrack): Promise<Json3File>;
+}
+
 export interface CaptionSession {
+  video: YouTubeVideoData;
   vssId1: string;
   vssId2: string;
   rows: MergedCaption[];
@@ -27,6 +35,12 @@ interface CaptionPanelState {
   /** True until the saved session has been read from storage */
   restoring: boolean;
   session?: CaptionSession;
+  /** The video's caption tracks, empty until they load */
+  tracks: YouTubeCaptionTrack[];
+  /** The video as the track source describes it, for a new session */
+  video?: YouTubeVideoData;
+  loadingTracks: boolean;
+  tracksError?: unknown;
   /** Tracks picked for a session that isn't built yet */
   selectedVssId1?: string;
   selectedVssId2?: string;
@@ -43,22 +57,25 @@ interface CaptionPanelState {
  * captions and bookmarks, building it from caption tracks, and following the
  * player.
  *
+ * The saved session needs nothing from YouTube, so it shows whether or not the
+ * tracks load. Without a track source, as in the web app, the runtime only
+ * shows the saved session.
+ *
  * Read state from `store`, and change it only through the methods, because
  * they also save the session.
  */
 export class CaptionPanelRuntime {
   readonly store = createStore<CaptionPanelState>({
     restoring: true,
+    tracks: [],
+    loadingTracks: false,
     building: false,
     isPlaying: false,
   });
 
   readonly storage: CaptionStorage;
-  readonly videoMeta: YouTubeVideoData;
-  readonly tracks: YouTubeCaptionTrack[];
-  private readonly fetchJson3: (
-    track: YouTubeCaptionTrack,
-  ) => Promise<Json3File>;
+  readonly youtubeId: string;
+  readonly trackSource?: CaptionTrackSource;
   private restorePromise?: Promise<void>;
   // Each build takes the next id, so a build that finishes after the tracks
   // changed again is dropped.
@@ -66,14 +83,12 @@ export class CaptionPanelRuntime {
 
   constructor(options: {
     storage: CaptionStorage;
-    videoMeta: YouTubeVideoData;
-    tracks: YouTubeCaptionTrack[];
-    fetchJson3: (track: YouTubeCaptionTrack) => Promise<Json3File>;
+    youtubeId: string;
+    trackSource?: CaptionTrackSource;
   }) {
     this.storage = options.storage;
-    this.videoMeta = options.videoMeta;
-    this.tracks = options.tracks;
-    this.fetchJson3 = options.fetchJson3;
+    this.youtubeId = options.youtubeId;
+    this.trackSource = options.trackSource;
   }
 
   /**
@@ -86,12 +101,19 @@ export class CaptionPanelRuntime {
   }
 
   private async restoreSession(): Promise<void> {
-    const { youtubeId } = this.videoMeta;
-    const saved = await this.storage.getSession(youtubeId);
+    const tracksLoaded = this.loadTracks();
+    const saved = await this.storage.getSession(this.youtubeId);
     if (saved) {
       this.store.update({
         restoring: false,
         session: {
+          video: {
+            youtubeId: saved.youtubeId,
+            title: saved.title,
+            channelName: saved.channelName,
+            channelId: saved.channelId,
+            duration: saved.duration,
+          },
           vssId1: saved.vssId1,
           vssId2: saved.vssId2,
           rows: saved.captions,
@@ -101,7 +123,28 @@ export class CaptionPanelRuntime {
       return;
     }
     this.store.update({ restoring: false });
-    await this.buildSession(getInitialTracks(this.tracks, youtubeId));
+    if (await tracksLoaded) {
+      await this.buildSession(
+        getInitialTracks(this.store.get().tracks, this.youtubeId),
+      );
+    }
+  }
+
+  // Resolves whether the tracks loaded. A failure stays in `tracksError`
+  // instead of rejecting, so it never hides a saved session.
+  private async loadTracks(): Promise<boolean> {
+    if (!this.trackSource) {
+      return false;
+    }
+    this.store.update({ loadingTracks: true });
+    try {
+      const { video, captionTracks } = await this.trackSource.fetchTracks();
+      this.store.update({ loadingTracks: false, video, tracks: captionTracks });
+      return true;
+    } catch (error) {
+      this.store.update({ loadingTracks: false, tracksError: error });
+      return false;
+    }
   }
 
   getSession(): CaptionSession {
@@ -122,10 +165,10 @@ export class CaptionPanelRuntime {
     const { vssId1, vssId2 } = selection;
     if (vssId1 && vssId2) {
       saveSelectedTracks({
-        tracks: this.tracks,
+        tracks: this.store.get().tracks,
         vssId1,
         vssId2,
-        youtubeId: this.videoMeta.youtubeId,
+        youtubeId: this.youtubeId,
       });
     }
     this.store.update({
@@ -141,23 +184,26 @@ export class CaptionPanelRuntime {
     vssId2?: string;
   }): Promise<void> {
     const buildId = ++this.lastBuildId;
-    const track1 = this.tracks.find((t) => t.vssId === selection.vssId1);
-    const track2 = this.tracks.find((t) => t.vssId === selection.vssId2);
+    const { tracks, video } = this.store.get();
+    const track1 = tracks.find((t) => t.vssId === selection.vssId1);
+    const track2 = tracks.find((t) => t.vssId === selection.vssId2);
     this.store.update({
       selectedVssId1: track1?.vssId,
       selectedVssId2: track2?.vssId,
       building: !!track1 && !!track2,
       buildError: undefined,
     });
-    if (!track1 || !track2) {
+    // Tracks exist only once the source has loaded them with the video.
+    if (!track1 || !track2 || !this.trackSource || !video) {
       return;
     }
     try {
       const [json3_1, json3_2] = await Promise.all([
-        this.fetchJson3(track1),
-        this.fetchJson3(track2),
+        this.trackSource.fetchJson3(track1),
+        this.trackSource.fetchJson3(track2),
       ]);
       const session: CaptionSession = {
+        video,
         vssId1: track1.vssId,
         vssId2: track2.vssId,
         rows: mergeCaptions(
@@ -240,7 +286,7 @@ export class CaptionPanelRuntime {
   toExportData(): ExportData {
     const session = this.getSession();
     return sessionToExportData({
-      ...this.videoMeta,
+      ...session.video,
       language1: langFromVssId(session.vssId1),
       language2: langFromVssId(session.vssId2),
       vssId1: session.vssId1,
@@ -257,14 +303,8 @@ export class CaptionPanelRuntime {
   }
 
   private async saveSession(session: CaptionSession): Promise<void> {
-    const { youtubeId, title, channelName, channelId, duration } =
-      this.videoMeta;
     await this.storage.saveSession({
-      youtubeId,
-      title,
-      channelName,
-      channelId,
-      duration,
+      ...session.video,
       vssId1: session.vssId1,
       vssId2: session.vssId2,
       language1: langFromVssId(session.vssId1),

@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import {
   CaptionPanelFab,
@@ -6,10 +6,9 @@ import {
 } from "../../components/caption-panel-fab.tsx";
 import { CaptionPanel } from "../../components/caption-panel.tsx";
 import { ResizablePanel } from "../../components/resizable-panel.tsx";
-import type { YTPlayer } from "../../components/youtube-player.tsx";
+import { CaptionPanelRuntime } from "../../lib/caption-panel-runtime.ts";
 import type { CaptionStorage } from "../../lib/caption-storage.ts";
 import type { UseSync } from "../../lib/sync.ts";
-import type { YouTubeExtractionResult } from "../../lib/youtube.ts";
 import { fetchPlayerApi, fetchTrackJson3 } from "../../lib/youtube.ts";
 import { getVideoPlayer } from "../lib/youtube-page.ts";
 
@@ -58,65 +57,27 @@ function ExtensionViewer({
   youtubeId: string;
   useSync: UseSync;
 }) {
+  const queryClient = useQueryClient();
   const [player] = useState(() => getVideoPlayer());
-
-  const metadataQuery = useQuery({
-    queryKey: ["extension-metadata", youtubeId],
-    queryFn: () => fetchPlayerApi({ youtubeId, userLangs: getUserLangs() }),
-  });
-  const { data, isLoading, error } = metadataQuery;
-
-  if (isLoading) {
-    return (
-      <div className="flex h-full items-center justify-center text-sm text-neutral-500">
-        Loading subtitles…
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="flex h-full items-center justify-center text-sm text-red-500">
-        {String(error)}
-      </div>
-    );
-  }
-
-  return (
-    <div className="flex h-full flex-col">
-      {data && (
-        <ExtensionSession
-          storage={storage}
-          data={data}
-          player={player}
-          useSync={useSync}
-        />
-      )}
-    </div>
+  const [runtime] = useState(
+    () =>
+      new CaptionPanelRuntime({
+        storage,
+        youtubeId,
+        trackSource: {
+          fetchTracks: () =>
+            fetchPlayerApi({ youtubeId, userLangs: getUserLangs() }),
+          fetchJson3: (track) =>
+            queryClient.fetchQuery({
+              queryKey: ["json3", youtubeId, track.vssId],
+              queryFn: () => fetchTrackJson3(track.baseUrl),
+              retry: 3,
+            }),
+        },
+      }),
   );
-}
 
-function ExtensionSession({
-  storage,
-  data,
-  player,
-  useSync,
-}: {
-  storage: CaptionStorage;
-  data: YouTubeExtractionResult;
-  player?: YTPlayer;
-  useSync: UseSync;
-}) {
-  return (
-    <CaptionPanel
-      storage={storage}
-      tracks={data.captionTracks}
-      player={player}
-      fetchJson3={(track) => fetchTrackJson3(track.baseUrl)}
-      videoMeta={data.video}
-      useSync={useSync}
-    />
-  );
+  return <CaptionPanel runtime={runtime} player={player} useSync={useSync} />;
 }
 
 function getUserLangs(): string[] {

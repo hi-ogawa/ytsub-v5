@@ -160,3 +160,30 @@ test("panel left edge can be dragged to resize", async ({ context }) => {
 async function getWidth(locator: Locator) {
   return (await locator.boundingBox())!.width;
 }
+
+test("saved captions show when YouTube refuses the player API request", async ({
+  context,
+}) => {
+  const { ytPage, host } = await openPanelWithTracks(context, SEED_YOUTUBE_ID);
+  await context.route("https://www.youtube.com/youtubei/v1/player", (route) =>
+    route.fulfill({
+      json: {
+        playabilityStatus: {
+          status: "LOGIN_REQUIRED",
+          reason: "Sign in to confirm you're not a bot",
+        },
+      },
+    }),
+  );
+
+  await ytPage.reload();
+  await expect(host.locator("[data-index='0']")).toBeVisible();
+  await expect(host.getByTestId("tracks-error")).toContainText(
+    "LOGIN_REQUIRED (Sign in to confirm you're not a bot)",
+  );
+
+  // A video with nothing saved has only the error to show
+  await ytPage.goto(`https://www.youtube.com/watch?v=${OTHER_YOUTUBE_ID}`);
+  await host.getByTestId("caption-fab").click();
+  await expect(host.getByText("LOGIN_REQUIRED")).toBeVisible();
+});
