@@ -101,6 +101,7 @@ test("detects pull after push and a remote update", async ({
     end: 3,
   });
 
+  await page.bringToFront();
   await page.reload();
   const badge = page
     .getByTestId(`video-card-${SEED_VIDEO_ID}`)
