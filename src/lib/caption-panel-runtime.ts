@@ -1,5 +1,4 @@
 import type { YTPlayer } from "../components/youtube-player.tsx";
-import { runSteps } from "../utils/run-steps.ts";
 import { createStore } from "../utils/store.ts";
 import { type MergedCaption, mergeCaptions } from "./caption-merge.ts";
 import {
@@ -202,32 +201,28 @@ export class CaptionPanelRuntime {
     if (!track1 || !track2 || !this.trackSource || !video) {
       return;
     }
-    const { trackSource } = this;
+    const { signal } = controller;
     try {
-      const session = await runSteps(controller.signal, [
-        () =>
-          Promise.all([
-            trackSource.fetchJson3(track1),
-            trackSource.fetchJson3(track2),
-          ]),
-        async ([json3_1, json3_2]) => {
-          const session: CaptionSession = {
-            video,
-            vssId1: track1.vssId,
-            vssId2: track2.vssId,
-            rows: mergeCaptions(
-              { json3: json3_1, vssId: track1.vssId },
-              { json3: json3_2, vssId: track2.vssId },
-            ),
-            bookmarks: [],
-          };
-          await this.saveSession(session);
-          return session;
-        },
+      const [json3_1, json3_2] = await Promise.all([
+        this.trackSource.fetchJson3(track1),
+        this.trackSource.fetchJson3(track2),
       ]);
+      signal.throwIfAborted();
+      const session: CaptionSession = {
+        video,
+        vssId1: track1.vssId,
+        vssId2: track2.vssId,
+        rows: mergeCaptions(
+          { json3: json3_1, vssId: track1.vssId },
+          { json3: json3_2, vssId: track2.vssId },
+        ),
+        bookmarks: [],
+      };
+      await this.saveSession(session);
+      signal.throwIfAborted();
       this.store.update({ session, building: false });
     } catch (error) {
-      if (!controller.signal.aborted) {
+      if (!signal.aborted) {
         this.store.update({ building: false, buildError: error });
       }
     }
