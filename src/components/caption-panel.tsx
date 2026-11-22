@@ -28,7 +28,10 @@ export function CaptionPanel({
 }) {
   const restoreQuery = useQuery({
     queryKey: ["caption-panel-restore", runtime.youtubeId],
-    queryFn: () => runtime.restore().then(() => null),
+    queryFn: async () => {
+      await runtime.restore();
+      return true;
+    },
     staleTime: Infinity,
     gcTime: 0,
     retry: false,
