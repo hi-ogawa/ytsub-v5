@@ -53,16 +53,22 @@ export interface CaptionStorage {
 
 // In-memory copy of the stored index, for components that read it as they
 // render.
-export const videoIndexStore = withUseValue(
-  createStore<{ entries: VideoIndexEntry[] }>({ entries: [] }),
-);
+export const videoIndexStore = createVideoIndexStore();
 
-export function updateVideoIndexStore(notice: StorageNotice) {
-  if (notice.type === "videoIndex") {
-    videoIndexStore.update({ entries: notice.entries });
-  }
-}
+function createVideoIndexStore() {
+  const store = withUseValue(
+    createStore<{ entries: VideoIndexEntry[] }>({ entries: [] }),
+  );
 
-export async function loadVideoIndex(storage: CaptionStorage) {
-  videoIndexStore.update({ entries: await storage.listVideoIndex() });
+  const connect = async (storage: CaptionStorage) => {
+    // Subscribe before loading so a change made during the load isn't lost.
+    storage.subscribe((notice) => {
+      if (notice.type === "videoIndex") {
+        store.update({ entries: notice.entries });
+      }
+    });
+    store.update({ entries: await storage.listVideoIndex() });
+  };
+
+  return { ...store, connect };
 }
