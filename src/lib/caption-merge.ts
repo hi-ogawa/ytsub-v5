@@ -31,7 +31,7 @@ export interface MergedCaption {
 export function mergeStrict(
   cues1: CaptionCue[],
   cues2: CaptionCue[],
-  tolerance = 0.5,
+  { tolerance = 0.5 }: { tolerance?: number } = {},
 ): MergedCaption[] | undefined {
   if (cues1.length !== cues2.length) {
     return undefined;
@@ -60,7 +60,7 @@ export function mergeRelaxedStrict(
   cues1: CaptionCue[],
   cues2: CaptionCue[],
 ): MergedCaption[] | undefined {
-  return mergeStrict(cues1, cues2, 2.0);
+  return mergeStrict(cues1, cues2, { tolerance: 2 });
 }
 
 // === Strategy 3: Partition ===
@@ -144,7 +144,7 @@ export function mergeCaptions(
 
   // Translated pair: events share tStartMs, strict should work
   if (isTranslatedPair(track1.vssId, track2.vssId)) {
-    const strict = mergeStrict(cues1, cues2, 0.5);
+    const strict = mergeStrict(cues1, cues2);
     if (strict) {
       return strict;
     }

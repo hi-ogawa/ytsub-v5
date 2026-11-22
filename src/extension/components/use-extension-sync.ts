@@ -32,19 +32,19 @@ export function useExtensionSync({
     mutationFn: async (action: SyncAction) => {
       if (action.direction === "push") {
         const { serverUpdatedAt } = await bgRpc.pushSession({ youtubeId });
-        await captionStorage.setSyncedAt(youtubeId, serverUpdatedAt);
+        await captionStorage.markSynced({ youtubeId, serverUpdatedAt });
       } else {
         const { session, serverUpdatedAt } = await bgRpc.fetchSession({
           youtubeId,
         });
-        // replace() bumps the index entry's updatedAt, so setSyncedAt must follow it.
+        // replace() bumps the index entry's updatedAt, so markSynced must follow it.
         await action.store.replace({
           vssId1: session.vssId1,
           vssId2: session.vssId2,
           captions: session.captions,
           bookmarks: session.bookmarks,
         });
-        await captionStorage.setSyncedAt(youtubeId, serverUpdatedAt);
+        await captionStorage.markSynced({ youtubeId, serverUpdatedAt });
       }
     },
     onSuccess: () => serverQuery.refetch(),
