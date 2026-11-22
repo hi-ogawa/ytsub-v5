@@ -51,6 +51,32 @@ test("clicking a row seeks to its start and plays, and clicking the current row 
   await expect.poll(isPaused).toBe(false);
 });
 
+test("repeat replays a row from its start until another row is clicked", async ({
+  context,
+}) => {
+  const { ytPage, host } = await openPanelWithTracks(context, SEED_YOUTUBE_ID);
+  const video = ytPage.locator("video");
+  const isPaused = () => video.evaluate((el: HTMLVideoElement) => el.paused);
+  const getCurrentTime = () =>
+    video.evaluate((el: HTMLVideoElement) => el.currentTime);
+  // The mock video has no source, so its time moves only when set by hand.
+  const setCurrentTime = (time: number) =>
+    video.evaluate((el: HTMLVideoElement, t) => (el.currentTime = t), time);
+
+  // Row 2 spans 35.597–38.206
+  const repeat = host.locator("[data-index='2']").getByTitle("Repeat");
+  await repeat.click();
+  await expect(repeat).toHaveAttribute("aria-pressed", "true");
+  await expect.poll(isPaused).toBe(false);
+  expect(await getCurrentTime()).toBe(35.597);
+
+  await setCurrentTime(38.1);
+  await expect.poll(getCurrentTime).toBe(35.597);
+
+  await host.locator("[data-index='3']").click();
+  await expect(repeat).toHaveAttribute("aria-pressed", "false");
+});
+
 test("track selection: default empty, select tracks, switch language", async ({
   context,
 }) => {

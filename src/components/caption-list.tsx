@@ -1,4 +1,4 @@
-import { ExternalLink } from "lucide-react";
+import { ExternalLink, Repeat } from "lucide-react";
 import {
   useEffect,
   useImperativeHandle,
@@ -26,18 +26,24 @@ export function CaptionList({
   rows,
   currentIndex,
   isPlaying,
+  loopIndex,
   player,
   autoScroll,
   bookmarks,
+  onPlayRow,
+  onToggleLoop,
   onGoToBookmark,
 }: {
   ref: React.Ref<CaptionListHandle>;
   rows: MergedCaption[];
   currentIndex?: number;
   isPlaying: boolean;
+  loopIndex?: number;
   player?: YTPlayer;
   autoScroll: boolean;
   bookmarks: ExtensionBookmark[];
+  onPlayRow: (index: number) => void;
+  onToggleLoop: (index: number) => void;
   onGoToBookmark: (bookmarkId: string) => void;
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -122,8 +128,7 @@ export function CaptionList({
     if (index === currentIndex) {
       isPlaying ? player.pauseVideo() : player.playVideo();
     } else {
-      player.seekTo(rows[index].begin);
-      player.playVideo();
+      onPlayRow(index);
     }
   }
 
@@ -143,9 +148,14 @@ export function CaptionList({
             index={i}
             isCurrent={i === currentIndex}
             isPlaying={isPlaying}
+            isLooping={i === loopIndex}
             bookmarks={bookmarksByIndex.get(i)}
             bookmarkNumberById={bookmarkNumberById}
             onClick={() => onClickRow(i)}
+            onToggleLoop={() => {
+              manualScroll.clear();
+              onToggleLoop(i);
+            }}
             onGoToBookmark={onGoToBookmark}
             onPopoverOpenChange={onPopoverOpenChange}
           />
@@ -160,9 +170,11 @@ function CaptionRow({
   index,
   isCurrent,
   isPlaying,
+  isLooping,
   bookmarks,
   bookmarkNumberById,
   onClick,
+  onToggleLoop,
   onGoToBookmark,
   onPopoverOpenChange,
 }: {
@@ -170,9 +182,11 @@ function CaptionRow({
   index: number;
   isCurrent: boolean;
   isPlaying: boolean;
+  isLooping: boolean;
   bookmarks?: ExtensionBookmark[];
   bookmarkNumberById: Map<string, number>;
   onClick: () => void;
+  onToggleLoop: () => void;
   onGoToBookmark: (bookmarkId: string) => void;
   onPopoverOpenChange: (open: boolean) => void;
 }) {
@@ -202,10 +216,26 @@ function CaptionRow({
         .join(" ")}
       onClick={onClick}
     >
-      <div className="text-xs text-muted-foreground">
-        <span className="ml-auto">
+      <div className="flex items-center text-xs text-muted-foreground">
+        <span>
           {formatTimestamp(row.begin)} – {formatTimestamp(row.end)}
         </span>
+        <button
+          className={[
+            "-my-0.5 ml-auto rounded p-0.5 hover:bg-accent hover:text-foreground",
+            isLooping && "bg-accent text-foreground",
+          ]
+            .filter(Boolean)
+            .join(" ")}
+          title="Repeat"
+          aria-pressed={isLooping}
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggleLoop();
+          }}
+        >
+          <Repeat className="size-3.5" />
+        </button>
       </div>
       <div className="flex text-sm">
         <div className="flex-1 border-r pr-2" data-side="0">

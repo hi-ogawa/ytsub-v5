@@ -9,7 +9,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu.tsx";
-import type { YTPlayer } from "./youtube-player.tsx";
 
 export type BookmarksListHandle = {
   scrollToBookmark: (bookmarkId: string) => void;
@@ -19,14 +18,14 @@ export function ExtensionBookmarksList({
   ref,
   bookmarks,
   rows,
-  player,
+  onPlayBookmark,
   onDeleteBookmark,
   onGoToCaption,
 }: {
   ref: React.Ref<BookmarksListHandle>;
   bookmarks: ExtensionBookmark[];
   rows: MergedCaption[];
-  player?: YTPlayer;
+  onPlayBookmark: (bookmark: ExtensionBookmark) => void;
   onDeleteBookmark: (id: string) => void;
   onGoToCaption: (captionIndex: number) => void;
 }) {
@@ -52,13 +51,7 @@ export function ExtensionBookmarksList({
           bookmark={bm}
           bookmarkNumber={bmIndex + 1}
           caption={rows[bm.captionIndex]}
-          onClick={() => {
-            if (!player) {
-              return;
-            }
-            player.seekTo(bm.timestamp);
-            player.playVideo();
-          }}
+          onClick={() => onPlayBookmark(bm)}
           onDelete={() => onDeleteBookmark(bm.id)}
           onGoToCaption={() => onGoToCaption(bm.captionIndex)}
         />
