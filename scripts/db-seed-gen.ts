@@ -85,14 +85,12 @@ if (files.length === 0) {
   process.exit(1);
 }
 
-const devPasswordHash = await hashPassword(
-  "devpassword",
-  new Uint8Array(16).fill(0) as Uint8Array<ArrayBuffer>,
-);
-const devEmptyPasswordHash = await hashPassword(
-  "devpassword",
-  new Uint8Array(16).fill(1) as Uint8Array<ArrayBuffer>,
-);
+const devPasswordHash = await hashPassword("devpassword", {
+  salt: new Uint8Array(16).fill(0) as Uint8Array<ArrayBuffer>,
+});
+const devEmptyPasswordHash = await hashPassword("devpassword", {
+  salt: new Uint8Array(16).fill(1) as Uint8Array<ArrayBuffer>,
+});
 // Seed users: "dev" owns videos, "dev-empty" has no data
 const seedUsers = [
   `INSERT OR IGNORE INTO users (username, password_hash) VALUES ('dev', '${devPasswordHash}');`,
