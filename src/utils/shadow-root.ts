@@ -43,9 +43,9 @@ function addShadowStyle(shadow: ShadowRoot, css: string) {
   );
 
   if (propertyRules.length > 0) {
-    const propStyle = document.createElement("style");
-    propStyle.textContent = propertyRules.join("\n");
-    document.head.appendChild(propStyle);
+    const propertyStyle = document.createElement("style");
+    propertyStyle.textContent = propertyRules.join("\n");
+    document.head.appendChild(propertyStyle);
   }
 
   const style = document.createElement("style");

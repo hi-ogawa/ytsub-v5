@@ -14,17 +14,21 @@ export function createTransact<S>(options: {
   name: string;
   version: number;
   storeNames: { [K in keyof S]: string };
-  upgrade: (db: IDBDatabase, oldVersion: number, tx: IDBTransaction) => void;
+  upgrade: (
+    db: IDBDatabase,
+    oldVersion: number,
+    transaction: IDBTransaction,
+  ) => void;
 }) {
   let dbPromise: Promise<IDBDatabase> | undefined;
 
   function openDb(): Promise<IDBDatabase> {
     dbPromise ??= new Promise((resolve, reject) => {
-      const req = indexedDB.open(options.name, options.version);
-      req.onupgradeneeded = (e) =>
-        options.upgrade(req.result, e.oldVersion, req.transaction!);
-      req.onsuccess = () => {
-        const db = req.result;
+      const request = indexedDB.open(options.name, options.version);
+      request.onupgradeneeded = (event) =>
+        options.upgrade(request.result, event.oldVersion, request.transaction!);
+      request.onsuccess = () => {
+        const db = request.result;
         // Let a newer version of the app upgrade the database.
         db.onversionchange = () => {
           db.close();
@@ -32,44 +36,45 @@ export function createTransact<S>(options: {
         };
         resolve(db);
       };
-      req.onerror = () => reject(req.error);
+      request.onerror = () => reject(request.error);
     });
     return dbPromise;
   }
 
-  // Runs `fn` in one transaction and resolves after it completes. `fn` may
+  // Runs `callback` in one transaction and resolves after it completes. `callback` may
   // await requests on its stores, because a transaction stays active through
   // promise callbacks run from its request events.
   return async function transact<K extends keyof S & string, R>(
     names: K[],
     mode: IDBTransactionMode,
-    fn: (stores: StoreMap<S, K>) => Promise<R>,
+    callback: (stores: StoreMap<S, K>) => Promise<R>,
   ): Promise<R> {
     const db = await openDb();
-    const tx = db.transaction(
+    const transaction = db.transaction(
       names.map((name) => options.storeNames[name]),
       mode,
     );
     const done = new Promise<void>((resolve, reject) => {
-      tx.oncomplete = () => resolve();
-      tx.onerror = () => reject(tx.error);
-      tx.onabort = () => reject(tx.error ?? new Error("Transaction aborted"));
+      transaction.oncomplete = () => resolve();
+      transaction.onerror = () => reject(transaction.error);
+      transaction.onabort = () =>
+        reject(transaction.error ?? new Error("Transaction aborted"));
     });
     const stores = Object.fromEntries(
       names.map((name) => [
         name,
-        wrapStore(tx.objectStore(options.storeNames[name])),
+        wrapStore(transaction.objectStore(options.storeNames[name])),
       ]),
     ) as StoreMap<S, K>;
     let result: R;
     try {
-      result = await fn(stores);
-    } catch (err) {
+      result = await callback(stores);
+    } catch (error) {
       done.catch(() => {});
       try {
-        tx.abort();
+        transaction.abort();
       } catch {}
-      throw err;
+      throw error;
     }
     await done;
     return result;
@@ -89,9 +94,9 @@ function wrapStore<T>(store: IDBObjectStore): Store<T> {
   };
 }
 
-function requestResult<T>(req: IDBRequest): Promise<T> {
+function requestResult<T>(request: IDBRequest): Promise<T> {
   return new Promise((resolve, reject) => {
-    req.onsuccess = () => resolve(req.result as T);
-    req.onerror = () => reject(req.error);
+    request.onsuccess = () => resolve(request.result as T);
+    request.onerror = () => reject(request.error);
   });
 }

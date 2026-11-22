@@ -5,8 +5,8 @@ import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 
-const git = (cmd: string) => execSync(cmd).toString().trim();
-const rev = git("git rev-parse --short HEAD");
+const git = (command: string) => execSync(command).toString().trim();
+const revision = git("git rev-parse --short HEAD");
 const branch = git("git branch --show-current");
 const dirty = git("git status --porcelain") ? "-dirty" : "";
 const buildTime = new Date();
@@ -94,7 +94,7 @@ export default defineConfig({
   define: {
     "process.env.NODE_ENV": JSON.stringify("production"),
     __BUILD_TIME__: JSON.stringify(buildTime.toISOString()),
-    __GIT_REV__: JSON.stringify(rev + dirty),
+    __GIT_REV__: JSON.stringify(revision + dirty),
     __DEV_EXT__: JSON.stringify(!!process.env.DEV_EXT),
     __SERVER_URL__: JSON.stringify(
       process.env.DEV_EXT
@@ -128,14 +128,15 @@ export default defineConfig({
           hour: "2-digit",
           minute: "2-digit",
         });
-        manifest.name = `Zamak-dev [${branch} ${rev} ${time}]`;
+        manifest.name = `Zamak-dev [${branch} ${revision} ${time}]`;
         manifest.key = DEV_EXTENSION_PUBLIC_KEY;
       } else if (process.env.PATCH_MANIFEST === "true") {
-        const prMatch = process.env.GITHUB_REF?.match(/refs\/pull\/(\d+)\//);
-        if (prMatch) {
-          manifest.name = `Zamak [PR#${prMatch[1]} ${rev}]`;
+        const pullRequestMatch =
+          process.env.GITHUB_REF?.match(/refs\/pull\/(\d+)\//);
+        if (pullRequestMatch) {
+          manifest.name = `Zamak [PR#${pullRequestMatch[1]} ${revision}]`;
         } else {
-          manifest.name = `Zamak [${rev}]`;
+          manifest.name = `Zamak [${revision}]`;
         }
         manifest.key = DEV_EXTENSION_PUBLIC_KEY;
       }

@@ -17,9 +17,9 @@ export function formatRelativeTime(
   now: number = Date.now(),
 ): string {
   const diff = new Date(time).getTime() - now;
-  for (const [unit, ms] of UNITS) {
-    if (Math.abs(diff) >= ms) {
-      return relativeTimeFormat.format(Math.trunc(diff / ms), unit);
+  for (const [unit, milliseconds] of UNITS) {
+    if (Math.abs(diff) >= milliseconds) {
+      return relativeTimeFormat.format(Math.trunc(diff / milliseconds), unit);
     }
   }
   return "just now";

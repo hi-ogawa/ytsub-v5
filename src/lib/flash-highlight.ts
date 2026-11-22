@@ -1,8 +1,8 @@
 // The attribute comes off once the flash ends or is cancelled. Otherwise hiding
 // the tab with `display: none` and showing it again replays the flash.
-export function flashHighlight(el: HTMLElement) {
-  el.dataset.flash = "";
-  const animation = el
+export function flashHighlight(element: HTMLElement) {
+  element.dataset.flash = "";
+  const animation = element
     .getAnimations()
     .find(
       (a) => a instanceof CSSAnimation && a.animationName === "flash-highlight",
@@ -11,6 +11,6 @@ export function flashHighlight(el: HTMLElement) {
     return;
   }
   animation.currentTime = 0;
-  const remove = () => delete el.dataset.flash;
+  const remove = () => delete element.dataset.flash;
   animation.finished.then(remove, remove);
 }

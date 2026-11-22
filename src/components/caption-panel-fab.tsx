@@ -3,7 +3,8 @@ import { captionPanelPreferences } from "../lib/caption-panel-preferences.ts";
 export function useFabOpen(youtubeId: string) {
   const [fabOpen, setFabOpen] = captionPanelPreferences.useValue("fabOpen");
   const open = fabOpen[youtubeId] ?? false;
-  const toggle = () => setFabOpen((prev) => ({ ...prev, [youtubeId]: !open }));
+  const toggle = () =>
+    setFabOpen((current) => ({ ...current, [youtubeId]: !open }));
   return [open, toggle] as const;
 }
 

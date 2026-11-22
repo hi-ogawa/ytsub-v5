@@ -40,22 +40,26 @@ export function extractBookmarkSelection(
     return;
   }
 
-  const startEl = startContainer.parentElement;
-  const endEl = endContainer.parentElement;
-  const dataOffset = startEl?.getAttribute("data-offset");
-  if (!startEl || !endEl || !dataOffset) {
+  const startElement = startContainer.parentElement;
+  const endElement = endContainer.parentElement;
+  const dataOffset = startElement?.getAttribute("data-offset");
+  if (!startElement || !endElement || !dataOffset) {
     return;
   }
 
-  const sideEl = startEl.parentElement;
-  const dataSide = sideEl?.getAttribute("data-side");
-  if (!sideEl || !dataSide || startEl.parentElement !== endEl.parentElement) {
+  const sideElement = startElement.parentElement;
+  const dataSide = sideElement?.getAttribute("data-side");
+  if (
+    !sideElement ||
+    !dataSide ||
+    startElement.parentElement !== endElement.parentElement
+  ) {
     return;
   }
 
-  const indexEl = sideEl.parentElement?.parentElement;
-  const dataIndex = indexEl?.getAttribute("data-index");
-  if (!indexEl || !dataIndex) {
+  const indexElement = sideElement.parentElement?.parentElement;
+  const dataIndex = indexElement?.getAttribute("data-index");
+  if (!indexElement || !dataIndex) {
     return;
   }
 
@@ -74,14 +78,14 @@ export function extractBookmarkSelection(
 export function indexBookmarks(bookmarks: ExtensionBookmark[]) {
   const bookmarksByIndex = new Map<number, ExtensionBookmark[]>();
   const bookmarkNumberById = new Map<string, number>();
-  for (let i = 0; i < bookmarks.length; i++) {
-    const bm = bookmarks[i];
-    bookmarkNumberById.set(bm.id, i + 1);
-    const list = bookmarksByIndex.get(bm.captionIndex);
+  for (let index = 0; index < bookmarks.length; index++) {
+    const bookmark = bookmarks[index];
+    bookmarkNumberById.set(bookmark.id, index + 1);
+    const list = bookmarksByIndex.get(bookmark.captionIndex);
     if (list) {
-      list.push(bm);
+      list.push(bookmark);
     } else {
-      bookmarksByIndex.set(bm.captionIndex, [bm]);
+      bookmarksByIndex.set(bookmark.captionIndex, [bookmark]);
     }
   }
   return { bookmarksByIndex, bookmarkNumberById };

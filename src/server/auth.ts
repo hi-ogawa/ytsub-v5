@@ -32,10 +32,10 @@ export async function verifySessionToken(
   if (!payload) {
     return;
   }
-  const [userIdStr, expStr] = payload.split(":");
-  const userId = Number(userIdStr);
-  const exp = Number(expStr);
-  if (userId && exp >= Date.now() / 1000) {
+  const [userIdText, expiresAtText] = payload.split(":");
+  const userId = Number(userIdText);
+  const expiresAt = Number(expiresAtText);
+  if (userId && expiresAt >= Date.now() / 1000) {
     return userId;
   }
 }
@@ -64,6 +64,6 @@ export async function createSessionToken(
   userId: number,
   expiresInDays = 30,
 ): Promise<string> {
-  const exp = Math.floor(Date.now() / 1000) + expiresInDays * 86400;
-  return sign(`${userId}:${exp}`, env.AUTH_SECRET);
+  const expiresAt = Math.floor(Date.now() / 1000) + expiresInDays * 86400;
+  return sign(`${userId}:${expiresAt}`, env.AUTH_SECRET);
 }

@@ -4,7 +4,7 @@ import { createRoot } from "react-dom/client";
 import { PortalContainerProvider } from "../components/ui/portal-container.tsx";
 import type { CaptionStorage } from "../lib/caption-storage.ts";
 import { createShadowHost } from "../utils/shadow-root.ts";
-import type { bgRpcHandlers } from "./background.ts";
+import type { backgroundRpcHandlers } from "./background.ts";
 import { CaptionOverlay } from "./components/caption-overlay.tsx";
 import { useExtensionSync } from "./components/use-extension-sync.ts";
 import contentCss from "./content.css?inline";
@@ -26,7 +26,7 @@ const queryClient = new QueryClient({
   },
 });
 
-const bgRpc = createRuntimeRelayRpc<typeof bgRpcHandlers>();
+const backgroundRpc = createRuntimeRelayRpc<typeof backgroundRpcHandlers>();
 
 function main() {
   console.log(`[zamak] build: ${__BUILD_TIME__} (${__GIT_REV__})`);
@@ -70,7 +70,7 @@ function mountOverlay({
             storage={storage}
             youtubeId={youtubeId}
             useSync={({ youtubeId }) =>
-              useExtensionSync({ storage, bgRpc, youtubeId })
+              useExtensionSync({ storage, backgroundRpc, youtubeId })
             }
           />
         </QueryClientProvider>

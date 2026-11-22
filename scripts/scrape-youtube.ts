@@ -48,8 +48,8 @@ async function scrape(youtubeId: string) {
         console.log(
           `[${youtubeId}] ${track.vssId} (${track.languageCode}): ${json3.events?.length ?? 0} events`,
         );
-      } catch (e) {
-        console.warn(`[${youtubeId}] ${track.vssId}: fetch failed — ${e}`);
+      } catch (error) {
+        console.warn(`[${youtubeId}] ${track.vssId}: fetch failed — ${error}`);
       }
     }
 

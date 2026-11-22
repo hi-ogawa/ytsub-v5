@@ -8,13 +8,18 @@ test("AI pick prompt: copy and import with markdown fence", async ({
   await context.grantPermissions(["clipboard-read", "clipboard-write"], {
     origin: "https://www.youtube.com",
   });
-  const { ytPage, host } = await openPanelWithTracks(context, SEED_YOUTUBE_ID);
+  const { youtubePage, host } = await openPanelWithTracks(
+    context,
+    SEED_YOUTUBE_ID,
+  );
   await host.getByTitle("Settings").click();
 
   // Copy pick prompt
   await expect(host.getByText("AI prompt")).toBeVisible();
   await host.getByTitle("Copy prompt").click();
-  const clipboard = await ytPage.evaluate(() => navigator.clipboard.readText());
+  const clipboard = await youtubePage.evaluate(() =>
+    navigator.clipboard.readText(),
+  );
   expect(clipboard).toContain("Zamak Task: Pick & Fill");
   expect(clipboard).toContain("skills/zamak/SKILL.md");
   expect(clipboard).toContain("cloud palace");
@@ -26,7 +31,7 @@ test("AI pick prompt: copy and import with markdown fence", async ({
 {"captionIndex": 0, "text": "꼬집어", "translation": "to pinch", "etymology": "" },
 {"captionIndex": 1, "text": "밤새", "translation": "all night", "etymology": "" }]}
 \`\`\``;
-  ytPage.on("dialog", (dialog) => {
+  youtubePage.on("dialog", (dialog) => {
     if (dialog.type() === "prompt") {
       dialog.accept(wrapped);
     } else {
@@ -50,7 +55,10 @@ test("AI fill prompt: copy and import updates existing bookmark", async ({
   await context.grantPermissions(["clipboard-read", "clipboard-write"], {
     origin: "https://www.youtube.com",
   });
-  const { ytPage, host } = await openPanelWithTracks(context, SEED_YOUTUBE_ID);
+  const { youtubePage, host } = await openPanelWithTracks(
+    context,
+    SEED_YOUTUBE_ID,
+  );
 
   // Create a bookmark first
   await createBookmarkAt(host, { index: 0, start: 0, end: 3 });
@@ -68,7 +76,9 @@ test("AI fill prompt: copy and import updates existing bookmark", async ({
   await host.getByTitle("Settings").click();
   const aiSelect = host.locator("select").last();
   await aiSelect.selectOption("fill");
-  const clipboard = await ytPage.evaluate(() => navigator.clipboard.readText());
+  const clipboard = await youtubePage.evaluate(() =>
+    navigator.clipboard.readText(),
+  );
   expect(clipboard).toContain("Zamak Task: Fill Bookmarks");
   expect(clipboard).toContain("꼬집어");
 
@@ -84,7 +94,7 @@ test("AI fill prompt: copy and import updates existing bookmark", async ({
       },
     ],
   });
-  ytPage.on("dialog", (dialog) => {
+  youtubePage.on("dialog", (dialog) => {
     if (dialog.type() === "prompt") {
       dialog.accept(json);
     } else {
@@ -115,7 +125,10 @@ test("AI align prompt: copy and import replaces rows, moves bookmarks, and adds 
   await context.grantPermissions(["clipboard-read", "clipboard-write"], {
     origin: "https://www.youtube.com",
   });
-  const { ytPage, host } = await openPanelWithTracks(context, SEED_YOUTUBE_ID);
+  const { youtubePage, host } = await openPanelWithTracks(
+    context,
+    SEED_YOUTUBE_ID,
+  );
   await createBookmarkAt(host, { index: 0, start: 0, end: 3 });
   const panel = host.getByTestId("resizable-panel");
   await panel.getByRole("tab", { name: /Bookmarks/ }).click();
@@ -128,7 +141,9 @@ test("AI align prompt: copy and import replaces rows, moves bookmarks, and adds 
   // Copy align prompt
   await host.getByTitle("Settings").click();
   await host.locator("select").last().selectOption("fix-asr");
-  const clipboard = await ytPage.evaluate(() => navigator.clipboard.readText());
+  const clipboard = await youtubePage.evaluate(() =>
+    navigator.clipboard.readText(),
+  );
   expect(clipboard).toContain("Zamak Task: Fix & Align ASR");
   expect(clipboard).toContain(`ID: ${SEED_YOUTUBE_ID}`);
   expect(clipboard).toContain("skills/zamak/SKILL.md");
@@ -142,7 +157,7 @@ test("AI align prompt: copy and import replaces rows, moves bookmarks, and adds 
   ];
   const dialogs: string[] = [];
   let answer = "";
-  ytPage.on("dialog", (dialog) => {
+  youtubePage.on("dialog", (dialog) => {
     dialogs.push(dialog.message());
     if (dialog.type() === "prompt") {
       dialog.accept(answer);

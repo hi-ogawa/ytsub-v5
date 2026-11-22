@@ -12,7 +12,7 @@ import { useWebSync } from "../components/use-web-sync.ts";
 export function VideoViewerPage({ storage }: { storage: CaptionStorage }) {
   const { youtubeId } = useParams<"youtubeId">();
 
-  const { ref: playerElRef, player } = useYouTubePlayer(youtubeId);
+  const { ref: playerElementRef, player } = useYouTubePlayer(youtubeId);
 
   if (!youtubeId) {
     return (
@@ -29,7 +29,10 @@ export function VideoViewerPage({ storage }: { storage: CaptionStorage }) {
         <div className="flex justify-center">
           <div className="relative w-full max-w-xl lg:max-w-none">
             <div className="relative pt-[56.2%]">
-              <div className="absolute top-0 h-full w-full" ref={playerElRef} />
+              <div
+                className="absolute top-0 h-full w-full"
+                ref={playerElementRef}
+              />
             </div>
           </div>
         </div>

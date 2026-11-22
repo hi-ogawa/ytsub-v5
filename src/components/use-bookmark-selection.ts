@@ -24,8 +24,10 @@ export function useBookmarkSelection({
 
   useEffect(() => {
     const handler = () => {
-      const sel = getSelectionAt(contentRef.current) ?? undefined;
-      setSelection(sel ? extractBookmarkSelection(sel) : undefined);
+      const domSelection = getSelectionAt(contentRef.current) ?? undefined;
+      setSelection(
+        domSelection ? extractBookmarkSelection(domSelection) : undefined,
+      );
     };
     document.addEventListener("selectionchange", handler);
     return () => document.removeEventListener("selectionchange", handler);

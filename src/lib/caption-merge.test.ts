@@ -161,18 +161,18 @@ function mergeStats(merged: MergedCaption[], enCues: CaptionCue[]) {
 
   // Shared cue2s: how many cue2 indices are claimed by multiple rows
   const cue2Claimants = new Map<number, number>();
-  for (const m of merged) {
-    for (const j of m.cue2Indices) {
-      cue2Claimants.set(j, (cue2Claimants.get(j) ?? 0) + 1);
+  for (const row of merged) {
+    for (const cueIndex of row.cue2Indices) {
+      cue2Claimants.set(cueIndex, (cue2Claimants.get(cueIndex) ?? 0) + 1);
     }
   }
   const sharedCue2s = [...cue2Claimants.values()].filter((c) => c > 1).length;
 
   // Dropped cue2s: not assigned to any row
   const assignedCue2s = new Set<number>();
-  for (const m of merged) {
-    for (const j of m.cue2Indices) {
-      assignedCue2s.add(j);
+  for (const row of merged) {
+    for (const cueIndex of row.cue2Indices) {
+      assignedCue2s.add(cueIndex);
     }
   }
   const droppedCue2s = enCues.length - assignedCue2s.size;
@@ -195,12 +195,13 @@ function loadVideo(youtubeId: string) {
 }
 
 describe("strategy mapping stats", () => {
-  const v1 = loadVideo("7GU_VQfgMT0");
-  const v2 = loadVideo("DtK-CkwNHSY");
+  const video1 = loadVideo("7GU_VQfgMT0");
+  const video2 = loadVideo("DtK-CkwNHSY");
 
   describe("7GU_VQfgMT0", () => {
     it("cue counts", () => {
-      expect({ ko: v1.ko.length, en: v1.en.length }).toMatchInlineSnapshot(`
+      expect({ ko: video1.ko.length, en: video1.en.length })
+        .toMatchInlineSnapshot(`
         {
           "en": 56,
           "ko": 62,
@@ -208,7 +209,7 @@ describe("strategy mapping stats", () => {
       `);
     });
     it("partition", () => {
-      expect(mergeStats(mergePartition(v1.ko, v1.en), v1.en))
+      expect(mergeStats(mergePartition(video1.ko, video1.en), video1.en))
         .toMatchInlineSnapshot(`
         {
           "droppedCue2s": 0,
@@ -260,7 +261,8 @@ describe("strategy mapping stats", () => {
 
   describe("DtK-CkwNHSY", () => {
     it("cue counts", () => {
-      expect({ ko: v2.ko.length, en: v2.en.length }).toMatchInlineSnapshot(`
+      expect({ ko: video2.ko.length, en: video2.en.length })
+        .toMatchInlineSnapshot(`
         {
           "en": 40,
           "ko": 85,
@@ -268,7 +270,7 @@ describe("strategy mapping stats", () => {
       `);
     });
     it("partition", () => {
-      expect(mergeStats(mergePartition(v2.ko, v2.en), v2.en))
+      expect(mergeStats(mergePartition(video2.ko, video2.en), video2.en))
         .toMatchInlineSnapshot(`
           {
             "droppedCue2s": 0,

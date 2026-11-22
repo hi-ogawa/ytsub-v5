@@ -14,17 +14,17 @@ export type AiTask = (typeof AI_TASKS)[number]["task"];
 // Split "# --- task-name ---" sections
 const sections: Record<string, string> = {};
 for (const chunk of (promptMd as string).split(/^# --- /m).slice(1)) {
-  const nl = chunk.indexOf("\n");
-  const key = chunk.slice(0, nl).replace(/ ---$/, "").trim();
-  sections[key] = chunk.slice(nl + 1).trim();
+  const newlineIndex = chunk.indexOf("\n");
+  const key = chunk.slice(0, newlineIndex).replace(/ ---$/, "").trim();
+  sections[key] = chunk.slice(newlineIndex + 1).trim();
 }
 
 function formatCaptions(rows: MergedCaption[]): string {
   return rows
-    .map((r) => {
-      const m = Math.floor(r.begin / 60);
-      const s = String(Math.floor(r.begin % 60)).padStart(2, "0");
-      return `[${r.idx}] ${m}:${s} | ${r.text1} | ${r.text2}`;
+    .map((row) => {
+      const minutes = Math.floor(row.begin / 60);
+      const seconds = String(Math.floor(row.begin % 60)).padStart(2, "0");
+      return `[${row.idx}] ${minutes}:${seconds} | ${row.text1} | ${row.text2}`;
     })
     .join("\n");
 }
@@ -34,31 +34,34 @@ function formatBookmarks(
   bookmarks: ExtensionBookmark[],
 ): string {
   const unfilled = bookmarks.filter((b) => !b.translation);
-  const bms = (unfilled.length > 0 ? unfilled : bookmarks).map((b) => {
-    const caption = rows[b.captionIndex];
-    const ctx = caption ? { text1: caption.text1, text2: caption.text2 } : null;
-    return {
-      id: b.id,
-      text: b.text,
-      captionIndex: b.captionIndex,
-      context: b.context,
-      caption: ctx,
-    };
-  });
-  return JSON.stringify(bms, null, 2);
+  const summaries = (unfilled.length > 0 ? unfilled : bookmarks).map(
+    (bookmark) => {
+      const caption = rows[bookmark.captionIndex];
+      return {
+        id: bookmark.id,
+        text: bookmark.text,
+        captionIndex: bookmark.captionIndex,
+        context: bookmark.context,
+        caption: caption
+          ? { text1: caption.text1, text2: caption.text2 }
+          : null,
+      };
+    },
+  );
+  return JSON.stringify(summaries, null, 2);
 }
 
 // Only what the agent needs to re-anchor each bookmark, so translations and
 // notes never pass through it.
 function formatAnchorBookmarks(bookmarks: ExtensionBookmark[]): string {
-  const bms = bookmarks.map((b) => ({
+  const summaries = bookmarks.map((b) => ({
     id: b.id,
     text: b.text,
     captionIndex: b.captionIndex,
     side: b.side,
     context: b.context,
   }));
-  return JSON.stringify(bms, null, 2);
+  return JSON.stringify(summaries, null, 2);
 }
 
 function formatTracks({
@@ -149,30 +152,30 @@ export function pickFillToBookmarks(
   warnings: string[];
 } {
   const warnings: string[] = [];
-  const bookmarks = entries.flatMap((e) => {
-    const row = rows[e.captionIndex];
+  const bookmarks = entries.flatMap((entry) => {
+    const row = rows[entry.captionIndex];
     if (!row) {
-      warnings.push(`captionIndex ${e.captionIndex} out of range`);
+      warnings.push(`captionIndex ${entry.captionIndex} out of range`);
       return [];
     }
-    const offset = row.text1.indexOf(e.text);
+    const offset = row.text1.indexOf(entry.text);
     if (offset === -1) {
       warnings.push(
-        `"${e.text}" not found in caption ${e.captionIndex}: "${row.text1}"`,
+        `"${entry.text}" not found in caption ${entry.captionIndex}: "${row.text1}"`,
       );
       return [];
     }
     return [
       {
-        text: e.text,
+        text: entry.text,
         side: 0,
         offset,
-        captionIndex: e.captionIndex,
+        captionIndex: entry.captionIndex,
         timestamp: row.begin,
         context: row.text1,
-        translation: e.translation,
-        etymology: e.etymology,
-        notes: e.notes,
+        translation: entry.translation,
+        etymology: entry.etymology,
+        notes: entry.notes,
       },
     ];
   });
@@ -202,23 +205,28 @@ export function alignResultToSession(
     text1Segments: [c.text1],
     text2Segments: [c.text2],
   }));
-  function placeOnRow(a: AiImportAlignBookmark, side: number) {
-    const row = captions[a.captionIndex];
+  function placeOnRow(anchor: AiImportAlignBookmark, side: number) {
+    const row = captions[anchor.captionIndex];
     if (!row) {
-      errors.push(`"${a.text}": captionIndex ${a.captionIndex} out of range`);
+      errors.push(
+        `"${anchor.text}": captionIndex ${anchor.captionIndex} out of range`,
+      );
       return;
     }
     const rowText = side === 0 ? row.text1 : row.text2;
-    if (rowText.slice(a.offset, a.offset + a.text.length) !== a.text) {
+    if (
+      rowText.slice(anchor.offset, anchor.offset + anchor.text.length) !==
+      anchor.text
+    ) {
       errors.push(
-        `"${a.text}" not at offset ${a.offset} in caption ${a.captionIndex}: "${rowText}"`,
+        `"${anchor.text}" not at offset ${anchor.offset} in caption ${anchor.captionIndex}: "${rowText}"`,
       );
       return;
     }
     return {
-      captionIndex: a.captionIndex,
-      offset: a.offset,
-      text: a.text,
+      captionIndex: anchor.captionIndex,
+      offset: anchor.offset,
+      text: anchor.text,
       context: rowText,
       timestamp: row.begin,
     };
@@ -232,21 +240,21 @@ export function alignResultToSession(
       errors.push(`Unknown bookmark id ${id}`);
     }
   }
-  const moved = bookmarks.flatMap((b) => {
-    const a = anchors.get(b.id);
-    if (!a) {
-      errors.push(`"${b.text}" (${b.id}) is missing`);
+  const moved = bookmarks.flatMap((bookmark) => {
+    const anchor = anchors.get(bookmark.id);
+    if (!anchor) {
+      errors.push(`"${bookmark.text}" (${bookmark.id}) is missing`);
       return [];
     }
-    const placed = placeOnRow(a, b.side);
-    return placed ? [{ ...b, ...placed }] : [];
+    const placed = placeOnRow(anchor, bookmark.side);
+    return placed ? [{ ...bookmark, ...placed }] : [];
   });
-  const added = result.bookmarks.flatMap((a) => {
-    if (a.id) {
+  const added = result.bookmarks.flatMap((anchor) => {
+    if (anchor.id) {
       return [];
     }
-    const side = a.side ?? 0;
-    const placed = placeOnRow(a, side);
+    const side = anchor.side ?? 0;
+    const placed = placeOnRow(anchor, side);
     if (!placed) {
       return [];
     }
@@ -255,9 +263,9 @@ export function alignResultToSession(
         ...placed,
         id: crypto.randomUUID(),
         side,
-        translation: a.translation,
-        etymology: a.etymology,
-        notes: a.notes,
+        translation: anchor.translation,
+        etymology: anchor.etymology,
+        notes: anchor.notes,
         createdAt: new Date().toISOString(),
       },
     ];

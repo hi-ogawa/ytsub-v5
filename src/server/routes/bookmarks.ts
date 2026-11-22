@@ -84,8 +84,8 @@ export const bookmarksRouter = authed.router({
         notes: b.notes,
       }));
       let inserted = 0;
-      for (let i = 0; i < rows.length; i += BOOKMARK_BATCH_SIZE) {
-        const batch = rows.slice(i, i + BOOKMARK_BATCH_SIZE);
+      for (let start = 0; start < rows.length; start += BOOKMARK_BATCH_SIZE) {
+        const batch = rows.slice(start, start + BOOKMARK_BATCH_SIZE);
         const result = await db.insert(bookmarks).values(batch).returning();
         inserted += result.length;
       }

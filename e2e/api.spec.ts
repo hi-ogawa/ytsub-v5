@@ -7,7 +7,7 @@ test.beforeAll(async () => {
 
 /** Register a test user and return a cookie header for subsequent requests */
 async function getAuthCookie(request: any): Promise<string> {
-  const res = await request.post("/api/auth/register", {
+  const response = await request.post("/api/auth/register", {
     headers: { "Content-Type": "application/json" },
     data: {
       json: {
@@ -16,7 +16,7 @@ async function getAuthCookie(request: any): Promise<string> {
       },
     },
   });
-  const setCookie = res.headers()["set-cookie"] ?? "";
+  const setCookie = response.headers()["set-cookie"] ?? "";
   // Extract session cookie value
   const match = setCookie.match(/session=([^;]+)/);
   return match ? `session=${match[1]}` : "";
@@ -37,12 +37,12 @@ const rpc = (request: any, path: string, data: any = {}) =>
     data: { json: data },
   });
 
-const json = async (res: any) => {
-  const body = await res.json();
+const json = async (response: any) => {
+  const body = await response.json();
   return body.json;
 };
 
-const uid = () => Math.random().toString(36).slice(2);
+const createUniqueId = () => Math.random().toString(36).slice(2);
 
 const defaultTrackFields = {
   language1: "ko",
@@ -53,56 +53,56 @@ const defaultTrackFields = {
 
 test.describe("videos API", () => {
   test("create, list, and get video", async ({ request }) => {
-    const youtubeId = `test-${uid()}`;
-    const createRes = await rpc(request, "videos/createVideo", {
+    const youtubeId = `test-${createUniqueId()}`;
+    const createResponse = await rpc(request, "videos/createVideo", {
       youtubeId,
       title: "Test Video",
       channelName: "Test Channel",
       duration: 300,
       ...defaultTrackFields,
     });
-    expect(createRes.ok()).toBe(true);
-    const video = await json(createRes);
+    expect(createResponse.ok()).toBe(true);
+    const video = await json(createResponse);
     expect(video.youtubeId).toBe(youtubeId);
     expect(video.title).toBe("Test Video");
     expect(video.id).toBeGreaterThan(0);
 
     // List videos
-    const listRes = await rpc(request, "videos/listVideos", {});
-    expect(listRes.ok()).toBe(true);
-    const list = await json(listRes);
+    const listResponse = await rpc(request, "videos/listVideos", {});
+    expect(listResponse.ok()).toBe(true);
+    const list = await json(listResponse);
     expect(list.total).toBeGreaterThanOrEqual(1);
     expect(list.items.some((v: any) => v.youtubeId === youtubeId)).toBe(true);
 
     // Get video (no captions yet)
-    const getRes = await rpc(request, "videos/getVideo", { id: video.id });
-    expect(getRes.ok()).toBe(true);
-    const got = await json(getRes);
+    const getResponse = await rpc(request, "videos/getVideo", { id: video.id });
+    expect(getResponse.ok()).toBe(true);
+    const got = await json(getResponse);
     expect(got.title).toBe("Test Video");
     expect(got.captionCount).toBe(0);
   });
 
   test("upsert video on youtube_id conflict", async ({ request }) => {
-    const youtubeId = `upsert-${uid()}`;
+    const youtubeId = `upsert-${createUniqueId()}`;
     await rpc(request, "videos/createVideo", {
       youtubeId,
       title: "Original",
       channelName: "Ch",
       ...defaultTrackFields,
     });
-    const res = await rpc(request, "videos/createVideo", {
+    const response = await rpc(request, "videos/createVideo", {
       youtubeId,
       title: "Updated",
       channelName: "Ch",
       ...defaultTrackFields,
     });
-    expect(res.ok()).toBe(true);
-    const video = await json(res);
+    expect(response.ok()).toBe(true);
+    const video = await json(response);
     expect(video.title).toBe("Updated");
   });
 
   test("delete video cascades captions", async ({ request }) => {
-    const youtubeId = `delete-${uid()}`;
+    const youtubeId = `delete-${createUniqueId()}`;
     const video = await json(
       await rpc(request, "videos/createVideo", {
         youtubeId,
@@ -116,15 +116,17 @@ test.describe("videos API", () => {
       captions: [{ idx: 0, begin: 0, end: 1, text1: "테스트", text2: "test" }],
     });
 
-    const delRes = await rpc(request, "videos/deleteVideo", { id: video.id });
-    expect(delRes.ok()).toBe(true);
+    const deleteResponse = await rpc(request, "videos/deleteVideo", {
+      id: video.id,
+    });
+    expect(deleteResponse.ok()).toBe(true);
 
-    const getRes = await rpc(request, "videos/getVideo", { id: video.id });
-    expect(getRes.ok()).toBe(false);
+    const getResponse = await rpc(request, "videos/getVideo", { id: video.id });
+    expect(getResponse.ok()).toBe(false);
   });
 
   test("create captions for a video", async ({ request }) => {
-    const youtubeId = `caption-${uid()}`;
+    const youtubeId = `caption-${createUniqueId()}`;
     const video = await json(
       await rpc(request, "videos/createVideo", {
         youtubeId,
@@ -133,19 +135,19 @@ test.describe("videos API", () => {
       }),
     );
 
-    const captionRes = await rpc(request, "videos/createCaptions", {
+    const captionResponse = await rpc(request, "videos/createCaptions", {
       videoId: video.id,
       captions: [
         { idx: 0, begin: 0, end: 2.5, text1: "안녕하세요", text2: "Hello" },
         { idx: 1, begin: 2.5, end: 5, text1: "감사합니다", text2: "Thank you" },
       ],
     });
-    expect(captionRes.ok()).toBe(true);
-    const result = await json(captionRes);
+    expect(captionResponse.ok()).toBe(true);
+    const result = await json(captionResponse);
     expect(result.inserted).toBe(2);
 
-    const getRes = await rpc(request, "videos/getVideo", { id: video.id });
-    const got = await json(getRes);
+    const getResponse = await rpc(request, "videos/getVideo", { id: video.id });
+    const got = await json(getResponse);
     expect(got.captionCount).toBe(2);
   });
 
@@ -153,7 +155,7 @@ test.describe("videos API", () => {
     const { videoId } = await json(
       await rpc(request, "videos/importVideo", {
         video: {
-          youtubeId: `update-cap-${uid()}`,
+          youtubeId: `update-cap-${createUniqueId()}`,
           title: "V",
           ...defaultTrackFields,
         },
@@ -164,17 +166,17 @@ test.describe("videos API", () => {
       }),
     );
 
-    const res = await rpc(request, "videos/updateCaption", {
+    const response = await rpc(request, "videos/updateCaption", {
       videoId,
       idx: 1,
       text1: "감사합니다",
     });
-    expect(res.ok()).toBe(true);
+    expect(response.ok()).toBe(true);
 
-    const caps = await json(
+    const captions = await json(
       await rpc(request, "videos/listCaptions", { videoId }),
     );
-    expect(caps.map((c: any) => [c.text1, c.text2])).toEqual([
+    expect(captions.map((c: any) => [c.text1, c.text2])).toEqual([
       ["안녕하세요", "Hello"],
       ["감사합니다", "Thank you"],
     ]);
@@ -192,8 +194,8 @@ test.describe("importVideo API", () => {
   test("imports video, captions, and bookmarks in one call", async ({
     request,
   }) => {
-    const youtubeId = `import-${uid()}`;
-    const res = await rpc(request, "videos/importVideo", {
+    const youtubeId = `import-${createUniqueId()}`;
+    const response = await rpc(request, "videos/importVideo", {
       video: {
         youtubeId,
         title: "Import Test",
@@ -216,8 +218,8 @@ test.describe("importVideo API", () => {
         },
       ],
     });
-    expect(res.ok()).toBe(true);
-    const result = await json(res);
+    expect(response.ok()).toBe(true);
+    const result = await json(response);
     expect(result.videoId).toBeGreaterThan(0);
     expect(result.captions).toBe(2);
     expect(result.bookmarks).toBe(1);
@@ -230,35 +232,35 @@ test.describe("importVideo API", () => {
     expect(video.captionCount).toBe(2);
 
     // Verify bookmark was created with resolved captionId
-    const bms = await json(
+    const bookmarks = await json(
       await rpc(request, "bookmarks/listBookmarks", {
         videoId: result.videoId,
       }),
     );
-    expect(bms.total).toBe(1);
-    expect(bms.items[0].text).toBe("안녕");
-    expect(bms.items[0].captionId).toBeGreaterThan(0);
-    expect(bms.items[0].timestamp).toBe(0);
+    expect(bookmarks.total).toBe(1);
+    expect(bookmarks.items[0].text).toBe("안녕");
+    expect(bookmarks.items[0].captionId).toBeGreaterThan(0);
+    expect(bookmarks.items[0].timestamp).toBe(0);
   });
 
   test("imports large caption set (300+) without hitting SQL variable limit", async ({
     request,
   }) => {
-    const youtubeId = `large-${uid()}`;
+    const youtubeId = `large-${createUniqueId()}`;
     const captionCount = 350;
-    const caps = Array.from({ length: captionCount }, (_, i) => ({
+    const captions = Array.from({ length: captionCount }, (_, i) => ({
       idx: i,
       begin: i * 2,
       end: i * 2 + 2,
       text1: `자막${i}`,
       text2: `caption${i}`,
     }));
-    const res = await rpc(request, "videos/importVideo", {
+    const response = await rpc(request, "videos/importVideo", {
       video: { youtubeId, title: "Large Video", ...defaultTrackFields },
-      captions: caps,
+      captions,
     });
-    expect(res.ok()).toBe(true);
-    const result = await json(res);
+    expect(response.ok()).toBe(true);
+    const result = await json(response);
     expect(result.captions).toBe(captionCount);
 
     const video = await json(
@@ -270,16 +272,16 @@ test.describe("importVideo API", () => {
   test("imports large bookmark set (50+) without hitting SQL variable limit", async ({
     request,
   }) => {
-    const youtubeId = `large-bm-${uid()}`;
+    const youtubeId = `large-bm-${createUniqueId()}`;
     const bookmarkCount = 50;
-    const caps = Array.from({ length: bookmarkCount }, (_, i) => ({
+    const captions = Array.from({ length: bookmarkCount }, (_, i) => ({
       idx: i,
       begin: i * 2,
       end: i * 2 + 2,
       text1: `자막${i}`,
       text2: `caption${i}`,
     }));
-    const bms = Array.from({ length: bookmarkCount }, (_, i) => ({
+    const bookmarks = Array.from({ length: bookmarkCount }, (_, i) => ({
       text: `단어${i}`,
       translation: `word${i}`,
       captionIdx: i,
@@ -287,33 +289,33 @@ test.describe("importVideo API", () => {
       offset: 0,
       context: `자막${i}`,
     }));
-    const res = await rpc(request, "videos/importVideo", {
+    const response = await rpc(request, "videos/importVideo", {
       video: {
         youtubeId,
         title: "Large Bookmark Video",
         ...defaultTrackFields,
       },
-      captions: caps,
-      bookmarks: bms,
+      captions,
+      bookmarks,
     });
-    expect(res.ok()).toBe(true);
-    const result = await json(res);
+    expect(response.ok()).toBe(true);
+    const result = await json(response);
     expect(result.captions).toBe(bookmarkCount);
     expect(result.bookmarks).toBe(bookmarkCount);
 
-    const bmList = await json(
+    const bookmarkList = await json(
       await rpc(request, "bookmarks/listBookmarks", {
         videoId: result.videoId,
         limit: 100,
       }),
     );
-    expect(bmList.total).toBe(bookmarkCount);
+    expect(bookmarkList.total).toBe(bookmarkCount);
   });
 
   test("re-import replaces captions and bookmarks", async ({ request }) => {
-    const youtubeId = `reimport-${uid()}`;
+    const youtubeId = `reimport-${createUniqueId()}`;
     // First import
-    const res1 = await json(
+    const firstImport = await json(
       await rpc(request, "videos/importVideo", {
         video: { youtubeId, title: "V1", ...defaultTrackFields },
         captions: [
@@ -323,7 +325,7 @@ test.describe("importVideo API", () => {
     );
 
     // Re-import with different data
-    const res2 = await json(
+    const secondImport = await json(
       await rpc(request, "videos/importVideo", {
         video: { youtubeId, title: "V2", ...defaultTrackFields },
         captions: [
@@ -334,26 +336,28 @@ test.describe("importVideo API", () => {
     );
 
     // Same video ID (upsert)
-    expect(res2.videoId).toBe(res1.videoId);
-    expect(res2.captions).toBe(2);
+    expect(secondImport.videoId).toBe(firstImport.videoId);
+    expect(secondImport.captions).toBe(2);
 
     // Captions replaced, not accumulated
     const video = await json(
-      await rpc(request, "videos/getVideo", { id: res2.videoId }),
+      await rpc(request, "videos/getVideo", { id: secondImport.videoId }),
     );
     expect(video.title).toBe("V2");
     expect(video.captionCount).toBe(2);
 
-    const caps = await json(
-      await rpc(request, "videos/listCaptions", { videoId: res2.videoId }),
+    const captions = await json(
+      await rpc(request, "videos/listCaptions", {
+        videoId: secondImport.videoId,
+      }),
     );
-    expect(caps[0].text1).toBe("갱신");
+    expect(captions[0].text1).toBe("갱신");
   });
 });
 
 test.describe("bookmarks API", () => {
   test("create, list, and update bookmarks", async ({ request }) => {
-    const youtubeId = `bookmark-${uid()}`;
+    const youtubeId = `bookmark-${createUniqueId()}`;
     const video = await json(
       await rpc(request, "videos/createVideo", {
         youtubeId,
@@ -362,7 +366,7 @@ test.describe("bookmarks API", () => {
       }),
     );
 
-    const createRes = await rpc(request, "bookmarks/createBookmarks", {
+    const createResponse = await rpc(request, "bookmarks/createBookmarks", {
       bookmarks: [
         {
           videoId: video.id,
@@ -378,28 +382,28 @@ test.describe("bookmarks API", () => {
         },
       ],
     });
-    expect(createRes.ok()).toBe(true);
-    const created = await json(createRes);
+    expect(createResponse.ok()).toBe(true);
+    const created = await json(createResponse);
     expect(created.inserted).toBe(2);
 
-    const listRes = await rpc(request, "bookmarks/listBookmarks", {
+    const listResponse = await rpc(request, "bookmarks/listBookmarks", {
       videoId: video.id,
     });
-    expect(listRes.ok()).toBe(true);
-    const list = await json(listRes);
+    expect(listResponse.ok()).toBe(true);
+    const list = await json(listResponse);
     expect(list.total).toBe(2);
     const bookmarkId = list.items[0].id;
-    const updateRes = await rpc(request, "bookmarks/updateBookmark", {
+    const updateResponse = await rpc(request, "bookmarks/updateBookmark", {
       id: bookmarkId,
       notes: "Common greeting",
     });
-    expect(updateRes.ok()).toBe(true);
-    const updated = await json(updateRes);
+    expect(updateResponse.ok()).toBe(true);
+    const updated = await json(updateResponse);
     expect(updated.notes).toBe("Common greeting");
   });
 
   test("delete bookmark", async ({ request }) => {
-    const youtubeId = `del-bm-${uid()}`;
+    const youtubeId = `del-bm-${createUniqueId()}`;
     const video = await json(
       await rpc(request, "videos/createVideo", {
         youtubeId,
@@ -413,10 +417,10 @@ test.describe("bookmarks API", () => {
     const list = await json(
       await rpc(request, "bookmarks/listBookmarks", { videoId: video.id }),
     );
-    const delRes = await rpc(request, "bookmarks/deleteBookmark", {
+    const deleteResponse = await rpc(request, "bookmarks/deleteBookmark", {
       id: list.items[0].id,
     });
-    expect(delRes.ok()).toBe(true);
+    expect(deleteResponse.ok()).toBe(true);
 
     const after = await json(
       await rpc(request, "bookmarks/listBookmarks", { videoId: video.id }),
@@ -430,7 +434,7 @@ test.describe("bookmarks API", () => {
     const { videoId } = await json(
       await rpc(request, "videos/importVideo", {
         video: {
-          youtubeId: `bm-text-${uid()}`,
+          youtubeId: `bm-text-${createUniqueId()}`,
           title: "V",
           ...defaultTrackFields,
         },
@@ -461,23 +465,23 @@ test.describe("bookmarks API", () => {
     const side0 = items.find((b: any) => b.side === 0);
     const side1 = items.find((b: any) => b.side === 1);
 
-    const res = await rpc(request, "bookmarks/updateBookmark", {
+    const response = await rpc(request, "bookmarks/updateBookmark", {
       id: side0.id,
       text: "쌍꺼풀",
       context: "오늘 쌍꺼풀이",
     });
-    expect(res.ok()).toBe(true);
-    const updated = await json(res);
+    expect(response.ok()).toBe(true);
+    const updated = await json(response);
     expect(updated.text).toBe("쌍꺼풀");
     expect(updated.offset).toBe(3);
     expect(updated.context).toBe("오늘 쌍꺼풀이");
 
     // Side 1 is checked against text2
-    const side1Res = await rpc(request, "bookmarks/updateBookmark", {
+    const side1Response = await rpc(request, "bookmarks/updateBookmark", {
       id: side1.id,
       offset: 7,
     });
-    expect(side1Res.ok()).toBe(true);
+    expect(side1Response.ok()).toBe(true);
 
     const misplaced = await rpc(request, "bookmarks/updateBookmark", {
       id: side0.id,
@@ -495,7 +499,7 @@ test.describe("bookmarks API", () => {
   }) => {
     const video = await json(
       await rpc(request, "videos/createVideo", {
-        youtubeId: `bm-nocap-${uid()}`,
+        youtubeId: `bm-nocap-${createUniqueId()}`,
         title: "V",
         ...defaultTrackFields,
       }),
@@ -507,16 +511,16 @@ test.describe("bookmarks API", () => {
       await rpc(request, "bookmarks/listBookmarks", { videoId: video.id }),
     );
 
-    const textRes = await rpc(request, "bookmarks/updateBookmark", {
+    const textResponse = await rpc(request, "bookmarks/updateBookmark", {
       id: items[0].id,
       text: "단어들",
     });
-    expect(textRes.ok()).toBe(false);
+    expect(textResponse.ok()).toBe(false);
 
-    const notesRes = await rpc(request, "bookmarks/updateBookmark", {
+    const notesResponse = await rpc(request, "bookmarks/updateBookmark", {
       id: items[0].id,
       notes: "still editable",
     });
-    expect(notesRes.ok()).toBe(true);
+    expect(notesResponse.ok()).toBe(true);
   });
 });

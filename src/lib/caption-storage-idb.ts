@@ -32,7 +32,7 @@ const transact = createTransact<Stores>({
   name: DB_NAME,
   version: DB_VERSION,
   storeNames: STORE_NAMES,
-  upgrade(db, oldVersion, tx) {
+  upgrade(db, oldVersion, transaction) {
     if (oldVersion < 1) {
       db.createObjectStore(STORE_NAMES.sessions, { keyPath: "youtubeId" });
     }
@@ -44,9 +44,9 @@ const transact = createTransact<Stores>({
       // A synced entry's base becomes the server time recorded at its last
       // sync, which the server's edited_at started from. An entry unchanged
       // since then takes the same value as its editedAt, so it stays synced.
-      const videos = tx.objectStore(STORE_NAMES.videos);
-      videos.openCursor().onsuccess = (e) => {
-        const cursor = (e.target as IDBRequest<IDBCursorWithValue>).result;
+      const videos = transaction.objectStore(STORE_NAMES.videos);
+      videos.openCursor().onsuccess = (event) => {
+        const cursor = (event.target as IDBRequest<IDBCursorWithValue>).result;
         if (!cursor) {
           return;
         }
@@ -147,8 +147,8 @@ class IdbCaptionStorage implements CaptionStorage {
   };
 
   notify(notice: StorageNotice) {
-    for (const l of this.listeners) {
-      l(notice);
+    for (const listener of this.listeners) {
+      listener(notice);
     }
   }
 }

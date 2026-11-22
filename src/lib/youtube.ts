@@ -91,13 +91,13 @@ export function extractVideoData(): YouTubeExtractionResult {
 
   const captionTracks = rawTracks.map((track) => {
     // name can be { simpleText: "..." } or { runs: [{ text: "..." }] }
-    const nameObj = track.name as Record<string, unknown> | undefined;
+    const rawName = track.name as Record<string, unknown> | undefined;
     let name = String(track.languageCode);
-    if (nameObj) {
-      if (typeof nameObj.simpleText === "string") {
-        name = nameObj.simpleText;
-      } else if (Array.isArray(nameObj.runs)) {
-        name = (nameObj.runs as { text: string }[]).map((r) => r.text).join("");
+    if (rawName) {
+      if (typeof rawName.simpleText === "string") {
+        name = rawName.simpleText;
+      } else if (Array.isArray(rawName.runs)) {
+        name = (rawName.runs as { text: string }[]).map((r) => r.text).join("");
       }
     }
     return {
@@ -125,14 +125,16 @@ export function extractVideoData(): YouTubeExtractionResult {
 export async function fetchTrackJson3(baseUrl: string): Promise<Json3File> {
   const url = new URL(baseUrl);
   url.searchParams.set("fmt", "json3");
-  const res = await fetch(url.toString());
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`Failed to fetch json3: ${res.status} ${text}`);
+  const response = await fetch(url.toString());
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`Failed to fetch json3: ${response.status} ${text}`);
   }
-  const text = await res.text();
+  const text = await response.text();
   if (!text) {
-    throw new Error(`Empty response from json3 fetch (status ${res.status})`);
+    throw new Error(
+      `Empty response from json3 fetch (status ${response.status})`,
+    );
   }
   return JSON.parse(text);
 }
@@ -190,11 +192,11 @@ export async function fetchPlayerApi(options: {
   ).ytcfg;
   let visitorData: string | undefined;
   if (ytcfg?.data_) {
-    const d = ytcfg.data_;
+    const config = ytcfg.data_;
     visitorData =
-      (d.VISITOR_DATA as string) ??
+      (config.VISITOR_DATA as string) ??
       ((
-        (d.INNERTUBE_CONTEXT as Record<string, unknown>)?.client as Record<
+        (config.INNERTUBE_CONTEXT as Record<string, unknown>)?.client as Record<
           string,
           unknown
         >
@@ -204,7 +206,7 @@ export async function fetchPlayerApi(options: {
     throw new Error("Could not extract visitorData from ytcfg");
   }
 
-  const res = await fetch("https://www.youtube.com/youtubei/v1/player", {
+  const response = await fetch("https://www.youtube.com/youtubei/v1/player", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -230,11 +232,11 @@ export async function fetchPlayerApi(options: {
     }),
   });
 
-  if (!res.ok) {
-    throw new Error(`Player API returned ${res.status}`);
+  if (!response.ok) {
+    throw new Error(`Player API returned ${response.status}`);
   }
 
-  const data = (await res.json()) as Record<string, unknown>;
+  const data = (await response.json()) as Record<string, unknown>;
 
   // Parse response (inlined — page.evaluate can't see external functions)
   // YouTube leaves out videoDetails when it refuses playback, such as with
@@ -260,13 +262,13 @@ export async function fetchPlayerApi(options: {
   >[];
 
   const captionTracks = rawTracks.map((track) => {
-    const nameObj = track.name as Record<string, unknown> | undefined;
+    const rawName = track.name as Record<string, unknown> | undefined;
     let trackName = String(track.languageCode);
-    if (nameObj) {
-      if (typeof nameObj.simpleText === "string") {
-        trackName = nameObj.simpleText;
-      } else if (Array.isArray(nameObj.runs)) {
-        trackName = (nameObj.runs as { text: string }[])
+    if (rawName) {
+      if (typeof rawName.simpleText === "string") {
+        trackName = rawName.simpleText;
+      } else if (Array.isArray(rawName.runs)) {
+        trackName = (rawName.runs as { text: string }[])
           .map((r) => r.text)
           .join("");
       }
@@ -299,20 +301,20 @@ export async function fetchPlayerApi(options: {
       captionTracks.find((t) => !t.kind) ??
       captionTracks.find((t) => t.kind === "asr");
     if (source) {
-      for (const tlang of targetLangs) {
-        if (coveredLangs.has(tlang)) {
+      for (const targetLang of targetLangs) {
+        if (coveredLangs.has(targetLang)) {
           continue;
         }
-        const tUrl = new URL(source.baseUrl);
-        tUrl.searchParams.set("tlang", tlang);
+        const translatedUrl = new URL(source.baseUrl);
+        translatedUrl.searchParams.set("tlang", targetLang);
         captionTracks.push({
-          baseUrl: tUrl.toString(),
-          languageCode: tlang,
+          baseUrl: translatedUrl.toString(),
+          languageCode: targetLang,
           kind: "asr",
-          name: `${tlang} (auto-translated from ${source.languageCode})`,
-          vssId: `${source.vssId}.t.${tlang}`,
+          name: `${targetLang} (auto-translated from ${source.languageCode})`,
+          vssId: `${source.vssId}.t.${targetLang}`,
         });
-        coveredLangs.add(tlang);
+        coveredLangs.add(targetLang);
       }
     }
   }
@@ -358,17 +360,25 @@ export function parseJson3(data: Json3File): CaptionCue[] {
     let words: CaptionWord[] | undefined;
     if (event.segs.some((s) => s.tOffsetMs != null)) {
       words = [];
-      for (let si = 0; si < event.segs.length; si++) {
-        const seg = event.segs[si];
-        const wordText = (seg.utf8 || "").replace(/\n/g, "").trim();
+      for (
+        let segmentIndex = 0;
+        segmentIndex < event.segs.length;
+        segmentIndex++
+      ) {
+        const segment = event.segs[segmentIndex];
+        const wordText = (segment.utf8 || "").replace(/\n/g, "").trim();
         if (!wordText) {
           continue;
         }
-        const begin = (event.tStartMs + (seg.tOffsetMs ?? 0)) / 1000;
+        const begin = (event.tStartMs + (segment.tOffsetMs ?? 0)) / 1000;
         let end = eventEnd;
-        for (let sj = si + 1; sj < event.segs.length; sj++) {
-          if (event.segs[sj].tOffsetMs != null) {
-            end = (event.tStartMs + event.segs[sj].tOffsetMs!) / 1000;
+        for (
+          let nextIndex = segmentIndex + 1;
+          nextIndex < event.segs.length;
+          nextIndex++
+        ) {
+          if (event.segs[nextIndex].tOffsetMs != null) {
+            end = (event.tStartMs + event.segs[nextIndex].tOffsetMs!) / 1000;
             break;
           }
         }

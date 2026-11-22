@@ -86,8 +86,8 @@ export const videosRouter = authed.router({
         text2: c.text2,
       }));
       let inserted = 0;
-      for (let i = 0; i < rows.length; i += CAPTION_BATCH_SIZE) {
-        const batch = rows.slice(i, i + CAPTION_BATCH_SIZE);
+      for (let start = 0; start < rows.length; start += CAPTION_BATCH_SIZE) {
+        const batch = rows.slice(start, start + CAPTION_BATCH_SIZE);
         const result = await db.insert(captions).values(batch).returning();
         inserted += result.length;
       }
@@ -271,8 +271,8 @@ export const videosRouter = authed.router({
           text2: c.text2,
         }));
         let allInserted: { idx: number; id: number }[] = [];
-        for (let i = 0; i < rows.length; i += CAPTION_BATCH_SIZE) {
-          const batch = rows.slice(i, i + CAPTION_BATCH_SIZE);
+        for (let start = 0; start < rows.length; start += CAPTION_BATCH_SIZE) {
+          const batch = rows.slice(start, start + CAPTION_BATCH_SIZE);
           const result = await db.insert(captions).values(batch).returning();
           allInserted = allInserted.concat(result);
         }
@@ -296,8 +296,15 @@ export const videosRouter = authed.router({
           }));
           // Delete existing bookmarks for this video first
           await db.delete(bookmarks).where(eq(bookmarks.videoId, video.id));
-          for (let i = 0; i < bookmarkRows.length; i += BOOKMARK_BATCH_SIZE) {
-            const batch = bookmarkRows.slice(i, i + BOOKMARK_BATCH_SIZE);
+          for (
+            let start = 0;
+            start < bookmarkRows.length;
+            start += BOOKMARK_BATCH_SIZE
+          ) {
+            const batch = bookmarkRows.slice(
+              start,
+              start + BOOKMARK_BATCH_SIZE,
+            );
             await db.insert(bookmarks).values(batch);
           }
         }

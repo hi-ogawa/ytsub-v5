@@ -33,27 +33,27 @@ export function ExtensionBookmarksList({
 
   useImperativeHandle(ref, () => ({
     scrollToBookmark: (bookmarkId: string) => {
-      const el = scrollRef.current?.querySelector(
+      const element = scrollRef.current?.querySelector(
         `[data-bookmark-id="${bookmarkId}"]`,
       ) as HTMLElement | null;
-      if (el) {
-        el.scrollIntoView({ behavior: "smooth", block: "center" });
-        flashHighlight(el);
+      if (element) {
+        element.scrollIntoView({ behavior: "smooth", block: "center" });
+        flashHighlight(element);
       }
     },
   }));
 
   return (
     <div ref={scrollRef} className="flex flex-col gap-1.5 p-1.5">
-      {bookmarks.map((bm, bmIndex) => (
+      {bookmarks.map((bookmark, index) => (
         <BookmarkCard
-          key={bm.id}
-          bookmark={bm}
-          bookmarkNumber={bmIndex + 1}
-          caption={rows[bm.captionIndex]}
-          onClick={() => onPlayBookmark(bm)}
-          onDelete={() => onDeleteBookmark(bm.id)}
-          onGoToCaption={() => onGoToCaption(bm.captionIndex)}
+          key={bookmark.id}
+          bookmark={bookmark}
+          bookmarkNumber={index + 1}
+          caption={rows[bookmark.captionIndex]}
+          onClick={() => onPlayBookmark(bookmark)}
+          onDelete={() => onDeleteBookmark(bookmark.id)}
+          onGoToCaption={() => onGoToCaption(bookmark.captionIndex)}
         />
       ))}
     </div>
@@ -139,8 +139,8 @@ function BookmarkCard({
             <button
               className="rounded p-0.5 text-muted-foreground hover:bg-accent hover:text-foreground"
               title="Go to caption"
-              onClick={(e) => {
-                e.stopPropagation();
+              onClick={(event) => {
+                event.stopPropagation();
                 onGoToCaption();
               }}
             >
@@ -161,7 +161,7 @@ function BookmarkCard({
 }
 
 function formatTimestamp(seconds: number): string {
-  const m = Math.floor(seconds / 60);
-  const s = Math.floor(seconds % 60);
-  return `${m}:${String(s).padStart(2, "0")}`;
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = Math.floor(seconds % 60);
+  return `${minutes}:${String(remainingSeconds).padStart(2, "0")}`;
 }
