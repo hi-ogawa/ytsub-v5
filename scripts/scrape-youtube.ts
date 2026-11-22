@@ -2,11 +2,11 @@
  * Scrape YouTube video metadata + subtitle tracks to fixture files.
  *
  * Usage:
- *   node scripts/scrape-youtube.ts <videoId> [videoId2 ...]
+ *   node scripts/scrape-youtube.ts <youtubeId> [youtubeId2 ...]
  *
  * Output:
- *   scripts/youtube-json/<videoId>/metadata.json   — YouTubeExtractionResult
- *   scripts/youtube-json/<videoId>/track-<vssId>.json    — json3 for each track
+ *   scripts/youtube-json/<youtubeId>/metadata.json   — YouTubeExtractionResult
+ *   scripts/youtube-json/<youtubeId>/track-<vssId>.json    — json3 for each track
  *
  * Auto-translated tracks are generated for configured target languages
  * via fetchPlayerApi's userLangs parameter.
@@ -22,21 +22,21 @@ const FIXTURES_DIR = join(import.meta.dirname, "youtube-json");
 /** Languages to generate translations for when not natively available. */
 const USER_LANGS = ["ko", "en", "ja"];
 
-async function scrape(videoId: string) {
+async function scrape(youtubeId: string) {
   const browser = await chromium.launch();
   const page = await browser.newPage();
 
   try {
-    await page.goto(`https://www.youtube.com/watch?v=${videoId}`, {
+    await page.goto(`https://www.youtube.com/watch?v=${youtubeId}`, {
       waitUntil: "domcontentloaded",
     });
 
     // fetchPlayerApi generates translated virtual tracks for userLangs
     const result = await page.evaluate(fetchPlayerApi, {
-      videoId,
+      youtubeId,
       userLangs: USER_LANGS,
     });
-    const dir = join(FIXTURES_DIR, videoId);
+    const dir = join(FIXTURES_DIR, youtubeId);
     await mkdir(dir, { recursive: true });
 
     // Fetch all tracks (native + translated)
@@ -46,10 +46,10 @@ async function scrape(videoId: string) {
         const filename = `track-${track.vssId}.json`;
         await writeFile(join(dir, filename), JSON.stringify(json3, null, 2));
         console.log(
-          `[${videoId}] ${track.vssId} (${track.languageCode}): ${json3.events?.length ?? 0} events`,
+          `[${youtubeId}] ${track.vssId} (${track.languageCode}): ${json3.events?.length ?? 0} events`,
         );
       } catch (e) {
-        console.warn(`[${videoId}] ${track.vssId}: fetch failed — ${e}`);
+        console.warn(`[${youtubeId}] ${track.vssId}: fetch failed — ${e}`);
       }
     }
 
@@ -57,18 +57,20 @@ async function scrape(videoId: string) {
       join(dir, "metadata.json"),
       JSON.stringify(result, null, 2),
     );
-    console.log(`[${videoId}] metadata: ${result.captionTracks.length} tracks`);
+    console.log(
+      `[${youtubeId}] metadata: ${result.captionTracks.length} tracks`,
+    );
   } finally {
     await browser.close();
   }
 }
 
-const videoIds = process.argv.slice(2);
-if (videoIds.length === 0) {
-  console.error("Usage: node scripts/scrape-youtube.ts <videoId> [...]");
+const youtubeIds = process.argv.slice(2);
+if (youtubeIds.length === 0) {
+  console.error("Usage: node scripts/scrape-youtube.ts <youtubeId> [...]");
   process.exit(1);
 }
 
-for (const id of videoIds) {
+for (const id of youtubeIds) {
   await scrape(id);
 }

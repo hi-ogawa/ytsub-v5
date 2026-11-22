@@ -33,16 +33,16 @@ function main() {
   const storage = createBridgeStorage();
 
   subscribeWatchPage({
-    onEnter: (videoId) => mountOverlay({ storage, videoId }),
+    onEnter: (youtubeId) => mountOverlay({ storage, youtubeId }),
   });
 }
 
 function mountOverlay({
   storage,
-  videoId,
+  youtubeId,
 }: {
   storage: CaptionStorage;
-  videoId: string;
+  youtubeId: string;
 }) {
   const { host, container } = createShadowHost({
     id: "zamak-host",
@@ -68,7 +68,7 @@ function mountOverlay({
         <QueryClientProvider client={queryClient}>
           <CaptionOverlay
             storage={storage}
-            videoId={videoId}
+            youtubeId={youtubeId}
             useSync={(youtubeId) =>
               useExtensionSync({ storage, bgRpc, youtubeId })
             }
