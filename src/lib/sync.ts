@@ -1,9 +1,4 @@
-import type { InferRouterOutputs } from "@orpc/server";
-import type { Router } from "../server/rpc.ts";
 import type { CaptionPanelRuntime } from "./caption-panel-runtime.ts";
-import type { VideoIndexEntry } from "./caption-storage.ts";
-
-type ListVideosOutput = InferRouterOutputs<Router>["videos"]["listVideos"];
 
 export type SyncState =
   | "unauthenticated"
@@ -79,50 +74,3 @@ export type SyncStatus = {
 };
 
 export type UseSync = (options: { youtubeId: string }) => SyncStatus;
-
-export type VideoListEntry = VideoIndexEntry & {
-  syncStatus?: ComputedSyncState;
-  serverId?: number;
-};
-
-export function mergeVideoEntries(
-  localEntries: VideoIndexEntry[],
-  serverVideos: ListVideosOutput["items"],
-): VideoListEntry[] {
-  const merged = new Map<string, VideoListEntry>();
-
-  for (const local of localEntries) {
-    const server = serverVideos.find((v) => v.youtubeId === local.youtubeId);
-    const status = computeSyncState({
-      localUpdatedAt: local.updatedAt,
-      syncedAt: local.syncedAt,
-      syncedServerUpdatedAt: local.syncedServerUpdatedAt,
-      serverUpdatedAt: server?.updatedAt ?? undefined,
-    });
-    merged.set(local.youtubeId, {
-      youtubeId: local.youtubeId,
-      title: local.title,
-      channelName: local.channelName,
-      bookmarkCount: local.bookmarkCount,
-      updatedAt: local.updatedAt,
-      serverId: server?.id,
-      syncStatus: status,
-    });
-  }
-
-  for (const server of serverVideos) {
-    if (!merged.has(server.youtubeId)) {
-      merged.set(server.youtubeId, {
-        youtubeId: server.youtubeId,
-        title: server.title,
-        channelName: server.channelName,
-        bookmarkCount: 0,
-        updatedAt: server.updatedAt,
-        serverId: server.id,
-        syncStatus: "pull",
-      });
-    }
-  }
-
-  return Array.from(merged.values());
-}

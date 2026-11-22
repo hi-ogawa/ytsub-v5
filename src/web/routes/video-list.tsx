@@ -2,12 +2,12 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { ExternalLink } from "lucide-react";
 import { BookmarksPage } from "../../components/bookmarks-page.tsx";
 import { useVideoListSync } from "../../components/use-video-list-sync.ts";
+import type { VideoListEntry } from "../../components/use-video-list-sync.ts";
 import {
   type CaptionStorage,
   videoIndexStore,
 } from "../../lib/caption-storage.ts";
 import { orpc } from "../../lib/rpc-client.ts";
-import type { VideoListEntry } from "../../lib/sync.ts";
 
 const CHROME_STORE_URL =
   "https://chromewebstore.google.com/detail/zamak/gkonhebhbkfoeggebiipfbblfecdbabn";

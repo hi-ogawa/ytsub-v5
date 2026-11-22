@@ -1,3 +1,4 @@
+import type { InferRouterOutputs } from "@orpc/server";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -7,12 +8,21 @@ import {
 } from "../lib/caption-session.ts";
 import {
   type CaptionStorage,
+  type VideoIndexEntry,
   videoIndexStore,
 } from "../lib/caption-storage.ts";
 import { orpc } from "../lib/rpc-client.ts";
-import { type VideoListEntry, mergeVideoEntries } from "../lib/sync.ts";
+import { type ComputedSyncState, computeSyncState } from "../lib/sync.ts";
+import type { Router } from "../server/rpc.ts";
+
+type ListVideosOutput = InferRouterOutputs<Router>["videos"]["listVideos"];
 
 export type VideoListSync = ReturnType<typeof useVideoListSync>;
+
+export type VideoListEntry = VideoIndexEntry & {
+  syncStatus?: ComputedSyncState;
+  serverId?: number;
+};
 
 /**
  * Sync status, push, and pull for every video on the video list. The web app
@@ -100,4 +110,46 @@ export function useVideoListSync(storage: CaptionStorage) {
       }
     },
   };
+}
+
+function mergeVideoEntries(
+  localEntries: VideoIndexEntry[],
+  serverVideos: ListVideosOutput["items"],
+): VideoListEntry[] {
+  const merged = new Map<string, VideoListEntry>();
+
+  for (const local of localEntries) {
+    const server = serverVideos.find((v) => v.youtubeId === local.youtubeId);
+    const status = computeSyncState({
+      localUpdatedAt: local.updatedAt,
+      syncedAt: local.syncedAt,
+      syncedServerUpdatedAt: local.syncedServerUpdatedAt,
+      serverUpdatedAt: server?.updatedAt ?? undefined,
+    });
+    merged.set(local.youtubeId, {
+      youtubeId: local.youtubeId,
+      title: local.title,
+      channelName: local.channelName,
+      bookmarkCount: local.bookmarkCount,
+      updatedAt: local.updatedAt,
+      serverId: server?.id,
+      syncStatus: status,
+    });
+  }
+
+  for (const server of serverVideos) {
+    if (!merged.has(server.youtubeId)) {
+      merged.set(server.youtubeId, {
+        youtubeId: server.youtubeId,
+        title: server.title,
+        channelName: server.channelName,
+        bookmarkCount: 0,
+        updatedAt: server.updatedAt,
+        serverId: server.id,
+        syncStatus: "pull",
+      });
+    }
+  }
+
+  return Array.from(merged.values());
 }

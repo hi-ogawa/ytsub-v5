@@ -21,12 +21,12 @@ import {
   DropdownMenuTrigger,
 } from "../../components/ui/dropdown-menu.tsx";
 import { useVideoListSync } from "../../components/use-video-list-sync.ts";
+import type { VideoListEntry } from "../../components/use-video-list-sync.ts";
 import {
   type CaptionStorage,
   videoIndexStore,
 } from "../../lib/caption-storage.ts";
 import { orpc } from "../../lib/rpc-client.ts";
-import type { VideoListEntry } from "../../lib/sync.ts";
 import { useTheme } from "../../lib/theme.ts";
 import { chromeStorage } from "../lib/chrome-storage.ts";
 

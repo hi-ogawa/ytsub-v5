@@ -7,7 +7,6 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import type { VideoIndexEntry } from "../lib/caption-storage.ts";
-import type { VideoListEntry } from "../lib/sync.ts";
 import { syncStateDisplay } from "./sync-state.tsx";
 import { Dialog, DialogContent, DialogTitle } from "./ui/dialog.tsx";
 import {
@@ -16,6 +15,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu.tsx";
+import type { VideoListEntry } from "./use-video-list-sync.ts";
 import type { VideoListSync } from "./use-video-list-sync.ts";
 import { VideoCard } from "./video-card.tsx";
 
