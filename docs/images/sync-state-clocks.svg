@@ -54,7 +54,7 @@
   <rect x="366" y="183" width="168" height="38" rx="4" class="dv"/>
   <text x="450" y="198" text-anchor="middle" class="n dt">syncedAt</text>
   <text x="450" y="215" text-anchor="middle" class="v dt">10:53:13</text>
-  <text x="450" y="259" text-anchor="middle" class="s">the pull also sets localUpdatedAt</text>
+  <text x="450" y="259" text-anchor="middle" class="s">the pull also sets localUpdatedAt to 10:53:10</text>
   <rect x="556" y="183" width="168" height="38" rx="4" class="dv"/>
   <text x="640" y="198" text-anchor="middle" class="n dt">localUpdatedAt</text>
   <text x="640" y="215" text-anchor="middle" class="v dt">10:54:13</text>
