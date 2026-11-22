@@ -58,7 +58,7 @@ const transact = createTransact<Stores>({
           ...entry,
           editedAt: unchanged ? syncedServerUpdatedAt : updatedAt,
           syncedEditedAt: syncedServerUpdatedAt,
-        });
+        } satisfies VideoIndexEntry);
         cursor.continue();
       };
     }
