@@ -355,6 +355,7 @@ test("a pulled video keeps the place its edit time gives it", async ({
   await expect(bothCards.first()).toContainText("Local Only Video");
 
   const badge = seedCard.getByTestId("video-sync-badge");
+  await expect(badge).toHaveAttribute("data-sync-status", "pull");
   await badge.click();
   await expect(badge).toHaveAttribute("data-sync-status", "synced");
   await expect(bothCards.first()).toContainText("Local Only Video");
