@@ -5,7 +5,7 @@ import {
   BOOKMARK_BATCH_SIZE,
   CAPTION_BATCH_SIZE,
   db,
-  EDITED_AT_NOW,
+  ISO_NOW,
   touchVideo,
 } from "../db.ts";
 import { bookmarks, captions, videos } from "../schema.ts";
@@ -28,7 +28,7 @@ export const videosRouter = authed.router({
     .handler(async ({ input, context }) => {
       const [row] = await db
         .insert(videos)
-        .values({ ...input, userId: context.userId, editedAt: EDITED_AT_NOW })
+        .values({ ...input, userId: context.userId, editedAt: ISO_NOW })
         .onConflictDoUpdate({
           target: [videos.userId, videos.youtubeId],
           set: {
@@ -41,7 +41,7 @@ export const videosRouter = authed.router({
             vssId1: input.vssId1,
             vssId2: input.vssId2,
             updatedAt: sql`datetime('now')`,
-            editedAt: EDITED_AT_NOW,
+            editedAt: ISO_NOW,
           },
         })
         .returning();
@@ -235,7 +235,7 @@ export const videosRouter = authed.router({
     )
     .handler(async ({ input, context }) => {
       // Upsert video
-      const editedAt = input.video.editedAt ?? EDITED_AT_NOW;
+      const editedAt = input.video.editedAt ?? ISO_NOW;
       const [video] = await db
         .insert(videos)
         .values({ ...input.video, userId: context.userId, editedAt })
