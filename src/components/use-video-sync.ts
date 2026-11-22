@@ -4,10 +4,13 @@ import { toast } from "sonner";
 import {
   serverSessionToLocal,
   sessionToExportData,
-} from "./caption-session.ts";
-import { type CaptionStorage, videoIndexStore } from "./caption-storage.ts";
-import { orpc } from "./rpc-client.ts";
-import { type VideoSyncEntry, mergeVideoEntries } from "./sync.ts";
+} from "../lib/caption-session.ts";
+import {
+  type CaptionStorage,
+  videoIndexStore,
+} from "../lib/caption-storage.ts";
+import { orpc } from "../lib/rpc-client.ts";
+import { type VideoSyncEntry, mergeVideoEntries } from "../lib/sync.ts";
 
 export type VideoSyncHandle = ReturnType<typeof useVideoSync>;
 

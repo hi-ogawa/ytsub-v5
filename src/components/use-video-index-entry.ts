@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
-import type { CaptionStorage } from "./caption-storage.ts";
+import type { CaptionStorage } from "../lib/caption-storage.ts";
 
 export function useVideoIndexEntry({
   storage,

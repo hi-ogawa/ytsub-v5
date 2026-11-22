@@ -8,7 +8,6 @@ import {
 import { useState } from "react";
 import type { VideoIndexEntry } from "../lib/caption-storage.ts";
 import type { VideoSyncEntry } from "../lib/sync.ts";
-import type { VideoSyncHandle } from "../lib/use-video-sync.ts";
 import { syncStateDisplay } from "./sync-state.tsx";
 import { Dialog, DialogContent, DialogTitle } from "./ui/dialog.tsx";
 import {
@@ -17,6 +16,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu.tsx";
+import type { VideoSyncHandle } from "./use-video-sync.ts";
 import { VideoCard } from "./video-card.tsx";
 
 export function BookmarksPage({

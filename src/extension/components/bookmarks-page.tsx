@@ -20,6 +20,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "../../components/ui/dropdown-menu.tsx";
+import { useVideoSync } from "../../components/use-video-sync.ts";
 import {
   type CaptionStorage,
   videoIndexStore,
@@ -27,7 +28,6 @@ import {
 import { orpc } from "../../lib/rpc-client.ts";
 import type { VideoSyncEntry } from "../../lib/sync.ts";
 import { useTheme } from "../../lib/theme.ts";
-import { useVideoSync } from "../../lib/use-video-sync.ts";
 import { chromeStorage } from "../lib/chrome-storage.ts";
 
 export function ExtensionBookmarksPage({
