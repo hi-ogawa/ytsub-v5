@@ -75,6 +75,7 @@ test("repeat replays a row from its start until another row is clicked", async (
 
   await host.locator("[data-index='3']").click();
   await expect(repeat).toHaveAttribute("aria-pressed", "false");
+  expect(await getCurrentTime()).toBe(38.206);
 });
 
 test("track selection: default empty, select tracks, switch language", async ({
