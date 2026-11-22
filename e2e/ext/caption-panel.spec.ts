@@ -71,29 +71,6 @@ test("auto-scroll toggle persists across reload", async ({ context }) => {
   await expect(autoScrollItem).toHaveAttribute("data-checked", "false");
 });
 
-test("strategy dropdown switches merge strategy", async ({ context }) => {
-  const { ytPage, host } = await openPanelWithTracks(context, SEED_VIDEO_ID);
-  const strategySelect = host.locator("select[title='Alignment strategy']");
-
-  await host.getByTitle("Settings").click();
-  await expect(strategySelect).toHaveValue("partition");
-  await ytPage.keyboard.press("Escape");
-  const partitionCount = await host.locator("[data-index]").count();
-
-  await host.getByTitle("Settings").click();
-  await strategySelect.selectOption("overlap");
-  await ytPage.keyboard.press("Escape");
-  await expect(host.locator("[data-index='0']")).toBeVisible();
-  expect(await host.locator("[data-index]").count()).toBeGreaterThan(
-    partitionCount,
-  );
-
-  await host.getByTitle("Settings").click();
-  await strategySelect.selectOption("best-overlap");
-  await ytPage.keyboard.press("Escape");
-  await expect(host.locator("[data-index='0']")).toBeVisible();
-});
-
 test("export downloads valid import.json", async ({ context }) => {
   const { ytPage, host } = await openPanelWithTracks(context, SEED_VIDEO_ID);
 

@@ -22,14 +22,11 @@ test("pulled video opens in the viewer with its bookmarks and session-only setti
     page.getByRole("button", { name: "Bookmarks (15)" }),
   ).toBeVisible();
 
-  // Settings has auto-scroll and sync, but no track alignment
+  // Settings has auto-scroll and sync
   await page.getByTitle("Settings").click();
   await expect(page.getByText("Auto-scroll")).toBeVisible();
   await expect(page.getByTestId("sync-status")).toHaveAttribute(
     "data-sync-state",
     "synced",
   );
-  await expect(
-    page.locator("select[title='Alignment strategy']"),
-  ).not.toBeVisible();
 });
