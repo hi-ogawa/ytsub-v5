@@ -31,6 +31,11 @@ export function CaptionPanelContent({
   const captionListRef = useRef<CaptionListHandle>(null);
   const bookmarksListRef = useRef<BookmarksListHandle>(null);
 
+  const { currentIndex, isPlaying } = useSyncExternalStore(
+    runtime.playbackStore.subscribe,
+    runtime.playbackStore.get,
+  );
+
   const sortedBookmarks = useMemo(
     () => sortBookmarks(session.bookmarks),
     [session.bookmarks],
@@ -113,6 +118,8 @@ export function CaptionPanelContent({
               ref={bookmarksListRef}
               bookmarks={sortedBookmarks}
               rows={session.rows}
+              currentIndex={currentIndex}
+              isPlaying={isPlaying}
               onPlayBookmark={(bookmark) => runtime.playBookmark(bookmark)}
               onDeleteBookmark={(id) => runtime.deleteBookmark(id)}
               onGoToCaption={onGoToCaption}
