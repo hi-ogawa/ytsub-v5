@@ -68,7 +68,7 @@ function ExtensionViewer({
           fetchTracks: () =>
             fetchPlayerApi({ youtubeId, userLangs: getUserLangs() }),
           fetchJson3: (track) =>
-            queryClient.fetchQuery({
+            queryClient.query({
               queryKey: ["json3", youtubeId, track.vssId],
               queryFn: () => fetchTrackJson3(track.baseUrl),
               retry: 3,
