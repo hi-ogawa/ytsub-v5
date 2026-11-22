@@ -10,6 +10,9 @@ const FIXTURE_DIR = "scripts/youtube-json";
  * video has no source, so `play()` only clears `paused` and `currentTime` stays
  * where the last seek put it, which lets tests assert exact times.
  * Changes to the real page or API shape are covered by `pnpm test-youtube`.
+ *
+ * A status line under the video mirrors its play state and current time, so
+ * trace snapshots show what the player did between assertions.
  */
 export async function mockYouTube(context: BrowserContext) {
   await context.route("https://www.youtube.com/**", async (route) => {
@@ -47,15 +50,29 @@ const WATCH_HTML = `<!doctype html>
       main { padding: 24px; width: 60%; }
       video { display: block; width: 100%; aspect-ratio: 16 / 9; background: #ddd; }
       .line { height: 16px; margin-top: 12px; background: #eee; }
+      #playback { display: block; margin-top: 12px; font: bold 28px monospace; color: #222; }
     </style>
   </head>
   <body>
     <header>Mock YouTube (e2e/ext/youtube-mock.ts)</header>
     <main>
       <video></video>
+      <output id="playback"></output>
       <div class="line" style="width: 70%"></div>
       <div class="line" style="width: 40%"></div>
     </main>
+    <script>
+      // A source-less video fires no seeked or timeupdate events, so poll it.
+      {
+        const video = document.querySelector("video");
+        const status = document.getElementById("playback");
+        (function render() {
+          const text = \`\${video.paused ? "paused" : "playing"} at \${video.currentTime.toFixed(2)}s\`;
+          if (status.textContent !== text) status.textContent = text;
+          requestAnimationFrame(render);
+        })();
+      }
+    </script>
   </body>
 </html>
 `;
