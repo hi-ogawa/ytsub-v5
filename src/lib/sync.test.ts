@@ -33,6 +33,8 @@ test(computeSyncState, () => {
     [A,  A,  B,  "pull",     "#12 server changed"],
     [B,  A,  C,  "conflict", "#13 both changed"],
     [B,  A,  B,  "conflict", "#14 both changed to the same time"],
+    [A,  B,  B,  "push",     "#15 local changed to an earlier time"],
+    [B,  B,  A,  "pull",     "#16 server changed to an earlier time"],
   ] as const;
 
   for (const [local, synced, server, expected, note] of cases) {
@@ -47,20 +49,4 @@ test(computeSyncState, () => {
       )
       .toBe(expected);
   }
-});
-
-// An edit stamped by a clock that runs behind still counts as a change.
-test("computeSyncState with edit times earlier than the last sync", () => {
-  const synced = "2025-01-01T10:53:10.000Z";
-  const earlier = "2025-01-01T10:50:00.000Z";
-
-  const compute = (local: string, server: string) =>
-    computeSyncState({
-      localEditedAt: local,
-      syncedEditedAt: synced,
-      serverEditedAt: server,
-    });
-
-  expect(compute(earlier, synced)).toBe("push");
-  expect(compute(synced, earlier)).toBe("pull");
 });
