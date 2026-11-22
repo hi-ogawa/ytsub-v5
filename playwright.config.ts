@@ -18,8 +18,19 @@ const traceEnabled =
   process.env.E2E_TRACE === "1" ||
   (!process.env.CI && process.env.E2E_TRACE !== "0");
 
+// These specs never touch the database, so their tests run in parallel. The
+// other specs share one local D1 database that setupDb() clears, so the db
+// project runs them one at a time.
+const noDbSpecs = [
+  "e2e/ext/caption-panel.spec.ts",
+  "e2e/ext/caption-panel-bookmarks.spec.ts",
+  "e2e/ext/caption-panel-ai-prompts.spec.ts",
+];
+
 export default defineConfig({
-  workers: 1,
+  // One worker runs the db project and the other the no-db tests. More workers
+  // don't shorten the run, because the serial db project sets its length.
+  workers: 2,
   globalSetup: "./e2e/global-setup.ts",
   webServer: {
     command:
@@ -51,13 +62,16 @@ export default defineConfig({
   ],
   projects: [
     {
-      name: "app",
+      name: "db",
       testDir: "./e2e",
-      testIgnore: ["e2e/ext/**", "e2e/youtube/**"],
+      testIgnore: ["e2e/youtube/**", ...noDbSpecs],
+      workers: 1,
     },
     {
-      name: "ext",
-      testDir: "./e2e/ext",
+      name: "no-db",
+      testDir: "./e2e",
+      testMatch: noDbSpecs,
+      fullyParallel: true,
     },
   ],
 });

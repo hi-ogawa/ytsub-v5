@@ -1,22 +1,22 @@
 # E2E Tests
 
-The web app and extension e2e tests are two Playwright projects, `app` and `ext`, in `playwright.config.ts`. The subtitle extraction tests run against real YouTube pages with their own config, `playwright.youtube.config.ts`.
+The web app tests in `e2e/` and the extension tests in `e2e/ext/` run in `playwright.config.ts`, split into two Playwright projects by whether they use the database: `db` and `no-db`. The subtitle extraction tests run against real YouTube pages with their own config, `playwright.youtube.config.ts`.
 
 ```sh
 pnpm test-e2e                          # web app and extension
 pnpm test-e2e e2e/sync.spec.ts         # one file
-pnpm test-e2e --project=app            # one project
+pnpm test-e2e --project=no-db          # one project
 E2E_SERVER=dev pnpm test-e2e           # against the dev server
 pnpm test-youtube                      # real YouTube pages
 ```
 
-`pnpm test-e2e` builds the extension into `dist/extension/`, then runs Playwright. Playwright builds the web app and serves it with `vite preview`, so the tests run the worker that ships. Set `E2E_SERVER=dev` to serve the web app with `pnpm dev` instead, which skips the web app build. Both servers persist local state to `.wrangler/state/e2e`, separate from the dev database. Playwright runs one test at a time (`workers: 1`), because the database tests share that state and `setupDb()` clears it.
+`pnpm test-e2e` builds the extension into `dist/extension/`, then runs Playwright. Playwright builds the web app and serves it with `vite preview`, so the tests run the worker that ships. Set `E2E_SERVER=dev` to serve the web app with `pnpm dev` instead, which skips the web app build. Both servers persist local state to `.wrangler/state/e2e`, separate from the dev database. The `db` project runs one test at a time, because its tests share that state and `setupDb()` clears it. The `no-db` project lists the extension specs that never call `setupDb()` and runs their tests in parallel alongside the `db` project, which shortens the run. `setupDb()` throws outside the `db` project, so a spec that needs the database fails until it is moved out of the `no-db` list.
 
 ## Choose Between the Extension and the Web App
 
 [Architecture overview](architecture.md#share-one-ui-across-the-extension-and-the-web-app) lists what each surface can do, which decides where a test can run.
 
-Test the caption panel and the bookmarks page in the extension project, `e2e/ext`, because desktop users run them there and bookmarks are created there. These tests need no login or server state unless they sync.
+Test the caption panel and the bookmarks page in the extension tests, `e2e/ext`, because desktop users run them there and bookmarks are created there. These tests need no login or server state unless they sync, so add a new spec that doesn't sync to the `noDbSpecs` list in `playwright.config.ts`.
 
 Test the web app for what only it does: login and registration, the server APIs, importing, and the viewer for pulled videos that phones use. These tests need a user in the database. Call `setupDb({ seed: true })` and then `login(page)`, because login needs the seed user. `setupDb()` writes to SQLite directly and takes about 0.15s. The web viewer shows only pulled videos, so `openPulledVideo(page, youtubeId)` logs in, pulls a seed video, and opens it.
 
@@ -69,4 +69,4 @@ gh workflow run e2e-trace.yml --ref main \
   -f tests='e2e/sync.spec.ts e2e/ext/bookmarks-page.spec.ts'
 ```
 
-Separate test file filters with spaces. A filter can match specs in both the web app and extension projects. Add `-f grep='push'` to filter by test title. You can also run **E2E trace** from the repository's Actions tab.
+Separate test file filters with spaces. A filter can match specs in both the web app and the extension. Add `-f grep='push'` to filter by test title. You can also run **E2E trace** from the repository's Actions tab.

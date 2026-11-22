@@ -11,6 +11,9 @@ export const execAsync = promisify(exec);
 // the server is still finishing instead of failing with "database is locked".
 // The timeout is only an upper bound; sqlite3 proceeds as soon as the lock frees.
 export async function setupDb(options: { seed?: boolean } = {}) {
+  if (test.info().project.name !== "db") {
+    throw new Error("setupDb() runs only in the db project");
+  }
   const sql = options.seed
     ? "scripts/db-clear.sql scripts/db-seed.sql"
     : "scripts/db-clear.sql";
