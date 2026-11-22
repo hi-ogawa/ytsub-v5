@@ -1,13 +1,11 @@
 import { expect } from "@playwright/test";
+import { SEED_VIDEO_ID } from "../helper";
 import {
   createBookmarkAt,
   openPanelWithTracks,
   selectTextInCaption,
   test,
 } from "./helper";
-
-// Billlie - cloud palace
-const SEED_VIDEO_ID = "7GU_VQfgMT0";
 
 test("clicks inside the bookmark popover don't reach the caption row", async ({
   context,

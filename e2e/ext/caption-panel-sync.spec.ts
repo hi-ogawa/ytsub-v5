@@ -1,5 +1,5 @@
 import { expect, type Page } from "@playwright/test";
-import { createCheckpoint, setupDb } from "../helper";
+import { createCheckpoint, SEED_VIDEO_ID, setupDb } from "../helper";
 import {
   gotoBookmarks,
   login,
@@ -7,9 +7,6 @@ import {
   seedChromeStorage,
   test,
 } from "./helper";
-
-// Billlie - cloud palace (seeded on server for "dev" user)
-const SEED_VIDEO_ID = "7GU_VQfgMT0";
 
 function openSyncMenu(ytPage: Page) {
   const host = ytPage.locator("#zamak-host");

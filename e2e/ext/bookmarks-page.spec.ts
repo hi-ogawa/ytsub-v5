@@ -1,5 +1,10 @@
 import { expect } from "@playwright/test";
-import { bumpServerUpdatedAt, createCheckpoint, setupDb } from "../helper";
+import {
+  bumpServerUpdatedAt,
+  createCheckpoint,
+  SEED_VIDEO_ID,
+  setupDb,
+} from "../helper";
 import {
   createBookmarkAt,
   gotoBookmarks,
@@ -25,9 +30,6 @@ const fixtureEntries = [
     updatedAt: "2026-03-09T00:00:00.000Z",
   },
 ];
-
-// Billlie - cloud palace (seeded on server for "dev" user)
-const SEED_VIDEO_ID = "7GU_VQfgMT0";
 
 test("bookmark captions, then push them from the bookmarks page", async ({
   context,

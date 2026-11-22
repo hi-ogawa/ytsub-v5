@@ -1,8 +1,6 @@
 import { expect } from "@playwright/test";
+import { SEED_VIDEO_ID } from "../helper";
 import { createBookmarkAt, openPanelWithTracks, test } from "./helper";
-
-// Billlie - cloud palace
-const SEED_VIDEO_ID = "7GU_VQfgMT0";
 
 test("AI pick prompt: copy and import with markdown fence", async ({
   context,
@@ -132,7 +130,7 @@ test("AI align prompt: copy and import replaces rows, moves bookmarks, and adds 
   await host.locator("select").last().selectOption("fix-asr");
   const clipboard = await ytPage.evaluate(() => navigator.clipboard.readText());
   expect(clipboard).toContain("Zamak Task: Fix & Align ASR");
-  expect(clipboard).toContain("ID: 7GU_VQfgMT0");
+  expect(clipboard).toContain(`ID: ${SEED_VIDEO_ID}`);
   expect(clipboard).toContain("skills/zamak/SKILL.md");
   expect(clipboard).toContain("`.ko`: ko, manual, current text1");
   expect(clipboard).toContain(bookmarkId!);

@@ -1,8 +1,7 @@
 import { expect, type Locator } from "@playwright/test";
+import { SEED_VIDEO_ID } from "../helper";
 import { openPanelWithTracks, openYouTubeTab, test } from "./helper";
 
-// Billlie - cloud palace
-const SEED_VIDEO_ID = "7GU_VQfgMT0";
 const OTHER_VIDEO_ID = "DtK-CkwNHSY";
 
 test("FAB toggles the panel and keeps its state per video across reloads", async ({
@@ -105,7 +104,7 @@ test("export downloads valid import.json", async ({ context }) => {
     ytPage.waitForEvent("download"),
     host.getByText("Export import.json").click(),
   ]);
-  expect(download.suggestedFilename()).toBe("import-7GU_VQfgMT0.json");
+  expect(download.suggestedFilename()).toBe(`import-${SEED_VIDEO_ID}.json`);
 
   const content = await (
     await download.createReadStream()
@@ -115,7 +114,7 @@ test("export downloads valid import.json", async ({ context }) => {
   const data = JSON.parse(content);
   expect(data).toMatchObject({
     video: {
-      youtubeId: "7GU_VQfgMT0",
+      youtubeId: SEED_VIDEO_ID,
       title: "Billlie | 'cloud palace' 𝐁efore sunrise live",
       channelName: "Billlie",
       channelId: "UCyc9sUCxELTDK9vELO5Fzeg",

@@ -5,6 +5,13 @@ import { expect, type Page, test } from "@playwright/test";
 
 export const execAsync = promisify(exec);
 
+/**
+ * Billlie's "cloud palace", which has manual ko and en subtitles. It is the one
+ * video in both the YouTube fixtures (`scripts/youtube-json`) and the server
+ * seed (`scripts/db-seed-json`, owned by the "dev" user).
+ */
+export const SEED_VIDEO_ID = "7GU_VQfgMT0";
+
 // Write to miniflare's D1 sqlite file directly instead of going through
 // wrangler CLI (0.15s vs 2s per call). WAL mode lets this run alongside the
 // dev server, but writers still take turns, so `.timeout` waits out a write
