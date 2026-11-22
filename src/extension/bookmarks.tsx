@@ -23,9 +23,8 @@ const queryClient = createAppQueryClient({
 });
 
 async function main() {
-  const storage = idbCaptionStorage;
-  storage.subscribe(updateVideoIndexStore);
-  await loadVideoIndex(storage);
+  idbCaptionStorage.subscribe(updateVideoIndexStore);
+  await loadVideoIndex(idbCaptionStorage);
   const serverUrl = await getServerUrl();
 
   // Configure RPC to use extension server URL + bearer token auth
@@ -48,7 +47,7 @@ async function main() {
     <StrictMode>
       <MemoryRouter>
         <QueryClientProvider client={queryClient}>
-          <CaptionStorageProvider value={storage}>
+          <CaptionStorageProvider value={idbCaptionStorage}>
             <ExtensionBookmarksPage
               serverUrl={serverUrl}
               isDevelopment={__DEV_EXT__}

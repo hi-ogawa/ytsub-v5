@@ -7,7 +7,7 @@ import {
   computeSyncState,
   useVideoIndexEntry,
 } from "../../lib/sync.ts";
-import type { BgRpcHandlers } from "../background.ts";
+import type { bgRpcHandlers } from "../background.ts";
 import type { RpcClient } from "../lib/extension-rpc.ts";
 
 type SyncAction =
@@ -18,7 +18,7 @@ export function useExtensionSync({
   bgRpc,
   youtubeId,
 }: {
-  bgRpc: RpcClient<BgRpcHandlers>;
+  bgRpc: RpcClient<typeof bgRpcHandlers>;
   youtubeId: string;
 }): SyncStatus {
   const storage = useCaptionStorage();

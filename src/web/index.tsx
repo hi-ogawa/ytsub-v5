@@ -10,13 +10,12 @@ import { App } from "./app.tsx";
 import "../styles.css";
 
 async function main() {
-  const storage = idbCaptionStorage;
-  storage.subscribe(updateVideoIndexStore);
-  await loadVideoIndex(storage);
+  idbCaptionStorage.subscribe(updateVideoIndexStore);
+  await loadVideoIndex(idbCaptionStorage);
 
   createRoot(document.getElementById("root")!).render(
     <StrictMode>
-      <CaptionStorageProvider value={storage}>
+      <CaptionStorageProvider value={idbCaptionStorage}>
         <App />
       </CaptionStorageProvider>
     </StrictMode>,
