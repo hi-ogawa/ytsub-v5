@@ -148,21 +148,27 @@ export function useSyncState({
         const result = await orpc.videos.importVideo.call(
           action.store.toExportData(),
         );
-        await storage.setSyncedAt(youtubeId, result.updatedAt);
+        await storage.markSynced({
+          youtubeId,
+          serverUpdatedAt: result.updatedAt,
+        });
       } else {
         const data = await orpc.videos.getFullSession.call({ youtubeId });
         if (!data) {
           throw new Error("Video not found on server");
         }
         const session = serverSessionToLocal(data);
-        // replace() bumps the index entry's updatedAt, so setSyncedAt must follow it.
+        // replace() bumps the index entry's updatedAt, so markSynced must follow it.
         await action.store.replace({
           vssId1: session.vssId1,
           vssId2: session.vssId2,
           captions: session.captions,
           bookmarks: session.bookmarks,
         });
-        await storage.setSyncedAt(youtubeId, data.video.updatedAt);
+        await storage.markSynced({
+          youtubeId,
+          serverUpdatedAt: data.video.updatedAt,
+        });
       }
     },
     onSuccess: () => serverQuery.refetch(),
@@ -298,7 +304,10 @@ export function useVideoSync(storage: CaptionStorage) {
       const result = await orpc.videos.importVideo.call(
         sessionToExportData(session),
       );
-      await storage.setSyncedAt(youtubeId, result.updatedAt);
+      await storage.markSynced({
+        youtubeId,
+        serverUpdatedAt: result.updatedAt,
+      });
     });
   };
 
@@ -311,7 +320,10 @@ export function useVideoSync(storage: CaptionStorage) {
       await storage.saveSession(serverSessionToLocal(data), {
         forceIndex: true,
       });
-      await storage.setSyncedAt(youtubeId, data.video.updatedAt);
+      await storage.markSynced({
+        youtubeId,
+        serverUpdatedAt: data.video.updatedAt,
+      });
     });
   };
 

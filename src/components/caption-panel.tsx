@@ -106,7 +106,7 @@ function CaptionPanelInner({
       });
       setStore(undefined);
       if (v1 && v2) {
-        saveSelectedTracks(tracks, v1, v2, youtubeId);
+        saveSelectedTracks({ tracks, vssId1: v1, vssId2: v2, youtubeId });
       }
     },
     [tracks, youtubeId],

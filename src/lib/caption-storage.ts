@@ -42,7 +42,10 @@ export interface CaptionStorage {
     options?: { forceIndex?: boolean },
   ): Promise<void>;
   deleteVideo(youtubeId: string): Promise<void>;
-  setSyncedAt(youtubeId: string, serverUpdatedAt: string): Promise<void>;
+  markSynced(options: {
+    youtubeId: string;
+    serverUpdatedAt: string;
+  }): Promise<void>;
   getVideoIndexEntry(youtubeId: string): Promise<VideoIndexEntry | undefined>;
   listVideoIndex(): Promise<VideoIndexEntry[]>;
   subscribe(listener: StorageListener): () => void;
