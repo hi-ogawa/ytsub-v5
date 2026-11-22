@@ -43,6 +43,7 @@ export function useExtensionSync({
           vssId2: session.vssId2,
           captions: session.captions,
           bookmarks: session.bookmarks,
+          editedAt: serverUpdatedAt,
         });
         await captionStorage.setSyncedAt(youtubeId, serverUpdatedAt);
       }

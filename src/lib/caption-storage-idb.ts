@@ -49,12 +49,14 @@ class IdbCaptionStorage implements CaptionStorage {
         if (!existing && !options?.forceIndex && !session.bookmarks.length) {
           return;
         }
+        const now = new Date().toISOString();
         videos.put({
           youtubeId: session.youtubeId,
           title: session.title,
           channelName: session.channelName,
           bookmarkCount: session.bookmarks.length,
-          updatedAt: new Date().toISOString(),
+          updatedAt: now,
+          editedAt: options?.editedAt ?? now,
           syncedAt: existing?.syncedAt,
           syncedServerUpdatedAt: existing?.syncedServerUpdatedAt,
         });

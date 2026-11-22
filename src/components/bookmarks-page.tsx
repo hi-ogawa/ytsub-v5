@@ -35,7 +35,7 @@ export function BookmarksPage({
     ? []
     : (sync?.entries ?? entries);
   const sorted = [...displayEntries].sort(
-    (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
+    (a, b) => getSortTime(b) - getSortTime(a),
   );
 
   return (
@@ -92,6 +92,10 @@ export function BookmarksPage({
       )}
     </div>
   );
+}
+
+function getSortTime(entry: VideoIndexEntry) {
+  return new Date(entry.editedAt ?? entry.updatedAt).getTime();
 }
 
 function CardMenu({

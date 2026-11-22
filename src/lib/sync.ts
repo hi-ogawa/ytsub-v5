@@ -160,6 +160,7 @@ export function useSyncState({
           vssId2: session.vssId2,
           captions: session.captions,
           bookmarks: session.bookmarks,
+          editedAt: data.video.updatedAt,
         });
         await captionStorage.setSyncedAt(youtubeId, data.video.updatedAt);
       }
@@ -233,6 +234,7 @@ function mergeVideoEntries(
       channelName: local.channelName,
       bookmarkCount: local.bookmarkCount,
       updatedAt: local.updatedAt,
+      editedAt: local.editedAt,
       serverId: server?.id,
       syncStatus: status,
     });
@@ -309,6 +311,7 @@ export function useVideoSync() {
       }
       await captionStorage.saveSession(serverSessionToLocal(data), {
         forceIndex: true,
+        editedAt: data.video.updatedAt,
       });
       await captionStorage.setSyncedAt(youtubeId, data.video.updatedAt);
     });

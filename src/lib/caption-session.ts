@@ -273,6 +273,7 @@ export class CaptionSessionManager {
     bookmarks: ExtensionBookmark[];
     vssId1?: string;
     vssId2?: string;
+    editedAt?: string;
   }): Promise<void> {
     this.rows = options.captions;
     this.bookmarks = options.bookmarks;
@@ -283,7 +284,7 @@ export class CaptionSessionManager {
       this.vssId2 = options.vssId2;
     }
     this.notify();
-    await this.persistSession();
+    await this.persistSession({ editedAt: options.editedAt });
   }
 
   toExportData(): ExportData {
@@ -302,7 +303,7 @@ export class CaptionSessionManager {
     });
   }
 
-  async persistSession(): Promise<void> {
+  async persistSession(options?: { editedAt?: string }): Promise<void> {
     const session: PersistedCaptionSession = {
       youtubeId: this.videoMeta.youtubeId,
       title: this.videoMeta.title,
@@ -317,6 +318,6 @@ export class CaptionSessionManager {
       captions: this.rows,
       bookmarks: this.bookmarks,
     };
-    await captionStorage.saveSession(session);
+    await captionStorage.saveSession(session, options);
   }
 }

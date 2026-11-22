@@ -246,3 +246,34 @@ test("pull works without a YouTube tab", async ({ page, extensionId }) => {
   checkpoint("pull synced");
   await expect(card.getByTestId("video-card-badge")).toHaveText("15 bookmarks");
 });
+
+test("pull keeps the video's place in the list", async ({
+  page,
+  extensionId,
+}) => {
+  await setupDb({ seed: true });
+
+  // Edited locally after the server's copy of the seed video
+  const localEntries = [
+    {
+      youtubeId: "local-only-123",
+      title: "Local Only Video",
+      channelName: "Some Channel",
+      bookmarkCount: 1,
+      updatedAt: new Date().toISOString(),
+    },
+  ];
+  await gotoBookmarks(page, extensionId);
+  await seedVideoIndex(page, localEntries);
+  await login(page);
+
+  const firstTitle = page.getByTestId("video-card-title").first();
+  await expect(firstTitle).toHaveText("Local Only Video");
+
+  const badge = page
+    .getByTestId(`video-card-${SEED_VIDEO_ID}`)
+    .getByTestId("video-sync-badge");
+  await badge.click();
+  await expect(badge).toHaveAttribute("data-sync-status", "synced");
+  await expect(firstTitle).toHaveText("Local Only Video");
+});
