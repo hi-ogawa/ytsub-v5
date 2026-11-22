@@ -1,14 +1,14 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
-import type { CaptionPanelRuntime } from "../lib/caption-panel-runtime.ts";
-import { serverSessionToLocal } from "../lib/caption-session.ts";
-import type { CaptionStorage } from "../lib/caption-storage.ts";
-import { orpc } from "../lib/rpc-client.ts";
+import type { CaptionPanelRuntime } from "../../lib/caption-panel-runtime.ts";
+import { serverSessionToLocal } from "../../lib/caption-session.ts";
+import type { CaptionStorage } from "../../lib/caption-storage.ts";
+import { orpc } from "../../lib/rpc-client.ts";
 import {
   type SyncState,
   type SyncStatus,
   computeSyncState,
-} from "../lib/sync.ts";
-import { useVideoIndexEntry } from "../lib/use-video-index-entry.ts";
+} from "../../lib/sync.ts";
+import { useVideoIndexEntry } from "../../lib/use-video-index-entry.ts";
 
 export function useWebSync({
   storage,
