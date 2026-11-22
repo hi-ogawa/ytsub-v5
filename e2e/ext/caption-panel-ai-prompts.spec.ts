@@ -1,10 +1,5 @@
 import { expect } from "@playwright/test";
-import {
-  createBookmarkAt,
-  openPanelWithTracks,
-  openYouTubeTab,
-  test,
-} from "./helper";
+import { createBookmarkAt, openPanelWithTracks, test } from "./helper";
 
 // Billlie - cloud palace
 const SEED_VIDEO_ID = "7GU_VQfgMT0";
@@ -15,9 +10,7 @@ test("AI pick prompt: copy and import with markdown fence", async ({
   await context.grantPermissions(["clipboard-read", "clipboard-write"], {
     origin: "https://www.youtube.com",
   });
-  const ytPage = await openYouTubeTab(context, SEED_VIDEO_ID);
-  await openPanelWithTracks(ytPage);
-  const host = ytPage.locator("#zamak-host");
+  const { ytPage, host } = await openPanelWithTracks(context, SEED_VIDEO_ID);
   await host.getByTitle("Settings").click();
 
   // Copy pick prompt
@@ -59,9 +52,7 @@ test("AI fill prompt: copy and import updates existing bookmark", async ({
   await context.grantPermissions(["clipboard-read", "clipboard-write"], {
     origin: "https://www.youtube.com",
   });
-  const ytPage = await openYouTubeTab(context, SEED_VIDEO_ID);
-  await openPanelWithTracks(ytPage);
-  const host = ytPage.locator("#zamak-host");
+  const { ytPage, host } = await openPanelWithTracks(context, SEED_VIDEO_ID);
 
   // Create a bookmark first
   await createBookmarkAt(host, { index: 0, start: 0, end: 3 });
@@ -126,9 +117,7 @@ test("AI align prompt: copy and import replaces rows, moves bookmarks, and adds 
   await context.grantPermissions(["clipboard-read", "clipboard-write"], {
     origin: "https://www.youtube.com",
   });
-  const ytPage = await openYouTubeTab(context, SEED_VIDEO_ID);
-  await openPanelWithTracks(ytPage);
-  const host = ytPage.locator("#zamak-host");
+  const { ytPage, host } = await openPanelWithTracks(context, SEED_VIDEO_ID);
   await createBookmarkAt(host, { index: 0, start: 0, end: 3 });
   const panel = host.getByTestId("resizable-panel");
   await panel.getByRole("button", { name: /Bookmarks/ }).click();

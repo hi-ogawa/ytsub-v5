@@ -5,7 +5,6 @@ import {
   gotoBookmarks,
   login,
   openPanelWithTracks,
-  openYouTubeTab,
   seedVideoIndex,
   test,
 } from "./helper";
@@ -38,9 +37,7 @@ test("bookmark captions, then push them from the bookmarks page", async ({
   await setupDb({ seed: true });
 
   // Bookmark the first Korean caption in the content script panel
-  const ytPage = await openYouTubeTab(context, SEED_VIDEO_ID);
-  await openPanelWithTracks(ytPage);
-  const host = ytPage.locator("#zamak-host");
+  const { host } = await openPanelWithTracks(context, SEED_VIDEO_ID);
   await createBookmarkAt(host, { index: 0, start: 0, end: 3 });
   await expect(
     host.getByRole("button", { name: "Bookmarks (1)" }),
@@ -79,8 +76,7 @@ test("opening a video without bookmarking keeps it off the list", async ({
   page,
   extensionId,
 }) => {
-  const ytPage = await openYouTubeTab(context, SEED_VIDEO_ID);
-  await openPanelWithTracks(ytPage);
+  await openPanelWithTracks(context, SEED_VIDEO_ID);
 
   await gotoBookmarks(page, extensionId);
   await expect(page.getByText("No bookmarked videos yet")).toBeVisible();
@@ -95,9 +91,8 @@ test("detects pull after push and a remote update", async ({
   await gotoBookmarks(page, extensionId);
   await login(page, { username: "dev-empty" });
 
-  const ytPage = await openYouTubeTab(context, SEED_VIDEO_ID);
-  await openPanelWithTracks(ytPage);
-  await createBookmarkAt(ytPage.locator("#zamak-host"), {
+  const { host } = await openPanelWithTracks(context, SEED_VIDEO_ID);
+  await createBookmarkAt(host, {
     index: 0,
     start: 0,
     end: 3,
@@ -131,9 +126,8 @@ for (const { choice, button } of [
     await login(page);
 
     // A local bookmark on a video the server already has, never synced
-    const ytPage = await openYouTubeTab(context, SEED_VIDEO_ID);
-    await openPanelWithTracks(ytPage);
-    await createBookmarkAt(ytPage.locator("#zamak-host"), {
+    const { host } = await openPanelWithTracks(context, SEED_VIDEO_ID);
+    await createBookmarkAt(host, {
       index: 0,
       start: 0,
       end: 3,

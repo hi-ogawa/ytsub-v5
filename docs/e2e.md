@@ -39,7 +39,7 @@ Extension tests load `dist/extension/`, which `pnpm test-e2e` builds, into a rea
 - `gotoBookmarks(page, extensionId)` opens `chrome-extension://<id>/bookmarks.html` with the test server URL.
 - `seedChromeStorage(context, data)` seeds `chrome.storage.local` through the service worker.
 - `login(page)` logs in through the extension bookmarks page. It is a different helper from the web app `login`.
-- `openYouTubeTab(context, videoId)` opens a watch page and waits for the content script. `openPanelWithTracks(ytPage)` opens the caption panel with the ko and en tracks.
+- `openPanelWithTracks(context, videoId)` opens a watch page with the caption panel showing the ko and en tracks, and returns the page and the panel's shadow host. `openYouTubeTab(context, videoId)` opens the watch page alone, for tests that start with the panel closed.
 - `createBookmarkAt(host, { index, start, end })` selects part of a caption inside the panel's shadow root and bookmarks it.
 
 The tests never load the real youtube.com. The `context` fixture serves `https://www.youtube.com/**` from a route handler in `e2e/ext/youtube-mock.ts`. Chrome injects content scripts by URL, so the mocked watch page still gets them. The page has only what the content script reads, and the player API and caption tracks come from the fixtures in `scripts/youtube-json/<id>/`, so `videoId` must be one of those. Every other youtube.com request is aborted. `pnpm test-youtube` covers changes to the real page and API.

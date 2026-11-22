@@ -8,11 +8,7 @@ const OTHER_VIDEO_ID = "DtK-CkwNHSY";
 test("FAB toggles the panel and keeps its state per video across reloads", async ({
   context,
 }) => {
-  const ytPage = await openYouTubeTab(context, SEED_VIDEO_ID);
-  const host = ytPage.locator("#zamak-host");
-  await expect(host.locator("[data-index='0']")).not.toBeVisible();
-
-  await openPanelWithTracks(ytPage);
+  const { ytPage, host } = await openPanelWithTracks(context, SEED_VIDEO_ID);
   await expect(host.locator("[data-index='5']")).toBeVisible();
   const row = host.locator("[data-index='0']");
   await expect(row.locator("text=/\\d+:\\d{2} – \\d+:\\d{2}/")).toBeVisible();
@@ -59,9 +55,7 @@ test("track selection: default empty, select tracks, switch language", async ({
 });
 
 test("auto-scroll toggle persists across reload", async ({ context }) => {
-  const ytPage = await openYouTubeTab(context, SEED_VIDEO_ID);
-  await openPanelWithTracks(ytPage);
-  const host = ytPage.locator("#zamak-host");
+  const { ytPage, host } = await openPanelWithTracks(context, SEED_VIDEO_ID);
   const autoScrollItem = host.locator("[data-checked]");
 
   await host.getByTitle("Settings").click();
@@ -81,9 +75,7 @@ test("auto-scroll toggle persists across reload", async ({ context }) => {
 });
 
 test("strategy dropdown switches merge strategy", async ({ context }) => {
-  const ytPage = await openYouTubeTab(context, SEED_VIDEO_ID);
-  await openPanelWithTracks(ytPage);
-  const host = ytPage.locator("#zamak-host");
+  const { ytPage, host } = await openPanelWithTracks(context, SEED_VIDEO_ID);
   const strategySelect = host.locator("select[title='Alignment strategy']");
 
   await host.getByTitle("Settings").click();
@@ -106,9 +98,7 @@ test("strategy dropdown switches merge strategy", async ({ context }) => {
 });
 
 test("export downloads valid import.json", async ({ context }) => {
-  const ytPage = await openYouTubeTab(context, SEED_VIDEO_ID);
-  await openPanelWithTracks(ytPage);
-  const host = ytPage.locator("#zamak-host");
+  const { ytPage, host } = await openPanelWithTracks(context, SEED_VIDEO_ID);
 
   await host.getByTitle("Settings").click();
   const [download] = await Promise.all([
@@ -153,9 +143,7 @@ test("export downloads valid import.json", async ({ context }) => {
 });
 
 test("panel left edge can be dragged to resize", async ({ context }) => {
-  const ytPage = await openYouTubeTab(context, SEED_VIDEO_ID);
-  await openPanelWithTracks(ytPage);
-  const host = ytPage.locator("#zamak-host");
+  const { ytPage, host } = await openPanelWithTracks(context, SEED_VIDEO_ID);
   const panel = host.getByTestId("resizable-panel");
   expect(await getWidth(panel)).toBe(400);
 

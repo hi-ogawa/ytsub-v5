@@ -4,7 +4,6 @@ import {
   gotoBookmarks,
   login,
   openPanelWithTracks,
-  openYouTubeTab,
   seedChromeStorage,
   test,
 } from "./helper";
@@ -50,8 +49,7 @@ test("push from the sync menu, then open the bookmarks page", async ({
   await gotoBookmarks(page, extensionId);
   await login(page, { username: "dev-empty" });
 
-  const ytPage = await openYouTubeTab(context, SEED_VIDEO_ID);
-  await openPanelWithTracks(ytPage);
+  const { ytPage } = await openPanelWithTracks(context, SEED_VIDEO_ID);
 
   // A video without bookmarks isn't in the video index yet
   let status = await openSyncMenu(ytPage);
@@ -89,9 +87,7 @@ test("pull from the sync menu replaces captions and bookmarks in place", async (
   await gotoBookmarks(page, extensionId);
   await login(page);
 
-  const ytPage = await openYouTubeTab(context, SEED_VIDEO_ID);
-  await openPanelWithTracks(ytPage);
-  const host = ytPage.locator("#zamak-host");
+  const { ytPage, host } = await openPanelWithTracks(context, SEED_VIDEO_ID);
   await expect(
     host.getByRole("button", { name: "Bookmarks", exact: true }),
   ).toBeVisible();
@@ -118,8 +114,7 @@ test("shows conflict when local bookmarks and server data both exist", async ({
   await gotoBookmarks(page, extensionId);
   await login(page);
 
-  const ytPage = await openYouTubeTab(context, SEED_VIDEO_ID);
-  await openPanelWithTracks(ytPage);
+  const { ytPage } = await openPanelWithTracks(context, SEED_VIDEO_ID);
   await createFirstBookmark(ytPage);
 
   const status = await openSyncMenu(ytPage);
@@ -135,8 +130,7 @@ test("a failed push shows its error in the sync menu", async ({
   await gotoBookmarks(page, extensionId);
   await login(page, { username: "dev-empty" });
 
-  const ytPage = await openYouTubeTab(context, SEED_VIDEO_ID);
-  await openPanelWithTracks(ytPage);
+  const { ytPage } = await openPanelWithTracks(context, SEED_VIDEO_ID);
   await createFirstBookmark(ytPage);
 
   const status = await openSyncMenu(ytPage);
