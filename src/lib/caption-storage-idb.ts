@@ -8,7 +8,7 @@ import type {
 } from "./caption-storage.ts";
 
 const DB_NAME = "zamak";
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 
 type Stores = { sessions: PersistedCaptionSession; videos: VideoIndexEntry };
 
@@ -21,12 +21,23 @@ const transact = createTransact<Stores>({
   name: DB_NAME,
   version: DB_VERSION,
   storeNames: STORE_NAMES,
-  upgrade(db, oldVersion) {
+  upgrade(db, oldVersion, tx) {
     if (oldVersion < 1) {
       db.createObjectStore(STORE_NAMES.sessions, { keyPath: "youtubeId" });
     }
     if (oldVersion < 2) {
       db.createObjectStore(STORE_NAMES.videos, { keyPath: "youtubeId" });
+    }
+    if (oldVersion < 3) {
+      // Entries from before editedAt existed take their last local write.
+      const videos = tx.objectStore(STORE_NAMES.videos);
+      videos.openCursor().onsuccess = (e) => {
+        const cursor = (e.target as IDBRequest<IDBCursorWithValue>).result;
+        if (cursor) {
+          cursor.update({ editedAt: cursor.value.updatedAt, ...cursor.value });
+          cursor.continue();
+        }
+      };
     }
   },
 });

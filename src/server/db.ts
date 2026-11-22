@@ -5,11 +5,15 @@ import * as schema from "./schema.ts";
 
 export const db = drizzle(env.DB, { schema });
 
-/** Mark the video as changed on the server, so the app offers a pull */
+// The current time in the format clients write `editedAt` in, with
+// milliseconds, so two edits in the same second get different values.
+export const EDITED_AT_NOW = sql`strftime('%Y-%m-%dT%H:%M:%fZ', 'now')`;
+
+/** Mark the video as edited on the server, so the app offers a pull */
 export async function touchVideo(videoId: number) {
   await db
     .update(schema.videos)
-    .set({ updatedAt: sql`datetime('now')` })
+    .set({ updatedAt: sql`datetime('now')`, editedAt: EDITED_AT_NOW })
     .where(eq(schema.videos.id, videoId));
 }
 

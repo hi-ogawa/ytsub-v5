@@ -14,7 +14,7 @@ Browser storage belongs to an origin. The extension keeps its sessions on its ow
 
 ## List Videos From a Small Index
 
-Opening every session just to draw the bookmarks page would be slow, so the same database also keeps a video index, one entry per video. An entry holds a video's title, channel, and bookmark count, plus timestamps for sync: when the session last changed locally, when it was last pushed or pulled, and the server's own timestamp for the video at that push or pull.
+Opening every session just to draw the bookmarks page would be slow, so the same database also keeps a video index, one entry per video. An entry holds a video's title, channel, and bookmark count, the time its content was last edited, plus timestamps for sync: when the session last changed locally, when it was last pushed or pulled, and the server's own timestamp for the video at that push or pull.
 
 Saving a session updates its index entry in the same transaction, so the two never disagree. A video gets an entry once it has a bookmark, and keeps it at zero bookmarks so that deleting the last one can still be pushed. Each entry is its own record, so two pages that change different videos at once never overwrite each other.
 
@@ -44,6 +44,14 @@ The bookmarks page pushes and pulls directly, in both the extension and the web 
 In both clients, a pull from the caption panel replaces the captions and bookmarks it shows, so you see the pulled copy without a reload. A conflict in the panel opens the bookmarks page, where you pick which copy to keep.
 
 Data can also enter the web app from an `import.json` file, through Import in the header menu. Import writes a session to the web app's storage, and a push then uploads it. [Generate import.json](../skills/zamak/references/generate-import-json.md) describes how to build one without the extension.
+
+## Order the List by When the Content Was Edited
+
+The bookmarks page lists the most recently edited videos first. The edit time belongs to the content, like its captions and bookmarks. The side that makes an edit sets it from its own clock: the browser for edits in the app, the server for edits made through its API. Push and pull copy it unchanged. So syncing a video never moves its card, and every device lists the videos in the same order.
+
+![Device A edits at 10:00 and pushes at 10:30. The server keeps the edit time 10:00 and stamps its own updated time 10:30. Device B, whose clock is behind, pulls and keeps the edit time 10:00, while its own sync timestamps come from its clock. The edit time is the same everywhere, and each side's sync timestamps come from its own clock.](images/edit-time.svg)
+
+The sync timestamps, by contrast, are stamped by whichever side writes, so they would reorder the list on every push or pull. Sorting by the edit time compares times from different clocks, so devices whose clocks disagree can swap two videos edited within that difference. Only the order of those two cards changes, and no sync decision reads the edit time.
 
 ## Know Where an Open Page Can Fall Behind
 

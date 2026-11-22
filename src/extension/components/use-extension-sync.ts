@@ -36,16 +36,16 @@ export function useExtensionSync({
         const { serverUpdatedAt } = await bgRpc.pushSession({ youtubeId });
         await storage.markSynced({ youtubeId, serverUpdatedAt });
       } else {
-        const { session, serverUpdatedAt } = await bgRpc.fetchSession({
-          youtubeId,
-        });
+        const { session, serverUpdatedAt, editedAt } = await bgRpc.fetchSession(
+          { youtubeId },
+        );
         // replace() bumps the index entry's updatedAt, so markSynced must follow it.
         await action.store.replace({
           vssId1: session.vssId1,
           vssId2: session.vssId2,
           captions: session.captions,
           bookmarks: session.bookmarks,
-          editedAt: serverUpdatedAt,
+          editedAt,
         });
         await storage.markSynced({ youtubeId, serverUpdatedAt });
       }

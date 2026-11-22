@@ -49,6 +49,7 @@ export const videos = sqliteTable(
     updatedAt: utcDatetime("updated_at")
       .notNull()
       .default(sql`(datetime('now'))`),
+    editedAt: text("edited_at").notNull(),
   },
   (t) => [
     unique().on(t.userId, t.youtubeId),

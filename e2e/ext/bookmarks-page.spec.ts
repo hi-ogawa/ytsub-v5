@@ -1,6 +1,7 @@
 import { expect } from "@playwright/test";
 import {
   bumpServerUpdatedAt,
+  setServerEditedAt,
   createCheckpoint,
   SEED_YOUTUBE_ID,
   setupDb,
@@ -21,6 +22,7 @@ const fixtureEntries = [
     channelName: "Test Channel",
     bookmarkCount: 3,
     updatedAt: "2026-03-10T00:00:00.000Z",
+    editedAt: "2026-03-10T00:00:00.000Z",
   },
   {
     youtubeId: "def456",
@@ -28,6 +30,7 @@ const fixtureEntries = [
     channelName: "Another Channel",
     bookmarkCount: 1,
     updatedAt: "2026-03-09T00:00:00.000Z",
+    editedAt: "2026-03-09T00:00:00.000Z",
   },
 ];
 
@@ -240,6 +243,7 @@ test("sync badges show correct states per entry", async ({
       channelName: "Billlie",
       bookmarkCount: 2,
       updatedAt: "2026-03-15T00:00:00.000Z",
+      editedAt: "2026-03-15T00:00:00.000Z",
     },
     {
       youtubeId: "local-only-123",
@@ -247,6 +251,7 @@ test("sync badges show correct states per entry", async ({
       channelName: "Some Channel",
       bookmarkCount: 1,
       updatedAt: "2026-03-14T00:00:00.000Z",
+      editedAt: "2026-03-14T00:00:00.000Z",
     },
   ];
   await gotoBookmarks(page, extensionId);
@@ -292,6 +297,7 @@ test("push shows an error toast when the local session is missing", async ({
       channelName: "Test",
       bookmarkCount: 1,
       updatedAt: "2026-03-15T00:00:00.000Z",
+      editedAt: "2026-03-15T00:00:00.000Z",
     },
   ];
   await gotoBookmarks(page, extensionId);
@@ -325,33 +331,44 @@ test("pull works without a YouTube tab", async ({ page, extensionId }) => {
   await expect(card.getByTestId("video-card-badge")).toHaveText("15 bookmarks");
 });
 
-test("pull keeps the video's place in the list", async ({
+test("a pulled video keeps the place its edit time gives it", async ({
   page,
   extensionId,
 }) => {
   await setupDb({ seed: true });
-
-  // Edited locally after the server's copy of the seed video
+  // The seed video was uploaded just now, but its content is older than the
+  // local video's
+  await setServerEditedAt(SEED_YOUTUBE_ID, "2026-01-01T00:00:00.000Z");
   const localEntries = [
     {
       youtubeId: "local-only-123",
       title: "Local Only Video",
       channelName: "Some Channel",
       bookmarkCount: 1,
-      updatedAt: new Date().toISOString(),
+      updatedAt: "2026-03-15T00:00:00.000Z",
+      editedAt: "2026-03-15T00:00:00.000Z",
     },
   ];
   await gotoBookmarks(page, extensionId);
   await seedVideoIndex(page, localEntries);
   await login(page);
 
-  const firstTitle = page.getByTestId("video-card-title").first();
-  await expect(firstTitle).toHaveText("Local Only Video");
+  // The other seed videos were edited just now and sort above both
+  const upperCard = page
+    .getByTestId(new RegExp(`^video-card-(local-only-123|${SEED_YOUTUBE_ID})$`))
+    .first();
+  await expect(upperCard).toHaveAttribute(
+    "data-testid",
+    "video-card-local-only-123",
+  );
 
   const badge = page
     .getByTestId(`video-card-${SEED_YOUTUBE_ID}`)
     .getByTestId("video-sync-badge");
   await badge.click();
   await expect(badge).toHaveAttribute("data-sync-status", "synced");
-  await expect(firstTitle).toHaveText("Local Only Video");
+  await expect(upperCard).toHaveAttribute(
+    "data-testid",
+    "video-card-local-only-123",
+  );
 });

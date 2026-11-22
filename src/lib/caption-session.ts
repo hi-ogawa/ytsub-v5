@@ -74,19 +74,22 @@ export function saveSelectedTracks({
 
 // --- Export ---
 
-export function sessionToExportData(session: {
-  youtubeId: string;
-  title: string;
-  channelName: string;
-  channelId: string;
-  duration: number;
-  language1: string;
-  language2: string;
-  vssId1: string;
-  vssId2: string;
-  captions: MergedCaption[];
-  bookmarks: ExtensionBookmark[];
-}): ExportData {
+export function sessionToExportData(
+  session: {
+    youtubeId: string;
+    title: string;
+    channelName: string;
+    channelId: string;
+    duration: number;
+    language1: string;
+    language2: string;
+    vssId1: string;
+    vssId2: string;
+    captions: MergedCaption[];
+    bookmarks: ExtensionBookmark[];
+  },
+  options?: { editedAt?: string },
+): ExportData {
   return {
     video: {
       youtubeId: session.youtubeId,
@@ -98,6 +101,7 @@ export function sessionToExportData(session: {
       language2: session.language2,
       vssId1: session.vssId1,
       vssId2: session.vssId2,
+      editedAt: options?.editedAt,
     },
     captions: session.captions.map((r, i) => ({
       idx: i,
@@ -290,20 +294,23 @@ export class CaptionSessionManager {
     await this.persistSession({ editedAt: options.editedAt });
   }
 
-  toExportData(): ExportData {
-    return sessionToExportData({
-      youtubeId: this.videoMeta.youtubeId,
-      title: this.videoMeta.title,
-      channelName: this.videoMeta.channelName,
-      channelId: this.videoMeta.channelId,
-      duration: this.videoMeta.duration,
-      language1: langFromVssId(this.vssId1),
-      language2: langFromVssId(this.vssId2),
-      vssId1: this.vssId1,
-      vssId2: this.vssId2,
-      captions: this.rows,
-      bookmarks: this.bookmarks,
-    });
+  toExportData(options?: { editedAt?: string }): ExportData {
+    return sessionToExportData(
+      {
+        youtubeId: this.videoMeta.youtubeId,
+        title: this.videoMeta.title,
+        channelName: this.videoMeta.channelName,
+        channelId: this.videoMeta.channelId,
+        duration: this.videoMeta.duration,
+        language1: langFromVssId(this.vssId1),
+        language2: langFromVssId(this.vssId2),
+        vssId1: this.vssId1,
+        vssId2: this.vssId2,
+        captions: this.rows,
+        bookmarks: this.bookmarks,
+      },
+      options,
+    );
   }
 
   async persistSession(options?: { editedAt?: string }): Promise<void> {

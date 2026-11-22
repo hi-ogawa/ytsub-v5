@@ -31,8 +31,9 @@ export const bgRpcHandlers = {
     if (!session) {
       throw new Error("No local session found");
     }
+    const entry = await idbCaptionStorage.getVideoIndexEntry(youtubeId);
     const result = await orpc.videos.importVideo.call(
-      sessionToExportData(session),
+      sessionToExportData(session, { editedAt: entry?.editedAt }),
     );
     return { serverUpdatedAt: result.updatedAt };
   },
@@ -46,6 +47,7 @@ export const bgRpcHandlers = {
     return {
       session: serverSessionToLocal(data),
       serverUpdatedAt: data.video.updatedAt,
+      editedAt: data.video.editedAt,
     };
   },
 };

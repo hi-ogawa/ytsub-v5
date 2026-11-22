@@ -23,10 +23,9 @@ export type VideoIndexEntry = {
   channelName: string;
   bookmarkCount: number;
   updatedAt: string;
-  // When the content was last edited, which orders the video list. A pull
-  // sets it to the server's updatedAt, so pulling keeps the video's place.
-  // Missing on entries written before it existed.
-  editedAt?: string;
+  // When the content was last edited, on whichever device or server made the
+  // edit. Push and pull copy it unchanged, and the video list sorts by it.
+  editedAt: string;
   // Local clock, compared with updatedAt
   syncedAt?: string;
   // Server clock, the server's updatedAt at the last push or pull
@@ -41,8 +40,7 @@ export interface CaptionStorage {
   getSession(youtubeId: string): Promise<PersistedCaptionSession | undefined>;
   // Also updates the video's index entry when the session has bookmarks or is
   // already indexed. `forceIndex` indexes it regardless, as after a pull.
-  // `editedAt` keeps the content's edit time from the server on a pull,
-  // instead of the current time.
+  // `editedAt` keeps the pulled content's edit time instead of the current time.
   saveSession(
     session: PersistedCaptionSession,
     options?: { forceIndex?: boolean; editedAt?: string },

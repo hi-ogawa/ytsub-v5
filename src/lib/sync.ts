@@ -151,8 +151,9 @@ export function useSyncState({
       store: CaptionSessionManager;
     }) => {
       if (action.direction === "push") {
+        const entry = await storage.getVideoIndexEntry(youtubeId);
         const result = await orpc.videos.importVideo.call(
-          action.store.toExportData(),
+          action.store.toExportData({ editedAt: entry?.editedAt }),
         );
         await storage.markSynced({
           youtubeId,
@@ -170,7 +171,7 @@ export function useSyncState({
           vssId2: session.vssId2,
           captions: session.captions,
           bookmarks: session.bookmarks,
-          editedAt: data.video.updatedAt,
+          editedAt: data.video.editedAt,
         });
         await storage.markSynced({
           youtubeId,
@@ -261,6 +262,7 @@ function mergeVideoEntries(
         channelName: server.channelName,
         bookmarkCount: 0,
         updatedAt: server.updatedAt,
+        editedAt: server.editedAt,
         serverId: server.id,
         syncStatus: "pull",
       });
@@ -309,8 +311,9 @@ export function useVideoSync(storage: CaptionStorage) {
       if (!session) {
         throw new Error("No local session found");
       }
+      const entry = await storage.getVideoIndexEntry(youtubeId);
       const result = await orpc.videos.importVideo.call(
-        sessionToExportData(session),
+        sessionToExportData(session, { editedAt: entry?.editedAt }),
       );
       await storage.markSynced({
         youtubeId,
@@ -327,7 +330,7 @@ export function useVideoSync(storage: CaptionStorage) {
       }
       await storage.saveSession(serverSessionToLocal(data), {
         forceIndex: true,
-        editedAt: data.video.updatedAt,
+        editedAt: data.video.editedAt,
       });
       await storage.markSynced({
         youtubeId,

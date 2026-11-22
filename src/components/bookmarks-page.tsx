@@ -34,8 +34,11 @@ export function BookmarksPage({
   const displayEntries: VideoSyncEntry[] = sync?.isPending
     ? []
     : (sync?.entries ?? entries);
-  const sorted = [...displayEntries].sort(
-    (a, b) => getSortTime(b) - getSortTime(a),
+  // Each editedAt comes from the clock of the side that made the edit, so
+  // clock skew can swap videos edited within the skew. No sync decision
+  // depends on this order.
+  const sorted = [...displayEntries].sort((a, b) =>
+    b.editedAt.localeCompare(a.editedAt),
   );
 
   return (
@@ -92,10 +95,6 @@ export function BookmarksPage({
       )}
     </div>
   );
-}
-
-function getSortTime(entry: VideoIndexEntry) {
-  return new Date(entry.editedAt ?? entry.updatedAt).getTime();
 }
 
 function CardMenu({
