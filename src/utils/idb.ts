@@ -21,8 +21,8 @@ export function createTransact<S>(options: {
   function openDb(): Promise<IDBDatabase> {
     dbPromise ??= new Promise((resolve, reject) => {
       const req = indexedDB.open(options.name, options.version);
-      req.onupgradeneeded = (e) =>
-        options.upgrade(req.result, e.oldVersion, req.transaction!);
+      req.onupgradeneeded = (event) =>
+        options.upgrade(req.result, event.oldVersion, req.transaction!);
       req.onsuccess = () => {
         const db = req.result;
         // Let a newer version of the app upgrade the database.
@@ -64,12 +64,12 @@ export function createTransact<S>(options: {
     let result: R;
     try {
       result = await fn(stores);
-    } catch (err) {
+    } catch (error) {
       done.catch(() => {});
       try {
         tx.abort();
       } catch {}
-      throw err;
+      throw error;
     }
     await done;
     return result;

@@ -127,18 +127,18 @@ function CardMenu({
       <DropdownMenuTrigger
         data-testid="video-card-menu"
         className="-mr-1.5 -mt-1 shrink-0 rounded p-1.5 text-muted-foreground hover:bg-muted"
-        onClick={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
+        onClick={(event) => {
+          event.preventDefault();
+          event.stopPropagation();
         }}
       >
         <EllipsisVertical className="size-4" />
       </DropdownMenuTrigger>
       <DropdownMenuContent
         align="end"
-        onClick={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
+        onClick={(event) => {
+          event.preventDefault();
+          event.stopPropagation();
         }}
       >
         <DropdownMenuItem
@@ -192,9 +192,9 @@ function SyncBadge({
     );
   }
 
-  const onClick = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
+  const onClick = (event: React.MouseEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
     if (displayState === "conflict") {
       setConflictOpen(true);
     } else if (displayState === "push") {
@@ -230,8 +230,8 @@ function SyncBadge({
             <button
               type="button"
               className="flex flex-1 items-center justify-center gap-2 rounded bg-muted px-4 py-2 text-sm hover:bg-accent"
-              onClick={(e) => {
-                e.stopPropagation();
+              onClick={(event) => {
+                event.stopPropagation();
                 setConflictOpen(false);
                 onPush();
               }}
@@ -247,8 +247,8 @@ function SyncBadge({
             <button
               type="button"
               className="flex flex-1 items-center justify-center gap-2 rounded bg-muted px-4 py-2 text-sm hover:bg-accent"
-              onClick={(e) => {
-                e.stopPropagation();
+              onClick={(event) => {
+                event.stopPropagation();
                 setConflictOpen(false);
                 onPull();
               }}

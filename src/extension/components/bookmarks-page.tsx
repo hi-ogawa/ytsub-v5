@@ -106,8 +106,8 @@ export function ExtensionBookmarksPage({
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-44">
               <DropdownMenuItem
-                onSelect={(e) => {
-                  e.preventDefault();
+                onSelect={(event) => {
+                  event.preventDefault();
                   cycle();
                 }}
                 className="gap-2"

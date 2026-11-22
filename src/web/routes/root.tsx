@@ -111,8 +111,8 @@ function HeaderMenu({
           <DropdownMenuItem
             data-testid="theme-toggle"
             data-theme={theme}
-            onSelect={(e) => {
-              e.preventDefault();
+            onSelect={(event) => {
+              event.preventDefault();
               cycle();
             }}
             className="gap-2"
