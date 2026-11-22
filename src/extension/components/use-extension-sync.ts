@@ -5,8 +5,8 @@ import {
   type SyncState,
   type SyncStatus,
   computeSyncState,
-  useVideoIndexEntry,
 } from "../../lib/sync.ts";
+import { useVideoIndexEntry } from "../../lib/use-video-index-entry.ts";
 import type { bgRpcHandlers } from "../background.ts";
 import type { RpcClient } from "../lib/extension-rpc.ts";
 

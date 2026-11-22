@@ -7,7 +7,7 @@ import {
 } from "../../components/youtube-player.tsx";
 import { CaptionPanelRuntime } from "../../lib/caption-panel-runtime.ts";
 import type { CaptionStorage } from "../../lib/caption-storage.ts";
-import { useSyncState } from "../../lib/sync.ts";
+import { useWebSync } from "../use-web-sync.ts";
 
 export function VideoViewerPage({ storage }: { storage: CaptionStorage }) {
   const { youtubeId } = useParams<"youtubeId">();
@@ -77,7 +77,7 @@ function useViewerSync({
   youtubeId: string;
 }) {
   const navigate = useNavigate();
-  return useSyncState({
+  return useWebSync({
     storage,
     youtubeId,
     onNavigate: () => navigate("/"),

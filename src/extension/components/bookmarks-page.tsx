@@ -25,8 +25,9 @@ import {
   videoIndexStore,
 } from "../../lib/caption-storage.ts";
 import { orpc } from "../../lib/rpc-client.ts";
-import { type VideoSyncEntry, useVideoSync } from "../../lib/sync.ts";
+import type { VideoSyncEntry } from "../../lib/sync.ts";
 import { useTheme } from "../../lib/theme.ts";
+import { useVideoSync } from "../../lib/use-video-sync.ts";
 import { chromeStorage } from "../lib/chrome-storage.ts";
 
 export function ExtensionBookmarksPage({
