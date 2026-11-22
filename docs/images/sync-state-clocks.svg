@@ -74,7 +74,7 @@
   <text x="270" y="336">Local changed?</text>
   <text x="610" y="336" text-anchor="end">no</text>
   <text x="270" y="354" class="f"><tspan class="dt">localUpdatedAt</tspan> &gt; <tspan class="dt">syncedAt</tspan></text>
-  <text x="270" y="370" class="x">10:53:13 &gt; 10:53:13</text>
+  <text x="270" y="370" class="x">10:53:10 &gt; 10:53:13</text>
   <text x="270" y="396">Server changed?</text>
   <text x="610" y="396" text-anchor="end">no</text>
   <text x="270" y="414" class="f"><tspan class="st">serverUpdatedAt</tspan> &gt; <tspan class="dt">syncedAt</tspan></text>
