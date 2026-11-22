@@ -35,7 +35,7 @@ function main() {
   subscribeWatchPage({ onEnter: mountOverlay });
 }
 
-function mountOverlay(videoId: string) {
+function mountOverlay(youtubeId: string) {
   const { host, container } = createShadowHost({
     id: "zamak-host",
     css: contentCss,
@@ -59,7 +59,7 @@ function mountOverlay(videoId: string) {
       <PortalContainerProvider value={container}>
         <QueryClientProvider client={queryClient}>
           <CaptionOverlay
-            videoId={videoId}
+            youtubeId={youtubeId}
             useSync={(youtubeId) => useExtensionSync({ bgRpc, youtubeId })}
           />
         </QueryClientProvider>

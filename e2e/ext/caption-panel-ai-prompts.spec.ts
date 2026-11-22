@@ -1,5 +1,5 @@
 import { expect } from "@playwright/test";
-import { SEED_VIDEO_ID } from "../helper";
+import { SEED_YOUTUBE_ID } from "../helper";
 import { createBookmarkAt, openPanelWithTracks, test } from "./helper";
 
 test("AI pick prompt: copy and import with markdown fence", async ({
@@ -8,7 +8,7 @@ test("AI pick prompt: copy and import with markdown fence", async ({
   await context.grantPermissions(["clipboard-read", "clipboard-write"], {
     origin: "https://www.youtube.com",
   });
-  const { ytPage, host } = await openPanelWithTracks(context, SEED_VIDEO_ID);
+  const { ytPage, host } = await openPanelWithTracks(context, SEED_YOUTUBE_ID);
   await host.getByTitle("Settings").click();
 
   // Copy pick prompt
@@ -50,7 +50,7 @@ test("AI fill prompt: copy and import updates existing bookmark", async ({
   await context.grantPermissions(["clipboard-read", "clipboard-write"], {
     origin: "https://www.youtube.com",
   });
-  const { ytPage, host } = await openPanelWithTracks(context, SEED_VIDEO_ID);
+  const { ytPage, host } = await openPanelWithTracks(context, SEED_YOUTUBE_ID);
 
   // Create a bookmark first
   await createBookmarkAt(host, { index: 0, start: 0, end: 3 });
@@ -115,7 +115,7 @@ test("AI align prompt: copy and import replaces rows, moves bookmarks, and adds 
   await context.grantPermissions(["clipboard-read", "clipboard-write"], {
     origin: "https://www.youtube.com",
   });
-  const { ytPage, host } = await openPanelWithTracks(context, SEED_VIDEO_ID);
+  const { ytPage, host } = await openPanelWithTracks(context, SEED_YOUTUBE_ID);
   await createBookmarkAt(host, { index: 0, start: 0, end: 3 });
   const panel = host.getByTestId("resizable-panel");
   await panel.getByRole("button", { name: /Bookmarks/ }).click();
@@ -130,7 +130,7 @@ test("AI align prompt: copy and import replaces rows, moves bookmarks, and adds 
   await host.locator("select").last().selectOption("fix-asr");
   const clipboard = await ytPage.evaluate(() => navigator.clipboard.readText());
   expect(clipboard).toContain("Zamak Task: Fix & Align ASR");
-  expect(clipboard).toContain(`ID: ${SEED_VIDEO_ID}`);
+  expect(clipboard).toContain(`ID: ${SEED_YOUTUBE_ID}`);
   expect(clipboard).toContain("skills/zamak/SKILL.md");
   expect(clipboard).toContain("`.ko`: ko, manual, current text1");
   expect(clipboard).toContain(bookmarkId!);

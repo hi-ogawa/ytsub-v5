@@ -187,8 +187,8 @@ function mergeStats(merged: MergedCaption[], enCues: CaptionCue[]) {
   };
 }
 
-function loadVideo(videoId: string) {
-  const videoDir = join(YOUTUBE_JSON_DIR, videoId);
+function loadVideo(youtubeId: string) {
+  const videoDir = join(YOUTUBE_JSON_DIR, youtubeId);
   const koFile = findTrackFile(videoDir, "ko")!;
   const enFile = findTrackFile(videoDir, "en")!;
   return { ko: loadTrack(videoDir, koFile), en: loadTrack(videoDir, enFile) };

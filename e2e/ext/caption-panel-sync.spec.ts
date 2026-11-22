@@ -1,5 +1,5 @@
 import { expect } from "@playwright/test";
-import { createCheckpoint, SEED_VIDEO_ID, setupDb } from "../helper";
+import { createCheckpoint, SEED_YOUTUBE_ID, setupDb } from "../helper";
 import {
   createBookmarkAt,
   gotoBookmarks,
@@ -19,7 +19,7 @@ test("push from the sync menu, then open the bookmarks page", async ({
   await gotoBookmarks(page, extensionId);
   await login(page, { username: "dev-empty" });
 
-  const { ytPage, host } = await openPanelWithTracks(context, SEED_VIDEO_ID);
+  const { ytPage, host } = await openPanelWithTracks(context, SEED_YOUTUBE_ID);
 
   // A video without bookmarks isn't in the video index yet
   let status = await openSyncMenu(host);
@@ -40,7 +40,7 @@ test("push from the sync menu, then open the bookmarks page", async ({
   const bookmarksPage = await bookmarksPagePromise;
   await expect(
     bookmarksPage
-      .getByTestId(`video-card-${SEED_VIDEO_ID}`)
+      .getByTestId(`video-card-${SEED_YOUTUBE_ID}`)
       .getByTestId("video-sync-badge"),
   ).toHaveAttribute("data-sync-status", "synced");
 });
@@ -54,7 +54,7 @@ test("pull from the sync menu replaces captions and bookmarks in place", async (
   await gotoBookmarks(page, extensionId);
   await login(page);
 
-  const { ytPage, host } = await openPanelWithTracks(context, SEED_VIDEO_ID);
+  const { ytPage, host } = await openPanelWithTracks(context, SEED_YOUTUBE_ID);
   await expect(
     host.getByRole("button", { name: "Bookmarks", exact: true }),
   ).toBeVisible();
@@ -81,7 +81,7 @@ test("shows conflict when local bookmarks and server data both exist", async ({
   await gotoBookmarks(page, extensionId);
   await login(page);
 
-  const { host } = await openPanelWithTracks(context, SEED_VIDEO_ID);
+  const { host } = await openPanelWithTracks(context, SEED_YOUTUBE_ID);
   await createBookmarkAt(host, { index: 0, start: 0, end: 3 });
 
   const status = await openSyncMenu(host);
@@ -97,7 +97,7 @@ test("a failed push shows its error in the sync menu", async ({
   await gotoBookmarks(page, extensionId);
   await login(page, { username: "dev-empty" });
 
-  const { host } = await openPanelWithTracks(context, SEED_VIDEO_ID);
+  const { host } = await openPanelWithTracks(context, SEED_YOUTUBE_ID);
   await createBookmarkAt(host, { index: 0, start: 0, end: 3 });
 
   const status = await openSyncMenu(host);
