@@ -41,9 +41,7 @@ test("bookmark captions, then push them from the bookmarks page", async ({
   // Bookmark the first Korean caption in the content script panel
   const { host } = await openPanelWithTracks(context, SEED_YOUTUBE_ID);
   await createBookmarkAt(host, { index: 0, start: 0, end: 3 });
-  await expect(
-    host.getByRole("button", { name: "Bookmarks (1)" }),
-  ).toBeVisible();
+  await expect(host.getByRole("tab", { name: "Bookmarks (1)" })).toBeVisible();
 
   // The video reaches the bookmarks page without login
   await gotoBookmarks(page, extensionId);
@@ -55,9 +53,7 @@ test("bookmark captions, then push them from the bookmarks page", async ({
 
   // Another bookmark updates the count
   await createBookmarkAt(host, { index: 1, start: 0, end: 2 });
-  await expect(
-    host.getByRole("button", { name: "Bookmarks (2)" }),
-  ).toBeVisible();
+  await expect(host.getByRole("tab", { name: "Bookmarks (2)" })).toBeVisible();
   await page.reload();
   await expect(card.getByTestId("video-card-badge")).toHaveText("2 bookmarks");
 

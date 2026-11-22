@@ -9,7 +9,7 @@ test("FAB toggles the panel and keeps its state per video across reloads", async
   await expect(host.locator("[data-index='5']")).toBeVisible();
   const row = host.locator("[data-index='0']");
   await expect(row.locator("text=/\\d+:\\d{2} – \\d+:\\d{2}/")).toBeVisible();
-  const cols = row.locator(".flex-1");
+  const cols = row.locator("[data-side]");
   await expect(cols).toHaveCount(2);
   await expect(cols.nth(0)).not.toHaveText("");
   await expect(cols.nth(1)).not.toHaveText("");

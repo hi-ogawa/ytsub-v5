@@ -129,6 +129,7 @@ export function CaptionList({
 
   return (
     <div
+      data-testid="caption-list"
       className="flex-[1_0_0] overflow-y-auto"
       ref={scrollRef}
       onWheel={manualScroll.trigger}
@@ -191,6 +192,7 @@ function CaptionRow({
   return (
     <div
       data-index={index}
+      aria-current={isCurrent || undefined}
       className={[
         "flex w-full cursor-pointer flex-col gap-1 border p-1 px-2 hover:bg-muted",
         isCurrent && isPlaying && "ring-2 ring-ring",

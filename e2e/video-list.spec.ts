@@ -80,6 +80,6 @@ test("import JSON file adds video to list with captions and bookmarks", async ({
   ).toBeVisible();
 
   // Bookmarks tab shows imported bookmarks
-  await page.getByRole("button", { name: /Bookmarks/ }).click();
+  await page.getByRole("tab", { name: /Bookmarks/ }).click();
   await expect(page.locator("[data-bookmark-id]").first()).toBeVisible();
 });
