@@ -20,7 +20,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "../../components/ui/dropdown-menu.tsx";
-import { captionStorage, videoIndexStore } from "../../lib/caption-storage.ts";
+import { idbCaptionStorage } from "../../lib/caption-storage-idb.ts";
+import { videoIndexStore } from "../../lib/caption-storage.ts";
 import { orpc } from "../../lib/rpc-client.ts";
 import { type VideoSyncEntry, useVideoSync } from "../../lib/sync.ts";
 import { useTheme } from "../../lib/theme.ts";
@@ -38,7 +39,7 @@ export function ExtensionBookmarksPage({
     chromeStorage.queryOptions<string>("username"),
   );
   const { theme, cycle, Icon } = useTheme();
-  const sync = useVideoSync();
+  const sync = useVideoSync(idbCaptionStorage);
   const [showLogin, setShowLogin] = useState(false);
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const deleteMutation = useMutation(
@@ -51,7 +52,7 @@ export function ExtensionBookmarksPage({
     if (entry.serverId) {
       deleteMutation.mutate({ id: entry.serverId });
     }
-    await captionStorage.deleteVideo(entry.youtubeId);
+    await idbCaptionStorage.deleteVideo(entry.youtubeId);
   }
 
   const handleLogout = async () => {

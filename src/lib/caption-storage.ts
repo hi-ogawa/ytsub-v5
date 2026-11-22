@@ -49,26 +49,18 @@ export interface CaptionStorage {
   subscribe(listener: StorageListener): () => void;
 }
 
-// Each entry point calls initCaptionStorage once at startup: the watch page
-// with the extension frame bridge, every other context with IndexedDB on its
-// own origin.
-export let captionStorage: CaptionStorage;
-
 // In-memory copy of the stored index, for components that read it as they
 // render.
 export const videoIndexStore = withUseValue(
   createStore<{ entries: VideoIndexEntry[] }>({ entries: [] }),
 );
 
-export function initCaptionStorage(storage: CaptionStorage) {
-  captionStorage = storage;
-  storage.subscribe((notice) => {
-    if (notice.type === "videoIndex") {
-      videoIndexStore.update({ entries: notice.entries });
-    }
-  });
+export function updateVideoIndexStore(notice: StorageNotice) {
+  if (notice.type === "videoIndex") {
+    videoIndexStore.update({ entries: notice.entries });
+  }
 }
 
-export async function loadVideoIndex() {
-  videoIndexStore.update({ entries: await captionStorage.listVideoIndex() });
+export async function loadVideoIndex(storage: CaptionStorage) {
+  videoIndexStore.update({ entries: await storage.listVideoIndex() });
 }

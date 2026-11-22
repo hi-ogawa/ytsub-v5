@@ -1,6 +1,7 @@
 import { useNavigate, useParams } from "react-router";
 import { CaptionPanel } from "../../components/caption-panel.tsx";
 import { useYouTubePlayer } from "../../components/youtube-player.tsx";
+import { idbCaptionStorage } from "../../lib/caption-storage-idb.ts";
 import { videoIndexStore } from "../../lib/caption-storage.ts";
 import { useSyncState } from "../../lib/sync.ts";
 import type { Json3File } from "../../lib/youtube.ts";
@@ -49,6 +50,7 @@ export function VideoViewerPage() {
       {/* Caption panel */}
       <div className="flex min-h-0 flex-[1_0_0] flex-col border-t lg:w-1/3 lg:flex-none lg:rounded lg:border">
         <CaptionPanel
+          storage={idbCaptionStorage}
           sessionOnly
           tracks={[]}
           player={player}
@@ -63,5 +65,9 @@ export function VideoViewerPage() {
 
 function useViewerSync(youtubeId: string) {
   const navigate = useNavigate();
-  return useSyncState({ youtubeId, onNavigate: () => navigate("/") });
+  return useSyncState({
+    storage: idbCaptionStorage,
+    youtubeId,
+    onNavigate: () => navigate("/"),
+  });
 }

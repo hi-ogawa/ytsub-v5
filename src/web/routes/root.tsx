@@ -22,6 +22,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "../../components/ui/dropdown-menu.tsx";
+import { idbCaptionStorage } from "../../lib/caption-storage-idb.ts";
 import { orpc } from "../../lib/rpc-client.ts";
 import { useTheme } from "../../lib/theme.ts";
 
@@ -243,7 +244,7 @@ function DevMenuItems() {
         onSelect={async () => {
           const { bootstrapFixtures } =
             await import("../../lib/dev-fixtures.ts");
-          await bootstrapFixtures();
+          await bootstrapFixtures(idbCaptionStorage);
         }}
         className="gap-2"
       >

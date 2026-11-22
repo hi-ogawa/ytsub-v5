@@ -4,7 +4,10 @@ import { createRoot } from "react-dom/client";
 import { MemoryRouter } from "react-router";
 import { Toaster } from "sonner";
 import { idbCaptionStorage } from "../lib/caption-storage-idb.ts";
-import { initCaptionStorage, loadVideoIndex } from "../lib/caption-storage.ts";
+import {
+  loadVideoIndex,
+  updateVideoIndexStore,
+} from "../lib/caption-storage.ts";
 import { createAppQueryClient } from "../lib/query-client.ts";
 import { setRpcConfig } from "../lib/rpc-client.ts";
 import { ExtensionBookmarksPage } from "./components/bookmarks-page.tsx";
@@ -19,8 +22,8 @@ const queryClient = createAppQueryClient({
 });
 
 async function main() {
-  initCaptionStorage(idbCaptionStorage);
-  await loadVideoIndex();
+  idbCaptionStorage.subscribe(updateVideoIndexStore);
+  await loadVideoIndex(idbCaptionStorage);
   const serverUrl = await getServerUrl();
 
   // Configure RPC to use extension server URL + bearer token auth

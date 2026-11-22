@@ -5,9 +5,9 @@ import {
   type MergedCaption,
   mergeCaptions,
 } from "./caption-merge.ts";
-import {
-  type PersistedCaptionSession,
-  captionStorage,
+import type {
+  CaptionStorage,
+  PersistedCaptionSession,
 } from "./caption-storage.ts";
 import type { ExtensionBookmark } from "./extension-bookmarks.ts";
 import {
@@ -120,7 +120,10 @@ export function sessionToExportData(session: {
 
 // --- Import (export data → local storage) ---
 
-export async function importExportData(data: ExportData): Promise<void> {
+export async function importExportData(
+  storage: CaptionStorage,
+  data: ExportData,
+): Promise<void> {
   const session: PersistedCaptionSession = {
     youtubeId: data.video.youtubeId,
     title: data.video.title,
@@ -156,10 +159,11 @@ export async function importExportData(data: ExportData): Promise<void> {
       createdAt: new Date().toISOString(),
     })),
   };
-  await captionStorage.saveSession(session);
+  await storage.saveSession(session);
 }
 
 export async function buildCaptionSession(options: {
+  storage: CaptionStorage;
   track1: YouTubeCaptionTrack;
   track2: YouTubeCaptionTrack;
   fetchJson3: (track: YouTubeCaptionTrack) => Promise<Json3File>;
@@ -176,6 +180,7 @@ export async function buildCaptionSession(options: {
     options.strategy,
   );
   const store = new CaptionSessionManager({
+    storage: options.storage,
     videoMeta: options.videoMeta,
     vssId1: options.track1.vssId,
     vssId2: options.track2.vssId,
@@ -190,6 +195,7 @@ export async function buildCaptionSession(options: {
 // --- Store ---
 
 export class CaptionSessionManager {
+  private readonly storage: CaptionStorage;
   readonly videoMeta: YouTubeVideoData;
   vssId1: string;
   vssId2: string;
@@ -200,6 +206,7 @@ export class CaptionSessionManager {
   private listeners = new Set<() => void>();
 
   constructor(params: {
+    storage: CaptionStorage;
     videoMeta: YouTubeVideoData;
     vssId1: string;
     vssId2: string;
@@ -207,6 +214,7 @@ export class CaptionSessionManager {
     strategy: MergeStrategy;
     bookmarks: ExtensionBookmark[];
   }) {
+    this.storage = params.storage;
     this.videoMeta = params.videoMeta;
     this.vssId1 = params.vssId1;
     this.vssId2 = params.vssId2;
@@ -317,6 +325,6 @@ export class CaptionSessionManager {
       captions: this.rows,
       bookmarks: this.bookmarks,
     };
-    await captionStorage.saveSession(session);
+    await this.storage.saveSession(session);
   }
 }

@@ -7,6 +7,7 @@ import {
 import { CaptionPanel } from "../../components/caption-panel.tsx";
 import { ResizablePanel } from "../../components/resizable-panel.tsx";
 import { useYouTubePlayer } from "../../components/youtube-player.tsx";
+import { idbCaptionStorage } from "../../lib/caption-storage-idb.ts";
 import { fixtureMetadata, fixtureTracks } from "../../lib/dev-fixtures.ts";
 import { useSyncState } from "../../lib/sync.ts";
 import type {
@@ -82,6 +83,7 @@ function DevViewerSession({
 
   return (
     <CaptionPanel
+      storage={idbCaptionStorage}
       tracks={meta.captionTracks}
       player={player}
       fetchJson3={fetchJson3}
@@ -93,5 +95,9 @@ function DevViewerSession({
 
 function useDevSync(youtubeId: string) {
   const navigate = useNavigate();
-  return useSyncState({ youtubeId, onNavigate: () => navigate("/dev") });
+  return useSyncState({
+    storage: idbCaptionStorage,
+    youtubeId,
+    onNavigate: () => navigate("/dev"),
+  });
 }

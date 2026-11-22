@@ -1,5 +1,5 @@
 import { mergeCaptions } from "./caption-merge.ts";
-import { captionStorage } from "./caption-storage.ts";
+import type { CaptionStorage } from "./caption-storage.ts";
 import {
   type Json3File,
   type YouTubeExtractionResult,
@@ -15,7 +15,7 @@ export const fixtureTracks = import.meta.glob<{ default: Json3File }>(
   "/scripts/youtube-json/*/track-*.json",
 );
 
-export async function bootstrapFixtures() {
+export async function bootstrapFixtures(storage: CaptionStorage) {
   for (const [path, meta] of Object.entries(fixtureMetadata)) {
     const dir = path.replace("/metadata.json", "");
     const tracks = meta.captionTracks;
@@ -37,7 +37,7 @@ export async function bootstrapFixtures() {
       { json3: mod2.default, vssId: track2.vssId },
     );
 
-    await captionStorage.saveSession(
+    await storage.saveSession(
       {
         youtubeId: meta.video.youtubeId,
         title: meta.video.title,

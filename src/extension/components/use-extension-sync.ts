@@ -1,6 +1,6 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import type { CaptionSessionManager } from "../../lib/caption-session.ts";
-import { captionStorage } from "../../lib/caption-storage.ts";
+import type { CaptionStorage } from "../../lib/caption-storage.ts";
 import {
   type SyncState,
   type SyncStatus,
@@ -15,13 +15,15 @@ type SyncAction =
   | { direction: "pull"; store: CaptionSessionManager };
 
 export function useExtensionSync({
+  storage,
   bgRpc,
   youtubeId,
 }: {
+  storage: CaptionStorage;
   bgRpc: RpcClient<typeof bgRpcHandlers>;
   youtubeId: string;
 }): SyncStatus {
-  const entryQuery = useVideoIndexEntry(youtubeId);
+  const entryQuery = useVideoIndexEntry(storage, youtubeId);
 
   const serverQuery = useQuery({
     queryKey: ["extension-sync-state", youtubeId],
@@ -32,7 +34,7 @@ export function useExtensionSync({
     mutationFn: async (action: SyncAction) => {
       if (action.direction === "push") {
         const { serverUpdatedAt } = await bgRpc.pushSession({ youtubeId });
-        await captionStorage.setSyncedAt(youtubeId, serverUpdatedAt);
+        await storage.setSyncedAt(youtubeId, serverUpdatedAt);
       } else {
         const { session, serverUpdatedAt } = await bgRpc.fetchSession({
           youtubeId,
@@ -44,7 +46,7 @@ export function useExtensionSync({
           captions: session.captions,
           bookmarks: session.bookmarks,
         });
-        await captionStorage.setSyncedAt(youtubeId, serverUpdatedAt);
+        await storage.setSyncedAt(youtubeId, serverUpdatedAt);
       }
     },
     onSuccess: () => serverQuery.refetch(),
