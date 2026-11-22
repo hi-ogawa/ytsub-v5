@@ -7,7 +7,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import type { VideoIndexEntry } from "../lib/caption-storage.ts";
-import type { VideoSyncEntry, VideoSyncHandle } from "../lib/sync.ts";
+import { formatRelativeTime } from "../utils/relative-time.ts";
 import { syncStateDisplay } from "./sync-state.tsx";
 import { Dialog, DialogContent, DialogTitle } from "./ui/dialog.tsx";
 import {
@@ -16,6 +16,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu.tsx";
+import type { VideoListEntry } from "./use-video-list-sync.ts";
+import type { VideoListSync } from "./use-video-list-sync.ts";
 import { VideoCard } from "./video-card.tsx";
 
 export function BookmarksPage({
@@ -27,15 +29,15 @@ export function BookmarksPage({
 }: {
   entries: VideoIndexEntry[];
   videoHref: (youtubeId: string) => string;
-  onDelete?: (entry: VideoSyncEntry) => void;
-  sync?: VideoSyncHandle;
+  onDelete?: (entry: VideoListEntry) => void;
+  sync?: VideoListSync;
   emptyState?: React.ReactNode;
 }) {
-  const displayEntries: VideoSyncEntry[] = sync?.isPending
+  const displayEntries: VideoListEntry[] = sync?.isPending
     ? []
     : (sync?.entries ?? entries);
-  const sorted = [...displayEntries].sort(
-    (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
+  const sorted = [...displayEntries].sort((a, b) =>
+    b.editedAt.localeCompare(a.editedAt),
   );
 
   return (
@@ -70,14 +72,21 @@ export function BookmarksPage({
               }
               badge={
                 <>
-                  <span className="rounded bg-muted px-2 py-0.5 font-mono">
-                    {entry.bookmarkCount} bookmark
-                    {entry.bookmarkCount === 1 ? "" : "s"}
+                  <span
+                    data-testid="video-card-storage"
+                    className="rounded bg-muted px-2 py-0.5"
+                  >
+                    {entry.bookmarkCount === undefined
+                      ? "Not on this device"
+                      : `${entry.bookmarkCount} bookmark${entry.bookmarkCount === 1 ? "" : "s"}`}
                   </span>
+                  <EditTime time={entry.editedAt} />
                   {sync && entry.syncStatus && (
                     <span className="ml-auto">
                       <SyncBadge
                         status={entry.syncStatus}
+                        localEditedAt={entry.editedAt}
+                        serverEditedAt={entry.serverEditedAt}
                         syncing={sync.syncing.has(entry.youtubeId)}
                         onPull={() => sync.onPull(entry.youtubeId)}
                         onPush={() => sync.onPush(entry.youtubeId)}
@@ -94,11 +103,23 @@ export function BookmarksPage({
   );
 }
 
+function EditTime({ time }: { time: string }) {
+  return (
+    <time
+      dateTime={time}
+      title={`Edited ${new Date(time).toLocaleString()}`}
+      data-testid="edited-at"
+    >
+      {formatRelativeTime(time)}
+    </time>
+  );
+}
+
 function CardMenu({
   entry,
   onDelete,
 }: {
-  entry: VideoSyncEntry;
+  entry: VideoListEntry;
   onDelete: () => void;
 }) {
   return (
@@ -138,11 +159,15 @@ function CardMenu({
 
 function SyncBadge({
   status,
+  localEditedAt,
+  serverEditedAt,
   syncing,
   onPull,
   onPush,
 }: {
-  status: NonNullable<VideoSyncEntry["syncStatus"]>;
+  status: NonNullable<VideoListEntry["syncStatus"]>;
+  localEditedAt: string;
+  serverEditedAt?: string;
   syncing: boolean;
   onPull: () => void;
   onPush: () => void;
@@ -183,7 +208,11 @@ function SyncBadge({
     <>
       <button
         type="button"
-        title={label}
+        title={
+          displayState === "pull" && serverEditedAt
+            ? `${label}: server copy edited ${formatRelativeTime(serverEditedAt)}`
+            : label
+        }
         className="rounded p-1.5 hover:bg-muted"
         onClick={onClick}
         {...testAttrs}
@@ -194,7 +223,8 @@ function SyncBadge({
         <DialogContent>
           <DialogTitle>Sync conflict</DialogTitle>
           <p className="mb-4 text-sm text-muted-foreground">
-            Both local and server have changes. Choose which version to keep.
+            This device and the server both have changes. Choose which copy to
+            keep.
           </p>
           <div className="flex gap-2">
             <button
@@ -207,7 +237,12 @@ function SyncBadge({
               }}
             >
               <ArrowUpFromLine className="size-4" />
-              Upload local
+              <span className="flex flex-col items-start">
+                Upload local
+                <span className="text-xs text-muted-foreground">
+                  Edited <EditTime time={localEditedAt} />
+                </span>
+              </span>
             </button>
             <button
               type="button"
@@ -219,7 +254,14 @@ function SyncBadge({
               }}
             >
               <ArrowDownToLine className="size-4" />
-              Download server
+              <span className="flex flex-col items-start">
+                Download server
+                {serverEditedAt && (
+                  <span className="text-xs text-muted-foreground">
+                    Edited <EditTime time={serverEditedAt} />
+                  </span>
+                )}
+              </span>
             </button>
           </div>
         </DialogContent>
