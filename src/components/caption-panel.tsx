@@ -181,7 +181,7 @@ function CaptionPanelLoading({
         track2: track2!,
         videoMeta,
         fetchJson3: (track) => {
-          return queryClient.fetchQuery({
+          return queryClient.query({
             queryKey: ["json3", videoMeta.youtubeId, track.vssId],
             queryFn: () => fetchJson3(track),
           });
