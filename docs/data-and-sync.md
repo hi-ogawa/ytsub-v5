@@ -35,8 +35,6 @@ Each push or pull also records the edit time it synced. The sync status asks two
 
 Every edit sets a new edit time, and sync copies edit times exactly, so a difference always means an edit. Nothing checks which time is later, so clocks that disagree can't change the answer. The server stamps its edits to the millisecond, so two server edits in the same second still differ.
 
-![On device B right after a pull, the local, synced, and server edit times are all 10:00, so the video is synced. If B edits, its local edit time differs and the video needs a push. If the server's copy is edited instead, the server edit time differs and it needs a pull. If both change, it's a conflict. Only equality is checked, never which time is later.](images/sync-state.svg)
-
 The answers decide the status:
 
 - If neither side changed since the last sync, the video is synced.
@@ -44,6 +42,9 @@ The answers decide the status:
 - If both changed, it's a conflict, and you pick which copy to keep.
 - A video that was never synced needs a push if the server doesn't have it, and it's a conflict if the server does.
 - A video that exists only on the server needs a pull.
+- A video that was synced and then removed from the server needs a push.
+
+![The two checks are local changed, editedAt ≠ syncedEditedAt, and server changed, the server's edited_at ≠ syncedEditedAt. When the video was synced before and both copies exist, the checks decide: neither changed is synced, only local is push, only server is pull, and both is conflict. When something is missing, rules decide first: no local copy is pull, never synced and not on the server is push, never synced but on the server is conflict, and synced but removed from the server is push.](images/sync-state.svg)
 
 ## Push and Pull Whole Videos
 
