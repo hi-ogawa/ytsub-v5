@@ -22,7 +22,7 @@ Test the web app for what only it does: login and registration, the server APIs,
 
 The seed videos are the `import.json` files in `scripts/db-seed-json/<id>/`. To add one, build its `import.json` as the Zamak skill's [Generate import.json](../skills/zamak/references/generate-import-json.md) describes, put it there, and run `pnpm db:seed-gen`.
 
-To check a UI change while working on it, run one spec on the surface that shows the change and open its trace, such as `pnpm test-e2e e2e/ext/caption-panel.spec.ts -g "<pattern>"` for the extension or `pnpm test-e2e e2e/basic.spec.ts -g "<pattern>"` for the web app.
+To check a UI change while working on it, run one spec on the surface that shows the change and open its trace, such as `pnpm test-e2e e2e/ext/caption-panel.spec.ts -g "<pattern>"` for the extension or `pnpm test-e2e e2e/video-viewer.spec.ts -g "<pattern>"` for the web app.
 
 ## Write Tests
 
@@ -39,7 +39,7 @@ Extension tests load `dist/extension/`, which `pnpm test-e2e` builds, into a rea
 - `gotoBookmarks(page, extensionId)` opens `chrome-extension://<id>/bookmarks.html` with the test server URL.
 - `seedChromeStorage(context, data)` seeds `chrome.storage.local` through the service worker.
 - `login(page)` logs in through the extension bookmarks page. It is a different helper from the web app `login`.
-- `openYouTubeTab(context, videoId)` opens a watch page and waits for the content script. `openPanelWithTracks(ytPage)` opens the caption panel with the ko and en tracks.
+- `openPanelWithTracks(context, videoId)` opens a watch page with the caption panel showing the ko and en tracks, and returns the page and the panel's shadow host. `openYouTubeTab(context, videoId)` opens the watch page alone, for tests that start with the panel closed.
 - `createBookmarkAt(host, { index, start, end })` selects part of a caption inside the panel's shadow root and bookmarks it.
 
 The tests never load the real youtube.com. The `context` fixture serves `https://www.youtube.com/**` from a route handler in `e2e/ext/youtube-mock.ts`. Chrome injects content scripts by URL, so the mocked watch page still gets them. The page has only what the content script reads, and the player API and caption tracks come from the fixtures in `scripts/youtube-json/<id>/`, so `videoId` must be one of those. Every other youtube.com request is aborted. `pnpm test-youtube` covers changes to the real page and API.

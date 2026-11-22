@@ -1,18 +1,11 @@
 import { expect, type Locator } from "@playwright/test";
+import { OTHER_VIDEO_ID, SEED_VIDEO_ID } from "../helper";
 import { openPanelWithTracks, openYouTubeTab, test } from "./helper";
-
-// Billlie - cloud palace
-const SEED_VIDEO_ID = "7GU_VQfgMT0";
-const OTHER_VIDEO_ID = "DtK-CkwNHSY";
 
 test("FAB toggles the panel and keeps its state per video across reloads", async ({
   context,
 }) => {
-  const ytPage = await openYouTubeTab(context, SEED_VIDEO_ID);
-  const host = ytPage.locator("#zamak-host");
-  await expect(host.locator("[data-index='0']")).not.toBeVisible();
-
-  await openPanelWithTracks(ytPage);
+  const { ytPage, host } = await openPanelWithTracks(context, SEED_VIDEO_ID);
   await expect(host.locator("[data-index='5']")).toBeVisible();
   const row = host.locator("[data-index='0']");
   await expect(row.locator("text=/\\d+:\\d{2} – \\d+:\\d{2}/")).toBeVisible();
@@ -59,9 +52,7 @@ test("track selection: default empty, select tracks, switch language", async ({
 });
 
 test("auto-scroll toggle persists across reload", async ({ context }) => {
-  const ytPage = await openYouTubeTab(context, SEED_VIDEO_ID);
-  await openPanelWithTracks(ytPage);
-  const host = ytPage.locator("#zamak-host");
+  const { ytPage, host } = await openPanelWithTracks(context, SEED_VIDEO_ID);
   const autoScrollItem = host.locator("[data-checked]");
 
   await host.getByTitle("Settings").click();
@@ -81,9 +72,7 @@ test("auto-scroll toggle persists across reload", async ({ context }) => {
 });
 
 test("strategy dropdown switches merge strategy", async ({ context }) => {
-  const ytPage = await openYouTubeTab(context, SEED_VIDEO_ID);
-  await openPanelWithTracks(ytPage);
-  const host = ytPage.locator("#zamak-host");
+  const { ytPage, host } = await openPanelWithTracks(context, SEED_VIDEO_ID);
   const strategySelect = host.locator("select[title='Alignment strategy']");
 
   await host.getByTitle("Settings").click();
@@ -106,16 +95,14 @@ test("strategy dropdown switches merge strategy", async ({ context }) => {
 });
 
 test("export downloads valid import.json", async ({ context }) => {
-  const ytPage = await openYouTubeTab(context, SEED_VIDEO_ID);
-  await openPanelWithTracks(ytPage);
-  const host = ytPage.locator("#zamak-host");
+  const { ytPage, host } = await openPanelWithTracks(context, SEED_VIDEO_ID);
 
   await host.getByTitle("Settings").click();
   const [download] = await Promise.all([
     ytPage.waitForEvent("download"),
     host.getByText("Export import.json").click(),
   ]);
-  expect(download.suggestedFilename()).toBe("import-7GU_VQfgMT0.json");
+  expect(download.suggestedFilename()).toBe(`import-${SEED_VIDEO_ID}.json`);
 
   const content = await (
     await download.createReadStream()
@@ -125,7 +112,7 @@ test("export downloads valid import.json", async ({ context }) => {
   const data = JSON.parse(content);
   expect(data).toMatchObject({
     video: {
-      youtubeId: "7GU_VQfgMT0",
+      youtubeId: SEED_VIDEO_ID,
       title: "Billlie | 'cloud palace' 𝐁efore sunrise live",
       channelName: "Billlie",
       channelId: "UCyc9sUCxELTDK9vELO5Fzeg",
@@ -153,9 +140,7 @@ test("export downloads valid import.json", async ({ context }) => {
 });
 
 test("panel left edge can be dragged to resize", async ({ context }) => {
-  const ytPage = await openYouTubeTab(context, SEED_VIDEO_ID);
-  await openPanelWithTracks(ytPage);
-  const host = ytPage.locator("#zamak-host");
+  const { ytPage, host } = await openPanelWithTracks(context, SEED_VIDEO_ID);
   const panel = host.getByTestId("resizable-panel");
   expect(await getWidth(panel)).toBe(400);
 

@@ -13,6 +13,7 @@
 
 ## Guides
 
+- [Local development](development.md): set up the local server and database, and work on the web app and the extension.
 - [E2E tests](e2e.md): how to run, write, and trace the web app, extension, and YouTube e2e tests.
 - [Deployment](deployment.md): migrations, deploys, and secrets on Cloudflare Workers and D1.
 - [Chrome Web Store submissions](chrome-store-submissions.md): the listing details and the steps for submitting a new version.

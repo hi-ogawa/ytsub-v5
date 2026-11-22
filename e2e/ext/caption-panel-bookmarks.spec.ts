@@ -1,21 +1,16 @@
 import { expect } from "@playwright/test";
+import { SEED_VIDEO_ID } from "../helper";
 import {
   createBookmarkAt,
   openPanelWithTracks,
-  openYouTubeTab,
   selectTextInCaption,
   test,
 } from "./helper";
 
-// Billlie - cloud palace
-const SEED_VIDEO_ID = "7GU_VQfgMT0";
-
 test("clicks inside the bookmark popover don't reach the caption row", async ({
   context,
 }) => {
-  const ytPage = await openYouTubeTab(context, SEED_VIDEO_ID);
-  await openPanelWithTracks(ytPage);
-  const host = ytPage.locator("#zamak-host");
+  const { ytPage, host } = await openPanelWithTracks(context, SEED_VIDEO_ID);
   await host
     .locator("[data-index='1'] [data-side='0'] [data-offset]")
     .selectText();
@@ -46,9 +41,7 @@ test("clicks inside the bookmark popover don't reach the caption row", async ({
 });
 
 test("bookmark arrows keep the play state", async ({ context }) => {
-  const ytPage = await openYouTubeTab(context, SEED_VIDEO_ID);
-  await openPanelWithTracks(ytPage);
-  const host = ytPage.locator("#zamak-host");
+  const { ytPage, host } = await openPanelWithTracks(context, SEED_VIDEO_ID);
   const prevButton = host.getByRole("button", { name: "Previous bookmark" });
   const nextButton = host.getByRole("button", { name: "Next bookmark" });
   await expect(prevButton).toBeDisabled();
@@ -78,9 +71,7 @@ test("bookmark arrows keep the play state", async ({ context }) => {
 });
 
 test("bookmark arrows show the caption while paused", async ({ context }) => {
-  const ytPage = await openYouTubeTab(context, SEED_VIDEO_ID);
-  await openPanelWithTracks(ytPage);
-  const host = ytPage.locator("#zamak-host");
+  const { host } = await openPanelWithTracks(context, SEED_VIDEO_ID);
   const row = host.locator("[data-index='30']");
   await row.locator("[data-side='0'] [data-offset]").selectText();
   await host.getByRole("button", { name: "Create bookmark" }).click();
@@ -103,9 +94,7 @@ test("bookmark arrows show the caption while paused", async ({ context }) => {
 test("manual bookmark: cancel selection, create, highlight, and export", async ({
   context,
 }) => {
-  const ytPage = await openYouTubeTab(context, SEED_VIDEO_ID);
-  await openPanelWithTracks(ytPage);
-  const host = ytPage.locator("#zamak-host");
+  const { ytPage, host } = await openPanelWithTracks(context, SEED_VIDEO_ID);
 
   // Select text — cancel hides FAB
   await selectTextInCaption(host, { index: 0, start: 0, end: 3 });
@@ -152,9 +141,7 @@ test("manual bookmark: cancel selection, create, highlight, and export", async (
 });
 
 test("track picker locks when bookmarks exist", async ({ context }) => {
-  const ytPage = await openYouTubeTab(context, SEED_VIDEO_ID);
-  await openPanelWithTracks(ytPage);
-  const host = ytPage.locator("#zamak-host");
+  const { ytPage, host } = await openPanelWithTracks(context, SEED_VIDEO_ID);
 
   // Create a bookmark first
   await createBookmarkAt(host, { index: 0, start: 0, end: 3 });
@@ -180,9 +167,7 @@ test("track picker locks when bookmarks exist", async ({ context }) => {
 });
 
 test("bookmarks persist across panel close/reopen", async ({ context }) => {
-  const ytPage = await openYouTubeTab(context, SEED_VIDEO_ID);
-  await openPanelWithTracks(ytPage);
-  const host = ytPage.locator("#zamak-host");
+  const { host } = await openPanelWithTracks(context, SEED_VIDEO_ID);
 
   // Create a bookmark
   await createBookmarkAt(host, { index: 0, start: 0, end: 3 });
@@ -203,9 +188,7 @@ test("bookmarks persist across panel close/reopen", async ({ context }) => {
 test("bookmarks tab: empty state, create bookmark, count and context", async ({
   context,
 }) => {
-  const ytPage = await openYouTubeTab(context, SEED_VIDEO_ID);
-  await openPanelWithTracks(ytPage);
-  const host = ytPage.locator("#zamak-host");
+  const { host } = await openPanelWithTracks(context, SEED_VIDEO_ID);
   const panel = host.getByTestId("resizable-panel");
 
   // Tab bar visible
@@ -236,9 +219,7 @@ test("bookmarks tab: empty state, create bookmark, count and context", async ({
 test("bookmarks tab orders bookmarks in one row by offset", async ({
   context,
 }) => {
-  const ytPage = await openYouTubeTab(context, SEED_VIDEO_ID);
-  await openPanelWithTracks(ytPage);
-  const host = ytPage.locator("#zamak-host");
+  const { host } = await openPanelWithTracks(context, SEED_VIDEO_ID);
   const panel = host.getByTestId("resizable-panel");
 
   // Create the later word first
@@ -253,9 +234,7 @@ test("bookmarks tab orders bookmarks in one row by offset", async ({
 test("go-to-caption button switches from bookmarks to captions tab", async ({
   context,
 }) => {
-  const ytPage = await openYouTubeTab(context, SEED_VIDEO_ID);
-  await openPanelWithTracks(ytPage);
-  const host = ytPage.locator("#zamak-host");
+  const { host } = await openPanelWithTracks(context, SEED_VIDEO_ID);
   const panel = host.getByTestId("resizable-panel");
   await createBookmarkAt(host, { index: 0, start: 0, end: 3 });
 
@@ -274,9 +253,7 @@ test("go-to-caption button switches from bookmarks to captions tab", async ({
 });
 
 test("delete bookmark from bookmarks tab", async ({ context }) => {
-  const ytPage = await openYouTubeTab(context, SEED_VIDEO_ID);
-  await openPanelWithTracks(ytPage);
-  const host = ytPage.locator("#zamak-host");
+  const { ytPage, host } = await openPanelWithTracks(context, SEED_VIDEO_ID);
   const panel = host.getByTestId("resizable-panel");
   await createBookmarkAt(host, { index: 0, start: 0, end: 3 });
 
@@ -304,9 +281,7 @@ test("delete bookmark from bookmarks tab", async ({ context }) => {
 });
 
 test("bookmark numbers in popover and bookmarks tab", async ({ context }) => {
-  const ytPage = await openYouTubeTab(context, SEED_VIDEO_ID);
-  await openPanelWithTracks(ytPage);
-  const host = ytPage.locator("#zamak-host");
+  const { ytPage, host } = await openPanelWithTracks(context, SEED_VIDEO_ID);
   const panel = host.getByTestId("resizable-panel");
   // Create out of order, so numbers must follow timestamps
   await createBookmarkAt(host, { index: 4, start: 0, end: 2 });
@@ -347,9 +322,7 @@ test("bookmark numbers in popover and bookmarks tab", async ({ context }) => {
 test("popover go-to-bookmark switches to bookmarks tab with flash-highlight", async ({
   context,
 }) => {
-  const ytPage = await openYouTubeTab(context, SEED_VIDEO_ID);
-  await openPanelWithTracks(ytPage);
-  const host = ytPage.locator("#zamak-host");
+  const { host } = await openPanelWithTracks(context, SEED_VIDEO_ID);
   const panel = host.getByTestId("resizable-panel");
   await createBookmarkAt(host, { index: 0, start: 0, end: 3 });
   await createBookmarkAt(host, { index: 2, start: 0, end: 1 });
