@@ -6,9 +6,10 @@ import { expect, type Page, test } from "@playwright/test";
 export const execAsync = promisify(exec);
 
 /**
- * Billlie's "cloud palace", which has manual ko and en subtitles. It is the one
- * video in both the YouTube fixtures (`scripts/youtube-json`) and the server
- * seed (`scripts/db-seed-json`, owned by the "dev" user).
+ * Billlie's "cloud palace", which has manual ko and en subtitles. It is in both
+ * the YouTube fixtures (`scripts/youtube-json`) and the server seed
+ * (`scripts/db-seed-json`, owned by the "dev" user), so a test can open it in
+ * the extension and pull it from the server.
  */
 export const SEED_VIDEO_ID = "7GU_VQfgMT0";
 
