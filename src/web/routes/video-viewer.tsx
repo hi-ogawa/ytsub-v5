@@ -1,15 +1,13 @@
 import { useNavigate, useParams } from "react-router";
 import { CaptionPanel } from "../../components/caption-panel.tsx";
 import { useYouTubePlayer } from "../../components/youtube-player.tsx";
-import { videoIndexStore } from "../../lib/caption-storage.ts";
+import {
+  type CaptionStorage,
+  videoIndexStore,
+} from "../../lib/caption-storage.ts";
 import { useSyncState } from "../../lib/sync.ts";
-import type { Json3File } from "../../lib/youtube.ts";
 
-const neverFetchJson3 = (): Promise<Json3File> => {
-  throw new Error("Cannot fetch captions in web viewer");
-};
-
-export function VideoViewerPage() {
+export function VideoViewerPage({ storage }: { storage: CaptionStorage }) {
   const { youtubeId } = useParams<"youtubeId">();
 
   const [entries] = videoIndexStore.useValue("entries");
@@ -49,19 +47,32 @@ export function VideoViewerPage() {
       {/* Caption panel */}
       <div className="flex min-h-0 flex-[1_0_0] flex-col border-t lg:w-1/3 lg:flex-none lg:rounded lg:border">
         <CaptionPanel
+          storage={storage}
           sessionOnly
           tracks={[]}
           player={player}
-          fetchJson3={neverFetchJson3}
+          fetchJson3={() => {
+            throw new Error("Cannot fetch captions in web viewer");
+          }}
           videoMeta={videoMeta}
-          useSync={useViewerSync}
+          useSync={({ youtubeId }) => useViewerSync({ storage, youtubeId })}
         />
       </div>
     </div>
   );
 }
 
-function useViewerSync(youtubeId: string) {
+function useViewerSync({
+  storage,
+  youtubeId,
+}: {
+  storage: CaptionStorage;
+  youtubeId: string;
+}) {
   const navigate = useNavigate();
-  return useSyncState({ youtubeId, onNavigate: () => navigate("/") });
+  return useSyncState({
+    storage,
+    youtubeId,
+    onNavigate: () => navigate("/"),
+  });
 }

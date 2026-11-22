@@ -15,6 +15,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "../../components/ui/dropdown-menu.tsx";
+import type { CaptionStorage } from "../../lib/caption-storage.ts";
 import { orpc } from "../../lib/rpc-client.ts";
 import { useTheme } from "../../lib/theme.ts";
 
@@ -28,7 +29,7 @@ export async function authLoader() {
   return { authenticated: data.json.authenticated };
 }
 
-export function RootLayout() {
+export function RootLayout({ storage }: { storage: CaptionStorage }) {
   const { authenticated } = useLoaderData<typeof authLoader>();
 
   return (
@@ -37,7 +38,7 @@ export function RootLayout() {
         <Link to="/" className="text-sm font-semibold">
           Zamak
         </Link>
-        <HeaderMenu authenticated={authenticated} />
+        <HeaderMenu storage={storage} authenticated={authenticated} />
       </header>
       <main className="flex-1 overflow-auto">
         <Outlet />
@@ -70,7 +71,13 @@ export function AuthLayout() {
   return <Outlet />;
 }
 
-function HeaderMenu({ authenticated }: { authenticated: boolean }) {
+function HeaderMenu({
+  storage,
+  authenticated,
+}: {
+  storage: CaptionStorage;
+  authenticated: boolean;
+}) {
   const { theme, cycle, Icon } = useTheme();
   const [showImport, setShowImport] = useState(false);
 
@@ -121,7 +128,11 @@ function HeaderMenu({ authenticated }: { authenticated: boolean }) {
         </DropdownMenuContent>
       </DropdownMenu>
       {authenticated && (
-        <ImportDialog open={showImport} onOpenChange={setShowImport} />
+        <ImportDialog
+          storage={storage}
+          open={showImport}
+          onOpenChange={setShowImport}
+        />
       )}
     </>
   );

@@ -5,7 +5,6 @@ import {
   EllipsisVertical,
   Trash2,
 } from "lucide-react";
-import { ALL_STRATEGIES, type MergeStrategy } from "../lib/caption-merge.ts";
 import type { CaptionSessionManager } from "../lib/caption-session.ts";
 import type { UseSync } from "../lib/sync.ts";
 import type { YouTubeCaptionTrack } from "../lib/youtube.ts";
@@ -24,17 +23,13 @@ export function SettingsDropdown({
   tracks,
   autoScroll,
   onSetAutoScroll,
-  onSelectStrategy,
   useSync,
-  sessionOnly,
 }: {
   store: CaptionSessionManager;
   tracks: YouTubeCaptionTrack[];
   autoScroll: boolean;
   onSetAutoScroll: (value: boolean | ((prev: boolean) => boolean)) => void;
-  onSelectStrategy: (s: MergeStrategy) => void;
   useSync: UseSync;
-  sessionOnly?: boolean;
 }) {
   const hasBookmarks = store.bookmarks.length > 0;
 
@@ -60,32 +55,6 @@ export function SettingsDropdown({
           />
           Auto-scroll
         </DropdownMenuItem>
-        {!sessionOnly && (
-          <div className="px-2 py-1.5">
-            <label className="mb-1 block text-sm text-muted-foreground">
-              Track alignment
-            </label>
-            <select
-              className={`w-full rounded border bg-background px-1 py-0.5 text-sm ${hasBookmarks ? "cursor-not-allowed opacity-50" : ""}`}
-              value={store.strategy}
-              onChange={(e) =>
-                onSelectStrategy(e.target.value as MergeStrategy)
-              }
-              title={
-                hasBookmarks
-                  ? "Cannot change while bookmarks exist"
-                  : "Alignment strategy"
-              }
-              disabled={hasBookmarks}
-            >
-              {ALL_STRATEGIES.map((st) => (
-                <option key={st} value={st}>
-                  {st}
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
         <AiPromptCopy store={store} tracks={tracks} />
         <DropdownMenuItem onSelect={() => importAiResult(store)}>
           <ClipboardPaste className="mr-2 size-4" />

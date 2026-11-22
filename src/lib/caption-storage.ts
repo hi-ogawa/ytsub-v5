@@ -1,6 +1,6 @@
 import { withUseValue } from "../components/use-store-value.ts";
 import { createStore } from "../utils/store.ts";
-import type { MergeStrategy, MergedCaption } from "./caption-merge.ts";
+import type { MergedCaption } from "./caption-merge.ts";
 import type { ExtensionBookmark } from "./extension-bookmarks.ts";
 
 export interface PersistedCaptionSession {
@@ -13,7 +13,6 @@ export interface PersistedCaptionSession {
   vssId2: string;
   language1: string;
   language2: string;
-  strategy?: MergeStrategy;
   captions: MergedCaption[];
   bookmarks: ExtensionBookmark[];
 }
@@ -43,32 +42,33 @@ export interface CaptionStorage {
     options?: { forceIndex?: boolean },
   ): Promise<void>;
   deleteVideo(youtubeId: string): Promise<void>;
-  setSyncedAt(youtubeId: string, serverUpdatedAt: string): Promise<void>;
+  markSynced(options: {
+    youtubeId: string;
+    serverUpdatedAt: string;
+  }): Promise<void>;
   getVideoIndexEntry(youtubeId: string): Promise<VideoIndexEntry | undefined>;
   listVideoIndex(): Promise<VideoIndexEntry[]>;
   subscribe(listener: StorageListener): () => void;
 }
 
-// Each entry point calls initCaptionStorage once at startup: the watch page
-// with the extension frame bridge, every other context with IndexedDB on its
-// own origin.
-export let captionStorage: CaptionStorage;
-
 // In-memory copy of the stored index, for components that read it as they
 // render.
-export const videoIndexStore = withUseValue(
-  createStore<{ entries: VideoIndexEntry[] }>({ entries: [] }),
-);
+export const videoIndexStore = createVideoIndexStore();
 
-export function initCaptionStorage(storage: CaptionStorage) {
-  captionStorage = storage;
-  storage.subscribe((notice) => {
-    if (notice.type === "videoIndex") {
-      videoIndexStore.update({ entries: notice.entries });
-    }
-  });
-}
+function createVideoIndexStore() {
+  const store = withUseValue(
+    createStore<{ entries: VideoIndexEntry[] }>({ entries: [] }),
+  );
 
-export async function loadVideoIndex() {
-  videoIndexStore.update({ entries: await captionStorage.listVideoIndex() });
+  const connect = async (storage: CaptionStorage) => {
+    // Subscribe before loading so a change made during the load isn't lost.
+    storage.subscribe((notice) => {
+      if (notice.type === "videoIndex") {
+        store.update({ entries: notice.entries });
+      }
+    });
+    store.update({ entries: await storage.listVideoIndex() });
+  };
+
+  return { ...store, connect };
 }

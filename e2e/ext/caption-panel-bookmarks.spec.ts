@@ -1,5 +1,5 @@
 import { expect } from "@playwright/test";
-import { SEED_VIDEO_ID } from "../helper";
+import { SEED_YOUTUBE_ID } from "../helper";
 import {
   createBookmarkAt,
   openPanelWithTracks,
@@ -10,7 +10,7 @@ import {
 test("clicks inside the bookmark popover don't reach the caption row", async ({
   context,
 }) => {
-  const { ytPage, host } = await openPanelWithTracks(context, SEED_VIDEO_ID);
+  const { ytPage, host } = await openPanelWithTracks(context, SEED_YOUTUBE_ID);
   await host
     .locator("[data-index='1'] [data-side='0'] [data-offset]")
     .selectText();
@@ -41,7 +41,7 @@ test("clicks inside the bookmark popover don't reach the caption row", async ({
 });
 
 test("bookmark arrows keep the play state", async ({ context }) => {
-  const { ytPage, host } = await openPanelWithTracks(context, SEED_VIDEO_ID);
+  const { ytPage, host } = await openPanelWithTracks(context, SEED_YOUTUBE_ID);
   const prevButton = host.getByRole("button", { name: "Previous bookmark" });
   const nextButton = host.getByRole("button", { name: "Next bookmark" });
   await expect(prevButton).toBeDisabled();
@@ -70,8 +70,35 @@ test("bookmark arrows keep the play state", async ({ context }) => {
   expect(await isPaused()).toBe(false);
 });
 
+test("bookmark arrows wrap around at the ends", async ({ context }) => {
+  const { ytPage, host } = await openPanelWithTracks(context, SEED_YOUTUBE_ID);
+  await createBookmarkAt(host, { index: 1, start: 0, end: 3 });
+  await createBookmarkAt(host, { index: 3, start: 0, end: 3 });
+  const video = ytPage.locator("video");
+  const getCurrentTime = () =>
+    video.evaluate((el: HTMLVideoElement) => el.currentTime);
+  async function clickAndGetTime(name: string) {
+    return await test.step(
+      `Click ${name}`,
+      async () => {
+        const before = await getCurrentTime();
+        await host.getByRole("button", { name }).click();
+        await expect.poll(getCurrentTime).not.toBe(before);
+        return getCurrentTime();
+      },
+      { box: true },
+    );
+  }
+
+  const first = await clickAndGetTime("Next bookmark");
+  const second = await clickAndGetTime("Next bookmark");
+  expect(second).toBeGreaterThan(first);
+  expect(await clickAndGetTime("Next bookmark")).toBe(first);
+  expect(await clickAndGetTime("Previous bookmark")).toBe(second);
+});
+
 test("bookmark arrows show the caption while paused", async ({ context }) => {
-  const { host } = await openPanelWithTracks(context, SEED_VIDEO_ID);
+  const { host } = await openPanelWithTracks(context, SEED_YOUTUBE_ID);
   const row = host.locator("[data-index='30']");
   await row.locator("[data-side='0'] [data-offset]").selectText();
   await host.getByRole("button", { name: "Create bookmark" }).click();
@@ -81,20 +108,22 @@ test("bookmark arrows show the caption while paused", async ({ context }) => {
   await host.getByRole("button", { name: "Next bookmark" }).click();
   const getOffsetFromCenter = () =>
     row.evaluate((el) => {
-      const list = el.closest(".overflow-y-auto")!.getBoundingClientRect();
+      const list = el
+        .closest("[data-testid='caption-list']")!
+        .getBoundingClientRect();
       const rect = el.getBoundingClientRect();
       return Math.abs(
         rect.top + rect.height / 2 - (list.top + list.height / 2),
       );
     });
   await expect.poll(getOffsetFromCenter).toBeLessThan(2);
-  await expect(row).toHaveClass(/border-ring/);
+  await expect(row).toHaveAttribute("aria-current", "true");
 });
 
 test("manual bookmark: cancel selection, create, highlight, and export", async ({
   context,
 }) => {
-  const { ytPage, host } = await openPanelWithTracks(context, SEED_VIDEO_ID);
+  const { ytPage, host } = await openPanelWithTracks(context, SEED_YOUTUBE_ID);
 
   // Select text — cancel hides FAB
   await selectTextInCaption(host, { index: 0, start: 0, end: 3 });
@@ -141,7 +170,7 @@ test("manual bookmark: cancel selection, create, highlight, and export", async (
 });
 
 test("track picker locks when bookmarks exist", async ({ context }) => {
-  const { ytPage, host } = await openPanelWithTracks(context, SEED_VIDEO_ID);
+  const { ytPage, host } = await openPanelWithTracks(context, SEED_YOUTUBE_ID);
 
   // Create a bookmark first
   await createBookmarkAt(host, { index: 0, start: 0, end: 3 });
@@ -167,7 +196,7 @@ test("track picker locks when bookmarks exist", async ({ context }) => {
 });
 
 test("bookmarks persist across panel close/reopen", async ({ context }) => {
-  const { host } = await openPanelWithTracks(context, SEED_VIDEO_ID);
+  const { host } = await openPanelWithTracks(context, SEED_YOUTUBE_ID);
 
   // Create a bookmark
   await createBookmarkAt(host, { index: 0, start: 0, end: 3 });
@@ -188,26 +217,24 @@ test("bookmarks persist across panel close/reopen", async ({ context }) => {
 test("bookmarks tab: empty state, create bookmark, count and context", async ({
   context,
 }) => {
-  const { host } = await openPanelWithTracks(context, SEED_VIDEO_ID);
+  const { host } = await openPanelWithTracks(context, SEED_YOUTUBE_ID);
   const panel = host.getByTestId("resizable-panel");
 
   // Tab bar visible
-  await expect(panel.getByRole("button", { name: "Captions" })).toBeVisible();
-  await expect(panel.getByRole("button", { name: /Bookmarks/ })).toBeVisible();
+  await expect(panel.getByRole("tab", { name: "Captions" })).toBeVisible();
+  await expect(panel.getByRole("tab", { name: /Bookmarks/ })).toBeVisible();
 
   // Empty state
-  await panel.getByRole("button", { name: /Bookmarks/ }).click();
+  await panel.getByRole("tab", { name: /Bookmarks/ }).click();
   await expect(host.getByText("No bookmarks yet")).toBeVisible();
 
   // Create bookmark and verify count
-  await panel.getByRole("button", { name: "Captions" }).click();
+  await panel.getByRole("tab", { name: "Captions" }).click();
   await createBookmarkAt(host, { index: 0, start: 0, end: 3 });
-  await expect(
-    panel.getByRole("button", { name: "Bookmarks (1)" }),
-  ).toBeVisible();
+  await expect(panel.getByRole("tab", { name: "Bookmarks (1)" })).toBeVisible();
 
   // Bookmark card with caption context
-  await panel.getByRole("button", { name: /Bookmarks/ }).click();
+  await panel.getByRole("tab", { name: /Bookmarks/ }).click();
   const bookmarkCard = host.locator("[data-bookmark-id]").first();
   await expect(bookmarkCard).toBeVisible();
   await expect(bookmarkCard.getByText("꼬집어").first()).toBeVisible();
@@ -219,14 +246,14 @@ test("bookmarks tab: empty state, create bookmark, count and context", async ({
 test("bookmarks tab orders bookmarks in one row by offset", async ({
   context,
 }) => {
-  const { host } = await openPanelWithTracks(context, SEED_VIDEO_ID);
+  const { host } = await openPanelWithTracks(context, SEED_YOUTUBE_ID);
   const panel = host.getByTestId("resizable-panel");
 
   // Create the later word first
   await createBookmarkAt(host, { index: 0, start: 8, end: 10 });
   await createBookmarkAt(host, { index: 0, start: 0, end: 3 });
 
-  await panel.getByRole("button", { name: "Bookmarks (2)" }).click();
+  await panel.getByRole("tab", { name: "Bookmarks (2)" }).click();
   const cards = host.locator("[data-bookmark-id] .font-medium");
   await expect(cards).toHaveText(["꼬집어", "꿈인"]);
 });
@@ -234,30 +261,31 @@ test("bookmarks tab orders bookmarks in one row by offset", async ({
 test("go-to-caption button switches from bookmarks to captions tab", async ({
   context,
 }) => {
-  const { host } = await openPanelWithTracks(context, SEED_VIDEO_ID);
+  const { host } = await openPanelWithTracks(context, SEED_YOUTUBE_ID);
   const panel = host.getByTestId("resizable-panel");
   await createBookmarkAt(host, { index: 0, start: 0, end: 3 });
 
   // Switch to bookmarks tab
-  await panel.getByRole("button", { name: /Bookmarks/ }).click();
+  await panel.getByRole("tab", { name: /Bookmarks/ }).click();
   await expect(host.locator("[data-bookmark-id]").first()).toBeVisible();
 
   // Click go-to-caption
   await host.getByRole("button", { name: "Go to caption" }).first().click();
 
   // Should switch back to captions tab
-  await expect(panel.getByRole("button", { name: "Captions" })).toHaveClass(
-    /font-medium/,
+  await expect(panel.getByRole("tab", { name: "Captions" })).toHaveAttribute(
+    "aria-selected",
+    "true",
   );
   await expect(host.locator("[data-index='0']")).toBeVisible();
 });
 
 test("delete bookmark from bookmarks tab", async ({ context }) => {
-  const { ytPage, host } = await openPanelWithTracks(context, SEED_VIDEO_ID);
+  const { ytPage, host } = await openPanelWithTracks(context, SEED_YOUTUBE_ID);
   const panel = host.getByTestId("resizable-panel");
   await createBookmarkAt(host, { index: 0, start: 0, end: 3 });
 
-  await panel.getByRole("button", { name: /Bookmarks/ }).click();
+  await panel.getByRole("tab", { name: /Bookmarks/ }).click();
   await expect(host.locator("[data-bookmark-id]").first()).toBeVisible();
 
   // Open dropdown and delete
@@ -274,14 +302,14 @@ test("delete bookmark from bookmarks tab", async ({ context }) => {
   await expect(host.getByText("No bookmarks yet")).toBeVisible();
 
   // Highlight should be gone from captions
-  await panel.getByRole("button", { name: "Captions" }).click();
+  await panel.getByRole("tab", { name: "Captions" }).click();
   await expect(
     host.locator("[data-index='0'] .bg-highlight-bg"),
   ).not.toBeVisible();
 });
 
 test("bookmark numbers in popover and bookmarks tab", async ({ context }) => {
-  const { ytPage, host } = await openPanelWithTracks(context, SEED_VIDEO_ID);
+  const { ytPage, host } = await openPanelWithTracks(context, SEED_YOUTUBE_ID);
   const panel = host.getByTestId("resizable-panel");
   // Create out of order, so numbers must follow timestamps
   await createBookmarkAt(host, { index: 4, start: 0, end: 2 });
@@ -298,7 +326,7 @@ test("bookmark numbers in popover and bookmarks tab", async ({ context }) => {
   await ytPage.keyboard.press("Escape");
 
   // Bookmark cards are numbered in order
-  await panel.getByRole("button", { name: /Bookmarks/ }).click();
+  await panel.getByRole("tab", { name: /Bookmarks/ }).click();
   const cards = host.locator("[data-bookmark-id]");
   await expect(cards).toHaveCount(3);
   await expect(cards.nth(0)).toContainText("#1꼬집어");
@@ -319,10 +347,10 @@ test("bookmark numbers in popover and bookmarks tab", async ({ context }) => {
   await expect(cards.nth(1)).toContainText("#2아직");
 });
 
-test("popover go-to-bookmark switches to bookmarks tab with flash-highlight", async ({
+test("popover go-to-bookmark switches to bookmarks tab and flashes the card", async ({
   context,
 }) => {
-  const { host } = await openPanelWithTracks(context, SEED_VIDEO_ID);
+  const { host } = await openPanelWithTracks(context, SEED_YOUTUBE_ID);
   const panel = host.getByTestId("resizable-panel");
   await createBookmarkAt(host, { index: 0, start: 0, end: 3 });
   await createBookmarkAt(host, { index: 2, start: 0, end: 1 });
@@ -349,18 +377,19 @@ test("popover go-to-bookmark switches to bookmarks tab with flash-highlight", as
   await goToBookmark(0);
 
   // Should switch to bookmarks tab and close the popover
-  await expect(panel.getByRole("button", { name: /Bookmarks/ })).toHaveClass(
-    /font-medium/,
+  await expect(panel.getByRole("tab", { name: /Bookmarks/ })).toHaveAttribute(
+    "aria-selected",
+    "true",
   );
   await expect(host.getByTestId("bookmark-popover")).toHaveCount(0);
 
-  // Bookmark card should be visible with flash-highlight animation
+  // Bookmark card should be visible and flashing
   await expect(cards.nth(0)).toBeVisible();
-  await expect(cards.nth(0)).toHaveClass(/flash-highlight/);
+  await expect(cards.nth(0)).toHaveAttribute("data-flash");
 
-  // Hiding the tab mid-flash must not leave the class to replay later
-  await panel.getByRole("button", { name: /Captions/ }).click();
+  // Hiding the tab mid-flash must not leave the flash to replay later
+  await panel.getByRole("tab", { name: /Captions/ }).click();
   await goToBookmark(2);
-  await expect(cards.nth(1)).toHaveClass(/flash-highlight/);
-  await expect(cards.nth(0)).not.toHaveClass(/flash-highlight/);
+  await expect(cards.nth(1)).toHaveAttribute("data-flash");
+  await expect(cards.nth(0)).not.toHaveAttribute("data-flash");
 });

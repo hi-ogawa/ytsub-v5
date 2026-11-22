@@ -1,13 +1,9 @@
 import type { InferRouterInputs } from "@orpc/server";
 import type { Router } from "../server/rpc.ts";
-import {
-  type MergeStrategy,
-  type MergedCaption,
-  mergeCaptions,
-} from "./caption-merge.ts";
-import {
-  type PersistedCaptionSession,
-  captionStorage,
+import { type MergedCaption, mergeCaptions } from "./caption-merge.ts";
+import type {
+  CaptionStorage,
+  PersistedCaptionSession,
 } from "./caption-storage.ts";
 import type { ExtensionBookmark } from "./extension-bookmarks.ts";
 import {
@@ -27,10 +23,10 @@ const LANGS_KEY = "zamak:preferred-langs";
 
 export function getInitialTracks(
   tracks: YouTubeCaptionTrack[],
-  videoId: string,
+  youtubeId: string,
 ): { vssId1?: string; vssId2?: string } {
   try {
-    const perVideo = localStorage.getItem(`${TRACKS_KEY}:${videoId}`);
+    const perVideo = localStorage.getItem(`${TRACKS_KEY}:${youtubeId}`);
     if (perVideo) {
       const { vssId1, vssId2 } = JSON.parse(perVideo);
       const valid1 = tracks.some((t) => t.vssId === vssId1);
@@ -51,14 +47,19 @@ export function getInitialTracks(
   return {};
 }
 
-export function saveSelectedTracks(
-  tracks: YouTubeCaptionTrack[],
-  vssId1: string,
-  vssId2: string,
-  videoId: string,
-) {
+export function saveSelectedTracks({
+  tracks,
+  vssId1,
+  vssId2,
+  youtubeId,
+}: {
+  tracks: YouTubeCaptionTrack[];
+  vssId1: string;
+  vssId2: string;
+  youtubeId: string;
+}) {
   localStorage.setItem(
-    `${TRACKS_KEY}:${videoId}`,
+    `${TRACKS_KEY}:${youtubeId}`,
     JSON.stringify({ vssId1, vssId2 }),
   );
   const t1 = tracks.find((t) => t.vssId === vssId1);
@@ -120,7 +121,10 @@ export function sessionToExportData(session: {
 
 // --- Import (export data → local storage) ---
 
-export async function importExportData(data: ExportData): Promise<void> {
+export async function importExportData(
+  storage: CaptionStorage,
+  data: ExportData,
+): Promise<void> {
   const session: PersistedCaptionSession = {
     youtubeId: data.video.youtubeId,
     title: data.video.title,
@@ -156,31 +160,30 @@ export async function importExportData(data: ExportData): Promise<void> {
       createdAt: new Date().toISOString(),
     })),
   };
-  await captionStorage.saveSession(session);
+  await storage.saveSession(session);
 }
 
 export async function buildCaptionSession(options: {
+  storage: CaptionStorage;
   track1: YouTubeCaptionTrack;
   track2: YouTubeCaptionTrack;
   fetchJson3: (track: YouTubeCaptionTrack) => Promise<Json3File>;
   videoMeta: YouTubeVideoData;
-  strategy?: MergeStrategy;
 }): Promise<CaptionSessionManager> {
   const [json3_1, json3_2] = await Promise.all([
     options.fetchJson3(options.track1),
     options.fetchJson3(options.track2),
   ]);
-  const merged = mergeCaptions(
+  const rows = mergeCaptions(
     { json3: json3_1, vssId: options.track1.vssId },
     { json3: json3_2, vssId: options.track2.vssId },
-    options.strategy,
   );
   const store = new CaptionSessionManager({
+    storage: options.storage,
     videoMeta: options.videoMeta,
     vssId1: options.track1.vssId,
     vssId2: options.track2.vssId,
-    rows: merged.captions,
-    strategy: merged.strategy,
+    rows,
     bookmarks: [],
   });
   await store.persistSession();
@@ -190,28 +193,28 @@ export async function buildCaptionSession(options: {
 // --- Store ---
 
 export class CaptionSessionManager {
+  private readonly storage: CaptionStorage;
   readonly videoMeta: YouTubeVideoData;
   vssId1: string;
   vssId2: string;
   rows: MergedCaption[];
-  readonly strategy: MergeStrategy; // TODO: smells
   bookmarks: ExtensionBookmark[];
   version = 0;
   private listeners = new Set<() => void>();
 
   constructor(params: {
+    storage: CaptionStorage;
     videoMeta: YouTubeVideoData;
     vssId1: string;
     vssId2: string;
     rows: MergedCaption[];
-    strategy: MergeStrategy;
     bookmarks: ExtensionBookmark[];
   }) {
+    this.storage = params.storage;
     this.videoMeta = params.videoMeta;
     this.vssId1 = params.vssId1;
     this.vssId2 = params.vssId2;
     this.rows = params.rows;
-    this.strategy = params.strategy;
     this.bookmarks = params.bookmarks;
   }
 
@@ -313,10 +316,9 @@ export class CaptionSessionManager {
       vssId2: this.vssId2,
       language1: langFromVssId(this.vssId1),
       language2: langFromVssId(this.vssId2),
-      strategy: this.strategy,
       captions: this.rows,
       bookmarks: this.bookmarks,
     };
-    await captionStorage.saveSession(session);
+    await this.storage.saveSession(session);
   }
 }

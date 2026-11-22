@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { createUser, openPulledVideo, SEED_VIDEO_ID } from "./helper.ts";
+import { createUser, openPulledVideo, SEED_YOUTUBE_ID } from "./helper.ts";
 
 test.use({ hasTouch: true });
 
@@ -7,7 +7,7 @@ test("dropdown opens on tap but not on a scroll that starts on its trigger", asy
   page,
 }) => {
   const username = await createUser({ seed: true });
-  await openPulledVideo(page, { username, youtubeId: SEED_VIDEO_ID });
+  await openPulledVideo(page, { username, youtubeId: SEED_YOUTUBE_ID });
 
   const trigger = page.getByTitle("Settings");
   const menu = page.getByRole("menu");

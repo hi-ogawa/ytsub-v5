@@ -20,10 +20,10 @@ export const execAsync = promisify(exec);
  * (`scripts/db-seed-json`, which `createUser({ seed: true })` inserts), so a test can open it in
  * the extension and pull it from the server.
  */
-export const SEED_VIDEO_ID = "7GU_VQfgMT0";
+export const SEED_YOUTUBE_ID = "7GU_VQfgMT0";
 
 /** A second video in both the YouTube fixtures and the server seed */
-export const OTHER_VIDEO_ID = "DtK-CkwNHSY";
+export const OTHER_YOUTUBE_ID = "DtK-CkwNHSY";
 
 /** The password of every user that createUser() makes */
 export const TEST_PASSWORD = "devpassword";
@@ -46,7 +46,7 @@ export async function createUser(
   await withApi(async (api) => {
     await callApi(api, "auth/register", { username, password: TEST_PASSWORD });
     if (options.seed) {
-      for (const youtubeId of SEED_VIDEO_IDS) {
+      for (const youtubeId of SEED_YOUTUBE_IDS) {
         await callApi(api, "videos/importVideo", readSeedImport(youtubeId));
       }
     }
@@ -91,7 +91,7 @@ async function callApi(api: APIRequestContext, path: string, input: unknown) {
   }
 }
 
-const SEED_VIDEO_IDS = readdirSync("scripts/db-seed-json");
+const SEED_YOUTUBE_IDS = readdirSync("scripts/db-seed-json");
 
 function readSeedImport(youtubeId: string): unknown {
   return JSON.parse(

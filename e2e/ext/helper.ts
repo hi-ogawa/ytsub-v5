@@ -110,13 +110,13 @@ export async function seedVideoIndex(page: Page, entries: object[]) {
 /** Open a mocked YouTube watch page and wait for the content script. */
 export async function openYouTubeTab(
   context: BrowserContext,
-  videoId: string,
+  youtubeId: string,
 ): Promise<Page> {
   return await test.step(
     "Open YouTube tab",
     async () => {
       const ytPage = await context.newPage();
-      await ytPage.goto(`https://www.youtube.com/watch?v=${videoId}`);
+      await ytPage.goto(`https://www.youtube.com/watch?v=${youtubeId}`);
       await expect(ytPage.locator("#zamak-host")).toBeAttached();
       return ytPage;
     },
@@ -127,12 +127,12 @@ export async function openYouTubeTab(
 /** Open a mocked YouTube watch page with the caption panel showing ko/en tracks */
 export async function openPanelWithTracks(
   context: BrowserContext,
-  videoId: string,
+  youtubeId: string,
 ) {
   return await test.step(
     "Open caption panel with tracks",
     async () => {
-      const ytPage = await openYouTubeTab(context, videoId);
+      const ytPage = await openYouTubeTab(context, youtubeId);
       const host = ytPage.locator("#zamak-host");
       await host.getByTestId("caption-fab").click();
       const selects = host.getByTestId("track-picker").locator("select");

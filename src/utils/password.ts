@@ -36,13 +36,13 @@ async function pbkdf2(
   );
 }
 
-/** Returns "salt:hash" in hex. Optionally accepts a fixed salt (for deterministic output in seeds). */
+/** Returns "salt:hash" in hex. Seeds pass a fixed salt for deterministic output. */
 export async function hashPassword(
   password: string,
-  fixedSalt?: Uint8Array<ArrayBuffer>,
+  options: { salt?: Uint8Array<ArrayBuffer> } = {},
 ): Promise<string> {
   const salt =
-    fixedSalt ??
+    options.salt ??
     (crypto.getRandomValues(
       new Uint8Array(SALT_BYTES),
     ) as Uint8Array<ArrayBuffer>);
