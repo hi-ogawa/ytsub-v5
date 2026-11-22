@@ -70,6 +70,33 @@ test("bookmark arrows keep the play state", async ({ context }) => {
   expect(await isPaused()).toBe(false);
 });
 
+test("bookmark arrows wrap around at the ends", async ({ context }) => {
+  const { ytPage, host } = await openPanelWithTracks(context, SEED_YOUTUBE_ID);
+  await createBookmarkAt(host, { index: 1, start: 0, end: 3 });
+  await createBookmarkAt(host, { index: 3, start: 0, end: 3 });
+  const video = ytPage.locator("video");
+  const getCurrentTime = () =>
+    video.evaluate((el: HTMLVideoElement) => el.currentTime);
+  async function clickAndGetTime(name: string) {
+    return await test.step(
+      `Click ${name}`,
+      async () => {
+        const before = await getCurrentTime();
+        await host.getByRole("button", { name }).click();
+        await expect.poll(getCurrentTime).not.toBe(before);
+        return getCurrentTime();
+      },
+      { box: true },
+    );
+  }
+
+  const first = await clickAndGetTime("Next bookmark");
+  const second = await clickAndGetTime("Next bookmark");
+  expect(second).toBeGreaterThan(first);
+  expect(await clickAndGetTime("Next bookmark")).toBe(first);
+  expect(await clickAndGetTime("Previous bookmark")).toBe(second);
+});
+
 test("bookmark arrows show the caption while paused", async ({ context }) => {
   const { host } = await openPanelWithTracks(context, SEED_YOUTUBE_ID);
   const row = host.locator("[data-index='30']");
