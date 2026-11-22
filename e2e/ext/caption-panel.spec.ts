@@ -187,4 +187,5 @@ test("saved captions show when YouTube refuses the player API request", async ({
   await ytPage.goto(`https://www.youtube.com/watch?v=${OTHER_YOUTUBE_ID}`);
   await host.getByTestId("caption-fab").click();
   await expect(host.getByText("LOGIN_REQUIRED")).toBeVisible();
+  await expect(host.locator("[data-index]")).toHaveCount(0);
 });
