@@ -70,7 +70,6 @@ export function CaptionPanel({
         runtime={runtime}
         state={state}
         session={state.session}
-        player={player}
         useSync={useSync}
       />
     );
@@ -143,13 +142,11 @@ function CaptionPanelWithSession({
   runtime,
   state,
   session,
-  player,
   useSync,
 }: {
   runtime: CaptionPanelRuntime;
   state: CaptionPanelState;
   session: CaptionSession;
-  player?: YTPlayer;
   useSync: UseSync;
 }) {
   const [autoScroll, setAutoScroll] =
@@ -196,7 +193,6 @@ function CaptionPanelWithSession({
       <CaptionPanelContent
         runtime={runtime}
         session={session}
-        player={player}
         autoScroll={autoScroll}
       />
     </div>
