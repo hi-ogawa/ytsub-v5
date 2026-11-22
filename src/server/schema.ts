@@ -49,6 +49,8 @@ export const videos = sqliteTable(
     updatedAt: utcDatetime("updated_at")
       .notNull()
       .default(sql`(datetime('now'))`),
+    // Plain text, so a client's value reads back unchanged. utcDatetime
+    // rewrites values on read.
     editedAt: text("edited_at").notNull(),
   },
   (t) => [
