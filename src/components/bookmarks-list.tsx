@@ -19,6 +19,8 @@ export function ExtensionBookmarksList({
   ref,
   bookmarks,
   rows,
+  currentIndex,
+  isPlaying,
   repeatIndex,
   onPlayBookmark,
   onToggleRepeat,
@@ -28,6 +30,8 @@ export function ExtensionBookmarksList({
   ref: React.Ref<BookmarksListHandle>;
   bookmarks: ExtensionBookmark[];
   rows: MergedCaption[];
+  currentIndex?: number;
+  isPlaying: boolean;
   repeatIndex?: number;
   onPlayBookmark: (bookmark: ExtensionBookmark) => void;
   onToggleRepeat: (captionIndex: number) => void;
@@ -56,6 +60,8 @@ export function ExtensionBookmarksList({
           bookmark={bm}
           bookmarkNumber={bmIndex + 1}
           caption={rows[bm.captionIndex]}
+          isCurrent={bm.captionIndex === currentIndex}
+          isPlaying={isPlaying}
           isRepeating={bm.captionIndex === repeatIndex}
           onClick={() => onPlayBookmark(bm)}
           onToggleRepeat={() => onToggleRepeat(bm.captionIndex)}
@@ -71,6 +77,8 @@ function BookmarkCard({
   bookmark,
   bookmarkNumber,
   caption,
+  isCurrent,
+  isPlaying,
   isRepeating,
   onClick,
   onToggleRepeat,
@@ -80,6 +88,8 @@ function BookmarkCard({
   bookmark: ExtensionBookmark;
   bookmarkNumber: number;
   caption?: MergedCaption;
+  isCurrent: boolean;
+  isPlaying: boolean;
   isRepeating: boolean;
   onClick: () => void;
   onToggleRepeat: () => void;
@@ -89,7 +99,14 @@ function BookmarkCard({
   return (
     <div
       data-bookmark-id={bookmark.id}
-      className="flex cursor-pointer flex-col gap-1 border border-border p-2 hover:bg-muted"
+      aria-current={isCurrent || undefined}
+      className={[
+        "flex cursor-pointer flex-col gap-1 border p-2 hover:bg-muted",
+        isCurrent && isPlaying && "ring-2 ring-ring",
+        isCurrent ? "border-ring" : "border-border",
+      ]
+        .filter(Boolean)
+        .join(" ")}
       onClick={onClick}
     >
       <div className="flex items-start gap-1">

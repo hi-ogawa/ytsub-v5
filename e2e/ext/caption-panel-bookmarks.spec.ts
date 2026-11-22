@@ -161,6 +161,28 @@ test("bookmark arrows show the caption while paused", async ({ context }) => {
   await expect(row).toHaveAttribute("aria-current", "true");
 });
 
+test("bookmarks tab marks every card from the current row", async ({
+  context,
+}) => {
+  const { host } = await openPanelWithTracks(context, SEED_YOUTUBE_ID);
+  // The later selection goes first, because a bookmark splits the row's text
+  await createBookmarkAt(host, { index: 2, start: 4, end: 6 });
+  await createBookmarkAt(host, { index: 2, start: 0, end: 2 });
+  await createBookmarkAt(host, { index: 3, start: 0, end: 2 });
+  await host.getByRole("tab", { name: /Bookmarks/ }).click();
+  const cards = host.locator("[data-bookmark-id]");
+  const currentCards = host.locator("[data-bookmark-id][aria-current='true']");
+
+  await cards.nth(2).click();
+  await expect(currentCards).toHaveCount(1);
+  await expect(cards.nth(2)).toHaveAttribute("aria-current", "true");
+
+  await host.getByRole("button", { name: "Previous bookmark" }).click();
+  await expect(currentCards).toHaveCount(2);
+  await expect(cards.nth(0)).toHaveAttribute("aria-current", "true");
+  await expect(cards.nth(1)).toHaveAttribute("aria-current", "true");
+});
+
 test("manual bookmark: cancel selection, create, highlight, and export", async ({
   context,
 }) => {
