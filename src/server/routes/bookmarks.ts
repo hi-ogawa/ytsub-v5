@@ -5,7 +5,13 @@ import { BOOKMARK_BATCH_SIZE, db, touchVideo } from "../db.ts";
 import { bookmarks, captions, videos } from "../schema.ts";
 
 /** Verify video belongs to the authenticated user */
-async function assertVideoOwner(videoId: number, userId: number) {
+async function assertVideoOwner({
+  videoId,
+  userId,
+}: {
+  videoId: number;
+  userId: number;
+}) {
   const video = await db
     .select({ id: videos.id })
     .from(videos)
@@ -17,7 +23,13 @@ async function assertVideoOwner(videoId: number, userId: number) {
 }
 
 /** Verify bookmark belongs to user (via its video) */
-async function assertBookmarkOwner(bookmarkId: number, userId: number) {
+async function assertBookmarkOwner({
+  bookmarkId,
+  userId,
+}: {
+  bookmarkId: number;
+  userId: number;
+}) {
   const row = await db
     .select({ id: bookmarks.id })
     .from(bookmarks)
@@ -56,7 +68,7 @@ export const bookmarksRouter = authed.router({
       // Verify all referenced videos belong to user
       const videoIds = [...new Set(input.bookmarks.map((b) => b.videoId))];
       for (const videoId of videoIds) {
-        await assertVideoOwner(videoId, context.userId);
+        await assertVideoOwner({ videoId, userId: context.userId });
       }
       const rows = input.bookmarks.map((b) => ({
         videoId: sql.raw(`${b.videoId}`),
@@ -183,7 +195,10 @@ export const bookmarksRouter = authed.router({
   deleteBookmark: authed
     .input(z.object({ id: z.number().int() }))
     .handler(async ({ input, context }) => {
-      await assertBookmarkOwner(input.id, context.userId);
+      await assertBookmarkOwner({
+        bookmarkId: input.id,
+        userId: context.userId,
+      });
       const [row] = await db
         .delete(bookmarks)
         .where(eq(bookmarks.id, input.id))

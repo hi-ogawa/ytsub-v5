@@ -13,7 +13,7 @@ export function SyncMenuItem({
   useSync: UseSync;
   store: CaptionSessionManager;
 }) {
-  const sync = useSync(store.videoMeta.youtubeId);
+  const sync = useSync({ youtubeId: store.videoMeta.youtubeId });
   const { state, error, onNavigate } = sync;
   const { icon, label } = syncStateDisplay(state);
   const action = getSyncMenuAction(sync, store);

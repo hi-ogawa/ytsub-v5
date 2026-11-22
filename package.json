@@ -48,7 +48,7 @@
   "devDependencies": {
     "@cloudflare/vite-plugin": "1.70.1",
     "@cloudflare/workers-types": "^5.20261120.1",
-    "@hiogawa/playwright-trace-pack": "https://pkg.pr.new/hi-ogawa/playwright-trace-pack/@hiogawa/playwright-trace-pack@df95343",
+    "@hiogawa/playwright-trace-pack": "https://pkg.pr.new/hi-ogawa/playwright-trace-pack/@hiogawa/playwright-trace-pack@e73104d",
     "@playwright/test": "^1.65.1",
     "@tailwindcss/vite": "^4.3.5",
     "@types/chrome": "^0.3.7",

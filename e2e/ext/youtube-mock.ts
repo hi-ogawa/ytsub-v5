@@ -20,8 +20,8 @@ export async function mockYouTube(context: BrowserContext) {
         return;
       }
       case "/youtubei/v1/player": {
-        const { videoId } = route.request().postDataJSON();
-        await fulfillPlayer(route, videoId);
+        const { videoId: youtubeId } = route.request().postDataJSON();
+        await fulfillPlayer(route, youtubeId);
         return;
       }
       case "/api/timedtext": {
@@ -60,9 +60,9 @@ const WATCH_HTML = `<!doctype html>
 </html>
 `;
 
-async function fulfillPlayer(route: Route, videoId: string) {
+async function fulfillPlayer(route: Route, youtubeId: string) {
   const metadata: YouTubeExtractionResult = JSON.parse(
-    readFileSync(`${FIXTURE_DIR}/${videoId}/metadata.json`, "utf-8"),
+    readFileSync(`${FIXTURE_DIR}/${youtubeId}/metadata.json`, "utf-8"),
   );
   const { video, captionTracks } = metadata;
   await route.fulfill({
@@ -77,7 +77,7 @@ async function fulfillPlayer(route: Route, videoId: string) {
       captions: {
         playerCaptionsTracklistRenderer: {
           captionTracks: captionTracks.map((track) => ({
-            baseUrl: `https://www.youtube.com/api/timedtext?${new URLSearchParams({ v: videoId, vssId: track.vssId })}`,
+            baseUrl: `https://www.youtube.com/api/timedtext?${new URLSearchParams({ v: youtubeId, vssId: track.vssId })}`,
             languageCode: track.languageCode,
             kind: track.kind,
             name: { simpleText: track.name },

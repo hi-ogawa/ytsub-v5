@@ -58,7 +58,7 @@ describe("mergeStrict", () => {
   it("merges within tolerance", () => {
     const cues1: CaptionCue[] = [{ begin: 0, end: 2, text: "a" }];
     const cues2: CaptionCue[] = [{ begin: 0.3, end: 2.1, text: "b" }];
-    expect(mergeStrict(cues1, cues2, 0.5)).toBeDefined();
+    expect(mergeStrict(cues1, cues2, { tolerance: 0.5 })).toBeDefined();
   });
 
   it("rejects count mismatch", () => {
@@ -73,7 +73,7 @@ describe("mergeStrict", () => {
   it("rejects timestamp mismatch beyond tolerance", () => {
     const cues1: CaptionCue[] = [{ begin: 0, end: 2, text: "a" }];
     const cues2: CaptionCue[] = [{ begin: 1, end: 3, text: "b" }];
-    expect(mergeStrict(cues1, cues2, 0.5)).toBeUndefined();
+    expect(mergeStrict(cues1, cues2, { tolerance: 0.5 })).toBeUndefined();
   });
 });
 
@@ -187,8 +187,8 @@ function mergeStats(merged: MergedCaption[], enCues: CaptionCue[]) {
   };
 }
 
-function loadVideo(videoId: string) {
-  const videoDir = join(YOUTUBE_JSON_DIR, videoId);
+function loadVideo(youtubeId: string) {
+  const videoDir = join(YOUTUBE_JSON_DIR, youtubeId);
   const koFile = findTrackFile(videoDir, "ko")!;
   const enFile = findTrackFile(videoDir, "en")!;
   return { ko: loadTrack(videoDir, koFile), en: loadTrack(videoDir, enFile) };
