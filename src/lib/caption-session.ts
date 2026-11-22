@@ -47,14 +47,19 @@ export function getInitialTracks(
   return {};
 }
 
-export function saveSelectedTracks(
-  tracks: YouTubeCaptionTrack[],
-  vssId1: string,
-  vssId2: string,
-  videoId: string,
-) {
+export function saveSelectedTracks({
+  tracks,
+  vssId1,
+  vssId2,
+  youtubeId,
+}: {
+  tracks: YouTubeCaptionTrack[];
+  vssId1: string;
+  vssId2: string;
+  youtubeId: string;
+}) {
   localStorage.setItem(
-    `${TRACKS_KEY}:${videoId}`,
+    `${TRACKS_KEY}:${youtubeId}`,
     JSON.stringify({ vssId1, vssId2 }),
   );
   const t1 = tracks.find((t) => t.vssId === vssId1);
