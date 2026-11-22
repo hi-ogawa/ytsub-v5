@@ -29,7 +29,7 @@ The pages differ where the two surfaces do. The web app can't fetch from YouTube
 
 |                                              | 🧩 Extension               | 🌐 Web app                 |
 | -------------------------------------------- | -------------------------- | -------------------------- |
-| No login needed                              | ✅ login only to sync      | ❌ every page              |
+| Login                                        | 🔓 optional, only to sync  | 🔒 required                |
 | Caption source                               | ▶️ YouTube's tracks        | ☁️ pulled session only     |
 | Track picker, alignment strategy             | ✅                         | ❌ language label          |
 | Starts a new session                         | ✅                         | ❌ pull first              |
