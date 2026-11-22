@@ -49,8 +49,9 @@ export const videos = sqliteTable(
     updatedAt: utcDatetime("updated_at")
       .notNull()
       .default(sql`(datetime('now'))`),
-    // Plain text, so a client's value reads back unchanged. utcDatetime
-    // rewrites values on read.
+    // Plain text, because it holds ISO strings to the millisecond, and
+    // utcDatetime assumes the second-precision format of datetime('now').
+    // TODO: write the other timestamps in this format too, and drop utcDatetime.
     editedAt: text("edited_at").notNull(),
   },
   (t) => [
