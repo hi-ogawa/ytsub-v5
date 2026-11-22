@@ -6,7 +6,9 @@ const FIXTURE_DIR = "scripts/youtube-json";
 
 /**
  * Serve youtube.com from `scripts/youtube-json` fixtures. The watch page
- * carries only what the content script reads: `ytcfg` and a `<video>`.
+ * carries only what the content script reads: `ytcfg` and a `<video>`. The
+ * video has no source, so `play()` only clears `paused` and `currentTime` stays
+ * where the last seek put it, which lets tests assert exact times.
  * Changes to the real page or API shape are covered by `pnpm test-youtube`.
  */
 export async function mockYouTube(context: BrowserContext) {
