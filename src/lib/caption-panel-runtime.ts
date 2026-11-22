@@ -1,4 +1,5 @@
 import type { YTPlayer } from "../components/youtube-player.tsx";
+import { startAnimationFrameLoop } from "../utils/animation-frame-loop.ts";
 import { RestartableTask } from "../utils/restartable-task.ts";
 import { createStore } from "../utils/store.ts";
 import { type MergedCaption, mergeCaptions } from "./caption-merge.ts";
@@ -296,14 +297,9 @@ export class CaptionPanelRuntime {
    */
   attachPlayer(player: YTPlayer): () => void {
     this.player = player;
-    let rafId: number;
-    const loop = () => {
-      this.syncPlayback(player);
-      rafId = requestAnimationFrame(loop);
-    };
-    rafId = requestAnimationFrame(loop);
+    const stopLoop = startAnimationFrameLoop(() => this.syncPlayback(player));
     return () => {
-      cancelAnimationFrame(rafId);
+      stopLoop();
       this.player = undefined;
     };
   }
