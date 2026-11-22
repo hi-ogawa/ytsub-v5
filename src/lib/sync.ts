@@ -208,9 +208,17 @@ export function useSyncState({
   };
 }
 
-export type VideoSyncEntry = VideoIndexEntry & {
+export type VideoSyncEntry = {
+  youtubeId: string;
+  title: string;
+  channelName: string;
+  // Absent for a video that exists only on the server, whose video list has
+  // no bookmark count
+  bookmarkCount?: number;
+  editedAt: string;
   syncStatus?: ComputedSyncState;
   serverId?: number;
+  serverEditedAt?: string;
 };
 
 function mergeVideoEntries(
@@ -233,6 +241,7 @@ function mergeVideoEntries(
       bookmarkCount: local.bookmarkCount,
       editedAt: local.editedAt,
       serverId: server?.id,
+      serverEditedAt: server?.editedAt,
       syncStatus: status,
     });
   }
@@ -243,9 +252,9 @@ function mergeVideoEntries(
         youtubeId: server.youtubeId,
         title: server.title,
         channelName: server.channelName,
-        bookmarkCount: 0,
         editedAt: server.editedAt,
         serverId: server.id,
+        serverEditedAt: server.editedAt,
         syncStatus: "pull",
       });
     }
