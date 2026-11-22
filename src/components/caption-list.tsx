@@ -77,15 +77,15 @@ export function CaptionList({
 
   // Follows the current caption, scrolling only when it drifts more than a
   // sixth of the viewport from the center.
-  const prevScrollIndex = useRef<number | undefined>(undefined);
+  const previousScrollIndex = useRef<number | undefined>(undefined);
   useEffect(() => {
     if (
       currentIndex === undefined ||
-      currentIndex === prevScrollIndex.current
+      currentIndex === previousScrollIndex.current
     ) {
       return;
     }
-    prevScrollIndex.current = currentIndex;
+    previousScrollIndex.current = currentIndex;
 
     if (!autoScroll || manualScroll.isActive() || isPopoverOpenRef.current) {
       return;
