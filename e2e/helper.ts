@@ -28,12 +28,10 @@ export async function setupDb(options: { seed?: boolean } = {}) {
   await execAsync(`cat ${sql} | sqlite3 -cmd ".timeout 5000" ${findDbPath()}`);
 }
 
-/** Bump a video's updated_at and edited_at to a future time, simulating a push from another device. */
-export async function bumpServerEditedAt(youtubeId: string) {
+/** Simulate a push from another device, which leaves a new edit time on the server. */
+export async function editOnServer(youtubeId: string) {
   await runSql(`
-    UPDATE videos SET
-      updated_at = datetime('now', '+1 hour'),
-      edited_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '+1 hour')
+    UPDATE videos SET edited_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
     WHERE youtube_id = '${youtubeId}'
   `);
 }

@@ -1,6 +1,6 @@
 import { expect } from "@playwright/test";
 import {
-  bumpServerEditedAt,
+  editOnServer,
   setServerEditedAt,
   createCheckpoint,
   SEED_YOUTUBE_ID,
@@ -105,8 +105,7 @@ test("detects pull after push and a remote update", async ({
   await badge.click();
   await expect(badge).toHaveAttribute("data-sync-status", "synced");
 
-  // Simulate a push from another device
-  await bumpServerEditedAt(SEED_YOUTUBE_ID);
+  await editOnServer(SEED_YOUTUBE_ID);
   await page.reload();
   await expect(badge).toHaveAttribute("data-sync-status", "pull");
 });
