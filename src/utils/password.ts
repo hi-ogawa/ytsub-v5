@@ -4,8 +4,8 @@ const PBKDF2_ITERATIONS = 100_000;
 const SALT_BYTES = 16;
 const HASH_BYTES = 32;
 
-function toHex(buf: ArrayBuffer): string {
-  return [...new Uint8Array(buf)]
+function toHex(buffer: ArrayBuffer): string {
+  return [...new Uint8Array(buffer)]
     .map((b) => b.toString(16).padStart(2, "0"))
     .join("");
 }

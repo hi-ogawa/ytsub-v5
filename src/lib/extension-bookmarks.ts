@@ -40,22 +40,26 @@ export function extractBookmarkSelection(
     return;
   }
 
-  const startEl = startContainer.parentElement;
-  const endEl = endContainer.parentElement;
-  const dataOffset = startEl?.getAttribute("data-offset");
-  if (!startEl || !endEl || !dataOffset) {
+  const startElement = startContainer.parentElement;
+  const endElement = endContainer.parentElement;
+  const dataOffset = startElement?.getAttribute("data-offset");
+  if (!startElement || !endElement || !dataOffset) {
     return;
   }
 
-  const sideEl = startEl.parentElement;
-  const dataSide = sideEl?.getAttribute("data-side");
-  if (!sideEl || !dataSide || startEl.parentElement !== endEl.parentElement) {
+  const sideElement = startElement.parentElement;
+  const dataSide = sideElement?.getAttribute("data-side");
+  if (
+    !sideElement ||
+    !dataSide ||
+    startElement.parentElement !== endElement.parentElement
+  ) {
     return;
   }
 
-  const indexEl = sideEl.parentElement?.parentElement;
-  const dataIndex = indexEl?.getAttribute("data-index");
-  if (!indexEl || !dataIndex) {
+  const indexElement = sideElement.parentElement?.parentElement;
+  const dataIndex = indexElement?.getAttribute("data-index");
+  if (!indexElement || !dataIndex) {
     return;
   }
 

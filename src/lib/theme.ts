@@ -46,10 +46,10 @@ export function useTheme() {
     if (theme !== "system") {
       return;
     }
-    const mql = matchMedia("(prefers-color-scheme: dark)");
+    const darkQuery = matchMedia("(prefers-color-scheme: dark)");
     const handler = (e: MediaQueryListEvent) => applyDarkClass(e.matches);
-    mql.addEventListener("change", handler);
-    return () => mql.removeEventListener("change", handler);
+    darkQuery.addEventListener("change", handler);
+    return () => darkQuery.removeEventListener("change", handler);
   }, [theme]);
 
   const cycle = () =>

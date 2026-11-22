@@ -41,49 +41,49 @@ export function connectFrameRpc<Handlers extends FrameHandlers, Event>(
   options: ConnectOptions,
 ) {
   const listeners = new Set<(event: Event) => void>();
-  let connection: Promise<Connection> | undefined;
+  let connectionPromise: Promise<Connection> | undefined;
 
   function connect() {
-    connection ??= waitForFrame(options).then((conn) => {
-      listenFrom(conn, (message) => {
+    connectionPromise ??= waitForFrame(options).then((connection) => {
+      listenFrom(connection, (message) => {
         if (message.type !== "zamak-frame:event") {
           return;
         }
-        for (const l of listeners) {
-          l(message.event as Event);
+        for (const listener of listeners) {
+          listener(message.event as Event);
         }
       });
-      return conn;
+      return connection;
     });
-    return connection;
+    return connectionPromise;
   }
 
   async function call(method: string, params: unknown[]) {
-    const conn = await connect();
+    const connection = await connect();
     const id = crypto.randomUUID();
     return new Promise((resolve, reject) => {
-      const ac = new AbortController();
+      const controller = new AbortController();
       const timer = setTimeout(() => {
-        ac.abort();
+        controller.abort();
         reject(new Error(options.timeoutMessage));
       }, options.timeoutMs);
       listenFrom(
-        conn,
+        connection,
         (message) => {
           if (message.type !== "zamak-frame:response" || message.id !== id) {
             return;
           }
           clearTimeout(timer);
-          ac.abort();
+          controller.abort();
           if (message.error) {
             reject(new Error(message.error));
           } else {
             resolve(message.result);
           }
         },
-        { signal: ac.signal },
+        { signal: controller.signal },
       );
-      postTo(conn, { type: "zamak-frame:request", id, method, params });
+      postTo(connection, { type: "zamak-frame:request", id, method, params });
     });
   }
 
@@ -109,9 +109,9 @@ export function connectFrameRpc<Handlers extends FrameHandlers, Event>(
 // after that.
 function waitForFrame(options: ConnectOptions): Promise<Connection> {
   return new Promise((resolve, reject) => {
-    const ac = new AbortController();
+    const controller = new AbortController();
     const timer = setTimeout(() => {
-      ac.abort();
+      controller.abort();
       reject(new Error(options.timeoutMessage));
     }, options.timeoutMs);
     window.addEventListener(
@@ -132,10 +132,10 @@ function waitForFrame(options: ConnectOptions): Promise<Connection> {
           return;
         }
         clearTimeout(timer);
-        ac.abort();
+        controller.abort();
         resolve({ frame: frame.contentWindow!, origin: e.origin });
       },
-      { signal: ac.signal },
+      { signal: controller.signal },
     );
     const frame = document.getElementById(options.frameId);
     if (frame instanceof HTMLIFrameElement) {
@@ -191,19 +191,19 @@ export function serveFrameRpc<Event>(
 
 // --- Messaging ---
 
-function postTo(conn: Connection, message: FrameMessage) {
-  conn.frame.postMessage(message, conn.origin);
+function postTo(connection: Connection, message: FrameMessage) {
+  connection.frame.postMessage(message, connection.origin);
 }
 
 function listenFrom(
-  conn: Connection,
+  connection: Connection,
   listener: (message: FrameMessage) => void,
   options?: { signal?: AbortSignal },
 ) {
   window.addEventListener(
     "message",
     (e) => {
-      if (e.source !== conn.frame || e.origin !== conn.origin) {
+      if (e.source !== connection.frame || e.origin !== connection.origin) {
         return;
       }
       const message = e.data as FrameMessage | undefined;

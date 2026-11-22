@@ -16,7 +16,8 @@ test("clicks inside the bookmark popover don't reach the caption row", async ({
     .selectText();
   await host.getByRole("button", { name: "Create bookmark" }).click();
   const video = ytPage.locator("video");
-  const isPaused = () => video.evaluate((el: HTMLVideoElement) => el.paused);
+  const isPaused = () =>
+    video.evaluate((element: HTMLVideoElement) => element.paused);
 
   const highlight = host
     .locator("[data-index='1']")
@@ -49,9 +50,10 @@ test("repeat on a bookmark card repeats its row, shared with the Captions tab", 
   await createBookmarkAt(host, { index: 2, start: 0, end: 2 });
   await createBookmarkAt(host, { index: 3, start: 0, end: 2 });
   const video = ytPage.locator("video");
-  const isPaused = () => video.evaluate((el: HTMLVideoElement) => el.paused);
+  const isPaused = () =>
+    video.evaluate((element: HTMLVideoElement) => element.paused);
   const getCurrentTime = () =>
-    video.evaluate((el: HTMLVideoElement) => el.currentTime);
+    video.evaluate((element: HTMLVideoElement) => element.currentTime);
   const cards = host.locator("[data-bookmark-id]");
   const cardRepeats = cards.getByTitle("Repeat");
   const rowRepeat = (index: number) =>
@@ -94,9 +96,10 @@ test("bookmark arrows keep the play state", async ({ context }) => {
   await expect(prevButton).toBeEnabled();
   await expect(nextButton).toBeEnabled();
   const video = ytPage.locator("video");
-  const isPaused = () => video.evaluate((el: HTMLVideoElement) => el.paused);
+  const isPaused = () =>
+    video.evaluate((element: HTMLVideoElement) => element.paused);
   const getCurrentTime = () =>
-    video.evaluate((el: HTMLVideoElement) => el.currentTime);
+    video.evaluate((element: HTMLVideoElement) => element.currentTime);
 
   // A paused video stays paused at the bookmark
   expect(await isPaused()).toBe(true);
@@ -117,7 +120,7 @@ test("bookmark arrows wrap around at the ends", async ({ context }) => {
   await createBookmarkAt(host, { index: 3, start: 0, end: 3 });
   const video = ytPage.locator("video");
   const getCurrentTime = () =>
-    video.evaluate((el: HTMLVideoElement) => el.currentTime);
+    video.evaluate((element: HTMLVideoElement) => element.currentTime);
   async function clickAndGetTime(name: string) {
     return await test.step(
       `Click ${name}`,
@@ -148,11 +151,11 @@ test("bookmark arrows show the caption while paused", async ({ context }) => {
 
   await host.getByRole("button", { name: "Next bookmark" }).click();
   const getOffsetFromCenter = () =>
-    row.evaluate((el) => {
-      const list = el
+    row.evaluate((element) => {
+      const list = element
         .closest("[data-testid='caption-list']")!
         .getBoundingClientRect();
-      const rect = el.getBoundingClientRect();
+      const rect = element.getBoundingClientRect();
       return Math.abs(
         rect.top + rect.height / 2 - (list.top + list.height / 2),
       );
@@ -193,7 +196,8 @@ test("clicking a card from the current row toggles play, like a caption row", as
   await createBookmarkAt(host, { index: 3, start: 0, end: 2 });
   await host.getByRole("tab", { name: /Bookmarks/ }).click();
   const video = ytPage.locator("video");
-  const isPaused = () => video.evaluate((el: HTMLVideoElement) => el.paused);
+  const isPaused = () =>
+    video.evaluate((element: HTMLVideoElement) => element.paused);
   const cards = host.locator("[data-bookmark-id]");
 
   await cards.nth(0).click();
