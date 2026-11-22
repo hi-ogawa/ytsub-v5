@@ -40,7 +40,10 @@ export const bgRpcHandlers = {
     if (!data) {
       throw new Error("Video not found on server");
     }
-    return serverSessionToLocal(data);
+    return {
+      session: serverSessionToLocal(data),
+      updatedAt: data.video.updatedAt,
+    };
   },
 };
 

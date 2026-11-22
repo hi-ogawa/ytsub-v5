@@ -35,6 +35,13 @@ export async function bumpServerUpdatedAt(youtubeId: string) {
   );
 }
 
+/** Set a video's updated_at, in SQLite's `YYYY-MM-DD HH:MM:SS` UTC format. */
+export async function setServerUpdatedAt(youtubeId: string, updatedAt: string) {
+  await execAsync(
+    `sqlite3 -cmd ".timeout 5000" ${findDbPath()} "UPDATE videos SET updated_at = '${updatedAt}' WHERE youtube_id = '${youtubeId}'"`,
+  );
+}
+
 function findDbPath() {
   return globSync(
     ".wrangler/state/e2e/v3/d1/miniflare-D1DatabaseObject/*.sqlite",

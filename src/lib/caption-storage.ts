@@ -34,9 +34,11 @@ export interface CaptionStorage {
   getSession(youtubeId: string): Promise<PersistedCaptionSession | undefined>;
   // Also updates the video's index entry when the session has bookmarks or is
   // already indexed. `forceIndex` indexes it regardless, as after a pull.
+  // `updatedAt` defaults to now. A pull passes the server's, so the video
+  // keeps its place in the list.
   saveSession(
     session: PersistedCaptionSession,
-    options?: { forceIndex?: boolean },
+    options?: { forceIndex?: boolean; updatedAt?: string },
   ): Promise<void>;
   deleteVideo(youtubeId: string): Promise<void>;
   markSynced(youtubeId: string): Promise<void>;

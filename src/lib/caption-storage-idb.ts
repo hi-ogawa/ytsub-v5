@@ -54,7 +54,7 @@ class IdbCaptionStorage implements CaptionStorage {
           title: session.title,
           channelName: session.channelName,
           bookmarkCount: session.bookmarks.length,
-          updatedAt: new Date().toISOString(),
+          updatedAt: options?.updatedAt ?? new Date().toISOString(),
           syncedAt: existing?.syncedAt,
         });
         return videos.getAll();

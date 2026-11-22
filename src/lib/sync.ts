@@ -156,12 +156,12 @@ export function useSyncState({
           throw new Error("Video not found on server");
         }
         const session = serverSessionToLocal(data);
-        // replace() bumps the index entry's updatedAt, so markSynced must follow it.
         await action.store.replace({
           vssId1: session.vssId1,
           vssId2: session.vssId2,
           captions: session.captions,
           bookmarks: session.bookmarks,
+          updatedAt: data.video.updatedAt,
         });
         await storage.markSynced(youtubeId);
       }
@@ -307,6 +307,7 @@ export function useVideoSync(storage: CaptionStorage) {
       }
       await storage.saveSession(serverSessionToLocal(data), {
         forceIndex: true,
+        updatedAt: data.video.updatedAt,
       });
       await storage.markSynced(youtubeId);
     });
