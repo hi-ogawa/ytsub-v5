@@ -13,6 +13,9 @@ export const execAsync = promisify(exec);
  */
 export const SEED_VIDEO_ID = "7GU_VQfgMT0";
 
+/** A second video in both the YouTube fixtures and the server seed */
+export const OTHER_VIDEO_ID = "DtK-CkwNHSY";
+
 // Write to miniflare's D1 sqlite file directly instead of going through
 // wrangler CLI (0.15s vs 2s per call). WAL mode lets this run alongside the
 // dev server, but writers still take turns, so `.timeout` waits out a write

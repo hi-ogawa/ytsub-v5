@@ -1,8 +1,6 @@
 import { expect, type Locator } from "@playwright/test";
-import { SEED_VIDEO_ID } from "../helper";
+import { OTHER_VIDEO_ID, SEED_VIDEO_ID } from "../helper";
 import { openPanelWithTracks, openYouTubeTab, test } from "./helper";
-
-const OTHER_VIDEO_ID = "DtK-CkwNHSY";
 
 test("FAB toggles the panel and keeps its state per video across reloads", async ({
   context,
