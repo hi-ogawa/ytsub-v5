@@ -78,10 +78,16 @@ test("bookmark arrows wrap around at the ends", async ({ context }) => {
   const getCurrentTime = () =>
     video.evaluate((el: HTMLVideoElement) => el.currentTime);
   async function clickAndGetTime(name: string) {
-    const before = await getCurrentTime();
-    await host.getByRole("button", { name }).click();
-    await expect.poll(getCurrentTime).not.toBe(before);
-    return getCurrentTime();
+    return test.step(
+      `Click ${name}`,
+      async () => {
+        const before = await getCurrentTime();
+        await host.getByRole("button", { name }).click();
+        await expect.poll(getCurrentTime).not.toBe(before);
+        return getCurrentTime();
+      },
+      { box: true },
+    );
   }
 
   const first = await clickAndGetTime("Next bookmark");
