@@ -34,9 +34,6 @@ export function BookmarksPage({
   const displayEntries: VideoSyncEntry[] = sync?.isPending
     ? []
     : (sync?.entries ?? entries);
-  // Each editedAt comes from the clock of the side that made the edit, so
-  // clock skew can swap videos edited within the skew. No sync decision
-  // depends on this order.
   const sorted = [...displayEntries].sort((a, b) =>
     b.editedAt.localeCompare(a.editedAt),
   );
