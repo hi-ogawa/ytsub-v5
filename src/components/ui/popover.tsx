@@ -29,7 +29,7 @@ function PopoverContent({
         align={align}
         sideOffset={sideOffset}
         className={
-          "z-50 w-48 rounded border border-border bg-popover p-2 shadow-lg outline-hidden" +
+          "z-50 w-64 rounded border border-border bg-popover p-2 shadow-lg outline-hidden" +
           (className ? ` ${className}` : "")
         }
         {...props}

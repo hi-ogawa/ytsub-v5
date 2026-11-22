@@ -351,21 +351,21 @@ function BookmarkWord({
           {bookmark.text}
         </span>
         {bookmark.translation ? (
-          <span className="block text-xs text-muted-foreground">
+          <span className="block text-xs text-popover-foreground">
             {bookmark.translation}
           </span>
         ) : (
-          <span className="block text-xs italic text-muted-foreground/50">
+          <span className="block text-xs italic text-muted-foreground">
             unfilled
           </span>
         )}
         {bookmark.etymology && (
-          <span className="mt-1 block text-[10px] text-muted-foreground">
+          <span className="mt-1 block text-xs text-muted-foreground">
             {bookmark.etymology}
           </span>
         )}
         {bookmark.notes && (
-          <span className="mt-1 block max-h-24 overflow-y-auto text-[10px] text-muted-foreground">
+          <span className="mt-1 block max-h-24 overflow-y-auto text-xs text-muted-foreground">
             {bookmark.notes}
           </span>
         )}
