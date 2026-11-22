@@ -1,4 +1,5 @@
 import net from "node:net";
+import os from "node:os";
 import { defineConfig, devices } from "@playwright/test";
 
 const server = process.env.E2E_SERVER ?? "build";
@@ -22,9 +23,9 @@ export default defineConfig({
   // Each test logs in as a user of its own (see createUser in e2e/helper.ts),
   // so tests never share server data and all of them run in parallel.
   fullyParallel: true,
-  // On CI's 4 vCPUs, 3 workers ran fastest. Each extra worker slows every test
+  // Leave one CPU for the server. On CI's 4 vCPUs, 3 workers ran fastest,
   // because Chromium and the server compete for the CPUs.
-  workers: process.env.CI ? 3 : undefined,
+  workers: Math.max(1, os.availableParallelism() - 1),
   globalSetup: "./e2e/global-setup.ts",
   webServer: {
     command:
