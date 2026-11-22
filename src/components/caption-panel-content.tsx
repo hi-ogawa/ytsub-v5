@@ -1,5 +1,5 @@
 import { Bookmark, ChevronLeft, ChevronRight, X } from "lucide-react";
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState, useSyncExternalStore } from "react";
 import type { MergedCaption } from "../lib/caption-merge.ts";
 import {
   type CaptionPanelRuntime,
@@ -13,18 +13,19 @@ import {
 } from "./bookmarks-list.tsx";
 import { CaptionList, type CaptionListHandle } from "./caption-list.tsx";
 import { useBookmarkSelection } from "./use-bookmark-selection.ts";
-import { useStoreSelector } from "./use-store-value.ts";
+import type { YTPlayer } from "./youtube-player.tsx";
 
 export function CaptionPanelContent({
   runtime,
   session,
+  player,
   autoScroll,
 }: {
   runtime: CaptionPanelRuntime;
   session: CaptionSession;
+  player?: YTPlayer;
   autoScroll: boolean;
 }) {
-  const player = useStoreSelector(runtime.store, (s) => s.player);
   const [activeTab, setActiveTab] = useState<Tab>("captions");
   const contentRef = useRef<HTMLDivElement>(null);
   const captionListRef = useRef<CaptionListHandle>(null);
@@ -85,6 +86,7 @@ export function CaptionPanelContent({
             ref={captionListRef}
             runtime={runtime}
             rows={session.rows}
+            player={player}
             autoScroll={autoScroll}
             bookmarks={sortedBookmarks}
             onGoToBookmark={onGoToBookmark}
@@ -226,6 +228,7 @@ function CaptionViewer({
   ref,
   runtime,
   rows,
+  player,
   autoScroll,
   bookmarks,
   onGoToBookmark,
@@ -233,13 +236,15 @@ function CaptionViewer({
   ref: React.Ref<CaptionListHandle>;
   runtime: CaptionPanelRuntime;
   rows: MergedCaption[];
+  player?: YTPlayer;
   autoScroll: boolean;
   bookmarks: ExtensionBookmark[];
   onGoToBookmark: (bookmarkId: string) => void;
 }) {
-  const currentIndex = useStoreSelector(runtime.store, (s) => s.currentIndex);
-  const isPlaying = useStoreSelector(runtime.store, (s) => s.isPlaying);
-  const player = useStoreSelector(runtime.store, (s) => s.player);
+  const { currentIndex, isPlaying } = useSyncExternalStore(
+    runtime.playbackStore.subscribe,
+    runtime.playbackStore.get,
+  );
 
   return (
     <CaptionList

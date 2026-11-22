@@ -12,20 +12,19 @@ import type {
   CaptionPanelRuntime,
   CaptionSession,
 } from "../lib/caption-panel-runtime.ts";
+import type { YouTubeCaptionTrack } from "../lib/youtube.ts";
 import { downloadText } from "../utils/download-text.ts";
-import { useStoreSelector } from "./use-store-value.ts";
 
 export function AiPromptCopy({
-  runtime,
   session,
+  tracks,
 }: {
-  runtime: CaptionPanelRuntime;
   session: CaptionSession;
+  tracks: YouTubeCaptionTrack[];
 }) {
   const [selected, setSelected] = useState<AiTask>(AI_TASKS[0].task);
   const [copied, setCopied] = useState(false);
   const { youtubeId, title } = session.video;
-  const tracks = useStoreSelector(runtime.store, (s) => s.tracks);
 
   function getPrompt(task: AiTask) {
     return makeAiPrompt(task, {

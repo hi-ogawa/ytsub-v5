@@ -31,7 +31,7 @@ export interface CaptionSession {
   bookmarks: ExtensionBookmark[];
 }
 
-interface CaptionPanelState {
+export interface CaptionPanelState {
   /** True until the saved session has been read from storage */
   restoring: boolean;
   session?: CaptionSession;
@@ -47,6 +47,11 @@ interface CaptionPanelState {
   building: boolean;
   buildError?: unknown;
   player?: YTPlayer;
+}
+
+// Apart from the panel's state, because it changes with every caption while
+// the video plays, and only the caption list shows it.
+interface PlaybackState {
   /** Index of the caption row at the playback position */
   currentIndex?: number;
   isPlaying: boolean;
@@ -70,8 +75,8 @@ export class CaptionPanelRuntime {
     tracks: [],
     loadingTracks: false,
     building: false,
-    isPlaying: false,
   });
+  readonly playbackStore = createStore<PlaybackState>({ isPlaying: false });
 
   readonly storage: CaptionStorage;
   readonly youtubeId: string;
@@ -171,11 +176,8 @@ export class CaptionPanelRuntime {
         youtubeId: this.youtubeId,
       });
     }
-    this.store.update({
-      session: undefined,
-      currentIndex: undefined,
-      isPlaying: false,
-    });
+    this.store.update({ session: undefined });
+    this.playbackStore.update({ currentIndex: undefined, isPlaying: false });
     await this.buildSession(selection);
   }
 
@@ -336,12 +338,12 @@ export class CaptionPanelRuntime {
   }
 
   private syncPlayback(player: YTPlayer): void {
-    const state = this.store.get();
-    const rows = state.session?.rows;
+    const rows = this.store.get().session?.rows;
     if (!rows || rows.length === 0) {
       return;
     }
     const isPlaying = player.getPlayerState() === 1;
+    const state = this.playbackStore.get();
     let currentIndex = state.currentIndex;
     if (isPlaying) {
       const time = player.getCurrentTime();
@@ -351,7 +353,7 @@ export class CaptionPanelRuntime {
       }
     }
     if (isPlaying !== state.isPlaying || currentIndex !== state.currentIndex) {
-      this.store.update({ isPlaying, currentIndex });
+      this.playbackStore.update({ isPlaying, currentIndex });
     }
   }
 
@@ -391,7 +393,7 @@ export class CaptionPanelRuntime {
   // sets the current caption itself.
   private seekToBookmark(bookmark: ExtensionBookmark): void {
     this.store.get().player?.seekTo(bookmark.timestamp);
-    this.store.update({ currentIndex: bookmark.captionIndex });
+    this.playbackStore.update({ currentIndex: bookmark.captionIndex });
   }
 }
 

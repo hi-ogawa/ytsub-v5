@@ -1,7 +1,8 @@
-import { useEffect } from "react";
+import { useEffect, useSyncExternalStore } from "react";
 import { captionPanelPreferences } from "../lib/caption-panel-preferences.ts";
 import type {
   CaptionPanelRuntime,
+  CaptionPanelState,
   CaptionSession,
 } from "../lib/caption-panel-runtime.ts";
 import type { UseSync } from "../lib/sync.ts";
@@ -12,7 +13,6 @@ import {
   SettingsDropdownSkeleton,
 } from "./settings-menu.tsx";
 import { TrackPicker } from "./track-picker.tsx";
-import { useStoreSelector } from "./use-store-value.ts";
 import type { YTPlayer } from "./youtube-player.tsx";
 
 export function CaptionPanel({
@@ -31,21 +31,22 @@ export function CaptionPanel({
 
   useEffect(() => player && runtime.attachPlayer(player), [runtime, player]);
 
-  const restoring = useStoreSelector(runtime.store, (s) => s.restoring);
-  const session = useStoreSelector(runtime.store, (s) => s.session);
-  const loadingTracks = useStoreSelector(runtime.store, (s) => s.loadingTracks);
-  const tracksError = useStoreSelector(runtime.store, (s) => s.tracksError);
+  const state = useSyncExternalStore(
+    runtime.store.subscribe,
+    runtime.store.get,
+  );
 
   // TODO: better indicator?
-  if (restoring) {
+  if (state.restoring) {
     return null;
   }
 
-  if (session) {
+  if (state.session) {
     return (
       <CaptionPanelWithSession
         runtime={runtime}
-        session={session}
+        state={state}
+        session={state.session}
         useSync={useSync}
       />
     );
@@ -54,13 +55,13 @@ export function CaptionPanel({
   if (!runtime.trackSource) {
     return <PanelMessage>No session available</PanelMessage>;
   }
-  if (loadingTracks) {
+  if (state.loadingTracks) {
     return <PanelMessage>Loading subtitles…</PanelMessage>;
   }
-  if (tracksError) {
-    return <PanelMessage error>{String(tracksError)}</PanelMessage>;
+  if (state.tracksError) {
+    return <PanelMessage error>{String(state.tracksError)}</PanelMessage>;
   }
-  return <CaptionPanelLoading runtime={runtime} />;
+  return <CaptionPanelLoading runtime={runtime} state={state} />;
 }
 
 function PanelMessage({
@@ -79,12 +80,15 @@ function PanelMessage({
   );
 }
 
-function CaptionPanelLoading({ runtime }: { runtime: CaptionPanelRuntime }) {
-  const vssId1 = useStoreSelector(runtime.store, (s) => s.selectedVssId1);
-  const vssId2 = useStoreSelector(runtime.store, (s) => s.selectedVssId2);
-  const building = useStoreSelector(runtime.store, (s) => s.building);
-  const buildError = useStoreSelector(runtime.store, (s) => s.buildError);
-  const tracks = useStoreSelector(runtime.store, (s) => s.tracks);
+function CaptionPanelLoading({
+  runtime,
+  state,
+}: {
+  runtime: CaptionPanelRuntime;
+  state: CaptionPanelState;
+}) {
+  const { selectedVssId1, selectedVssId2, building, buildError, tracks } =
+    state;
 
   return (
     <div className="flex h-full flex-col">
@@ -92,8 +96,8 @@ function CaptionPanelLoading({ runtime }: { runtime: CaptionPanelRuntime }) {
         <div className="min-w-0 flex-1">
           <TrackPicker
             tracks={tracks}
-            selectedVssId1={vssId1}
-            selectedVssId2={vssId2}
+            selectedVssId1={selectedVssId1}
+            selectedVssId2={selectedVssId2}
             onSelect={(v1, v2) =>
               runtime.selectTracks({ vssId1: v1, vssId2: v2 })
             }
@@ -113,17 +117,18 @@ function CaptionPanelLoading({ runtime }: { runtime: CaptionPanelRuntime }) {
 
 function CaptionPanelWithSession({
   runtime,
+  state,
   session,
   useSync,
 }: {
   runtime: CaptionPanelRuntime;
+  state: CaptionPanelState;
   session: CaptionSession;
   useSync: UseSync;
 }) {
   const [autoScroll, setAutoScroll] =
     captionPanelPreferences.useValue("autoScroll");
-  const tracks = useStoreSelector(runtime.store, (s) => s.tracks);
-  const tracksError = useStoreSelector(runtime.store, (s) => s.tracksError);
+  const { tracks, tracksError } = state;
 
   return (
     <div className="flex h-full flex-col">
@@ -148,6 +153,7 @@ function CaptionPanelWithSession({
         <SettingsDropdown
           runtime={runtime}
           session={session}
+          tracks={tracks}
           autoScroll={autoScroll}
           onSetAutoScroll={setAutoScroll}
           useSync={useSync}
@@ -164,6 +170,7 @@ function CaptionPanelWithSession({
       <CaptionPanelContent
         runtime={runtime}
         session={session}
+        player={state.player}
         autoScroll={autoScroll}
       />
     </div>

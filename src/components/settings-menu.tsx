@@ -10,6 +10,7 @@ import type {
   CaptionSession,
 } from "../lib/caption-panel-runtime.ts";
 import type { UseSync } from "../lib/sync.ts";
+import type { YouTubeCaptionTrack } from "../lib/youtube.ts";
 import { downloadText } from "../utils/download-text.ts";
 import { AiPromptCopy, importAiResult } from "./ai-prompt-menu.tsx";
 import { SyncMenuItem } from "./sync-menu-item.tsx";
@@ -23,12 +24,14 @@ import {
 export function SettingsDropdown({
   runtime,
   session,
+  tracks,
   autoScroll,
   onSetAutoScroll,
   useSync,
 }: {
   runtime: CaptionPanelRuntime;
   session: CaptionSession;
+  tracks: YouTubeCaptionTrack[];
   autoScroll: boolean;
   onSetAutoScroll: (value: boolean | ((prev: boolean) => boolean)) => void;
   useSync: UseSync;
@@ -57,7 +60,7 @@ export function SettingsDropdown({
           />
           Auto-scroll
         </DropdownMenuItem>
-        <AiPromptCopy runtime={runtime} session={session} />
+        <AiPromptCopy session={session} tracks={tracks} />
         <DropdownMenuItem onSelect={() => importAiResult(runtime)}>
           <ClipboardPaste className="mr-2 size-4" />
           Import AI result
