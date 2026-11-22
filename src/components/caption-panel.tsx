@@ -37,7 +37,11 @@ export function CaptionPanel({
     retry: false,
   });
 
-  useEffect(() => player && runtime.attachPlayer(player), [runtime, player]);
+  useEffect(() => {
+    if (player) {
+      return runtime.attachPlayer(player);
+    }
+  }, [runtime, player]);
 
   const state = useSyncExternalStore(
     runtime.store.subscribe,
