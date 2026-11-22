@@ -142,8 +142,11 @@ export function useSyncState({
     }) => {
       if (action.direction === "push") {
         const entry = await storage.getVideoIndexEntry(youtubeId);
+        if (!entry) {
+          throw new Error("No local index entry found");
+        }
         const result = await orpc.videos.importVideo.call(
-          action.runtime.toExportData({ editedAt: entry?.editedAt }),
+          action.runtime.toExportData({ editedAt: entry.editedAt }),
         );
         await storage.markSynced({ youtubeId, editedAt: result.editedAt });
       } else {
@@ -291,8 +294,11 @@ export function useVideoSync(storage: CaptionStorage) {
         throw new Error("No local session found");
       }
       const entry = await storage.getVideoIndexEntry(youtubeId);
+      if (!entry) {
+        throw new Error("No local index entry found");
+      }
       const result = await orpc.videos.importVideo.call(
-        sessionToExportData(session, { editedAt: entry?.editedAt }),
+        sessionToExportData(session, { editedAt: entry.editedAt }),
       );
       await storage.markSynced({ youtubeId, editedAt: result.editedAt });
     });
