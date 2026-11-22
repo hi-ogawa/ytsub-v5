@@ -22,7 +22,7 @@ export function ExtensionBookmarksList({
   currentIndex,
   isPlaying,
   repeatIndex,
-  onPlayBookmark,
+  onClickBookmark,
   onToggleRepeat,
   onDeleteBookmark,
   onGoToCaption,
@@ -33,7 +33,7 @@ export function ExtensionBookmarksList({
   currentIndex?: number;
   isPlaying: boolean;
   repeatIndex?: number;
-  onPlayBookmark: (bookmark: ExtensionBookmark) => void;
+  onClickBookmark: (bookmark: ExtensionBookmark) => void;
   onToggleRepeat: (captionIndex: number) => void;
   onDeleteBookmark: (id: string) => void;
   onGoToCaption: (captionIndex: number) => void;
@@ -63,7 +63,7 @@ export function ExtensionBookmarksList({
           isCurrent={bm.captionIndex === currentIndex}
           isPlaying={isPlaying}
           isRepeating={bm.captionIndex === repeatIndex}
-          onClick={() => onPlayBookmark(bm)}
+          onClick={() => onClickBookmark(bm)}
           onToggleRepeat={() => onToggleRepeat(bm.captionIndex)}
           onDelete={() => onDeleteBookmark(bm.id)}
           onGoToCaption={() => onGoToCaption(bm.captionIndex)}
