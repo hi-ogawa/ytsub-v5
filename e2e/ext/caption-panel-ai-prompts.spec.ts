@@ -37,7 +37,7 @@ test("AI pick prompt: copy and import with markdown fence", async ({
 
   // Verify bookmarks created
   const panel = host.getByTestId("resizable-panel");
-  await panel.getByRole("button", { name: /Bookmarks/ }).click();
+  await panel.getByRole("tab", { name: /Bookmarks/ }).click();
   await expect(host.locator("[data-bookmark-id]")).toHaveCount(2);
   await expect(
     host.locator("[data-bookmark-id]").first().getByText("to pinch"),
@@ -57,7 +57,7 @@ test("AI fill prompt: copy and import updates existing bookmark", async ({
 
   // Verify unfilled state
   const panel = host.getByTestId("resizable-panel");
-  await panel.getByRole("button", { name: /Bookmarks/ }).click();
+  await panel.getByRole("tab", { name: /Bookmarks/ }).click();
   await expect(host.getByText("unfilled")).toBeVisible();
   const bookmarkId = await host
     .locator("[data-bookmark-id]")
@@ -98,7 +98,7 @@ test("AI fill prompt: copy and import updates existing bookmark", async ({
   await expect(host.getByText("unfilled")).not.toBeVisible();
 
   // The caption popover shows the filled translation and notes
-  await panel.getByRole("button", { name: /Captions/ }).click();
+  await panel.getByRole("tab", { name: /Captions/ }).click();
   await host
     .locator("[data-index='0']")
     .getByTestId("bookmark-highlight")
@@ -118,12 +118,12 @@ test("AI align prompt: copy and import replaces rows, moves bookmarks, and adds 
   const { ytPage, host } = await openPanelWithTracks(context, SEED_YOUTUBE_ID);
   await createBookmarkAt(host, { index: 0, start: 0, end: 3 });
   const panel = host.getByTestId("resizable-panel");
-  await panel.getByRole("button", { name: /Bookmarks/ }).click();
+  await panel.getByRole("tab", { name: /Bookmarks/ }).click();
   const bookmarkId = await host
     .locator("[data-bookmark-id]")
     .first()
     .getAttribute("data-bookmark-id");
-  await panel.getByRole("button", { name: /Captions/ }).click();
+  await panel.getByRole("tab", { name: /Captions/ }).click();
 
   // Copy align prompt
   await host.getByTitle("Settings").click();

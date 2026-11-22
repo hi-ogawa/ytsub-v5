@@ -152,6 +152,6 @@
   }
 }
 
-.flash-highlight {
+[data-flash] {
   animation: flash-highlight 3s ease-out;
 }

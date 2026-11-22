@@ -9,7 +9,7 @@ test("FAB toggles the panel and keeps its state per video across reloads", async
   await expect(host.locator("[data-index='5']")).toBeVisible();
   const row = host.locator("[data-index='0']");
   await expect(row.locator("text=/\\d+:\\d{2} – \\d+:\\d{2}/")).toBeVisible();
-  const cols = row.locator(".flex-1");
+  const cols = row.locator("[data-side]");
   await expect(cols).toHaveCount(2);
   await expect(cols.nth(0)).not.toHaveText("");
   await expect(cols.nth(1)).not.toHaveText("");
@@ -44,7 +44,7 @@ test("clicking a row seeks to its start and plays, and clicking the current row 
   await expect.poll(isPaused).toBe(false);
   expect(await getCurrentTime()).toBe(35.597);
 
-  await expect(row).toHaveClass(/ring-2/);
+  await expect(row).toHaveAttribute("aria-current", "true");
   await row.click();
   await expect.poll(isPaused).toBe(true);
   await row.click();
