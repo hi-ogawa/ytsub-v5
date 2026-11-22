@@ -35,8 +35,8 @@ export function BookmarksPage({
   const displayEntries: VideoListEntry[] = sync?.isPending
     ? []
     : (sync?.entries ?? entries);
-  const sorted = [...displayEntries].sort(
-    (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
+  const sorted = [...displayEntries].sort((a, b) =>
+    b.editedAt.localeCompare(a.editedAt),
   );
 
   return (

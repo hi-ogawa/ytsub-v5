@@ -66,13 +66,14 @@ export function useVideoListSync(storage: CaptionStorage) {
       if (!session) {
         throw new Error("No local session found");
       }
+      const entry = await storage.getVideoIndexEntry(youtubeId);
+      if (!entry) {
+        throw new Error("No local index entry found");
+      }
       const result = await orpc.videos.importVideo.call(
-        sessionToExportData(session),
+        sessionToExportData(session, { editedAt: entry.editedAt }),
       );
-      await storage.markSynced({
-        youtubeId,
-        serverUpdatedAt: result.updatedAt,
-      });
+      await storage.markSynced({ youtubeId, editedAt: result.editedAt });
     });
   };
 
@@ -84,11 +85,9 @@ export function useVideoListSync(storage: CaptionStorage) {
       }
       await storage.saveSession(serverSessionToLocal(data), {
         forceIndex: true,
+        editedAt: data.video.editedAt,
       });
-      await storage.markSynced({
-        youtubeId,
-        serverUpdatedAt: data.video.updatedAt,
-      });
+      await storage.markSynced({ youtubeId, editedAt: data.video.editedAt });
     });
   };
 
@@ -121,17 +120,16 @@ function mergeVideoEntries(
   for (const local of localEntries) {
     const server = serverVideos.find((v) => v.youtubeId === local.youtubeId);
     const status = computeSyncState({
-      localUpdatedAt: local.updatedAt,
-      syncedAt: local.syncedAt,
-      syncedServerUpdatedAt: local.syncedServerUpdatedAt,
-      serverUpdatedAt: server?.updatedAt ?? undefined,
+      localEditedAt: local.editedAt,
+      syncedEditedAt: local.syncedEditedAt,
+      serverEditedAt: server?.editedAt,
     });
     merged.set(local.youtubeId, {
       youtubeId: local.youtubeId,
       title: local.title,
       channelName: local.channelName,
       bookmarkCount: local.bookmarkCount,
-      updatedAt: local.updatedAt,
+      editedAt: local.editedAt,
       serverId: server?.id,
       syncStatus: status,
     });
@@ -144,7 +142,7 @@ function mergeVideoEntries(
         title: server.title,
         channelName: server.channelName,
         bookmarkCount: 0,
-        updatedAt: server.updatedAt,
+        editedAt: server.editedAt,
         serverId: server.id,
         syncStatus: "pull",
       });

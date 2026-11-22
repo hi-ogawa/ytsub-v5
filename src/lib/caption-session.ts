@@ -71,19 +71,22 @@ export function saveSelectedTracks({
 
 // --- Export ---
 
-export function sessionToExportData(session: {
-  youtubeId: string;
-  title: string;
-  channelName: string;
-  channelId: string;
-  duration: number;
-  language1: string;
-  language2: string;
-  vssId1: string;
-  vssId2: string;
-  captions: MergedCaption[];
-  bookmarks: ExtensionBookmark[];
-}): ExportData {
+export function sessionToExportData(
+  session: {
+    youtubeId: string;
+    title: string;
+    channelName: string;
+    channelId: string;
+    duration: number;
+    language1: string;
+    language2: string;
+    vssId1: string;
+    vssId2: string;
+    captions: MergedCaption[];
+    bookmarks: ExtensionBookmark[];
+  },
+  options?: { editedAt?: string },
+): ExportData {
   return {
     video: {
       youtubeId: session.youtubeId,
@@ -95,6 +98,7 @@ export function sessionToExportData(session: {
       language2: session.language2,
       vssId1: session.vssId1,
       vssId2: session.vssId2,
+      editedAt: options?.editedAt,
     },
     captions: session.captions.map((r, i) => ({
       idx: i,

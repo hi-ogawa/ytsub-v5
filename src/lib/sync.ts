@@ -18,40 +18,32 @@ export type ComputedSyncState =
   | "conflict"
   | "empty";
 
+// Each side's edit time changes with every edit and is copied unchanged by
+// push and pull, so comparing it for equality with its value at the last sync
+// tells whether that side changed, whatever the clocks say.
 export function computeSyncState(params: {
-  localUpdatedAt?: string;
-  syncedAt?: string;
-  syncedServerUpdatedAt?: string;
-  serverUpdatedAt?: string;
+  localEditedAt?: string;
+  syncedEditedAt?: string;
+  serverEditedAt?: string;
 }): ComputedSyncState {
-  const { localUpdatedAt, syncedAt, syncedServerUpdatedAt, serverUpdatedAt } =
-    params;
+  const { localEditedAt, syncedEditedAt, serverEditedAt } = params;
 
   // No local entry
-  if (!localUpdatedAt) {
-    return serverUpdatedAt ? "pull" : "empty";
+  if (!localEditedAt) {
+    return serverEditedAt ? "pull" : "empty";
   }
 
-  // syncedAt without localUpdatedAt is structurally impossible (syncedAt lives on VideoIndexEntry)
-  // but handled above. syncedAt without serverUpdatedAt is degenerate (server data deleted).
-
-  if (!syncedAt) {
-    if (!serverUpdatedAt) {
-      return "push";
-    }
-    return "conflict";
+  if (!syncedEditedAt) {
+    return serverEditedAt ? "conflict" : "push";
   }
 
   // Server data gone after a previous sync — need to re-push
-  if (!serverUpdatedAt) {
+  if (!serverEditedAt) {
     return "push";
   }
 
-  // Each comparison stays within one clock, because the client and server
-  // clocks can disagree. Entries synced before syncedServerUpdatedAt existed
-  // fall back to the local syncedAt.
-  const localChanged = localUpdatedAt > syncedAt;
-  const serverChanged = serverUpdatedAt > (syncedServerUpdatedAt ?? syncedAt);
+  const localChanged = localEditedAt !== syncedEditedAt;
+  const serverChanged = serverEditedAt !== syncedEditedAt;
 
   if (!localChanged && !serverChanged) {
     return "synced";

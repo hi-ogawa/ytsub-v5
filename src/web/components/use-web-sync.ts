@@ -29,7 +29,7 @@ export function useWebSync({
   const authenticated = authQuery.data?.authenticated === true;
 
   const serverQuery = useQuery({
-    ...orpc.videos.getVideoUpdatedAt.queryOptions({
+    ...orpc.videos.getVideoEditedAt.queryOptions({
       input: { youtubeId },
     }),
     enabled: authenticated,
@@ -41,30 +41,28 @@ export function useWebSync({
       runtime: CaptionPanelRuntime;
     }) => {
       if (action.direction === "push") {
+        const entry = await storage.getVideoIndexEntry(youtubeId);
+        if (!entry) {
+          throw new Error("No local index entry found");
+        }
         const result = await orpc.videos.importVideo.call(
-          action.runtime.toExportData(),
+          action.runtime.toExportData({ editedAt: entry.editedAt }),
         );
-        await storage.markSynced({
-          youtubeId,
-          serverUpdatedAt: result.updatedAt,
-        });
+        await storage.markSynced({ youtubeId, editedAt: result.editedAt });
       } else {
         const data = await orpc.videos.getFullSession.call({ youtubeId });
         if (!data) {
           throw new Error("Video not found on server");
         }
         const session = serverSessionToLocal(data);
-        // replace() bumps the index entry's updatedAt, so markSynced must follow it.
         await action.runtime.replace({
           vssId1: session.vssId1,
           vssId2: session.vssId2,
           captions: session.captions,
           bookmarks: session.bookmarks,
+          editedAt: data.video.editedAt,
         });
-        await storage.markSynced({
-          youtubeId,
-          serverUpdatedAt: data.video.updatedAt,
-        });
+        await storage.markSynced({ youtubeId, editedAt: data.video.editedAt });
       }
     },
     onSuccess: () => serverQuery.refetch(),
@@ -91,10 +89,9 @@ export function useWebSync({
     }
     const localEntry = entryQuery.data ?? undefined;
     return computeSyncState({
-      localUpdatedAt: localEntry?.updatedAt,
-      syncedAt: localEntry?.syncedAt,
-      syncedServerUpdatedAt: localEntry?.syncedServerUpdatedAt,
-      serverUpdatedAt: serverQuery.data?.updatedAt ?? undefined,
+      localEditedAt: localEntry?.editedAt,
+      syncedEditedAt: localEntry?.syncedEditedAt,
+      serverEditedAt: serverQuery.data?.editedAt,
     });
   };
 

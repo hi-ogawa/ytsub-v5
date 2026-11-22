@@ -5,6 +5,7 @@ import {
   BOOKMARK_BATCH_SIZE,
   CAPTION_BATCH_SIZE,
   db,
+  ISO_NOW,
   touchVideo,
 } from "../db.ts";
 import { bookmarks, captions, videos } from "../schema.ts";
@@ -27,7 +28,7 @@ export const videosRouter = authed.router({
     .handler(async ({ input, context }) => {
       const [row] = await db
         .insert(videos)
-        .values({ ...input, userId: context.userId })
+        .values({ ...input, userId: context.userId, editedAt: ISO_NOW })
         .onConflictDoUpdate({
           target: [videos.userId, videos.youtubeId],
           set: {
@@ -40,6 +41,7 @@ export const videosRouter = authed.router({
             vssId1: input.vssId1,
             vssId2: input.vssId2,
             updatedAt: sql`datetime('now')`,
+            editedAt: ISO_NOW,
           },
         })
         .returning();
@@ -201,6 +203,9 @@ export const videosRouter = authed.router({
           language2: z.string(),
           vssId1: z.string(),
           vssId2: z.string(),
+          // The pushing client's edit time. An import without one counts as
+          // an edit made now.
+          editedAt: z.string().optional(),
         }),
         captions: z.array(
           z.object({
@@ -230,9 +235,10 @@ export const videosRouter = authed.router({
     )
     .handler(async ({ input, context }) => {
       // Upsert video
+      const editedAt = input.video.editedAt ?? ISO_NOW;
       const [video] = await db
         .insert(videos)
-        .values({ ...input.video, userId: context.userId })
+        .values({ ...input.video, userId: context.userId, editedAt })
         .onConflictDoUpdate({
           target: [videos.userId, videos.youtubeId],
           set: {
@@ -245,6 +251,7 @@ export const videosRouter = authed.router({
             vssId1: input.video.vssId1,
             vssId2: input.video.vssId2,
             updatedAt: sql`datetime('now')`,
+            editedAt,
           },
         })
         .returning();
@@ -299,6 +306,7 @@ export const videosRouter = authed.router({
       return {
         videoId: video.id,
         updatedAt: video.updatedAt,
+        editedAt: video.editedAt,
         captions: insertedCaptions,
         bookmarks: input.bookmarks.length,
       };
@@ -332,11 +340,11 @@ export const videosRouter = authed.router({
       return { video, captions: videoCaptions, bookmarks: videoBookmarks };
     }),
 
-  getVideoUpdatedAt: authed
+  getVideoEditedAt: authed
     .input(z.object({ youtubeId: z.string() }))
     .handler(async ({ input, context }) => {
       const video = await db
-        .select({ updatedAt: videos.updatedAt })
+        .select({ editedAt: videos.editedAt })
         .from(videos)
         .where(
           and(
@@ -345,7 +353,7 @@ export const videosRouter = authed.router({
           ),
         )
         .get();
-      return video ? { updatedAt: video.updatedAt } : null;
+      return video ? { editedAt: video.editedAt } : null;
     }),
 
   deleteVideo: authed
