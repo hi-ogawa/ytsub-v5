@@ -63,6 +63,18 @@ export function CaptionPanelContent({
     });
   }
 
+  // Like a caption row, a card from the current row toggles play, and any
+  // other card plays from its bookmark.
+  function onClickBookmark(bookmark: ExtensionBookmark) {
+    if (bookmark.captionIndex !== currentIndex) {
+      runtime.playBookmark(bookmark);
+    } else if (isPlaying) {
+      player?.pauseVideo();
+    } else {
+      player?.playVideo();
+    }
+  }
+
   const bookmarkSelection = useBookmarkSelection({
     contentRef,
     runtime,
@@ -120,7 +132,7 @@ export function CaptionPanelContent({
               rows={session.rows}
               currentIndex={currentIndex}
               isPlaying={isPlaying}
-              onPlayBookmark={(bookmark) => runtime.playBookmark(bookmark)}
+              onClickBookmark={onClickBookmark}
               onDeleteBookmark={(id) => runtime.deleteBookmark(id)}
               onGoToCaption={onGoToCaption}
             />
