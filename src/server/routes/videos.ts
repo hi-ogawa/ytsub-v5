@@ -340,11 +340,11 @@ export const videosRouter = authed.router({
       return { video, captions: videoCaptions, bookmarks: videoBookmarks };
     }),
 
-  getVideoUpdatedAt: authed
+  getVideoEditedAt: authed
     .input(z.object({ youtubeId: z.string() }))
     .handler(async ({ input, context }) => {
       const video = await db
-        .select({ updatedAt: videos.updatedAt })
+        .select({ editedAt: videos.editedAt })
         .from(videos)
         .where(
           and(
@@ -353,7 +353,7 @@ export const videosRouter = authed.router({
           ),
         )
         .get();
-      return video ? { updatedAt: video.updatedAt } : null;
+      return video ? { editedAt: video.editedAt } : null;
     }),
 
   deleteVideo: authed

@@ -22,14 +22,11 @@ export type VideoIndexEntry = {
   title: string;
   channelName: string;
   bookmarkCount: number;
-  updatedAt: string;
   // When the content was last edited, on whichever device or server made the
   // edit. Push and pull copy it unchanged, and the video list sorts by it.
   editedAt: string;
-  // Local clock, compared with updatedAt
-  syncedAt?: string;
-  // Server clock, the server's updatedAt at the last push or pull
-  syncedServerUpdatedAt?: string;
+  // editedAt at the last push or pull
+  syncedEditedAt?: string;
 };
 
 export type StorageNotice = { type: "videoIndex"; entries: VideoIndexEntry[] };
@@ -46,10 +43,7 @@ export interface CaptionStorage {
     options?: { forceIndex?: boolean; editedAt?: string },
   ): Promise<void>;
   deleteVideo(youtubeId: string): Promise<void>;
-  markSynced(options: {
-    youtubeId: string;
-    serverUpdatedAt: string;
-  }): Promise<void>;
+  markSynced(options: { youtubeId: string; editedAt: string }): Promise<void>;
   getVideoIndexEntry(youtubeId: string): Promise<VideoIndexEntry | undefined>;
   listVideoIndex(): Promise<VideoIndexEntry[]>;
   subscribe(listener: StorageListener): () => void;

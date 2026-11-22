@@ -1,6 +1,6 @@
 import { expect } from "@playwright/test";
 import {
-  bumpServerUpdatedAt,
+  bumpServerEditedAt,
   setServerEditedAt,
   createCheckpoint,
   SEED_YOUTUBE_ID,
@@ -21,7 +21,6 @@ const fixtureEntries = [
     title: "Test Video One",
     channelName: "Test Channel",
     bookmarkCount: 3,
-    updatedAt: "2026-03-10T00:00:00.000Z",
     editedAt: "2026-03-10T00:00:00.000Z",
   },
   {
@@ -29,7 +28,6 @@ const fixtureEntries = [
     title: "Test Video Two",
     channelName: "Another Channel",
     bookmarkCount: 1,
-    updatedAt: "2026-03-09T00:00:00.000Z",
     editedAt: "2026-03-09T00:00:00.000Z",
   },
 ];
@@ -108,7 +106,7 @@ test("detects pull after push and a remote update", async ({
   await expect(badge).toHaveAttribute("data-sync-status", "synced");
 
   // Simulate a push from another device
-  await bumpServerUpdatedAt(SEED_YOUTUBE_ID);
+  await bumpServerEditedAt(SEED_YOUTUBE_ID);
   await page.reload();
   await expect(badge).toHaveAttribute("data-sync-status", "pull");
 });
@@ -242,7 +240,6 @@ test("sync badges show correct states per entry", async ({
       title: "cloud palace",
       channelName: "Billlie",
       bookmarkCount: 2,
-      updatedAt: "2026-03-15T00:00:00.000Z",
       editedAt: "2026-03-15T00:00:00.000Z",
     },
     {
@@ -250,7 +247,6 @@ test("sync badges show correct states per entry", async ({
       title: "Local Only Video",
       channelName: "Some Channel",
       bookmarkCount: 1,
-      updatedAt: "2026-03-14T00:00:00.000Z",
       editedAt: "2026-03-14T00:00:00.000Z",
     },
   ];
@@ -296,7 +292,6 @@ test("push shows an error toast when the local session is missing", async ({
       title: "Push Test Video",
       channelName: "Test",
       bookmarkCount: 1,
-      updatedAt: "2026-03-15T00:00:00.000Z",
       editedAt: "2026-03-15T00:00:00.000Z",
     },
   ];
@@ -345,7 +340,6 @@ test("a pulled video keeps the place its edit time gives it", async ({
       title: "Local Only Video",
       channelName: "Some Channel",
       bookmarkCount: 1,
-      updatedAt: "2026-03-15T00:00:00.000Z",
       editedAt: "2026-03-15T00:00:00.000Z",
     },
   ];

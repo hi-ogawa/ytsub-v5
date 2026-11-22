@@ -33,13 +33,10 @@ export function useExtensionSync({
   const syncMutation = useMutation({
     mutationFn: async (action: SyncAction) => {
       if (action.direction === "push") {
-        const { serverUpdatedAt } = await bgRpc.pushSession({ youtubeId });
-        await storage.markSynced({ youtubeId, serverUpdatedAt });
+        const { editedAt } = await bgRpc.pushSession({ youtubeId });
+        await storage.markSynced({ youtubeId, editedAt });
       } else {
-        const { session, serverUpdatedAt, editedAt } = await bgRpc.fetchSession(
-          { youtubeId },
-        );
-        // replace() bumps the index entry's updatedAt, so markSynced must follow it.
+        const { session, editedAt } = await bgRpc.fetchSession({ youtubeId });
         await action.store.replace({
           vssId1: session.vssId1,
           vssId2: session.vssId2,
@@ -47,7 +44,7 @@ export function useExtensionSync({
           bookmarks: session.bookmarks,
           editedAt,
         });
-        await storage.markSynced({ youtubeId, serverUpdatedAt });
+        await storage.markSynced({ youtubeId, editedAt });
       }
     },
     onSuccess: () => serverQuery.refetch(),
@@ -71,10 +68,9 @@ export function useExtensionSync({
     }
     const localEntry = entryQuery.data ?? undefined;
     return computeSyncState({
-      localUpdatedAt: localEntry?.updatedAt,
-      syncedAt: localEntry?.syncedAt,
-      syncedServerUpdatedAt: localEntry?.syncedServerUpdatedAt,
-      serverUpdatedAt: serverQuery.data.serverUpdatedAt,
+      localEditedAt: localEntry?.editedAt,
+      syncedEditedAt: localEntry?.syncedEditedAt,
+      serverEditedAt: serverQuery.data.serverEditedAt,
     });
   };
 

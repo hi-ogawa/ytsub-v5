@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="860" height="300" viewBox="0 0 860 300" font-family="system-ui, sans-serif" font-size="13">
+  <rect width="860" height="300" fill="#fff"/>
+  <g font-weight="600" fill="#222">
+    <text x="20" y="28">On device B</text>
+    <text x="300" y="28">Local edit time</text>
+    <text x="450" y="28">Synced edit time</text>
+    <text x="600" y="28">Server edit time</text>
+    <text x="750" y="28">Status</text>
+  </g>
+  <g>
+    <!-- row 1 -->
+    <text x="20" y="66">Right after the pull</text>
+    <rect x="300" y="48" width="120" height="28" rx="4" fill="#f3f3f3" stroke="#888"/><text x="314" y="67">10:00</text>
+    <rect x="450" y="48" width="120" height="28" rx="4" fill="#f3f3f3" stroke="#888"/><text x="464" y="67">10:00</text>
+    <rect x="600" y="48" width="120" height="28" rx="4" fill="#f3f3f3" stroke="#888"/><text x="614" y="67">10:00</text>
+    <text x="750" y="67" font-weight="600" fill="#2a7a2a">synced</text>
+
+    <!-- row 2 -->
+    <text x="20" y="116">B edits (its clock reads 10:58)</text>
+    <rect x="300" y="98" width="120" height="28" rx="4" fill="#ffe9c7" stroke="#c98a00"/><text x="314" y="117">10:58</text>
+    <rect x="450" y="98" width="120" height="28" rx="4" fill="#f3f3f3" stroke="#888"/><text x="464" y="117">10:00</text>
+    <rect x="600" y="98" width="120" height="28" rx="4" fill="#f3f3f3" stroke="#888"/><text x="614" y="117">10:00</text>
+    <text x="750" y="117" font-weight="600" fill="#8a5a00">push</text>
+
+    <!-- row 3 -->
+    <text x="20" y="166">Instead, the server's copy is</text>
+    <text x="20" y="182">edited at 10:59 (server clock)</text>
+    <rect x="300" y="148" width="120" height="28" rx="4" fill="#f3f3f3" stroke="#888"/><text x="314" y="167">10:00</text>
+    <rect x="450" y="148" width="120" height="28" rx="4" fill="#f3f3f3" stroke="#888"/><text x="464" y="167">10:00</text>
+    <rect x="600" y="148" width="120" height="28" rx="4" fill="#ffe9c7" stroke="#c98a00"/><text x="614" y="167">10:59</text>
+    <text x="750" y="167" font-weight="600" fill="#1f5fb5">pull</text>
+
+    <!-- row 4 -->
+    <text x="20" y="216">Both</text>
+    <rect x="300" y="198" width="120" height="28" rx="4" fill="#ffe9c7" stroke="#c98a00"/><text x="314" y="217">10:58</text>
+    <rect x="450" y="198" width="120" height="28" rx="4" fill="#f3f3f3" stroke="#888"/><text x="464" y="217">10:00</text>
+    <rect x="600" y="198" width="120" height="28" rx="4" fill="#ffe9c7" stroke="#c98a00"/><text x="614" y="217">10:59</text>
+    <text x="750" y="217" font-weight="600" fill="#a22">conflict</text>
+  </g>
+  <rect x="20" y="252" width="14" height="14" rx="3" fill="#ffe9c7" stroke="#c98a00"/>
+  <text x="42" y="264">differs from the synced edit time, so that side changed. Only equality is checked,</text>
+  <text x="42" y="282">never which time is later, so the two clocks never need to agree.</text>
+</svg>

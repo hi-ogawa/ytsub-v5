@@ -1,48 +1,37 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="900" height="420" viewBox="0 0 900 420" font-family="system-ui, sans-serif" font-size="13">
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="360" viewBox="0 0 900 360" font-family="system-ui, sans-serif" font-size="13">
   <defs>
     <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#444"/></marker>
   </defs>
-  <rect width="900" height="420" fill="#fff"/>
+  <rect width="900" height="360" fill="#fff"/>
   <g font-weight="600" fill="#222">
     <text x="20" y="26">Device A (clock correct)</text>
     <text x="320" y="26">Server</text>
     <text x="620" y="26">Device B (clock 3 min behind)</text>
   </g>
-  <g stroke="#ddd"><path d="M300 10V400M600 10V400"/></g>
+  <g stroke="#ddd"><path d="M300 10V340M600 10V340"/></g>
 
-  <!-- step 1: A edits -->
   <text x="20" y="54" fill="#555" font-size="12">1. Edit at 10:00</text>
-  <rect x="20" y="62" width="260" height="58" rx="6" fill="#fff" stroke="#888"/>
-  <text x="32" y="84" fill="#1f5fb5" font-weight="600">editedAt 10:00</text>
-  <text x="32" y="106" fill="#777">updatedAt 10:00</text>
+  <rect x="20" y="62" width="260" height="40" rx="6" fill="#fff" stroke="#888"/>
+  <text x="32" y="87" fill="#1f5fb5" font-weight="600">edit time 10:00</text>
 
-  <!-- step 2: push -->
-  <text x="20" y="160" fill="#555" font-size="12">2. Push at 10:30</text>
-  <rect x="20" y="168" width="260" height="58" rx="6" fill="#fff" stroke="#888"/>
-  <text x="32" y="190" fill="#1f5fb5" font-weight="600">editedAt 10:00</text>
-  <text x="32" y="212" fill="#777">syncedAt 10:30</text>
-  <rect x="320" y="168" width="260" height="58" rx="6" fill="#fff" stroke="#888"/>
-  <text x="332" y="190" fill="#1f5fb5" font-weight="600">editedAt 10:00  (copied)</text>
-  <text x="332" y="212" fill="#777">updated_at 10:30</text>
-  <path d="M280 197H318" stroke="#444" marker-end="url(#a)"/>
+  <text x="20" y="142" fill="#555" font-size="12">2. Push at 10:30</text>
+  <rect x="20" y="150" width="260" height="58" rx="6" fill="#fff" stroke="#888"/>
+  <text x="32" y="172" fill="#1f5fb5" font-weight="600">edit time 10:00</text>
+  <text x="32" y="194" fill="#555">synced edit time 10:00</text>
+  <rect x="320" y="150" width="260" height="58" rx="6" fill="#fff" stroke="#888"/>
+  <text x="332" y="172" fill="#1f5fb5" font-weight="600">edit time 10:00  (copied)</text>
+  <text x="332" y="194" fill="#999">updated_at 10:30, unused by sync</text>
+  <path d="M280 179H318" stroke="#444" marker-end="url(#a)"/>
 
-  <!-- step 3: pull -->
-  <text x="620" y="266" fill="#555" font-size="12">3. Pull at 11:00 (B reads 10:57)</text>
-  <rect x="320" y="274" width="260" height="58" rx="6" fill="#fff" stroke="#888"/>
-  <text x="332" y="296" fill="#1f5fb5" font-weight="600">editedAt 10:00</text>
-  <text x="332" y="318" fill="#777">updated_at 10:30</text>
-  <rect x="620" y="274" width="260" height="102" rx="6" fill="#fff" stroke="#888"/>
-  <text x="632" y="296" fill="#1f5fb5" font-weight="600">editedAt 10:00  (copied)</text>
-  <text x="632" y="318" fill="#777">updatedAt 10:57</text>
-  <text x="632" y="340" fill="#777">syncedAt 10:57</text>
-  <text x="632" y="362" fill="#777">syncedServerUpdatedAt 10:30</text>
-  <path d="M580 303H618" stroke="#444" marker-end="url(#a)"/>
+  <text x="620" y="248" fill="#555" font-size="12">3. Pull at 11:00 (B reads 10:57)</text>
+  <rect x="320" y="256" width="260" height="40" rx="6" fill="#fff" stroke="#888"/>
+  <text x="332" y="281" fill="#1f5fb5" font-weight="600">edit time 10:00</text>
+  <rect x="620" y="256" width="260" height="58" rx="6" fill="#fff" stroke="#888"/>
+  <text x="632" y="278" fill="#1f5fb5" font-weight="600">edit time 10:00  (copied)</text>
+  <text x="632" y="300" fill="#555">synced edit time 10:00</text>
+  <path d="M580 276H618" stroke="#444" marker-end="url(#a)"/>
 
-  <!-- legend -->
-  <rect x="20" y="300" width="14" height="14" fill="#1f5fb5"/>
-  <text x="42" y="312">content metadata: set where the edit</text>
-  <text x="42" y="330">happens, copied unchanged by sync</text>
-  <rect x="20" y="350" width="14" height="14" fill="#999"/>
-  <text x="42" y="362">sync bookkeeping: stamped by whoever</text>
-  <text x="42" y="380">writes, from its own clock</text>
+  <text x="20" y="270" fill="#555" font-size="12">The edit time is the same on every side.</text>
+  <text x="20" y="288" fill="#555" font-size="12">B's clock never stamps it, so its skew</text>
+  <text x="20" y="306" fill="#555" font-size="12">doesn't show up anywhere.</text>
 </svg>

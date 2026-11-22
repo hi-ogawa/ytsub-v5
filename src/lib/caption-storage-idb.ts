@@ -8,7 +8,7 @@ import type {
 } from "./caption-storage.ts";
 
 const DB_NAME = "zamak";
-const DB_VERSION = 3;
+const DB_VERSION = 4;
 
 type Stores = { sessions: PersistedCaptionSession; videos: VideoIndexEntry };
 
@@ -28,15 +28,27 @@ const transact = createTransact<Stores>({
     if (oldVersion < 2) {
       db.createObjectStore(STORE_NAMES.videos, { keyPath: "youtubeId" });
     }
-    if (oldVersion < 3) {
+    if (oldVersion < 4) {
       // Entries from before editedAt existed take their last local write.
+      // A synced entry's base becomes the server time recorded at its last
+      // sync, which the server's edited_at started from. An entry unchanged
+      // since then takes the same value as its editedAt, so it stays synced.
       const videos = tx.objectStore(STORE_NAMES.videos);
       videos.openCursor().onsuccess = (e) => {
         const cursor = (e.target as IDBRequest<IDBCursorWithValue>).result;
-        if (cursor) {
-          cursor.update({ editedAt: cursor.value.updatedAt, ...cursor.value });
-          cursor.continue();
+        if (!cursor) {
+          return;
         }
+        const { updatedAt, syncedAt, syncedServerUpdatedAt, ...entry } =
+          cursor.value;
+        const unchanged =
+          syncedServerUpdatedAt && syncedAt && updatedAt <= syncedAt;
+        cursor.update({
+          ...entry,
+          editedAt: unchanged ? syncedServerUpdatedAt : updatedAt,
+          syncedEditedAt: syncedServerUpdatedAt,
+        });
+        cursor.continue();
       };
     }
   },
@@ -60,16 +72,13 @@ class IdbCaptionStorage implements CaptionStorage {
         if (!existing && !options?.forceIndex && !session.bookmarks.length) {
           return;
         }
-        const now = new Date().toISOString();
         videos.put({
           youtubeId: session.youtubeId,
           title: session.title,
           channelName: session.channelName,
           bookmarkCount: session.bookmarks.length,
-          updatedAt: now,
-          editedAt: options?.editedAt ?? now,
-          syncedAt: existing?.syncedAt,
-          syncedServerUpdatedAt: existing?.syncedServerUpdatedAt,
+          editedAt: options?.editedAt ?? new Date().toISOString(),
+          syncedEditedAt: existing?.syncedEditedAt,
         });
         return videos.getAll();
       },
@@ -94,7 +103,7 @@ class IdbCaptionStorage implements CaptionStorage {
 
   markSynced: CaptionStorage["markSynced"] = async ({
     youtubeId,
-    serverUpdatedAt,
+    editedAt,
   }) => {
     const entries = await transact(
       ["videos"],
@@ -104,8 +113,7 @@ class IdbCaptionStorage implements CaptionStorage {
         if (existing) {
           videos.put({
             ...existing,
-            syncedAt: new Date().toISOString(),
-            syncedServerUpdatedAt: serverUpdatedAt,
+            syncedEditedAt: editedAt,
           });
         }
         return videos.getAll();
