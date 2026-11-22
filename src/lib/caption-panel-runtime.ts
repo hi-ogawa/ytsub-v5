@@ -82,7 +82,6 @@ export class CaptionPanelRuntime {
   readonly storage: CaptionStorage;
   readonly youtubeId: string;
   readonly trackSource?: CaptionTrackSource;
-  private restorePromise?: Promise<void>;
   private readonly buildTask = new RestartableTask();
 
   constructor(options: {
@@ -95,16 +94,8 @@ export class CaptionPanelRuntime {
     this.trackSource = options.trackSource;
   }
 
-  /**
-   * Show the saved session, or build one from the tracks picked last time. Only
-   * the first call does anything.
-   */
-  restore(): Promise<void> {
-    this.restorePromise ??= this.restoreSession();
-    return this.restorePromise;
-  }
-
-  private async restoreSession(): Promise<void> {
+  /** Show the saved session, or build one from the tracks picked last time. */
+  async restore(): Promise<void> {
     const tracksLoaded = this.loadTracks();
     const saved = await this.storage.getSession(this.youtubeId);
     if (saved) {

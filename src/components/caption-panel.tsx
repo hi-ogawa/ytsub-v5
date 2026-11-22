@@ -1,3 +1,4 @@
+import { useQuery } from "@tanstack/react-query";
 import { useEffect, useSyncExternalStore } from "react";
 import { captionPanelPreferences } from "../lib/caption-panel-preferences.ts";
 import type {
@@ -25,9 +26,13 @@ export function CaptionPanel({
   // Called by the sync menu each time it opens, so its queries refetch then.
   useSync: UseSync;
 }) {
-  useEffect(() => {
-    void runtime.restore();
-  }, [runtime]);
+  const restoreQuery = useQuery({
+    queryKey: ["caption-panel-restore", runtime.youtubeId],
+    queryFn: () => runtime.restore().then(() => null),
+    staleTime: Infinity,
+    gcTime: 0,
+    retry: false,
+  });
 
   useEffect(() => player && runtime.attachPlayer(player), [runtime, player]);
 
@@ -35,6 +40,10 @@ export function CaptionPanel({
     runtime.store.subscribe,
     runtime.store.get,
   );
+
+  if (restoreQuery.error) {
+    return <PanelMessage error>{String(restoreQuery.error)}</PanelMessage>;
+  }
 
   // TODO: better indicator?
   if (state.restoring) {
