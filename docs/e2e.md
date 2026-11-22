@@ -22,7 +22,7 @@ Test the web app for what only it does: login and registration, the server APIs,
 
 The seed videos are the `import.json` files in `scripts/db-seed-json/<id>/`. To add one, build its `import.json` as the Zamak skill's [Generate import.json](../skills/zamak/references/generate-import-json.md) describes, put it there, and run `pnpm db:seed-gen`.
 
-To check a UI change while working on it, run one spec on the surface that shows the change and open its trace, such as `pnpm test-e2e e2e/ext/caption-panel.spec.ts -g "<pattern>"` for the extension or `pnpm test-e2e e2e/basic.spec.ts -g "<pattern>"` for the web app.
+To check a UI change while working on it, run one spec on the surface that shows the change and open its trace, such as `pnpm test-e2e e2e/ext/caption-panel.spec.ts -g "<pattern>"` for the extension or `pnpm test-e2e e2e/video-viewer.spec.ts -g "<pattern>"` for the web app.
 
 ## Write Tests
 
