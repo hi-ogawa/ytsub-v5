@@ -74,6 +74,8 @@ export async function pushFromAnotherDevice(options: {
 async function withApi(fn: (api: APIRequestContext) => Promise<void>) {
   const api = await request.newContext({
     baseURL: `http://localhost:${process.env.E2E_PORT}`,
+    // Test setup, not a UI step, so it doesn't share the 2s action timeout
+    timeout: 10_000,
   });
   try {
     await fn(api);

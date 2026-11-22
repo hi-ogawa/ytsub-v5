@@ -22,7 +22,7 @@ export default defineConfig({
   // Each test logs in as a user of its own (see createUser in e2e/helper.ts),
   // so tests never share server data and all of them run in parallel.
   fullyParallel: true,
-  workers: process.env.CI ? 4 : undefined,
+  workers: process.env.CI ? 3 : undefined,
   globalSetup: "./e2e/global-setup.ts",
   webServer: {
     command:
