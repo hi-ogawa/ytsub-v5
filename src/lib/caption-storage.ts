@@ -23,7 +23,7 @@ export type VideoIndexEntry = {
   channelName: string;
   bookmarkCount: number;
   // When the content was last edited, on whichever device or server made the
-  // edit. Push and pull copy it unchanged, and the video list sorts by it.
+  // edit. Push and pull copy it unchanged.
   editedAt: string;
   // editedAt at the last push or pull
   syncedEditedAt?: string;
