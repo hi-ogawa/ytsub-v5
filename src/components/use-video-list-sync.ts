@@ -51,17 +51,17 @@ export function useVideoListSync(storage: CaptionStorage) {
 
   const [syncing, setSyncing] = useState<Set<string>>(new Set());
 
-  const withSyncing = async (youtubeId: string, fn: () => Promise<void>) => {
+  const withSyncing = async (youtubeId: string, run: () => Promise<void>) => {
     setSyncing((s) => new Set(s).add(youtubeId));
     try {
-      await fn();
+      await run();
       serverQuery.refetch();
     } catch (err) {
       console.error("[zamak sync]", err);
       toast.error(err instanceof Error ? err.message : "Sync failed");
     } finally {
-      setSyncing((s) => {
-        const next = new Set(s);
+      setSyncing((current) => {
+        const next = new Set(current);
         next.delete(youtubeId);
         return next;
       });

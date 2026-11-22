@@ -36,8 +36,8 @@ interface ImportData {
   }[];
 }
 
-function esc(s: string): string {
-  return s.replace(/'/g, "''");
+function esc(value: string): string {
+  return value.replace(/'/g, "''");
 }
 
 function toSql(data: ImportData): string {

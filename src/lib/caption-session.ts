@@ -32,9 +32,9 @@ export function getInitialTracks(
         return { vssId1, vssId2 };
       }
     }
-    const globalPref = localStorage.getItem(LANGS_KEY);
-    if (globalPref) {
-      const { lang1, lang2 } = JSON.parse(globalPref);
+    const globalPreference = localStorage.getItem(LANGS_KEY);
+    if (globalPreference) {
+      const { lang1, lang2 } = JSON.parse(globalPreference);
       return {
         vssId1: pickBestTrack(tracks, lang1)?.vssId,
         vssId2: pickBestTrack(tracks, lang2)?.vssId,
@@ -59,12 +59,15 @@ export function saveSelectedTracks({
     `${TRACKS_KEY}:${youtubeId}`,
     JSON.stringify({ vssId1, vssId2 }),
   );
-  const t1 = tracks.find((t) => t.vssId === vssId1);
-  const t2 = tracks.find((t) => t.vssId === vssId2);
-  if (t1 && t2) {
+  const track1 = tracks.find((t) => t.vssId === vssId1);
+  const track2 = tracks.find((t) => t.vssId === vssId2);
+  if (track1 && track2) {
     localStorage.setItem(
       LANGS_KEY,
-      JSON.stringify({ lang1: t1.languageCode, lang2: t2.languageCode }),
+      JSON.stringify({
+        lang1: track1.languageCode,
+        lang2: track2.languageCode,
+      }),
     );
   }
 }

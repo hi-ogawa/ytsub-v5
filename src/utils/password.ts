@@ -54,12 +54,14 @@ export async function verifyPassword(
   password: string,
   stored: string,
 ): Promise<boolean> {
-  const sep = stored.indexOf(":");
-  if (sep === -1) {
+  const separatorIndex = stored.indexOf(":");
+  if (separatorIndex === -1) {
     return false;
   }
-  const salt = fromHex(stored.slice(0, sep)) as Uint8Array<ArrayBuffer>;
-  const expectedHash = fromHex(stored.slice(sep + 1));
+  const salt = fromHex(
+    stored.slice(0, separatorIndex),
+  ) as Uint8Array<ArrayBuffer>;
+  const expectedHash = fromHex(stored.slice(separatorIndex + 1));
   const actualHash = new Uint8Array<ArrayBuffer>(await pbkdf2(password, salt));
   if (expectedHash.length !== actualHash.length) {
     return false;

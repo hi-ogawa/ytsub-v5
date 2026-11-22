@@ -121,8 +121,8 @@ function CaptionPanelLoading({
             tracks={tracks}
             selectedVssId1={selectedVssId1}
             selectedVssId2={selectedVssId2}
-            onSelect={(v1, v2) =>
-              runtime.selectTracks({ vssId1: v1, vssId2: v2 })
+            onSelect={(vssId1, vssId2) =>
+              runtime.selectTracks({ vssId1, vssId2 })
             }
           />
         </div>
@@ -162,8 +162,8 @@ function CaptionPanelWithSession({
               tracks={tracks}
               selectedVssId1={session.vssId1}
               selectedVssId2={session.vssId2}
-              onSelect={(v1, v2) =>
-                runtime.selectTracks({ vssId1: v1, vssId2: v2 })
+              onSelect={(vssId1, vssId2) =>
+                runtime.selectTracks({ vssId1, vssId2 })
               }
               disabled={session.bookmarks.length > 0}
             />

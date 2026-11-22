@@ -91,13 +91,13 @@ export function extractVideoData(): YouTubeExtractionResult {
 
   const captionTracks = rawTracks.map((track) => {
     // name can be { simpleText: "..." } or { runs: [{ text: "..." }] }
-    const nameObj = track.name as Record<string, unknown> | undefined;
+    const rawName = track.name as Record<string, unknown> | undefined;
     let name = String(track.languageCode);
-    if (nameObj) {
-      if (typeof nameObj.simpleText === "string") {
-        name = nameObj.simpleText;
-      } else if (Array.isArray(nameObj.runs)) {
-        name = (nameObj.runs as { text: string }[]).map((r) => r.text).join("");
+    if (rawName) {
+      if (typeof rawName.simpleText === "string") {
+        name = rawName.simpleText;
+      } else if (Array.isArray(rawName.runs)) {
+        name = (rawName.runs as { text: string }[]).map((r) => r.text).join("");
       }
     }
     return {
@@ -190,11 +190,11 @@ export async function fetchPlayerApi(options: {
   ).ytcfg;
   let visitorData: string | undefined;
   if (ytcfg?.data_) {
-    const d = ytcfg.data_;
+    const config = ytcfg.data_;
     visitorData =
-      (d.VISITOR_DATA as string) ??
+      (config.VISITOR_DATA as string) ??
       ((
-        (d.INNERTUBE_CONTEXT as Record<string, unknown>)?.client as Record<
+        (config.INNERTUBE_CONTEXT as Record<string, unknown>)?.client as Record<
           string,
           unknown
         >
@@ -260,13 +260,13 @@ export async function fetchPlayerApi(options: {
   >[];
 
   const captionTracks = rawTracks.map((track) => {
-    const nameObj = track.name as Record<string, unknown> | undefined;
+    const rawName = track.name as Record<string, unknown> | undefined;
     let trackName = String(track.languageCode);
-    if (nameObj) {
-      if (typeof nameObj.simpleText === "string") {
-        trackName = nameObj.simpleText;
-      } else if (Array.isArray(nameObj.runs)) {
-        trackName = (nameObj.runs as { text: string }[])
+    if (rawName) {
+      if (typeof rawName.simpleText === "string") {
+        trackName = rawName.simpleText;
+      } else if (Array.isArray(rawName.runs)) {
+        trackName = (rawName.runs as { text: string }[])
           .map((r) => r.text)
           .join("");
       }
@@ -299,20 +299,20 @@ export async function fetchPlayerApi(options: {
       captionTracks.find((t) => !t.kind) ??
       captionTracks.find((t) => t.kind === "asr");
     if (source) {
-      for (const tlang of targetLangs) {
-        if (coveredLangs.has(tlang)) {
+      for (const targetLang of targetLangs) {
+        if (coveredLangs.has(targetLang)) {
           continue;
         }
-        const tUrl = new URL(source.baseUrl);
-        tUrl.searchParams.set("tlang", tlang);
+        const translatedUrl = new URL(source.baseUrl);
+        translatedUrl.searchParams.set("tlang", targetLang);
         captionTracks.push({
-          baseUrl: tUrl.toString(),
-          languageCode: tlang,
+          baseUrl: translatedUrl.toString(),
+          languageCode: targetLang,
           kind: "asr",
-          name: `${tlang} (auto-translated from ${source.languageCode})`,
-          vssId: `${source.vssId}.t.${tlang}`,
+          name: `${targetLang} (auto-translated from ${source.languageCode})`,
+          vssId: `${source.vssId}.t.${targetLang}`,
         });
-        coveredLangs.add(tlang);
+        coveredLangs.add(targetLang);
       }
     }
   }

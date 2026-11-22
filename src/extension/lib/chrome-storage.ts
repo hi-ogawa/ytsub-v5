@@ -1,7 +1,7 @@
 export const chromeStorage = {
   async get<T>(key: string): Promise<T | undefined> {
-    const r = await chrome.storage.local.get(key);
-    return r[key] as T | undefined;
+    const result = await chrome.storage.local.get(key);
+    return result[key] as T | undefined;
   },
   set(items: Record<string, unknown>) {
     return chrome.storage.local.set(items);

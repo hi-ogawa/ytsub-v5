@@ -47,19 +47,19 @@ export function useYouTubePlayer(youtubeId?: string) {
   const [player, setPlayer] = useState<YTPlayer>();
   const playerRef = useRef<YTPlayer>(undefined);
 
-  const ref: RefCallback<HTMLDivElement> = (el) => {
-    if (!el || !youtubeId || playerRef.current) {
+  const ref: RefCallback<HTMLDivElement> = (element) => {
+    if (!element || !youtubeId || playerRef.current) {
       return;
     }
     loadYoutubeIframeApi().then(() => {
-      const p = new YT.Player(el, {
+      const createdPlayer = new YT.Player(element, {
         videoId: youtubeId,
         width: "100%",
         height: "100%",
         events: {
           onReady: () => {
-            playerRef.current = p;
-            setPlayer(p);
+            playerRef.current = createdPlayer;
+            setPlayer(createdPlayer);
           },
         },
       });

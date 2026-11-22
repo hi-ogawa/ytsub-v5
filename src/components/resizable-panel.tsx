@@ -78,9 +78,9 @@ function getPanelWidth(): number {
   try {
     const stored = localStorage.getItem(WIDTH_KEY);
     if (stored) {
-      const n = Number(stored);
-      if (n >= MIN_WIDTH && n <= MAX_WIDTH) {
-        return n;
+      const width = Number(stored);
+      if (width >= MIN_WIDTH && width <= MAX_WIDTH) {
+        return width;
       }
     }
   } catch {}

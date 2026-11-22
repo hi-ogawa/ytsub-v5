@@ -83,9 +83,9 @@ function ExtensionViewer({
 function getUserLangs(): string[] {
   const langs = [...navigator.languages];
   try {
-    const pref = localStorage.getItem("zamak:preferred-langs");
-    if (pref) {
-      const { lang1, lang2 } = JSON.parse(pref);
+    const preference = localStorage.getItem("zamak:preferred-langs");
+    if (preference) {
+      const { lang1, lang2 } = JSON.parse(preference);
       if (lang1 && !langs.includes(lang1)) {
         langs.push(lang1);
       }

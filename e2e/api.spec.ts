@@ -42,7 +42,7 @@ const json = async (res: any) => {
   return body.json;
 };
 
-const uid = () => Math.random().toString(36).slice(2);
+const createUniqueId = () => Math.random().toString(36).slice(2);
 
 const defaultTrackFields = {
   language1: "ko",
@@ -53,7 +53,7 @@ const defaultTrackFields = {
 
 test.describe("videos API", () => {
   test("create, list, and get video", async ({ request }) => {
-    const youtubeId = `test-${uid()}`;
+    const youtubeId = `test-${createUniqueId()}`;
     const createRes = await rpc(request, "videos/createVideo", {
       youtubeId,
       title: "Test Video",
@@ -83,7 +83,7 @@ test.describe("videos API", () => {
   });
 
   test("upsert video on youtube_id conflict", async ({ request }) => {
-    const youtubeId = `upsert-${uid()}`;
+    const youtubeId = `upsert-${createUniqueId()}`;
     await rpc(request, "videos/createVideo", {
       youtubeId,
       title: "Original",
@@ -102,7 +102,7 @@ test.describe("videos API", () => {
   });
 
   test("delete video cascades captions", async ({ request }) => {
-    const youtubeId = `delete-${uid()}`;
+    const youtubeId = `delete-${createUniqueId()}`;
     const video = await json(
       await rpc(request, "videos/createVideo", {
         youtubeId,
@@ -124,7 +124,7 @@ test.describe("videos API", () => {
   });
 
   test("create captions for a video", async ({ request }) => {
-    const youtubeId = `caption-${uid()}`;
+    const youtubeId = `caption-${createUniqueId()}`;
     const video = await json(
       await rpc(request, "videos/createVideo", {
         youtubeId,
@@ -153,7 +153,7 @@ test.describe("videos API", () => {
     const { videoId } = await json(
       await rpc(request, "videos/importVideo", {
         video: {
-          youtubeId: `update-cap-${uid()}`,
+          youtubeId: `update-cap-${createUniqueId()}`,
           title: "V",
           ...defaultTrackFields,
         },
@@ -192,7 +192,7 @@ test.describe("importVideo API", () => {
   test("imports video, captions, and bookmarks in one call", async ({
     request,
   }) => {
-    const youtubeId = `import-${uid()}`;
+    const youtubeId = `import-${createUniqueId()}`;
     const res = await rpc(request, "videos/importVideo", {
       video: {
         youtubeId,
@@ -244,7 +244,7 @@ test.describe("importVideo API", () => {
   test("imports large caption set (300+) without hitting SQL variable limit", async ({
     request,
   }) => {
-    const youtubeId = `large-${uid()}`;
+    const youtubeId = `large-${createUniqueId()}`;
     const captionCount = 350;
     const caps = Array.from({ length: captionCount }, (_, i) => ({
       idx: i,
@@ -270,7 +270,7 @@ test.describe("importVideo API", () => {
   test("imports large bookmark set (50+) without hitting SQL variable limit", async ({
     request,
   }) => {
-    const youtubeId = `large-bm-${uid()}`;
+    const youtubeId = `large-bm-${createUniqueId()}`;
     const bookmarkCount = 50;
     const caps = Array.from({ length: bookmarkCount }, (_, i) => ({
       idx: i,
@@ -311,7 +311,7 @@ test.describe("importVideo API", () => {
   });
 
   test("re-import replaces captions and bookmarks", async ({ request }) => {
-    const youtubeId = `reimport-${uid()}`;
+    const youtubeId = `reimport-${createUniqueId()}`;
     // First import
     const res1 = await json(
       await rpc(request, "videos/importVideo", {
@@ -353,7 +353,7 @@ test.describe("importVideo API", () => {
 
 test.describe("bookmarks API", () => {
   test("create, list, and update bookmarks", async ({ request }) => {
-    const youtubeId = `bookmark-${uid()}`;
+    const youtubeId = `bookmark-${createUniqueId()}`;
     const video = await json(
       await rpc(request, "videos/createVideo", {
         youtubeId,
@@ -399,7 +399,7 @@ test.describe("bookmarks API", () => {
   });
 
   test("delete bookmark", async ({ request }) => {
-    const youtubeId = `del-bm-${uid()}`;
+    const youtubeId = `del-bm-${createUniqueId()}`;
     const video = await json(
       await rpc(request, "videos/createVideo", {
         youtubeId,
@@ -430,7 +430,7 @@ test.describe("bookmarks API", () => {
     const { videoId } = await json(
       await rpc(request, "videos/importVideo", {
         video: {
-          youtubeId: `bm-text-${uid()}`,
+          youtubeId: `bm-text-${createUniqueId()}`,
           title: "V",
           ...defaultTrackFields,
         },
@@ -495,7 +495,7 @@ test.describe("bookmarks API", () => {
   }) => {
     const video = await json(
       await rpc(request, "videos/createVideo", {
-        youtubeId: `bm-nocap-${uid()}`,
+        youtubeId: `bm-nocap-${createUniqueId()}`,
         title: "V",
         ...defaultTrackFields,
       }),

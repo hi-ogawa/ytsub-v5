@@ -14,17 +14,17 @@ export type AiTask = (typeof AI_TASKS)[number]["task"];
 // Split "# --- task-name ---" sections
 const sections: Record<string, string> = {};
 for (const chunk of (promptMd as string).split(/^# --- /m).slice(1)) {
-  const nl = chunk.indexOf("\n");
-  const key = chunk.slice(0, nl).replace(/ ---$/, "").trim();
-  sections[key] = chunk.slice(nl + 1).trim();
+  const newlineIndex = chunk.indexOf("\n");
+  const key = chunk.slice(0, newlineIndex).replace(/ ---$/, "").trim();
+  sections[key] = chunk.slice(newlineIndex + 1).trim();
 }
 
 function formatCaptions(rows: MergedCaption[]): string {
   return rows
-    .map((r) => {
-      const m = Math.floor(r.begin / 60);
-      const s = String(Math.floor(r.begin % 60)).padStart(2, "0");
-      return `[${r.idx}] ${m}:${s} | ${r.text1} | ${r.text2}`;
+    .map((row) => {
+      const minutes = Math.floor(row.begin / 60);
+      const seconds = String(Math.floor(row.begin % 60)).padStart(2, "0");
+      return `[${row.idx}] ${minutes}:${seconds} | ${row.text1} | ${row.text2}`;
     })
     .join("\n");
 }

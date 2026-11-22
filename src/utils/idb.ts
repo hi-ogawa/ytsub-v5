@@ -37,13 +37,13 @@ export function createTransact<S>(options: {
     return dbPromise;
   }
 
-  // Runs `fn` in one transaction and resolves after it completes. `fn` may
-  // await requests on its stores, because a transaction stays active through
-  // promise callbacks run from its request events.
+  // Runs `callback` in one transaction and resolves after it completes.
+  // `callback` may await requests on its stores, because a transaction stays
+  // active through promise callbacks run from its request events.
   return async function transact<K extends keyof S & string, R>(
     names: K[],
     mode: IDBTransactionMode,
-    fn: (stores: StoreMap<S, K>) => Promise<R>,
+    callback: (stores: StoreMap<S, K>) => Promise<R>,
   ): Promise<R> {
     const db = await openDb();
     const tx = db.transaction(
@@ -63,7 +63,7 @@ export function createTransact<S>(options: {
     ) as StoreMap<S, K>;
     let result: R;
     try {
-      result = await fn(stores);
+      result = await callback(stores);
     } catch (err) {
       done.catch(() => {});
       try {
