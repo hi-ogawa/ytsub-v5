@@ -8,7 +8,10 @@ import {
   saveSelectedTracks,
   sessionToExportData,
 } from "./caption-session.ts";
-import type { CaptionStorage } from "./caption-storage.ts";
+import type {
+  CaptionStorage,
+  PersistedCaptionSession,
+} from "./caption-storage.ts";
 import type { ExtensionBookmark } from "./extension-bookmarks.ts";
 import {
   type Json3File,
@@ -96,29 +99,13 @@ export class CaptionPanelRuntime {
 
   /** Show the saved session, or build one from the tracks picked last time. */
   async restore(): Promise<void> {
-    const tracksLoaded = this.loadTracks();
     const saved = await this.storage.getSession(this.youtubeId);
-    if (saved) {
-      this.store.update({
-        restoring: false,
-        session: {
-          video: {
-            youtubeId: saved.youtubeId,
-            title: saved.title,
-            channelName: saved.channelName,
-            channelId: saved.channelId,
-            duration: saved.duration,
-          },
-          vssId1: saved.vssId1,
-          vssId2: saved.vssId2,
-          rows: saved.captions,
-          bookmarks: saved.bookmarks,
-        },
-      });
-      return;
-    }
-    this.store.update({ restoring: false });
-    if (await tracksLoaded) {
+    this.store.update({
+      restoring: false,
+      session: saved && toCaptionSession(saved),
+    });
+    const tracksLoaded = await this.loadTracks();
+    if (tracksLoaded && !saved) {
       await this.buildSession(
         getInitialTracks(this.store.get().tracks, this.youtubeId),
       );
@@ -389,4 +376,20 @@ export function sortBookmarks(
   return [...bookmarks].sort(
     (a, b) => a.timestamp - b.timestamp || a.offset - b.offset,
   );
+}
+
+function toCaptionSession(saved: PersistedCaptionSession): CaptionSession {
+  return {
+    video: {
+      youtubeId: saved.youtubeId,
+      title: saved.title,
+      channelName: saved.channelName,
+      channelId: saved.channelId,
+      duration: saved.duration,
+    },
+    vssId1: saved.vssId1,
+    vssId2: saved.vssId2,
+    rows: saved.captions,
+    bookmarks: saved.bookmarks,
+  };
 }
