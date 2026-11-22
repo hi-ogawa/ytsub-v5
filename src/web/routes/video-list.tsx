@@ -6,7 +6,8 @@ import {
   videoIndexStore,
 } from "../../lib/caption-storage.ts";
 import { orpc } from "../../lib/rpc-client.ts";
-import { useVideoSync, type VideoSyncEntry } from "../../lib/sync.ts";
+import type { VideoSyncEntry } from "../../lib/sync.ts";
+import { useVideoSync } from "../../lib/use-video-sync.ts";
 
 const CHROME_STORE_URL =
   "https://chromewebstore.google.com/detail/zamak/gkonhebhbkfoeggebiipfbblfecdbabn";
