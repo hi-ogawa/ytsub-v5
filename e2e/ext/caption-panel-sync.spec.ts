@@ -19,12 +19,15 @@ test("push from the sync menu, then open the bookmarks page", async ({
   await gotoBookmarks(page, extensionId);
   await login(page, { username: "dev-empty" });
 
-  const { ytPage, host } = await openPanelWithTracks(context, SEED_YOUTUBE_ID);
+  const { youtubePage, host } = await openPanelWithTracks(
+    context,
+    SEED_YOUTUBE_ID,
+  );
 
   // A video without bookmarks isn't in the video index yet
   let status = await openSyncMenu(host);
   await expect(status).toHaveAttribute("data-sync-state", "empty");
-  await ytPage.keyboard.press("Escape");
+  await youtubePage.keyboard.press("Escape");
 
   await createBookmarkAt(host, { index: 0, start: 0, end: 3 });
   status = await openSyncMenu(host);
@@ -54,7 +57,10 @@ test("pull from the sync menu replaces captions and bookmarks in place", async (
   await gotoBookmarks(page, extensionId);
   await login(page);
 
-  const { ytPage, host } = await openPanelWithTracks(context, SEED_YOUTUBE_ID);
+  const { youtubePage, host } = await openPanelWithTracks(
+    context,
+    SEED_YOUTUBE_ID,
+  );
   await expect(
     host.getByRole("tab", { name: "Bookmarks", exact: true }),
   ).toBeVisible();
@@ -66,7 +72,7 @@ test("pull from the sync menu replaces captions and bookmarks in place", async (
   await expect(status).toHaveAttribute("data-sync-state", "synced");
   checkpoint("pull synced");
 
-  await ytPage.keyboard.press("Escape");
+  await youtubePage.keyboard.press("Escape");
   await expect(host.getByRole("tab", { name: "Bookmarks (15)" })).toBeVisible();
 });
 

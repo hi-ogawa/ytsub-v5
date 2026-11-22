@@ -7,7 +7,7 @@ import {
   type SyncStatus,
   computeSyncState,
 } from "../../lib/sync.ts";
-import type { bgRpcHandlers } from "../background.ts";
+import type { backgroundRpcHandlers } from "../background.ts";
 import type { RpcClient } from "../lib/extension-rpc.ts";
 
 type SyncAction =
@@ -21,27 +21,29 @@ type SyncAction =
  */
 export function useExtensionSync({
   storage,
-  bgRpc,
+  backgroundRpc,
   youtubeId,
 }: {
   storage: CaptionStorage;
-  bgRpc: RpcClient<typeof bgRpcHandlers>;
+  backgroundRpc: RpcClient<typeof backgroundRpcHandlers>;
   youtubeId: string;
 }): SyncStatus {
   const entryQuery = useVideoIndexEntry({ storage, youtubeId });
 
   const serverQuery = useQuery({
     queryKey: ["extension-sync-state", youtubeId],
-    queryFn: () => bgRpc.getSyncState({ youtubeId }),
+    queryFn: () => backgroundRpc.getSyncState({ youtubeId }),
   });
 
   const syncMutation = useMutation({
     mutationFn: async (action: SyncAction) => {
       if (action.direction === "push") {
-        const { editedAt } = await bgRpc.pushSession({ youtubeId });
+        const { editedAt } = await backgroundRpc.pushSession({ youtubeId });
         await storage.markSynced({ youtubeId, editedAt });
       } else {
-        const { session, editedAt } = await bgRpc.fetchSession({ youtubeId });
+        const { session, editedAt } = await backgroundRpc.fetchSession({
+          youtubeId,
+        });
         await action.runtime.replace({
           vssId1: session.vssId1,
           vssId2: session.vssId2,
@@ -86,7 +88,7 @@ export function useExtensionSync({
     error: error
       ? `${variables?.direction === "pull" ? "Download" : "Upload"} failed: ${error.message}`
       : undefined,
-    onNavigate: () => bgRpc.openBookmarks(),
+    onNavigate: () => backgroundRpc.openBookmarks(),
     onPush: () => syncMutation.mutate({ direction: "push" }),
     onPull: (runtime) => syncMutation.mutate({ direction: "pull", runtime }),
   };

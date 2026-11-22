@@ -10,12 +10,15 @@ import {
 test("clicks inside the bookmark popover don't reach the caption row", async ({
   context,
 }) => {
-  const { ytPage, host } = await openPanelWithTracks(context, SEED_YOUTUBE_ID);
+  const { youtubePage, host } = await openPanelWithTracks(
+    context,
+    SEED_YOUTUBE_ID,
+  );
   await host
     .locator("[data-index='1'] [data-side='0'] [data-offset]")
     .selectText();
   await host.getByRole("button", { name: "Create bookmark" }).click();
-  const video = ytPage.locator("video");
+  const video = youtubePage.locator("video");
   const isPaused = () => video.evaluate((el: HTMLVideoElement) => el.paused);
 
   const highlight = host
@@ -43,12 +46,15 @@ test("clicks inside the bookmark popover don't reach the caption row", async ({
 test("repeat on a bookmark card repeats its row, shared with the Captions tab", async ({
   context,
 }) => {
-  const { ytPage, host } = await openPanelWithTracks(context, SEED_YOUTUBE_ID);
+  const { youtubePage, host } = await openPanelWithTracks(
+    context,
+    SEED_YOUTUBE_ID,
+  );
   // The later selection goes first, because a bookmark splits the row's text
   await createBookmarkAt(host, { index: 2, start: 4, end: 6 });
   await createBookmarkAt(host, { index: 2, start: 0, end: 2 });
   await createBookmarkAt(host, { index: 3, start: 0, end: 2 });
-  const video = ytPage.locator("video");
+  const video = youtubePage.locator("video");
   const isPaused = () => video.evaluate((el: HTMLVideoElement) => el.paused);
   const getCurrentTime = () =>
     video.evaluate((el: HTMLVideoElement) => el.currentTime);
@@ -82,18 +88,23 @@ test("repeat on a bookmark card repeats its row, shared with the Captions tab", 
 });
 
 test("bookmark arrows keep the play state", async ({ context }) => {
-  const { ytPage, host } = await openPanelWithTracks(context, SEED_YOUTUBE_ID);
-  const prevButton = host.getByRole("button", { name: "Previous bookmark" });
+  const { youtubePage, host } = await openPanelWithTracks(
+    context,
+    SEED_YOUTUBE_ID,
+  );
+  const previousButton = host.getByRole("button", {
+    name: "Previous bookmark",
+  });
   const nextButton = host.getByRole("button", { name: "Next bookmark" });
-  await expect(prevButton).toBeDisabled();
+  await expect(previousButton).toBeDisabled();
   await expect(nextButton).toBeDisabled();
   await host
     .locator("[data-index='1'] [data-side='0'] [data-offset]")
     .selectText();
   await host.getByRole("button", { name: "Create bookmark" }).click();
-  await expect(prevButton).toBeEnabled();
+  await expect(previousButton).toBeEnabled();
   await expect(nextButton).toBeEnabled();
-  const video = ytPage.locator("video");
+  const video = youtubePage.locator("video");
   const isPaused = () => video.evaluate((el: HTMLVideoElement) => el.paused);
   const getCurrentTime = () =>
     video.evaluate((el: HTMLVideoElement) => el.currentTime);
@@ -112,10 +123,13 @@ test("bookmark arrows keep the play state", async ({ context }) => {
 });
 
 test("bookmark arrows wrap around at the ends", async ({ context }) => {
-  const { ytPage, host } = await openPanelWithTracks(context, SEED_YOUTUBE_ID);
+  const { youtubePage, host } = await openPanelWithTracks(
+    context,
+    SEED_YOUTUBE_ID,
+  );
   await createBookmarkAt(host, { index: 1, start: 0, end: 3 });
   await createBookmarkAt(host, { index: 3, start: 0, end: 3 });
-  const video = ytPage.locator("video");
+  const video = youtubePage.locator("video");
   const getCurrentTime = () =>
     video.evaluate((el: HTMLVideoElement) => el.currentTime);
   async function clickAndGetTime(name: string) {
@@ -186,13 +200,16 @@ test("bookmarks tab marks every card from the current row", async ({
 test("clicking a card from the current row toggles play, like a caption row", async ({
   context,
 }) => {
-  const { ytPage, host } = await openPanelWithTracks(context, SEED_YOUTUBE_ID);
+  const { youtubePage, host } = await openPanelWithTracks(
+    context,
+    SEED_YOUTUBE_ID,
+  );
   // The later selection goes first, because a bookmark splits the row's text
   await createBookmarkAt(host, { index: 2, start: 4, end: 6 });
   await createBookmarkAt(host, { index: 2, start: 0, end: 2 });
   await createBookmarkAt(host, { index: 3, start: 0, end: 2 });
   await host.getByRole("tab", { name: /Bookmarks/ }).click();
-  const video = ytPage.locator("video");
+  const video = youtubePage.locator("video");
   const isPaused = () => video.evaluate((el: HTMLVideoElement) => el.paused);
   const cards = host.locator("[data-bookmark-id]");
 
@@ -214,7 +231,10 @@ test("clicking a card from the current row toggles play, like a caption row", as
 test("manual bookmark: cancel selection, create, highlight, and export", async ({
   context,
 }) => {
-  const { ytPage, host } = await openPanelWithTracks(context, SEED_YOUTUBE_ID);
+  const { youtubePage, host } = await openPanelWithTracks(
+    context,
+    SEED_YOUTUBE_ID,
+  );
 
   // Select text — cancel hides FAB
   await selectTextInCaption(host, { index: 0, start: 0, end: 3 });
@@ -242,7 +262,7 @@ test("manual bookmark: cancel selection, create, highlight, and export", async (
   // Export includes the bookmark
   await host.getByTitle("Settings").click();
   const [download] = await Promise.all([
-    ytPage.waitForEvent("download"),
+    youtubePage.waitForEvent("download"),
     host.getByText("Export import.json").click(),
   ]);
   const content = await (
@@ -261,7 +281,10 @@ test("manual bookmark: cancel selection, create, highlight, and export", async (
 });
 
 test("track picker locks when bookmarks exist", async ({ context }) => {
-  const { ytPage, host } = await openPanelWithTracks(context, SEED_YOUTUBE_ID);
+  const { youtubePage, host } = await openPanelWithTracks(
+    context,
+    SEED_YOUTUBE_ID,
+  );
 
   // Create a bookmark first
   await createBookmarkAt(host, { index: 0, start: 0, end: 3 });
@@ -273,7 +296,7 @@ test("track picker locks when bookmarks exist", async ({ context }) => {
 
   // Clear bookmarks via settings menu
   await host.getByTitle("Settings").click();
-  ytPage.on("dialog", (d) => d.accept());
+  youtubePage.on("dialog", (d) => d.accept());
   await host.getByText("Clear bookmarks").click();
 
   // Track selects should be re-enabled
@@ -372,7 +395,10 @@ test("go-to-caption button switches from bookmarks to captions tab", async ({
 });
 
 test("delete bookmark from bookmarks tab", async ({ context }) => {
-  const { ytPage, host } = await openPanelWithTracks(context, SEED_YOUTUBE_ID);
+  const { youtubePage, host } = await openPanelWithTracks(
+    context,
+    SEED_YOUTUBE_ID,
+  );
   const panel = host.getByTestId("resizable-panel");
   await createBookmarkAt(host, { index: 0, start: 0, end: 3 });
 
@@ -380,7 +406,7 @@ test("delete bookmark from bookmarks tab", async ({ context }) => {
   await expect(host.locator("[data-bookmark-id]").first()).toBeVisible();
 
   // Open dropdown and delete
-  ytPage.on("dialog", (d) => d.accept());
+  youtubePage.on("dialog", (d) => d.accept());
   const bookmarkCard = host.locator("[data-bookmark-id]").first();
   await bookmarkCard.getByTitle("Bookmark actions").click();
   await host.getByRole("menuitem", { name: "Delete" }).click();
@@ -396,7 +422,10 @@ test("delete bookmark from bookmarks tab", async ({ context }) => {
 });
 
 test("bookmark numbers in popover and bookmarks tab", async ({ context }) => {
-  const { ytPage, host } = await openPanelWithTracks(context, SEED_YOUTUBE_ID);
+  const { youtubePage, host } = await openPanelWithTracks(
+    context,
+    SEED_YOUTUBE_ID,
+  );
   const panel = host.getByTestId("resizable-panel");
   // Create out of order, so numbers must follow timestamps
   await createBookmarkAt(host, { index: 4, start: 0, end: 2 });
@@ -410,7 +439,7 @@ test("bookmark numbers in popover and bookmarks tab", async ({ context }) => {
     .first()
     .click();
   await expect(host.getByTestId("bookmark-popover")).toContainText("#2널");
-  await ytPage.keyboard.press("Escape");
+  await youtubePage.keyboard.press("Escape");
 
   // Bookmark cards are numbered in order
   await panel.getByRole("tab", { name: /Bookmarks/ }).click();
@@ -421,7 +450,7 @@ test("bookmark numbers in popover and bookmarks tab", async ({ context }) => {
   await expect(cards.nth(2)).toContainText("#3아직");
 
   // Deleting the first bookmark renumbers the rest
-  ytPage.on("dialog", (d) => d.accept());
+  youtubePage.on("dialog", (d) => d.accept());
   await cards.nth(0).getByTitle("Bookmark actions").click();
   await host.getByRole("menuitem", { name: "Delete" }).click();
   await expect(cards).toHaveCount(2);

@@ -114,10 +114,10 @@ export async function openYouTubeTab(
   return await test.step(
     "Open YouTube tab",
     async () => {
-      const ytPage = await context.newPage();
-      await ytPage.goto(`https://www.youtube.com/watch?v=${youtubeId}`);
-      await expect(ytPage.locator("#zamak-host")).toBeAttached();
-      return ytPage;
+      const youtubePage = await context.newPage();
+      await youtubePage.goto(`https://www.youtube.com/watch?v=${youtubeId}`);
+      await expect(youtubePage.locator("#zamak-host")).toBeAttached();
+      return youtubePage;
     },
     { box: true },
   );
@@ -135,14 +135,14 @@ export async function openPanelWithTracks(
   return await test.step(
     "Open caption panel with tracks",
     async () => {
-      const ytPage = await openYouTubeTab(context, youtubeId);
-      const host = ytPage.locator("#zamak-host");
+      const youtubePage = await openYouTubeTab(context, youtubeId);
+      const host = youtubePage.locator("#zamak-host");
       await host.getByTestId("caption-fab").click();
       const selects = host.getByTestId("track-picker").locator("select");
       await selects.nth(0).selectOption(".ko");
       await selects.nth(1).selectOption(".en");
       await expect(host.locator("[data-index='0']")).toBeVisible();
-      return { ytPage, host };
+      return { youtubePage, host };
     },
     { box: true },
   );
