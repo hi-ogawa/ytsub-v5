@@ -13,17 +13,14 @@ import {
 } from "./bookmarks-list.tsx";
 import { CaptionList, type CaptionListHandle } from "./caption-list.tsx";
 import { useBookmarkSelection } from "./use-bookmark-selection.ts";
-import type { YTPlayer } from "./youtube-player.tsx";
 
 export function CaptionPanelContent({
   runtime,
   session,
-  player,
   autoScroll,
 }: {
   runtime: CaptionPanelRuntime;
   session: CaptionSession;
-  player?: YTPlayer;
   autoScroll: boolean;
 }) {
   const [activeTab, setActiveTab] = useState<Tab>("captions");
@@ -63,16 +60,6 @@ export function CaptionPanelContent({
     });
   }
 
-  // Like a caption row, a card from the current row toggles play, and any
-  // other card plays from its bookmark.
-  function onClickBookmark(bookmark: ExtensionBookmark) {
-    if (bookmark.captionIndex === currentIndex) {
-      runtime.togglePlay();
-    } else {
-      runtime.playBookmark(bookmark);
-    }
-  }
-
   const bookmarkSelection = useBookmarkSelection({
     contentRef,
     runtime,
@@ -105,7 +92,6 @@ export function CaptionPanelContent({
             ref={captionListRef}
             runtime={runtime}
             rows={session.rows}
-            player={player}
             autoScroll={autoScroll}
             bookmarks={sortedBookmarks}
             onGoToBookmark={onGoToBookmark}
@@ -130,7 +116,9 @@ export function CaptionPanelContent({
               rows={session.rows}
               currentIndex={currentIndex}
               isPlaying={isPlaying}
-              onClickBookmark={onClickBookmark}
+              onClickBookmark={(bookmark) =>
+                runtime.playOrToggleRow(bookmark.captionIndex)
+              }
               onDeleteBookmark={(id) => runtime.deleteBookmark(id)}
               onGoToCaption={onGoToCaption}
             />
@@ -249,7 +237,6 @@ function CaptionViewer({
   ref,
   runtime,
   rows,
-  player,
   autoScroll,
   bookmarks,
   onGoToBookmark,
@@ -257,7 +244,6 @@ function CaptionViewer({
   ref: React.Ref<CaptionListHandle>;
   runtime: CaptionPanelRuntime;
   rows: MergedCaption[];
-  player?: YTPlayer;
   autoScroll: boolean;
   bookmarks: ExtensionBookmark[];
   onGoToBookmark: (bookmarkId: string) => void;
@@ -274,10 +260,9 @@ function CaptionViewer({
       currentIndex={currentIndex}
       isPlaying={isPlaying}
       repeatIndex={repeatIndex}
-      player={player}
       autoScroll={autoScroll}
       bookmarks={bookmarks}
-      onPlayRow={(index) => runtime.playRow(index)}
+      onPlayOrToggleRow={(index) => runtime.playOrToggleRow(index)}
       onToggleRepeat={(index) => runtime.toggleRepeat(index)}
       onGoToBookmark={onGoToBookmark}
     />

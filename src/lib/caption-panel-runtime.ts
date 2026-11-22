@@ -352,8 +352,20 @@ export class CaptionPanelRuntime {
     }
   }
 
+  /**
+   * Pause or resume when the row is current, and otherwise play it from its
+   * begin. A bookmark starts at its row's begin, so this plays bookmarks too.
+   */
+  playOrToggleRow(index: number): void {
+    if (index === this.playbackStore.get().currentIndex) {
+      this.togglePlay();
+    } else {
+      this.playRow(index);
+    }
+  }
+
   /** Seek to the row's begin and play, ending any repeat. */
-  playRow(index: number): void {
+  private playRow(index: number): void {
     this.player?.seekTo(this.getSession().rows[index].begin);
     this.player?.playVideo();
     this.playbackStore.update({ repeatIndex: undefined });
@@ -372,19 +384,12 @@ export class CaptionPanelRuntime {
     this.playbackStore.update({ repeatIndex: index, currentIndex: index });
   }
 
-  /** Pause if the video plays, and play otherwise. */
-  togglePlay(): void {
+  private togglePlay(): void {
     if (this.player?.getPlayerState() === 1) {
       this.player.pauseVideo();
     } else {
       this.player?.playVideo();
     }
-  }
-
-  /** Seek to the bookmark and play, ending any repeat. */
-  playBookmark(bookmark: ExtensionBookmark): void {
-    this.seekToBookmark(bookmark);
-    this.player?.playVideo();
   }
 
   // Previous and next wrap around. Previous skips a bookmark within the last
