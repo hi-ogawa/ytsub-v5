@@ -14,14 +14,15 @@ export function createTransact<S>(options: {
   name: string;
   version: number;
   storeNames: { [K in keyof S]: string };
-  upgrade: (db: IDBDatabase, oldVersion: number) => void;
+  upgrade: (db: IDBDatabase, oldVersion: number, tx: IDBTransaction) => void;
 }) {
   let dbPromise: Promise<IDBDatabase> | undefined;
 
   function openDb(): Promise<IDBDatabase> {
     dbPromise ??= new Promise((resolve, reject) => {
       const req = indexedDB.open(options.name, options.version);
-      req.onupgradeneeded = (e) => options.upgrade(req.result, e.oldVersion);
+      req.onupgradeneeded = (e) =>
+        options.upgrade(req.result, e.oldVersion, req.transaction!);
       req.onsuccess = () => {
         const db = req.result;
         // Let a newer version of the app upgrade the database.

@@ -250,27 +250,34 @@ export class CaptionPanelRuntime {
     bookmarks: ExtensionBookmark[];
     vssId1?: string;
     vssId2?: string;
+    editedAt?: string;
   }): Promise<void> {
     const session = this.getSession();
-    await this.updateSession({
-      rows: options.captions,
-      bookmarks: options.bookmarks,
-      vssId1: options.vssId1 ?? session.vssId1,
-      vssId2: options.vssId2 ?? session.vssId2,
-    });
+    await this.updateSession(
+      {
+        rows: options.captions,
+        bookmarks: options.bookmarks,
+        vssId1: options.vssId1 ?? session.vssId1,
+        vssId2: options.vssId2 ?? session.vssId2,
+      },
+      { editedAt: options.editedAt },
+    );
   }
 
-  toExportData(): ExportData {
+  toExportData(options?: { editedAt?: string }): ExportData {
     const session = this.getSession();
-    return sessionToExportData({
-      ...session.video,
-      language1: langFromVssId(session.vssId1),
-      language2: langFromVssId(session.vssId2),
-      vssId1: session.vssId1,
-      vssId2: session.vssId2,
-      captions: session.rows,
-      bookmarks: session.bookmarks,
-    });
+    return sessionToExportData(
+      {
+        ...session.video,
+        language1: langFromVssId(session.vssId1),
+        language2: langFromVssId(session.vssId2),
+        vssId1: session.vssId1,
+        vssId2: session.vssId2,
+        captions: session.rows,
+        bookmarks: session.bookmarks,
+      },
+      options,
+    );
   }
 
   private getSession(): CaptionSession {
@@ -281,22 +288,31 @@ export class CaptionPanelRuntime {
     return session;
   }
 
-  private async updateSession(update: Partial<CaptionSession>): Promise<void> {
+  private async updateSession(
+    update: Partial<CaptionSession>,
+    options?: { editedAt?: string },
+  ): Promise<void> {
     const session = { ...this.getSession(), ...update };
     this.store.update({ session });
-    await this.saveSession(session);
+    await this.saveSession(session, options);
   }
 
-  private async saveSession(session: CaptionSession): Promise<void> {
-    await this.storage.saveSession({
-      ...session.video,
-      vssId1: session.vssId1,
-      vssId2: session.vssId2,
-      language1: langFromVssId(session.vssId1),
-      language2: langFromVssId(session.vssId2),
-      captions: session.rows,
-      bookmarks: session.bookmarks,
-    });
+  private async saveSession(
+    session: CaptionSession,
+    options?: { editedAt?: string },
+  ): Promise<void> {
+    await this.storage.saveSession(
+      {
+        ...session.video,
+        vssId1: session.vssId1,
+        vssId2: session.vssId2,
+        language1: langFromVssId(session.vssId1),
+        language2: langFromVssId(session.vssId2),
+        captions: session.rows,
+        bookmarks: session.bookmarks,
+      },
+      options,
+    );
   }
 
   // --- Playback ---

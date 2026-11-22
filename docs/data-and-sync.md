@@ -16,18 +16,26 @@ Browser storage belongs to an origin. The extension keeps its sessions on its ow
 
 ## List Videos From a Small Index
 
-Opening every session just to draw the bookmarks page would be slow, so the same database also keeps a video index, one entry per video. An entry holds a video's title, channel, and bookmark count, plus timestamps for sync: when the session last changed locally, when it was last pushed or pulled, and the server's own timestamp for the video at that push or pull.
+Opening every session just to draw the bookmarks page would be slow, so the same database also keeps a video index, one entry per video. An entry holds a video's title, channel, and bookmark count, the time its content was last edited, and what that time was at its last push or pull.
 
 Saving a session updates its index entry in the same transaction, so the two never disagree. A video gets an entry once it has a bookmark, and keeps it at zero bookmarks so that deleting the last one can still be pushed. Until then, its session is stored but the video isn't listed anywhere. A pull from the bookmarks page adds the entry even with no bookmarks, so the pulled video shows up in the list. Each entry is its own record, so two pages that change different videos at once never overwrite each other.
 
-## Decide the Sync Direction From Two Pairs of Timestamps
+## Give Each Video an Edit Time That Travels With It
 
-The sync status of a video asks two questions, and each one compares timestamps from a single clock, because the browser's clock and the server's clock can disagree:
+Each video carries the time its content was last edited. The side that makes an edit sets it from its own clock: the browser for edits in the app, the server for edits made through its API. Push and pull copy it unchanged, like the captions and bookmarks, so every copy of a video has the same edit time.
 
-- **Did the local session change?** Compare when it last changed with when it was last synced, both from the browser's clock.
-- **Did the server's copy change?** Compare when it last changed with what that time was at the last sync, both from the server's clock. A push or pull records the server's time from its own response.
+![Device A edits at 10:00 and pushes at 10:30. The server keeps the edit time 10:00. Device B, whose clock is three minutes behind, pulls and keeps the edit time 10:00. The edit time is the same on every side, and B's clock never stamps it.](images/edit-time.svg)
 
-![Device A pushes, and the server saves serverUpdatedAt. Device B, whose clock is three minutes behind, pulls and saves syncedServerUpdatedAt, a copy of the server's time, and syncedAt from its own clock, then edits, which sets localUpdatedAt. Right after the pull, localUpdatedAt > syncedAt and serverUpdatedAt > syncedServerUpdatedAt are both false, so the video is synced. After the edit, only the local check is true, so the video needs a push. Each check compares two times from one clock. Mixing clocks, serverUpdatedAt > syncedAt would read as a server change: a pull right after the pull, and a conflict after the edit.](images/sync-state-clocks.svg)
+The bookmarks page lists the most recently edited videos first. Syncing never changes the edit time, so it never moves a card, and every device lists the videos in the same order. Sorting compares times from different clocks, so devices whose clocks disagree can swap two videos edited within that difference. Only the order of those two cards changes.
+
+## Decide the Sync Direction by Comparing Edit Times
+
+Each push or pull also records the edit time it synced. The sync status asks two questions, and each checks whether an edit time still equals the recorded one:
+
+- **Did the local session change?** Its edit time differs from the synced one.
+- **Did the server's copy change?** The server's edit time differs from the synced one.
+
+Every edit sets a new edit time, and sync copies edit times exactly, so a difference always means an edit. Nothing checks which time is later, so clocks that disagree can't change the answer. The server stamps its edits to the millisecond, so two server edits in the same second still differ.
 
 The answers decide the status:
 
@@ -36,10 +44,13 @@ The answers decide the status:
 - If both changed, it's a conflict, and you pick which copy to keep.
 - A video that was never synced needs a push if the server doesn't have it, and it's a conflict if the server does.
 - A video that exists only on the server needs a pull.
+- A video that was synced and then removed from the server needs a push.
+
+![The two checks are local changed, editedAt ≠ syncedEditedAt, and server changed, the server's edited_at ≠ syncedEditedAt. When the video was synced before and both copies exist, the checks decide: neither changed is synced, only local is push, only server is pull, and both is conflict. When something is missing, rules decide first: no local copy is pull, never synced and not on the server is push, never synced but on the server is conflict, and synced but removed from the server is push.](images/sync-state.svg)
 
 ## Push and Pull Whole Videos
 
-Push and pull always move a whole video, and the receiving side replaces its copy. A push sends the session to the server, which replaces that video's captions and bookmarks. A pull fetches the server's copy and replaces the local session. Either one then records the sync time and the server's timestamp in the index.
+Push and pull always move a whole video, and the receiving side replaces its copy. A push sends the session to the server, which replaces that video's captions and bookmarks. A pull fetches the server's copy and replaces the local session. Either one then records the synced edit time in the index.
 
 The bookmarks page pushes and pulls directly, in both the extension and the web app. The caption panel does too in the web app. In the extension, the panel asks the background, which holds the session token. A pull from the panel only fetches the session, and the panel applies it itself. The web app's caption panel only shows sessions that are already stored, because it can't fetch subtitles.
 
