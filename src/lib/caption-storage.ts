@@ -23,10 +23,7 @@ export type VideoIndexEntry = {
   channelName: string;
   bookmarkCount: number;
   updatedAt: string;
-  // Local clock, compared with updatedAt
   syncedAt?: string;
-  // Server clock, the server's updatedAt at the last push or pull
-  syncedServerUpdatedAt?: string;
 };
 
 export type StorageNotice = { type: "videoIndex"; entries: VideoIndexEntry[] };
@@ -42,10 +39,7 @@ export interface CaptionStorage {
     options?: { forceIndex?: boolean },
   ): Promise<void>;
   deleteVideo(youtubeId: string): Promise<void>;
-  markSynced(options: {
-    youtubeId: string;
-    serverUpdatedAt: string;
-  }): Promise<void>;
+  markSynced(youtubeId: string): Promise<void>;
   getVideoIndexEntry(youtubeId: string): Promise<VideoIndexEntry | undefined>;
   listVideoIndex(): Promise<VideoIndexEntry[]>;
   subscribe(listener: StorageListener): () => void;

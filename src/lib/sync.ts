@@ -41,11 +41,9 @@ export type ComputedSyncState =
 export function computeSyncState(params: {
   localUpdatedAt?: string;
   syncedAt?: string;
-  syncedServerUpdatedAt?: string;
   serverUpdatedAt?: string;
 }): ComputedSyncState {
-  const { localUpdatedAt, syncedAt, syncedServerUpdatedAt, serverUpdatedAt } =
-    params;
+  const { localUpdatedAt, syncedAt, serverUpdatedAt } = params;
 
   // No local entry
   if (!localUpdatedAt) {
@@ -67,11 +65,10 @@ export function computeSyncState(params: {
     return "push";
   }
 
-  // Each comparison stays within one clock, because the client and server
-  // clocks can disagree. Entries synced before syncedServerUpdatedAt existed
-  // fall back to the local syncedAt.
+  // serverUpdatedAt is from the server clock and syncedAt from the client
+  // clock. Comparing them assumes the clocks agree within a second or two.
   const localChanged = localUpdatedAt > syncedAt;
-  const serverChanged = serverUpdatedAt > (syncedServerUpdatedAt ?? syncedAt);
+  const serverChanged = serverUpdatedAt > syncedAt;
 
   if (!localChanged && !serverChanged) {
     return "synced";
@@ -151,13 +148,8 @@ export function useSyncState({
       store: CaptionSessionManager;
     }) => {
       if (action.direction === "push") {
-        const result = await orpc.videos.importVideo.call(
-          action.store.toExportData(),
-        );
-        await storage.markSynced({
-          youtubeId,
-          serverUpdatedAt: result.updatedAt,
-        });
+        await orpc.videos.importVideo.call(action.store.toExportData());
+        await storage.markSynced(youtubeId);
       } else {
         const data = await orpc.videos.getFullSession.call({ youtubeId });
         if (!data) {
@@ -171,10 +163,7 @@ export function useSyncState({
           captions: session.captions,
           bookmarks: session.bookmarks,
         });
-        await storage.markSynced({
-          youtubeId,
-          serverUpdatedAt: data.video.updatedAt,
-        });
+        await storage.markSynced(youtubeId);
       }
     },
     onSuccess: () => serverQuery.refetch(),
@@ -203,7 +192,6 @@ export function useSyncState({
     return computeSyncState({
       localUpdatedAt: localEntry?.updatedAt,
       syncedAt: localEntry?.syncedAt,
-      syncedServerUpdatedAt: localEntry?.syncedServerUpdatedAt,
       serverUpdatedAt: serverQuery.data?.updatedAt ?? undefined,
     });
   };
@@ -237,7 +225,6 @@ function mergeVideoEntries(
     const status = computeSyncState({
       localUpdatedAt: local.updatedAt,
       syncedAt: local.syncedAt,
-      syncedServerUpdatedAt: local.syncedServerUpdatedAt,
       serverUpdatedAt: server?.updatedAt ?? undefined,
     });
     merged.set(local.youtubeId, {
@@ -307,13 +294,8 @@ export function useVideoSync(storage: CaptionStorage) {
       if (!session) {
         throw new Error("No local session found");
       }
-      const result = await orpc.videos.importVideo.call(
-        sessionToExportData(session),
-      );
-      await storage.markSynced({
-        youtubeId,
-        serverUpdatedAt: result.updatedAt,
-      });
+      await orpc.videos.importVideo.call(sessionToExportData(session));
+      await storage.markSynced(youtubeId);
     });
   };
 
@@ -326,10 +308,7 @@ export function useVideoSync(storage: CaptionStorage) {
       await storage.saveSession(serverSessionToLocal(data), {
         forceIndex: true,
       });
-      await storage.markSynced({
-        youtubeId,
-        serverUpdatedAt: data.video.updatedAt,
-      });
+      await storage.markSynced(youtubeId);
     });
   };
 

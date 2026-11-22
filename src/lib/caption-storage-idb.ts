@@ -56,7 +56,6 @@ class IdbCaptionStorage implements CaptionStorage {
           bookmarkCount: session.bookmarks.length,
           updatedAt: new Date().toISOString(),
           syncedAt: existing?.syncedAt,
-          syncedServerUpdatedAt: existing?.syncedServerUpdatedAt,
         });
         return videos.getAll();
       },
@@ -79,10 +78,7 @@ class IdbCaptionStorage implements CaptionStorage {
     this.notify({ type: "videoIndex", entries });
   };
 
-  markSynced: CaptionStorage["markSynced"] = async ({
-    youtubeId,
-    serverUpdatedAt,
-  }) => {
+  markSynced: CaptionStorage["markSynced"] = async (youtubeId) => {
     const entries = await transact(
       ["videos"],
       "readwrite",
@@ -92,7 +88,6 @@ class IdbCaptionStorage implements CaptionStorage {
           videos.put({
             ...existing,
             syncedAt: new Date().toISOString(),
-            syncedServerUpdatedAt: serverUpdatedAt,
           });
         }
         return videos.getAll();

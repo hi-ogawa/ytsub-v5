@@ -31,10 +31,7 @@ export const bgRpcHandlers = {
     if (!session) {
       throw new Error("No local session found");
     }
-    const result = await orpc.videos.importVideo.call(
-      sessionToExportData(session),
-    );
-    return { serverUpdatedAt: result.updatedAt };
+    await orpc.videos.importVideo.call(sessionToExportData(session));
   },
 
   // The caption panel pulls with this. docs/extension-runtime.md explains why.
@@ -43,10 +40,7 @@ export const bgRpcHandlers = {
     if (!data) {
       throw new Error("Video not found on server");
     }
-    return {
-      session: serverSessionToLocal(data),
-      serverUpdatedAt: data.video.updatedAt,
-    };
+    return serverSessionToLocal(data);
   },
 };
 
