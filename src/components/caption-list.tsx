@@ -1,4 +1,4 @@
-import { ExternalLink, Repeat } from "lucide-react";
+import { ExternalLink } from "lucide-react";
 import {
   useEffect,
   useImperativeHandle,
@@ -13,9 +13,9 @@ import {
 } from "../lib/extension-bookmarks.ts";
 import { flashHighlight } from "../lib/flash-highlight.ts";
 import { getSelectionAt } from "../utils/get-selection.ts";
+import { RepeatToggle } from "./repeat-toggle.tsx";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover.tsx";
 import { useTimedFlag } from "./use-timed-flag.ts";
-import type { YTPlayer } from "./youtube-player.tsx";
 
 export type CaptionListHandle = {
   scrollToIndex: (index: number) => void;
@@ -27,10 +27,9 @@ export function CaptionList({
   currentIndex,
   isPlaying,
   repeatIndex,
-  player,
   autoScroll,
   bookmarks,
-  onPlayRow,
+  onPlayOrToggleRow,
   onToggleRepeat,
   onGoToBookmark,
 }: {
@@ -39,10 +38,9 @@ export function CaptionList({
   currentIndex?: number;
   isPlaying: boolean;
   repeatIndex?: number;
-  player?: YTPlayer;
   autoScroll: boolean;
   bookmarks: ExtensionBookmark[];
-  onPlayRow: (index: number) => void;
+  onPlayOrToggleRow: (index: number) => void;
   onToggleRepeat: (index: number) => void;
   onGoToBookmark: (bookmarkId: string) => void;
 }) {
@@ -115,21 +113,13 @@ export function CaptionList({
   }, [currentIndex]);
 
   // A click that ends a text selection is for bookmarking, not playback.
-  // Clicking the current row toggles play, any other row seeks to it, and
-  // either click resumes auto-scroll.
+  // Any other click resumes auto-scroll.
   function onClickRow(index: number) {
-    if (!player) {
-      return;
-    }
     if (getSelectionAt(scrollRef.current)?.toString()) {
       return;
     }
     manualScroll.clear();
-    if (index === currentIndex) {
-      isPlaying ? player.pauseVideo() : player.playVideo();
-    } else {
-      onPlayRow(index);
-    }
+    onPlayOrToggleRow(index);
   }
 
   return (
@@ -220,22 +210,11 @@ function CaptionRow({
         <span>
           {formatTimestamp(row.begin)} – {formatTimestamp(row.end)}
         </span>
-        <button
-          className={[
-            "-my-0.5 ml-auto rounded border p-0.5",
-            isRepeating
-              ? "border-accent/60 bg-accent/15 text-accent"
-              : "border-transparent hover:text-foreground",
-          ].join(" ")}
-          title="Repeat"
-          aria-pressed={isRepeating}
-          onClick={(e) => {
-            e.stopPropagation();
-            onToggleRepeat();
-          }}
-        >
-          <Repeat className="size-3.5" />
-        </button>
+        <RepeatToggle
+          className="-my-0.5 ml-auto"
+          isRepeating={isRepeating}
+          onToggle={onToggleRepeat}
+        />
       </div>
       <div className="flex text-sm">
         <div className="flex-1 border-r pr-2" data-side="0">

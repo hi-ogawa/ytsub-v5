@@ -3,6 +3,7 @@ import { useImperativeHandle, useRef } from "react";
 import type { MergedCaption } from "../lib/caption-merge.ts";
 import type { ExtensionBookmark } from "../lib/extension-bookmarks.ts";
 import { flashHighlight } from "../lib/flash-highlight.ts";
+import { RepeatToggle } from "./repeat-toggle.tsx";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,14 +19,22 @@ export function ExtensionBookmarksList({
   ref,
   bookmarks,
   rows,
-  onPlayBookmark,
+  currentIndex,
+  isPlaying,
+  repeatIndex,
+  onClickBookmark,
+  onToggleRepeat,
   onDeleteBookmark,
   onGoToCaption,
 }: {
   ref: React.Ref<BookmarksListHandle>;
   bookmarks: ExtensionBookmark[];
   rows: MergedCaption[];
-  onPlayBookmark: (bookmark: ExtensionBookmark) => void;
+  currentIndex?: number;
+  isPlaying: boolean;
+  repeatIndex?: number;
+  onClickBookmark: (bookmark: ExtensionBookmark) => void;
+  onToggleRepeat: (captionIndex: number) => void;
   onDeleteBookmark: (id: string) => void;
   onGoToCaption: (captionIndex: number) => void;
 }) {
@@ -51,7 +60,11 @@ export function ExtensionBookmarksList({
           bookmark={bm}
           bookmarkNumber={bmIndex + 1}
           caption={rows[bm.captionIndex]}
-          onClick={() => onPlayBookmark(bm)}
+          isCurrent={bm.captionIndex === currentIndex}
+          isPlaying={isPlaying}
+          isRepeating={bm.captionIndex === repeatIndex}
+          onClick={() => onClickBookmark(bm)}
+          onToggleRepeat={() => onToggleRepeat(bm.captionIndex)}
           onDelete={() => onDeleteBookmark(bm.id)}
           onGoToCaption={() => onGoToCaption(bm.captionIndex)}
         />
@@ -64,21 +77,36 @@ function BookmarkCard({
   bookmark,
   bookmarkNumber,
   caption,
+  isCurrent,
+  isPlaying,
+  isRepeating,
   onClick,
+  onToggleRepeat,
   onDelete,
   onGoToCaption,
 }: {
   bookmark: ExtensionBookmark;
   bookmarkNumber: number;
   caption?: MergedCaption;
+  isCurrent: boolean;
+  isPlaying: boolean;
+  isRepeating: boolean;
   onClick: () => void;
+  onToggleRepeat: () => void;
   onDelete: () => void;
   onGoToCaption: () => void;
 }) {
   return (
     <div
       data-bookmark-id={bookmark.id}
-      className="flex cursor-pointer flex-col gap-1 border border-border p-2 hover:bg-muted"
+      aria-current={isCurrent || undefined}
+      className={[
+        "flex cursor-pointer flex-col gap-1 border p-2 hover:bg-muted",
+        isCurrent && isPlaying && "ring-2 ring-ring",
+        isCurrent ? "border-ring" : "border-border",
+      ]
+        .filter(Boolean)
+        .join(" ")}
       onClick={onClick}
     >
       <div className="flex items-start gap-1">
@@ -89,9 +117,17 @@ function BookmarkCard({
         <span className="shrink-0 text-xs text-muted-foreground">
           {formatTimestamp(bookmark.timestamp)}
         </span>
+        {caption && (
+          <RepeatToggle
+            className="-mt-0.5 shrink-0 text-muted-foreground"
+            isRepeating={isRepeating}
+            onToggle={onToggleRepeat}
+          />
+        )}
         <DropdownMenu>
           <DropdownMenuTrigger
             className="-mr-1 -mt-0.5 shrink-0 rounded p-1 text-muted-foreground hover:bg-muted"
+            title="Bookmark actions"
             onClick={(e) => e.stopPropagation()}
           >
             <EllipsisVertical className="size-3.5" />
