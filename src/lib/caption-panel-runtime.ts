@@ -83,8 +83,6 @@ export class CaptionPanelRuntime {
   readonly youtubeId: string;
   readonly trackSource?: CaptionTrackSource;
   private restorePromise?: Promise<void>;
-  // A new build aborts the running one, so a build that finishes after the
-  // tracks changed again is dropped.
   private readonly buildTask = new RestartableTask();
 
   constructor(options: {
