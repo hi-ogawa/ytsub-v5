@@ -127,6 +127,7 @@ function BookmarkCard({
         <DropdownMenu>
           <DropdownMenuTrigger
             className="-mr-1 -mt-0.5 shrink-0 rounded p-1 text-muted-foreground hover:bg-muted"
+            title="Bookmark actions"
             onClick={(e) => e.stopPropagation()}
           >
             <EllipsisVertical className="size-3.5" />

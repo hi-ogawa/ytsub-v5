@@ -354,11 +354,7 @@ test("delete bookmark from bookmarks tab", async ({ context }) => {
   // Open dropdown and delete
   ytPage.on("dialog", (d) => d.accept());
   const bookmarkCard = host.locator("[data-bookmark-id]").first();
-  await bookmarkCard
-    .getByRole("button")
-    .filter({ has: ytPage.locator("svg") })
-    .first()
-    .click();
+  await bookmarkCard.getByTitle("Bookmark actions").click();
   await host.getByRole("menuitem", { name: "Delete" }).click();
 
   // Should show empty state
@@ -398,12 +394,7 @@ test("bookmark numbers in popover and bookmarks tab", async ({ context }) => {
 
   // Deleting the first bookmark renumbers the rest
   ytPage.on("dialog", (d) => d.accept());
-  await cards
-    .nth(0)
-    .getByRole("button")
-    .filter({ has: ytPage.locator("svg") })
-    .first()
-    .click();
+  await cards.nth(0).getByTitle("Bookmark actions").click();
   await host.getByRole("menuitem", { name: "Delete" }).click();
   await expect(cards).toHaveCount(2);
   await expect(cards.nth(0)).toContainText("#1널");
