@@ -142,6 +142,34 @@ test("bookmarks tab marks every card from the current row", async ({
   await expect(cards.nth(1)).toHaveAttribute("aria-current", "true");
 });
 
+test("clicking a card from the current row toggles play, like a caption row", async ({
+  context,
+}) => {
+  const { ytPage, host } = await openPanelWithTracks(context, SEED_YOUTUBE_ID);
+  // The later selection goes first, because a bookmark splits the row's text
+  await createBookmarkAt(host, { index: 2, start: 4, end: 6 });
+  await createBookmarkAt(host, { index: 2, start: 0, end: 2 });
+  await createBookmarkAt(host, { index: 3, start: 0, end: 2 });
+  await host.getByRole("tab", { name: /Bookmarks/ }).click();
+  const video = ytPage.locator("video");
+  const isPaused = () => video.evaluate((el: HTMLVideoElement) => el.paused);
+  const cards = host.locator("[data-bookmark-id]");
+
+  await cards.nth(0).click();
+  await expect.poll(isPaused).toBe(false);
+
+  // Any card from the current row pauses and resumes
+  await cards.nth(1).click();
+  await expect.poll(isPaused).toBe(true);
+  await cards.nth(0).click();
+  await expect.poll(isPaused).toBe(false);
+
+  // A card from another row seeks and keeps playing
+  await cards.nth(2).click();
+  await expect(cards.nth(2)).toHaveAttribute("aria-current", "true");
+  expect(await isPaused()).toBe(false);
+});
+
 test("manual bookmark: cancel selection, create, highlight, and export", async ({
   context,
 }) => {

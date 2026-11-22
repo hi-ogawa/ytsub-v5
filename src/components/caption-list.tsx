@@ -15,7 +15,6 @@ import { flashHighlight } from "../lib/flash-highlight.ts";
 import { getSelectionAt } from "../utils/get-selection.ts";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover.tsx";
 import { useTimedFlag } from "./use-timed-flag.ts";
-import type { YTPlayer } from "./youtube-player.tsx";
 
 export type CaptionListHandle = {
   scrollToIndex: (index: number) => void;
@@ -27,10 +26,9 @@ export function CaptionList({
   currentIndex,
   isPlaying,
   repeatIndex,
-  player,
   autoScroll,
   bookmarks,
-  onPlayRow,
+  onPlayOrToggleRow,
   onToggleRepeat,
   onGoToBookmark,
 }: {
@@ -39,10 +37,9 @@ export function CaptionList({
   currentIndex?: number;
   isPlaying: boolean;
   repeatIndex?: number;
-  player?: YTPlayer;
   autoScroll: boolean;
   bookmarks: ExtensionBookmark[];
-  onPlayRow: (index: number) => void;
+  onPlayOrToggleRow: (index: number) => void;
   onToggleRepeat: (index: number) => void;
   onGoToBookmark: (bookmarkId: string) => void;
 }) {
@@ -115,21 +112,13 @@ export function CaptionList({
   }, [currentIndex]);
 
   // A click that ends a text selection is for bookmarking, not playback.
-  // Clicking the current row toggles play, any other row seeks to it, and
-  // either click resumes auto-scroll.
+  // Any other click resumes auto-scroll.
   function onClickRow(index: number) {
-    if (!player) {
-      return;
-    }
     if (getSelectionAt(scrollRef.current)?.toString()) {
       return;
     }
     manualScroll.clear();
-    if (index === currentIndex) {
-      isPlaying ? player.pauseVideo() : player.playVideo();
-    } else {
-      onPlayRow(index);
-    }
+    onPlayOrToggleRow(index);
   }
 
   return (

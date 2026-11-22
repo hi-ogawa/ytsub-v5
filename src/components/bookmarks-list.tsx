@@ -20,7 +20,7 @@ export function ExtensionBookmarksList({
   rows,
   currentIndex,
   isPlaying,
-  onPlayBookmark,
+  onClickBookmark,
   onDeleteBookmark,
   onGoToCaption,
 }: {
@@ -29,7 +29,7 @@ export function ExtensionBookmarksList({
   rows: MergedCaption[];
   currentIndex?: number;
   isPlaying: boolean;
-  onPlayBookmark: (bookmark: ExtensionBookmark) => void;
+  onClickBookmark: (bookmark: ExtensionBookmark) => void;
   onDeleteBookmark: (id: string) => void;
   onGoToCaption: (captionIndex: number) => void;
 }) {
@@ -57,7 +57,7 @@ export function ExtensionBookmarksList({
           caption={rows[bm.captionIndex]}
           isCurrent={bm.captionIndex === currentIndex}
           isPlaying={isPlaying}
-          onClick={() => onPlayBookmark(bm)}
+          onClick={() => onClickBookmark(bm)}
           onDelete={() => onDeleteBookmark(bm.id)}
           onGoToCaption={() => onGoToCaption(bm.captionIndex)}
         />
