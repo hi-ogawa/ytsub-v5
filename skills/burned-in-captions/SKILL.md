@@ -31,7 +31,7 @@ The commands below shorten this to `uv run scripts/...`. Outputs go to the folde
 }
 ```
 
-- `kind` is `speech` for words someone says, and `other` for anything else the editor put on screen, whatever its frame. Fix & Align ASR uses a `speech` caption's text in place of the ASR's line at the same time, and makes an `other` caption a row of its own. So tag a caption `speech` when someone in the video says its words aloud at that time, and use the ASR at that time to check. Text filmed in the scene, such as signs, isn't a caption, so leave it out.
+- `kind` is `speech` for words someone says, and `other` for anything else the editor put on screen, whatever its frame. Fix & Align ASR uses a `speech` caption's text in place of the ASR's line at the same time, and turns `other` captions into rows as [Scenario G](../zamak/references/generate-import-json.md#use-burned-in-captions-scenario-g) describes. So tag a caption `speech` when someone in the video says its words aloud at that time, and use the ASR at that time to check. That includes a letter someone reads aloud, and a small popup beside a second speaker who talks over the first. Text filmed in the scene, such as signs, isn't a caption, so leave it out.
 - `position` is the caption's box `[x, y, w, h]` in the 1280×720 frame.
 - `text` is exactly what the picture shows, including nonstandard spelling, censored words such as ㅅㄲ, and spelled-out laughter.
 - `omitted` is a short reason, set on a caption whose text a reader declined to reproduce, such as copyrighted text. Its `text` is empty, and it keeps its time and position, so a user can fill it in by hand. Text that is only hard to read is not omitted, so mark it with `[?]` or read it again. Never put a placeholder label in `text` instead, because Fix & Align ASR would use the label as the caption's text.
@@ -131,19 +131,19 @@ This tiles the frames into sheets, each tile labelled with its time, and prints 
 
 Choose the tile size with `--scale`, so that this video's captions read comfortably, judging from the check sheet, which uses the default of 0.375, or 480×270 tiles. A sheet costs about 3,400 image tokens whatever is on it, so smaller tiles fit more frames per sheet.
 
-If the captions keep to a band and look small in full-frame tiles, also give readers a padded crop of that band with `--crop`, next to the full frames. The band is usually the area found for the regions in step 2. Text outside the band still needs the full frames. Crop and full-frame sheets hold different numbers of tiles, so a reader pairs them by the time on each tile, not sheet by sheet. For example, on one travel channel, 480 px full-frame tiles were borderline for the dialogue line, and a crop of the caption band at 0.75 scale read cleanly.
+If the captions keep to a band and look small in full-frame tiles, also give readers a padded crop of that band with `--crop`, next to the full frames. The band is usually the area found for the regions in step 2. Text outside the band still needs the full frames, such as a short popup beside a second speaker. Crop and full-frame sheets hold different numbers of tiles, so a reader pairs them by the time on each tile, not sheet by sheet. For example, on one travel channel, 480 px full-frame tiles were borderline for the dialogue line, and a crop of the caption band at 0.75 scale read cleanly.
 
 Give the sheets to reader subagents, with enough sheets per reader that its fixed overhead is small next to its reading. Start each reader's batch with the last tile of the batch before it, so a reader can link a caption across the boundary. Use the strongest model available: a cheaper one added a fluent ending that wasn't on screen. Give each reader the ASR for its time range if you have it, with this instruction:
 
 > Transcribe every caption in each frame exactly as shown, including nonstandard spelling, censored words, spelled-out laughter, and emoticons such as ㅠㅠ. The ASR is there to help you understand what is said. Where a caption differs from it, write what is on screen, never the ASR's words or standard Korean. Mark unclear or partial text with `[?]`.
 >
-> Tag each caption `speech` if it is words someone says, and `other` for anything else the editor put on screen. Skip text filmed in the scene, such as signs.
+> Tag each caption `speech` if it is words someone says, and `other` for anything else the editor put on screen. Words someone says can show outside the main dialogue line too, such as a small caption beside a second speaker who talks over the first, so tag those `speech` as well. Skip text filmed in the scene, such as signs, and list what you skipped in the tile's `skipped`, with the reason.
 >
-> Add a `note` to a caption, in your own words, whenever something about it matters for putting the track together: the caption isn't fully shown in this frame, it is the same caption as in another tile (give that tile's time), its text is too small or unclear to read at this size, or it comes from footage other than this video's own editing. Most captions need no note.
+> Add a `note` to a caption, in your own words, whenever something about it could change how it goes into the track, including how it relates to other captions or to the speech. For example, the caption isn't fully shown in this frame, it is the same caption as in another tile (give that tile's time), its text is too small or unclear to read at this size, it comes from footage other than this video's own editing, the dialogue line is reading its items aloud one by one, or it is a dense graphic such as a card of reviews and ratings. Most captions need no note.
 >
 > If you won't reproduce a caption's text, such as copyrighted text, return the caption with empty text and a short reason in `omitted`, rather than a placeholder in `text`.
 >
-> Return a JSON list with one entry per tile, including tiles with no caption: `{"t": <time>, "captions": [{"text": ..., "box": [x, y, w, h], "kind": "speech" | "other", "note"?: ..., "omitted"?: ...}]}`, with boxes in the pixels of the full-frame tile, or of the crop tile where a time has no full-frame tile.
+> Return a JSON list with one entry per tile, including tiles with no caption: `{"t": <time>, "captions": [{"text": ..., "box": [x, y, w, h], "kind": "speech" | "other", "note"?: ..., "omitted"?: ...}], "skipped"?: [{"text": ..., "reason": ...}]}`, with boxes in the pixels of the full-frame tile, or of the crop tile where a time has no full-frame tile.
 
 Without subagents, read a few sheets per turn yourself.
 
@@ -156,11 +156,13 @@ Turn the reads into captions:
 - Identical text read in neighboring runs becomes one caption.
 - A caption with `omitted` keeps its run's time and position like any other, and neighboring ones with the same reason in the same place become one.
 
-Reads with a `note` or a `[?]` need judgment. Judge each one together with the reads of the runs on either side: merge it into a neighbor, keep it as its own caption, drop it, or read it again from a later step or a closer crop, with a one-line reason.
+Reads with a `note` or a `[?]` need judgment. Judge each one together with the reads of the runs on either side: merge it into a neighbor, keep it as its own caption, drop it, or read it again from a later step or a closer crop, with a one-line reason. Look at the reads in full and in time order, so a caption that stays on screen sits next to the captions that change under it.
 
 - A read of a caption that isn't fully shown merges into the read of the same caption once it settles.
 - Text too small or unclear to read gets read again from a closer crop.
 - Text from other footage stays only if it belongs in this video's track.
+- A graphic that stays on screen while the dialogue line reads its items aloud one by one keeps its own `other` caption, because the track records the picture. The speech captions carry its content, so Fix & Align ASR leaves it out of the rows.
+- A dense graphic, such as a card with three reviews, star ratings, and a summary, isn't worth a caption for each element. Drop it, and list it in the report. A letter or memo read aloud isn't dense in this sense, because its text is the speech.
 - The note is the reader's own description of what it saw, so let it decide over how similar two texts look, because two different lines can differ by a single word. Fall back to text similarity only where neither a note nor identical text links two reads.
 
 A merge keeps the fuller read's text and spans both runs, so a fade-in read merged into its steady caption gets the right begin. Timing always comes from the runs, never from the judgment. Give the reads to do again to a new reader as described below, and treat the new reads the same way.
@@ -171,6 +173,7 @@ Ask for more frames where something is off:
 - the same text on both sides of a change, which means the read came too late
 - a run with a change in the features but no new text
 - an ASR line, or a cue of another subtitle track such as `en`, that no caption matches in time, on a show whose captions follow the speech
+- a speech caption whose span holds clearly more ASR speech than its text. The next line most likely replaced it in the same spot, which the features can miss under a still camera, so the read saw only the later line. Compare each speech caption with the ASR words under its span in a script, and read the flagged spans again every other step. On one variety show this found 21 lost lines, most of them about a second long. It can't find a line that the ASR also missed, such as a short popup over someone else's speech.
 - readers who disagree on a caption's text
 
 Stop when a round of corrections finds little that's new, and list the doubts that remain in your report instead of chasing each one. The report also lists each omitted range, each judgment, and each correction, with its time and its reason, so that a later [review](references/review.md) can find them.

@@ -22,11 +22,11 @@ export type VideoIndexEntry = {
   title: string;
   channelName: string;
   bookmarkCount: number;
-  updatedAt: string;
-  // Local clock, compared with updatedAt
-  syncedAt?: string;
-  // Server clock, the server's updatedAt at the last push or pull
-  syncedServerUpdatedAt?: string;
+  // When the content was last edited, on whichever device or server made the
+  // edit. Push and pull copy it unchanged.
+  editedAt: string;
+  // editedAt at the last push or pull
+  syncedEditedAt?: string;
 };
 
 export type StorageNotice = { type: "videoIndex"; entries: VideoIndexEntry[] };
@@ -37,15 +37,13 @@ export interface CaptionStorage {
   getSession(youtubeId: string): Promise<PersistedCaptionSession | undefined>;
   // Also updates the video's index entry when the session has bookmarks or is
   // already indexed. `forceIndex` indexes it regardless, as after a pull.
+  // `editedAt` keeps the pulled content's edit time instead of the current time.
   saveSession(
     session: PersistedCaptionSession,
-    options?: { forceIndex?: boolean },
+    options?: { forceIndex?: boolean; editedAt?: string },
   ): Promise<void>;
   deleteVideo(youtubeId: string): Promise<void>;
-  markSynced(options: {
-    youtubeId: string;
-    serverUpdatedAt: string;
-  }): Promise<void>;
+  markSynced(options: { youtubeId: string; editedAt: string }): Promise<void>;
   getVideoIndexEntry(youtubeId: string): Promise<VideoIndexEntry | undefined>;
   listVideoIndex(): Promise<VideoIndexEntry[]>;
   subscribe(listener: StorageListener): () => void;

@@ -1,9 +1,9 @@
 // Background service worker. docs/extension-runtime.md explains its role.
 
 import { sessionToExportData } from "../lib/caption-session.ts";
+import { serverSessionToLocal } from "../lib/caption-session.ts";
 import { idbCaptionStorage } from "../lib/caption-storage-idb.ts";
 import { orpc, setRpcConfig } from "../lib/rpc-client.ts";
-import { serverSessionToLocal } from "../lib/sync.ts";
 import { chromeStorage } from "./lib/chrome-storage.ts";
 import { registerRpcHandlers } from "./lib/extension-rpc.ts";
 import { getServerUrl } from "./lib/server-url.ts";
@@ -14,10 +14,10 @@ export const bgRpcHandlers = {
     if (!authenticated) {
       return { authenticated: false as const };
     }
-    const data = await orpc.videos.getVideoUpdatedAt.call({ youtubeId });
+    const data = await orpc.videos.getVideoEditedAt.call({ youtubeId });
     return {
       authenticated: true as const,
-      serverUpdatedAt: data?.updatedAt,
+      serverEditedAt: data?.editedAt,
     };
   },
 
@@ -31,10 +31,14 @@ export const bgRpcHandlers = {
     if (!session) {
       throw new Error("No local session found");
     }
+    const entry = await idbCaptionStorage.getVideoIndexEntry(youtubeId);
+    if (!entry) {
+      throw new Error("No local index entry found");
+    }
     const result = await orpc.videos.importVideo.call(
-      sessionToExportData(session),
+      sessionToExportData(session, { editedAt: entry.editedAt }),
     );
-    return { serverUpdatedAt: result.updatedAt };
+    return { editedAt: result.editedAt };
   },
 
   // The caption panel pulls with this. docs/extension-runtime.md explains why.
@@ -45,7 +49,7 @@ export const bgRpcHandlers = {
     }
     return {
       session: serverSessionToLocal(data),
-      serverUpdatedAt: data.video.updatedAt,
+      editedAt: data.video.editedAt,
     };
   },
 };

@@ -2,7 +2,6 @@ import { exec, spawn } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import { once } from "node:events";
 import { globSync, readdirSync, readFileSync, statSync } from "node:fs";
-import { setTimeout } from "node:timers/promises";
 import { promisify } from "node:util";
 import {
   type APIRequestContext,
@@ -54,20 +53,23 @@ export async function createUser(
   return username;
 }
 
-/** Push a seed video from another device, so the server copy is newer than the last sync */
+/**
+ * Push a seed video from another device. The server takes `editedAt` as the
+ * time its content was edited, which defaults to now.
+ */
 export async function pushFromAnotherDevice(options: {
   username: string;
   youtubeId: string;
+  editedAt?: string;
 }) {
-  // The server stores updated_at in whole seconds, so a push within the same
-  // second as the last sync would look unchanged.
-  await setTimeout(1000);
+  const data = readSeedImport(options.youtubeId);
+  data.video.editedAt = options.editedAt;
   await withApi(async (api) => {
     await callApi(api, "auth/login", {
       username: options.username,
       password: TEST_PASSWORD,
     });
-    await callApi(api, "videos/importVideo", readSeedImport(options.youtubeId));
+    await callApi(api, "videos/importVideo", data);
   });
 }
 
@@ -93,7 +95,9 @@ async function callApi(api: APIRequestContext, path: string, input: unknown) {
 
 const SEED_YOUTUBE_IDS = readdirSync("scripts/db-seed-json");
 
-function readSeedImport(youtubeId: string): unknown {
+function readSeedImport(youtubeId: string): {
+  video: { editedAt?: string };
+} {
   return JSON.parse(
     readFileSync(`scripts/db-seed-json/${youtubeId}/import.json`, "utf-8"),
   );
