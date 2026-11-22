@@ -222,8 +222,10 @@ function CaptionRow({
         </span>
         <button
           className={[
-            "-my-0.5 ml-auto p-0.5",
-            isLooping ? "scale-110 text-accent" : "hover:text-foreground",
+            "-my-0.5 ml-auto rounded border p-0.5",
+            isLooping
+              ? "border-accent/60 bg-accent/15 text-accent"
+              : "border-transparent hover:text-foreground",
           ].join(" ")}
           title="Repeat"
           aria-pressed={isLooping}
