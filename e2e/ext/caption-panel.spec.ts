@@ -30,6 +30,27 @@ test("FAB toggles the panel and keeps its state per video across reloads", async
   await expect(host.getByTitle("Show captions")).toBeVisible();
 });
 
+test("clicking a row seeks to its start and plays, and clicking the current row pauses", async ({
+  context,
+}) => {
+  const { ytPage, host } = await openPanelWithTracks(context, SEED_VIDEO_ID);
+  const video = ytPage.locator("video");
+  const isPaused = () => video.evaluate((el: HTMLVideoElement) => el.paused);
+  const getCurrentTime = () =>
+    video.evaluate((el: HTMLVideoElement) => el.currentTime);
+
+  const row = host.locator("[data-index='2']");
+  await row.click();
+  await expect.poll(isPaused).toBe(false);
+  expect(await getCurrentTime()).toBe(35.597);
+
+  await expect(row).toHaveClass(/ring-2/);
+  await row.click();
+  await expect.poll(isPaused).toBe(true);
+  await row.click();
+  await expect.poll(isPaused).toBe(false);
+});
+
 test("track selection: default empty, select tracks, switch language", async ({
   context,
 }) => {
