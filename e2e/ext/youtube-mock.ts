@@ -48,7 +48,7 @@ const WATCH_HTML = `<!doctype html>
       main { padding: 24px; width: 60%; }
       video { display: block; width: 100%; aspect-ratio: 16 / 9; background: #ddd; }
       .line { height: 16px; margin-top: 12px; background: #eee; }
-      #playback { display: block; margin-top: 8px; font-family: monospace; color: #444; }
+      #playback { display: block; margin-top: 12px; font: bold 28px monospace; color: #222; }
     </style>
   </head>
   <body>
