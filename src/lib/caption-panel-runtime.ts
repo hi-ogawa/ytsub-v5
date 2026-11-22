@@ -372,6 +372,15 @@ export class CaptionPanelRuntime {
     this.playbackStore.update({ repeatIndex: index, currentIndex: index });
   }
 
+  /** Pause if the video plays, and play otherwise. */
+  togglePlay(): void {
+    if (this.player?.getPlayerState() === 1) {
+      this.player.pauseVideo();
+    } else {
+      this.player?.playVideo();
+    }
+  }
+
   /** Seek to the bookmark and play, ending any repeat. */
   playBookmark(bookmark: ExtensionBookmark): void {
     this.seekToBookmark(bookmark);

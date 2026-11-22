@@ -66,12 +66,10 @@ export function CaptionPanelContent({
   // Like a caption row, a card from the current row toggles play, and any
   // other card plays from its bookmark.
   function onClickBookmark(bookmark: ExtensionBookmark) {
-    if (bookmark.captionIndex !== currentIndex) {
-      runtime.playBookmark(bookmark);
-    } else if (isPlaying) {
-      player?.pauseVideo();
+    if (bookmark.captionIndex === currentIndex) {
+      runtime.togglePlay();
     } else {
-      player?.playVideo();
+      runtime.playBookmark(bookmark);
     }
   }
 
