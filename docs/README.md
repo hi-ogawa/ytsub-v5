@@ -3,7 +3,7 @@
 ## Overview
 
 - [Product overview](product.md): the problem Zamak solves, the four study steps, and the three setups: extension only, with an account, and with the web app.
-- [Architecture overview](architecture.md): the extension, server, and web app, why only the extension can fetch subtitles, and the shared UI and its `/dev` mirrors.
+- [Architecture overview](architecture.md): the extension, server, and web app, why only the extension can fetch subtitles, and the UI they share.
 - [Extension runtime](extension-runtime.md): the content script, relay, background, and bookmarks page, the channels between them, and why the background goes through a YouTube tab.
 - [Data and sync](data-and-sync.md): caption sessions and the video index in each origin's storage, how sync status is decided, what push and pull replace, and where copies drift apart.
 
@@ -13,6 +13,7 @@
 
 ## Guides
 
+- [Local development](development.md): set up the local server and database, and work on the web app and the extension.
 - [E2E tests](e2e.md): how to run, write, and trace the web app, extension, and YouTube e2e tests.
 - [Deployment](deployment.md): migrations, deploys, and secrets on Cloudflare Workers and D1.
 - [Chrome Web Store submissions](chrome-store-submissions.md): the listing details and the steps for submitting a new version.

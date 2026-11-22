@@ -1,13 +1,13 @@
 import { expect, test } from "@playwright/test";
-import { openPanelWithTracks } from "./helper.ts";
+import { openPulledVideo, SEED_VIDEO_ID, setupDb } from "./helper.ts";
 
 test.use({ hasTouch: true });
 
 test("dropdown opens on tap but not on a scroll that starts on its trigger", async ({
   page,
 }) => {
-  await page.goto("/dev/videos/7GU_VQfgMT0");
-  await openPanelWithTracks(page);
+  await setupDb({ seed: true });
+  await openPulledVideo(page, SEED_VIDEO_ID);
 
   const trigger = page.getByTitle("Settings");
   const menu = page.getByRole("menu");

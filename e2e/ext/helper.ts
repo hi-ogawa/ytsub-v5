@@ -4,6 +4,7 @@ import {
   chromium,
   expect,
   type BrowserContext,
+  type Locator,
   type Page,
 } from "@playwright/test";
 import { mockYouTube } from "./youtube-mock";
@@ -122,17 +123,82 @@ export async function openYouTubeTab(
   );
 }
 
-/** Open the caption panel and select ko/en tracks */
-export async function openPanelWithTracks(ytPage: Page) {
-  await test.step(
+/** Open a mocked YouTube watch page with the caption panel showing ko/en tracks */
+export async function openPanelWithTracks(
+  context: BrowserContext,
+  videoId: string,
+) {
+  return await test.step(
     "Open caption panel with tracks",
     async () => {
+      const ytPage = await openYouTubeTab(context, videoId);
       const host = ytPage.locator("#zamak-host");
       await host.getByTestId("caption-fab").click();
       const selects = host.getByTestId("track-picker").locator("select");
       await selects.nth(0).selectOption(".ko");
       await selects.nth(1).selectOption(".en");
       await expect(host.locator("[data-index='0']")).toBeVisible();
+      return { ytPage, host };
+    },
+    { box: true },
+  );
+}
+
+interface CaptionSelection {
+  index: number;
+  start: number;
+  end: number;
+}
+
+/** Select text in a caption row inside the content script's shadow root */
+export async function selectTextInCaption(
+  host: Locator,
+  { index, start, end }: CaptionSelection,
+) {
+  await test.step(
+    "Select caption text",
+    async () => {
+      await host
+        .locator(`[data-index='${index}'] [data-side='0'] [data-offset]`)
+        .first()
+        .evaluate(
+          (el, { start, end }) => {
+            const range = document.createRange();
+            range.setStart(el.firstChild!, start);
+            range.setEnd(el.firstChild!, end);
+            const selection = document.getSelection()!;
+            selection.removeAllRanges();
+            selection.addRange(range);
+          },
+          { start, end },
+        );
+    },
+    { box: true },
+  );
+}
+
+/** Select text in a caption row and create a bookmark */
+export async function createBookmarkAt(
+  host: Locator,
+  selection: CaptionSelection,
+) {
+  await test.step(
+    "Create bookmark",
+    async () => {
+      await selectTextInCaption(host, selection);
+      await host.getByRole("button", { name: "Create bookmark" }).click();
+    },
+    { box: true },
+  );
+}
+
+/** Open the panel's settings menu and return its sync status item */
+export async function openSyncMenu(host: Locator) {
+  return await test.step(
+    "Open sync menu",
+    async () => {
+      await host.getByTitle("Settings").click();
+      return host.getByTestId("sync-status");
     },
     { box: true },
   );
