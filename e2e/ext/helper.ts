@@ -7,6 +7,7 @@ import {
   type Locator,
   type Page,
 } from "@playwright/test";
+import { TEST_PASSWORD } from "../helper";
 import { mockYouTube } from "./youtube-mock";
 
 const SERVER_URL = `http://localhost:${process.env.E2E_PORT}`;
@@ -204,15 +205,15 @@ export async function openSyncMenu(host: Locator) {
   );
 }
 
-/** Log in via the extension bookmarks page UI */
-export async function login(page: Page, options?: { username?: string }) {
+/** Log in via the extension bookmarks page UI, as a user from createUser() */
+export async function login(page: Page, options: { username: string }) {
   await test.step(
     "Log in",
     async () => {
-      const username = options?.username ?? "dev";
+      const { username } = options;
       await page.getByTestId("sign-in").click();
       await page.getByPlaceholder("Username").fill(username);
-      await page.getByPlaceholder("Password").fill("devpassword");
+      await page.getByPlaceholder("Password").fill(TEST_PASSWORD);
       await page.getByTestId("login-submit").click();
       await expect(page.getByTestId("auth-username")).toHaveText(username);
     },

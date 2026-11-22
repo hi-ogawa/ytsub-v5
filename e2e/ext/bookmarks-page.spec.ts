@@ -1,9 +1,10 @@
 import { expect } from "@playwright/test";
 import {
-  bumpServerUpdatedAt,
   createCheckpoint,
   SEED_VIDEO_ID,
-  setupDb,
+  createUser,
+  pushFromAnotherDevice,
+  TEST_PASSWORD,
 } from "../helper";
 import {
   createBookmarkAt,
@@ -36,7 +37,7 @@ test("bookmark captions, then push them from the bookmarks page", async ({
   page,
   extensionId,
 }) => {
-  await setupDb({ seed: true });
+  const username = await createUser();
 
   // Bookmark the first Korean caption in the content script panel
   const { host } = await openPanelWithTracks(context, SEED_VIDEO_ID);
@@ -62,7 +63,7 @@ test("bookmark captions, then push them from the bookmarks page", async ({
   await expect(card.getByTestId("video-card-badge")).toHaveText("2 bookmarks");
 
   // Push the session the content script saved
-  await login(page, { username: "dev-empty" });
+  await login(page, { username });
   const badge = card.getByTestId("video-sync-badge");
   await expect(badge).toHaveAttribute("data-sync-status", "push");
   const checkpoint = createCheckpoint();
@@ -89,9 +90,9 @@ test("detects pull after push and a remote update", async ({
   page,
   extensionId,
 }) => {
-  await setupDb({ seed: true });
+  const username = await createUser();
   await gotoBookmarks(page, extensionId);
-  await login(page, { username: "dev-empty" });
+  await login(page, { username });
 
   const { host } = await openPanelWithTracks(context, SEED_VIDEO_ID);
   await createBookmarkAt(host, {
@@ -108,8 +109,7 @@ test("detects pull after push and a remote update", async ({
   await badge.click();
   await expect(badge).toHaveAttribute("data-sync-status", "synced");
 
-  // Simulate a push from another device
-  await bumpServerUpdatedAt(SEED_VIDEO_ID);
+  await pushFromAnotherDevice({ username, youtubeId: SEED_VIDEO_ID });
   await page.reload();
   await expect(badge).toHaveAttribute("data-sync-status", "pull");
 });
@@ -123,9 +123,9 @@ for (const { choice, button } of [
     page,
     extensionId,
   }) => {
-    await setupDb({ seed: true });
+    const username = await createUser({ seed: true });
     await gotoBookmarks(page, extensionId);
-    await login(page);
+    await login(page, { username });
 
     // A local bookmark on a video the server already has, never synced
     const { host } = await openPanelWithTracks(context, SEED_VIDEO_ID);
@@ -162,7 +162,7 @@ test("shows local entries with sync badges after login", async ({
   page,
   extensionId,
 }) => {
-  await setupDb({ seed: true });
+  const username = await createUser({ seed: true });
   await gotoBookmarks(page, extensionId);
   await seedVideoIndex(page, fixtureEntries);
 
@@ -170,7 +170,7 @@ test("shows local entries with sync badges after login", async ({
   await expect(page.getByText("Test Video One")).toBeVisible();
 
   // Login
-  await login(page);
+  await login(page, { username });
 
   // Entries still visible with sync badges (2 local + 3 server-seeded = 5)
   await expect(page.getByText("Test Video One")).toBeVisible();
@@ -180,7 +180,7 @@ test("shows local entries with sync badges after login", async ({
 });
 
 test("load, login, logout", async ({ page, extensionId }) => {
-  await setupDb({ seed: true });
+  const username = await createUser();
   await gotoBookmarks(page, extensionId);
 
   // Page loads with empty state
@@ -196,11 +196,11 @@ test("load, login, logout", async ({ page, extensionId }) => {
   await expect(page.getByTestId("login-error")).toBeVisible();
 
   // Valid login closes dialog and shows username
-  await page.getByPlaceholder("Username").fill("dev");
-  await page.getByPlaceholder("Password").fill("devpassword");
+  await page.getByPlaceholder("Username").fill(username);
+  await page.getByPlaceholder("Password").fill(TEST_PASSWORD);
   await page.getByTestId("login-submit").click();
   await expect(page.getByTestId("login-dialog")).not.toBeVisible();
-  await expect(page.getByTestId("auth-username")).toHaveText("dev");
+  await expect(page.getByTestId("auth-username")).toHaveText(username);
 
   // Logout via menu
   await page.getByTestId("header-menu").click();
@@ -233,7 +233,7 @@ test("sync badges show correct states per entry", async ({
   page,
   extensionId,
 }) => {
-  await setupDb({ seed: true });
+  const username = await createUser({ seed: true });
 
   // Seed local entries: one matching server seed video (conflict/push),
   // one local-only (push)
@@ -255,7 +255,7 @@ test("sync badges show correct states per entry", async ({
   ];
   await gotoBookmarks(page, extensionId);
   await seedVideoIndex(page, localEntries);
-  await login(page);
+  await login(page, { username });
 
   // Seed video exists on both server and local → conflict
   const seedBadge = page
@@ -271,9 +271,9 @@ test("sync badges show correct states per entry", async ({
 });
 
 test("server-only entries show pull badge", async ({ page, extensionId }) => {
-  await setupDb({ seed: true });
+  const username = await createUser({ seed: true });
   await gotoBookmarks(page, extensionId);
-  await login(page);
+  await login(page, { username });
 
   // No local entries — server seed video should appear with pull badge
   const badge = page
@@ -286,7 +286,7 @@ test("push shows an error toast when the local session is missing", async ({
   page,
   extensionId,
 }) => {
-  await setupDb({ seed: true });
+  const username = await createUser({ seed: true });
 
   // Seed a local-only entry so push badge appears
   const localEntries = [
@@ -300,7 +300,7 @@ test("push shows an error toast when the local session is missing", async ({
   ];
   await gotoBookmarks(page, extensionId);
   await seedVideoIndex(page, localEntries);
-  await login(page);
+  await login(page, { username });
 
   // The index has an entry, but no session to push
   const badge = page
@@ -315,9 +315,9 @@ test("push shows an error toast when the local session is missing", async ({
 });
 
 test("pull works without a YouTube tab", async ({ page, extensionId }) => {
-  await setupDb({ seed: true });
+  const username = await createUser({ seed: true });
   await gotoBookmarks(page, extensionId);
-  await login(page);
+  await login(page, { username });
 
   const card = page.getByTestId(`video-card-${SEED_VIDEO_ID}`);
   const badge = card.getByTestId("video-sync-badge");

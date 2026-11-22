@@ -1,16 +1,16 @@
 # E2E Tests
 
-The web app tests in `e2e/` and the extension tests in `e2e/ext/` run in `playwright.config.ts`, split into two Playwright projects by whether they use the database: `db` and `no-db`. The subtitle extraction tests run against real YouTube pages with their own config, `playwright.youtube.config.ts`.
+The web app and extension e2e tests are two Playwright projects, `app` and `ext`, in `playwright.config.ts`. The subtitle extraction tests run against real YouTube pages with their own config, `playwright.youtube.config.ts`.
 
 ```sh
 pnpm test-e2e                          # web app and extension
 pnpm test-e2e e2e/sync.spec.ts         # one file
-pnpm test-e2e --project=no-db          # one project
+pnpm test-e2e --project=app            # one project
 E2E_SERVER=dev pnpm test-e2e           # against the dev server
 pnpm test-youtube                      # real YouTube pages
 ```
 
-`pnpm test-e2e` builds the extension into `dist/extension/`, then runs Playwright. Playwright builds the web app and serves it with `vite preview`, so the tests run the worker that ships. Set `E2E_SERVER=dev` to serve the web app with `pnpm dev` instead, which skips the web app build. Both servers persist local state to `.wrangler/state/e2e`, separate from the dev database. The `db` project holds the web app specs and the extension specs listed in `dbExtSpecs`, and runs one test at a time, because its tests share that state and `setupDb()` clears it. The `no-db` project holds the other extension specs and runs their tests in parallel alongside the `db` project, which shortens the run. `setupDb()` throws outside the `db` project, so an extension spec that needs the database fails until it is added to `dbExtSpecs` in `playwright.config.ts`.
+`pnpm test-e2e` builds the extension into `dist/extension/`, then runs Playwright. Playwright builds the web app and serves it with `vite preview`, so the tests run the worker that ships. Set `E2E_SERVER=dev` to serve the web app with `pnpm dev` instead, which skips the web app build. Both servers persist local state to `.wrangler/state/e2e`, separate from the dev database. Every test runs in parallel, so a test that needs server data creates a user of its own, and tests never see each other's data.
 
 ## Choose Between the Extension and the Web App
 
@@ -18,15 +18,15 @@ pnpm test-youtube                      # real YouTube pages
 
 Test the caption panel and the bookmarks page in the extension tests, `e2e/ext`, because desktop users run them there and bookmarks are created there. These tests need no login or server state unless they sync.
 
-Test the web app for what only it does: login and registration, the server APIs, importing, and the viewer for pulled videos that phones use. These tests need a user in the database. Call `setupDb({ seed: true })` and then `login(page)`, because login needs the seed user. `setupDb()` writes to SQLite directly and takes about 0.15s. The web viewer shows only pulled videos, so `openPulledVideo(page, youtubeId)` logs in, pulls a seed video, and opens it.
+Test the web app for what only it does: login and registration, the server APIs, importing, and the viewer for pulled videos that phones use. These tests need a user in the database. `createUser()` creates a user with a unique name and returns the name, which `login(page, { username })` takes. With `createUser({ seed: true })`, the user owns the seed videos. The web viewer shows only pulled videos, so `openPulledVideo(page, { username, youtubeId })` logs in, pulls a seed video, and opens it. A test that registers a user through the UI or the API takes its name from `createUsername()`, so it never collides with another test. Create other server data through the server's API too, as `createUser()` does, because a direct SQLite write can make a concurrent server write fail with SQLITE_BUSY.
 
-The seed videos are the `import.json` files in `scripts/db-seed-json/<id>/`. To add one, build its `import.json` as the Zamak skill's [Generate import.json](../skills/zamak/references/generate-import-json.md) describes, put it there, and run `pnpm db:seed-gen`.
+The seed videos are the `import.json` files in `scripts/db-seed-json/<id>/`. To add one, build its `import.json` as the Zamak skill's [Generate import.json](../skills/zamak/references/generate-import-json.md) describes, and put it there. `createUser({ seed: true })` reads it from there, and `pnpm db:seed-gen` adds it to the dev database seed.
 
 To check a UI change while working on it, run one spec on the surface that shows the change and open its trace, such as `pnpm test-e2e e2e/ext/caption-panel.spec.ts -g "<pattern>"` for the extension or `pnpm test-e2e e2e/video-viewer.spec.ts -g "<pattern>"` for the web app.
 
 ## Write Tests
 
-- Keep the structure flat. Don't nest `test.describe`, and call `setupDb()` and `login()` inline in each test.
+- Keep the structure flat. Don't nest `test.describe`, and call `createUser()` and `login()` inline in each test.
 - Prefer one rich flow test over several thin tests with one assertion each. Each test pays about 500ms of navigation, so combining related assertions saves real time.
 - Wrap the body of a helper that performs several page actions in `test.step(name, fn, { box: true })`. Traces and the HTML report then show the helper as one named step, and a failure points at the spec line that called it.
 - Scope selectors to a `data-testid` or a panel container, because text can repeat across the page. For example, the FAB text can match a tab button name. Prefer `getByTestId`, then `getByRole` scoped to a container, then page-wide `getByText`.

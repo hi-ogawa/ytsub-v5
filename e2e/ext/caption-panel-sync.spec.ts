@@ -1,5 +1,5 @@
 import { expect } from "@playwright/test";
-import { createCheckpoint, SEED_VIDEO_ID, setupDb } from "../helper";
+import { createCheckpoint, SEED_VIDEO_ID, createUser } from "../helper";
 import {
   createBookmarkAt,
   gotoBookmarks,
@@ -15,9 +15,9 @@ test("push from the sync menu, then open the bookmarks page", async ({
   page,
   extensionId,
 }) => {
-  await setupDb({ seed: true });
+  const username = await createUser();
   await gotoBookmarks(page, extensionId);
-  await login(page, { username: "dev-empty" });
+  await login(page, { username });
 
   const { ytPage, host } = await openPanelWithTracks(context, SEED_VIDEO_ID);
 
@@ -50,9 +50,9 @@ test("pull from the sync menu replaces captions and bookmarks in place", async (
   page,
   extensionId,
 }) => {
-  await setupDb({ seed: true });
+  const username = await createUser({ seed: true });
   await gotoBookmarks(page, extensionId);
-  await login(page);
+  await login(page, { username });
 
   const { ytPage, host } = await openPanelWithTracks(context, SEED_VIDEO_ID);
   await expect(
@@ -77,9 +77,9 @@ test("shows conflict when local bookmarks and server data both exist", async ({
   page,
   extensionId,
 }) => {
-  await setupDb({ seed: true });
+  const username = await createUser({ seed: true });
   await gotoBookmarks(page, extensionId);
-  await login(page);
+  await login(page, { username });
 
   const { host } = await openPanelWithTracks(context, SEED_VIDEO_ID);
   await createBookmarkAt(host, { index: 0, start: 0, end: 3 });
@@ -93,9 +93,9 @@ test("a failed push shows its error in the sync menu", async ({
   page,
   extensionId,
 }) => {
-  await setupDb({ seed: true });
+  const username = await createUser();
   await gotoBookmarks(page, extensionId);
-  await login(page, { username: "dev-empty" });
+  await login(page, { username });
 
   const { host } = await openPanelWithTracks(context, SEED_VIDEO_ID);
   await createBookmarkAt(host, { index: 0, start: 0, end: 3 });

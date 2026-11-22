@@ -1,9 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { setupDb } from "./helper.ts";
-
-test.beforeAll(async () => {
-  await setupDb({ seed: true });
-});
+import { createUser, createUsername, TEST_PASSWORD } from "./helper.ts";
 
 test("redirects to /login when not authenticated", async ({ page }) => {
   await page.goto("/");
@@ -26,8 +22,9 @@ test("register with short password shows validation error", async ({
 });
 
 test("register then login as new user", async ({ page }) => {
+  const username = createUsername();
   await page.goto("/register");
-  await page.getByPlaceholder("Username").fill("newuser");
+  await page.getByPlaceholder("Username").fill(username);
   await page.getByPlaceholder("Password").fill("newpassword");
   await page.getByRole("button", { name: "Sign up" }).click();
   await expect(page).toHaveURL("/");
@@ -40,24 +37,25 @@ test("register then login as new user", async ({ page }) => {
   await expect(page).toHaveURL("/login");
 
   // Login again with same credentials
-  await page.getByPlaceholder("Username").fill("newuser");
+  await page.getByPlaceholder("Username").fill(username);
   await page.getByPlaceholder("Password").fill("newpassword");
   await page.getByRole("button", { name: "Login" }).click();
   await expect(page).toHaveURL("/");
 });
 
 test("register duplicate username shows error", async ({ page }) => {
+  const username = await createUser();
   await page.goto("/register");
-  // "dev" already exists from seed
-  await page.getByPlaceholder("Username").fill("dev");
+  await page.getByPlaceholder("Username").fill(username);
   await page.getByPlaceholder("Password").fill("somepassword");
   await page.getByRole("button", { name: "Sign up" }).click();
   await expect(page.getByText("Registration failed")).toBeVisible();
 });
 
 test("login with wrong then correct password", async ({ page }) => {
+  const username = await createUser();
   await page.goto("/login");
-  await page.getByPlaceholder("Username").fill("dev");
+  await page.getByPlaceholder("Username").fill(username);
   await page.getByPlaceholder("Password").fill("wrong");
   await page.getByRole("button", { name: "Login" }).click();
   await expect(page.getByText("Invalid username or password")).toBeVisible();
@@ -66,7 +64,7 @@ test("login with wrong then correct password", async ({ page }) => {
     page.locator("[data-sonner-toast][data-type='error']"),
   ).not.toBeVisible();
 
-  await page.getByPlaceholder("Password").fill("devpassword");
+  await page.getByPlaceholder("Password").fill(TEST_PASSWORD);
   await page.getByRole("button", { name: "Login" }).click();
   await expect(page).toHaveURL("/");
   await expect(page.locator("h1")).toHaveText("Bookmarked Videos");

@@ -1,9 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { setupDb } from "./helper.ts";
-
-test.beforeAll(async () => {
-  await setupDb();
-});
+import { createUsername } from "./helper.ts";
 
 const rpc = (request: any, path: string, data: any = {}) =>
   request.post(`/api/${path.replace(/\./g, "/")}`, {
@@ -23,8 +19,9 @@ test.describe("auth endpoints", () => {
   });
 
   test("register creates user and sets session cookie", async ({ request }) => {
+    const username = createUsername();
     const res = await rpc(request, "auth/register", {
-      username: "newuser",
+      username,
       password: "testpassword",
     });
     expect(res.ok()).toBe(true);
@@ -36,27 +33,29 @@ test.describe("auth endpoints", () => {
   });
 
   test("register duplicate username returns conflict", async ({ request }) => {
+    const username = createUsername();
     // Register first
     await rpc(request, "auth/register", {
-      username: "dupuser",
+      username,
       password: "testpassword",
     });
     // Try again
     const res = await rpc(request, "auth/register", {
-      username: "dupuser",
+      username,
       password: "testpassword",
     });
     expect(res.status()).toBe(409);
   });
 
   test("login with wrong password returns 401", async ({ request }) => {
+    const username = createUsername();
     // Register first
     await rpc(request, "auth/register", {
-      username: "wrongpw",
+      username,
       password: "testpassword",
     });
     const res = await rpc(request, "auth/login", {
-      username: "wrongpw",
+      username,
       password: "badpassword",
     });
     expect(res.status()).toBe(401);
@@ -65,13 +64,14 @@ test.describe("auth endpoints", () => {
   test("login with correct password sets session cookie", async ({
     request,
   }) => {
+    const username = createUsername();
     // Register first
     await rpc(request, "auth/register", {
-      username: "loginuser",
+      username,
       password: "testpassword",
     });
     const res = await rpc(request, "auth/login", {
-      username: "loginuser",
+      username,
       password: "testpassword",
     });
     expect(res.ok()).toBe(true);
@@ -81,8 +81,9 @@ test.describe("auth endpoints", () => {
   });
 
   test("authenticated API calls succeed with cookie", async ({ request }) => {
+    const username = createUsername();
     await rpc(request, "auth/register", {
-      username: "autheduser",
+      username,
       password: "testpassword",
     });
 
@@ -92,13 +93,14 @@ test.describe("auth endpoints", () => {
   });
 
   test("auth check returns status", async ({ request }) => {
+    const username = createUsername();
     // Before login
     const before = await rpc(request, "auth/check");
     expect((await json(before)).authenticated).toBe(false);
 
     // Register
     await rpc(request, "auth/register", {
-      username: "checkuser",
+      username,
       password: "testpassword",
     });
 
@@ -108,15 +110,16 @@ test.describe("auth endpoints", () => {
   });
 
   test("login returns token in body", async ({ request }) => {
+    const username = createUsername();
     await rpc(request, "auth/register", {
-      username: "tokenuser",
+      username,
       password: "testpassword",
     });
     // Logout to clear cookie
     await rpc(request, "auth/logout");
 
     const res = await rpc(request, "auth/login", {
-      username: "tokenuser",
+      username,
       password: "testpassword",
     });
     const body = await json(res);
@@ -125,12 +128,13 @@ test.describe("auth endpoints", () => {
   });
 
   test("bearer token auth works for API calls", async ({ request }) => {
+    const username = createUsername();
     await rpc(request, "auth/register", {
-      username: "beareruser",
+      username,
       password: "testpassword",
     });
     const loginRes = await rpc(request, "auth/login", {
-      username: "beareruser",
+      username,
       password: "testpassword",
     });
     const { token } = await json(loginRes);
@@ -150,12 +154,13 @@ test.describe("auth endpoints", () => {
   });
 
   test("bearer token auth check works", async ({ request }) => {
+    const username = createUsername();
     await rpc(request, "auth/register", {
-      username: "bearercheck",
+      username,
       password: "testpassword",
     });
     const loginRes = await rpc(request, "auth/login", {
-      username: "bearercheck",
+      username,
       password: "testpassword",
     });
     const { token } = await json(loginRes);
@@ -174,8 +179,9 @@ test.describe("auth endpoints", () => {
   });
 
   test("logout clears session", async ({ request }) => {
+    const username = createUsername();
     await rpc(request, "auth/register", {
-      username: "logoutuser",
+      username,
       password: "testpassword",
     });
 

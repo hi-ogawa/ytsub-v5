@@ -1,12 +1,12 @@
 import path from "node:path";
 import { expect, test } from "@playwright/test";
-import { login, SEED_VIDEO_ID, setupDb } from "./helper.ts";
+import { createUser, login, SEED_VIDEO_ID } from "./helper.ts";
 
 test("video card shows thumbnail and channel, clicking navigates to viewer", async ({
   page,
 }) => {
-  await setupDb({ seed: true });
-  await login(page);
+  const username = await createUser({ seed: true });
+  await login(page, { username });
 
   const card = page.getByRole("link", {
     name: /cloud palace/,
@@ -25,8 +25,8 @@ test("video card shows thumbnail and channel, clicking navigates to viewer", asy
 });
 
 test("cancel then confirm delete video", async ({ page }) => {
-  await setupDb({ seed: true });
-  await login(page);
+  const username = await createUser({ seed: true });
+  await login(page, { username });
 
   const card = page.getByRole("link", { name: /cloud palace/ });
   await expect(card).toBeVisible();
@@ -50,8 +50,8 @@ test("import JSON file adds video to list with captions and bookmarks", async ({
     `scripts/db-seed-json/${SEED_VIDEO_ID}/import.json`,
   );
 
-  await setupDb({ seed: true });
-  await login(page, { username: "dev-empty" });
+  const username = await createUser();
+  await login(page, { username });
 
   // Open import dialog from header menu
   await page.getByTestId("header-menu").click();

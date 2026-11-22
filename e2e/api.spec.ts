@@ -1,17 +1,12 @@
 import { expect, test } from "@playwright/test";
-import { setupDb } from "./helper.ts";
-
-test.beforeAll(async () => {
-  await setupDb();
-});
-
+import { createUsername } from "./helper.ts";
 /** Register a test user and return a cookie header for subsequent requests */
 async function getAuthCookie(request: any): Promise<string> {
   const res = await request.post("/api/auth/register", {
     headers: { "Content-Type": "application/json" },
     data: {
       json: {
-        username: `api-${Math.random().toString(36).slice(2)}`,
+        username: createUsername(),
         password: "testpassword",
       },
     },

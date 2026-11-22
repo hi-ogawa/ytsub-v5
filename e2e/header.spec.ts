@@ -1,14 +1,11 @@
 import { expect, test } from "@playwright/test";
-import { login, setupDb } from "./helper.ts";
-
-test.beforeAll(async () => {
-  await setupDb({ seed: true });
-});
+import { createUser, login } from "./helper.ts";
 
 test("header logo navigates back, logout redirects to login", async ({
   page,
 }) => {
-  await login(page);
+  const username = await createUser({ seed: true });
+  await login(page, { username });
 
   // Logo navigates back to video list
   await page.getByText("cloud palace").click();
@@ -26,7 +23,8 @@ test("header logo navigates back, logout redirects to login", async ({
 });
 
 test("shows toast on mutation error", async ({ page }) => {
-  await login(page);
+  const username = await createUser({ seed: true });
+  await login(page, { username });
 
   // Intercept logout API and return 500
   await page.route("**/api/auth/logout", (route) =>
