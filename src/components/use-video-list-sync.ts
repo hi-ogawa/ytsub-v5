@@ -10,11 +10,11 @@ import {
   videoIndexStore,
 } from "../lib/caption-storage.ts";
 import { orpc } from "../lib/rpc-client.ts";
-import { type VideoSyncEntry, mergeVideoEntries } from "../lib/sync.ts";
+import { type VideoListEntry, mergeVideoEntries } from "../lib/sync.ts";
 
-export type VideoSyncHandle = ReturnType<typeof useVideoSync>;
+export type VideoListSync = ReturnType<typeof useVideoListSync>;
 
-export function useVideoSync(storage: CaptionStorage) {
+export function useVideoListSync(storage: CaptionStorage) {
   const [videoIndex] = videoIndexStore.useValue("entries");
 
   const authQuery = useQuery(orpc.auth.check.queryOptions());
@@ -79,7 +79,7 @@ export function useVideoSync(storage: CaptionStorage) {
 
   const isPending =
     authQuery.isLoading || (authenticated && serverQuery.isLoading);
-  const entries: VideoSyncEntry[] = serverQuery.data ?? videoIndex;
+  const entries: VideoListEntry[] = serverQuery.data ?? videoIndex;
 
   return {
     authenticated,

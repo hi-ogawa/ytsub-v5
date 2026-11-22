@@ -80,7 +80,7 @@ export type SyncStatus = {
 
 export type UseSync = (options: { youtubeId: string }) => SyncStatus;
 
-export type VideoSyncEntry = VideoIndexEntry & {
+export type VideoListEntry = VideoIndexEntry & {
   syncStatus?: ComputedSyncState;
   serverId?: number;
 };
@@ -88,8 +88,8 @@ export type VideoSyncEntry = VideoIndexEntry & {
 export function mergeVideoEntries(
   localEntries: VideoIndexEntry[],
   serverVideos: ListVideosOutput["items"],
-): VideoSyncEntry[] {
-  const merged = new Map<string, VideoSyncEntry>();
+): VideoListEntry[] {
+  const merged = new Map<string, VideoListEntry>();
 
   for (const local of localEntries) {
     const server = serverVideos.find((v) => v.youtubeId === local.youtubeId);
