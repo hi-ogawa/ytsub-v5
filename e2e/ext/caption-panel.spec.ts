@@ -70,7 +70,7 @@ test("repeat replays a row from its start until another row is clicked", async (
   await expect.poll(isPaused).toBe(false);
   expect(await getCurrentTime()).toBe(35.597);
 
-  await setCurrentTime(38.1);
+  await setCurrentTime(38.206);
   await expect.poll(getCurrentTime).toBe(35.597);
 
   await host.locator("[data-index='3']").click();

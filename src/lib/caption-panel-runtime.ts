@@ -63,11 +63,6 @@ interface PlaybackState {
   repeatIndex?: number;
 }
 
-// How far before a repeating row's end playback jumps back to its begin. A row's
-// end is often the next row's begin, so jumping at the end itself lets the next
-// line's first sound slip in.
-const REPEAT_END_MARGIN = 0.2;
-
 /**
  * The caption panel's data and operations for one video: the session of merged
  * captions and bookmarks, building it from caption tracks, and following the
@@ -343,7 +338,7 @@ export class CaptionPanelRuntime {
       const time = player.getCurrentTime();
       const repeatRow =
         state.repeatIndex === undefined ? undefined : rows[state.repeatIndex];
-      if (repeatRow && time >= repeatRow.end - REPEAT_END_MARGIN) {
+      if (repeatRow && time >= repeatRow.end) {
         player.seekTo(repeatRow.begin);
         return;
       }
