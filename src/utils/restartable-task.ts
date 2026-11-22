@@ -7,14 +7,14 @@ export class RestartableTask {
 
   /**
    * Abort the previous run, and start a new one. Await each step of the run
-   * through `step`, which throws once a later restart aborts `signal`.
+   * through `runStep`, which throws once a later restart aborts `signal`.
    */
   restart() {
     this.controller?.abort();
     const controller = new AbortController();
     this.controller = controller;
     return {
-      step: createAbortableStep(controller.signal),
+      runStep: createAbortableStep(controller.signal),
       signal: controller.signal,
     };
   }

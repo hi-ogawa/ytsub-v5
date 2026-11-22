@@ -186,7 +186,7 @@ export class CaptionPanelRuntime {
     vssId1?: string;
     vssId2?: string;
   }): Promise<void> {
-    const { step, signal } = this.buildTask.restart();
+    const { runStep, signal } = this.buildTask.restart();
     const { tracks, video } = this.store.get();
     const track1 = tracks.find((t) => t.vssId === selection.vssId1);
     const track2 = tracks.find((t) => t.vssId === selection.vssId2);
@@ -201,7 +201,7 @@ export class CaptionPanelRuntime {
       return;
     }
     try {
-      const [json3_1, json3_2] = await step(
+      const [json3_1, json3_2] = await runStep(
         Promise.all([
           this.trackSource.fetchJson3(track1),
           this.trackSource.fetchJson3(track2),
@@ -217,7 +217,7 @@ export class CaptionPanelRuntime {
         ),
         bookmarks: [],
       };
-      await step(this.saveSession(session));
+      await runStep(this.saveSession(session));
       this.store.update({ session, building: false });
     } catch (error) {
       if (!signal.aborted) {
