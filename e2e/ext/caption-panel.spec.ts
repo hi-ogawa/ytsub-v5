@@ -44,7 +44,7 @@ test("clicking a row seeks to its start and plays, and clicking the current row 
   await expect.poll(isPaused).toBe(false);
   expect(await getCurrentTime()).toBe(35.597);
 
-  await expect(row).toHaveClass(/ring-2/);
+  await expect(row).toHaveAttribute("aria-current", "true");
   await row.click();
   await expect.poll(isPaused).toBe(true);
   await row.click();
