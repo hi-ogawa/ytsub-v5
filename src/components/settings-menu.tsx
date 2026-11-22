@@ -5,9 +5,11 @@ import {
   EllipsisVertical,
   Trash2,
 } from "lucide-react";
-import type { CaptionSessionManager } from "../lib/caption-session.ts";
+import type {
+  CaptionPanelRuntime,
+  CaptionSession,
+} from "../lib/caption-panel-runtime.ts";
 import type { UseSync } from "../lib/sync.ts";
-import type { YouTubeCaptionTrack } from "../lib/youtube.ts";
 import { downloadText } from "../utils/download-text.ts";
 import { AiPromptCopy, importAiResult } from "./ai-prompt-menu.tsx";
 import { SyncMenuItem } from "./sync-menu-item.tsx";
@@ -19,19 +21,19 @@ import {
 } from "./ui/dropdown-menu.tsx";
 
 export function SettingsDropdown({
-  store,
-  tracks,
+  runtime,
+  session,
   autoScroll,
   onSetAutoScroll,
   useSync,
 }: {
-  store: CaptionSessionManager;
-  tracks: YouTubeCaptionTrack[];
+  runtime: CaptionPanelRuntime;
+  session: CaptionSession;
   autoScroll: boolean;
   onSetAutoScroll: (value: boolean | ((prev: boolean) => boolean)) => void;
   useSync: UseSync;
 }) {
-  const hasBookmarks = store.bookmarks.length > 0;
+  const hasBookmarks = session.bookmarks.length > 0;
 
   return (
     <DropdownMenu>
@@ -42,7 +44,7 @@ export function SettingsDropdown({
         <EllipsisVertical className="size-4" />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        <SyncMenuItem useSync={useSync} store={store} />
+        <SyncMenuItem useSync={useSync} runtime={runtime} />
         <DropdownMenuItem
           data-checked={autoScroll}
           onSelect={(e) => {
@@ -55,16 +57,16 @@ export function SettingsDropdown({
           />
           Auto-scroll
         </DropdownMenuItem>
-        <AiPromptCopy store={store} tracks={tracks} />
-        <DropdownMenuItem onSelect={() => importAiResult(store)}>
+        <AiPromptCopy runtime={runtime} session={session} />
+        <DropdownMenuItem onSelect={() => importAiResult(runtime)}>
           <ClipboardPaste className="mr-2 size-4" />
           Import AI result
         </DropdownMenuItem>
         <DropdownMenuItem
           onClick={() => {
             downloadText({
-              filename: `import-${store.videoMeta.youtubeId}.json`,
-              text: JSON.stringify(store.toExportData(), null, 2),
+              filename: `import-${runtime.videoMeta.youtubeId}.json`,
+              text: JSON.stringify(runtime.toExportData(), null, 2),
               type: "application/json",
             });
           }}
@@ -75,7 +77,7 @@ export function SettingsDropdown({
         <DropdownMenuItem
           onClick={() => {
             if (confirm("Clear all bookmarks for this video?")) {
-              store.clearBookmarks();
+              runtime.clearBookmarks();
             }
           }}
           disabled={!hasBookmarks}

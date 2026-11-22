@@ -1,12 +1,10 @@
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
 import { captionPanelPreferences } from "../lib/caption-panel-preferences.ts";
 import {
-  buildCaptionSession,
-  CaptionSessionManager,
-  getInitialTracks,
-  saveSelectedTracks,
-} from "../lib/caption-session.ts";
+  type CaptionSession,
+  CaptionPanelRuntime,
+} from "../lib/caption-panel-runtime.ts";
 import type { CaptionStorage } from "../lib/caption-storage.ts";
 import type { UseSync } from "../lib/sync.ts";
 import {
@@ -21,6 +19,7 @@ import {
   SettingsDropdownSkeleton,
 } from "./settings-menu.tsx";
 import { TrackPicker } from "./track-picker.tsx";
+import { useStoreSelector } from "./use-store-value.ts";
 import type { YTPlayer } from "./youtube-player.tsx";
 
 type CaptionPanelProps = {
@@ -34,47 +33,7 @@ type CaptionPanelProps = {
   sessionOnly?: boolean;
 };
 
-export function CaptionPanel(props: CaptionPanelProps) {
-  const { youtubeId } = props.videoMeta;
-
-  // Restore last session
-  // - always fetch on mount
-  // - always spinner until ready
-  // - never refetch after mount
-  const initialStoreQuery = useQuery({
-    queryKey: ["caption-session", youtubeId],
-    queryFn: async () => {
-      const session = await props.storage.getSession(youtubeId);
-      if (!session) {
-        return null;
-      }
-      return new CaptionSessionManager({
-        storage: props.storage,
-        videoMeta: props.videoMeta,
-        vssId1: session.vssId1,
-        vssId2: session.vssId2,
-        rows: session.captions,
-        bookmarks: session.bookmarks,
-      });
-    },
-    gcTime: 0,
-    staleTime: Infinity,
-  });
-
-  // TODO: better indicator?
-  if (initialStoreQuery.isPending) {
-    return null;
-  }
-
-  return (
-    <CaptionPanelInner
-      {...props}
-      initialStore={initialStoreQuery.data ?? undefined}
-    />
-  );
-}
-
-function CaptionPanelInner({
+export function CaptionPanel({
   storage,
   tracks,
   player,
@@ -82,37 +41,38 @@ function CaptionPanelInner({
   videoMeta,
   useSync,
   sessionOnly,
-  initialStore,
-}: CaptionPanelProps & {
-  initialStore?: CaptionSessionManager;
-}) {
-  const { youtubeId } = videoMeta;
-
-  const [store, setStore] = useState(() => initialStore);
-  const [selectedTracks, setSelectedTracks] = useState(() => {
-    const { vssId1, vssId2 } =
-      initialStore ?? getInitialTracks(tracks, youtubeId);
-    return {
-      track1: tracks.find((t) => t.vssId === vssId1),
-      track2: tracks.find((t) => t.vssId === vssId2),
-    };
-  });
-
-  const selectTracks = useCallback(
-    (v1?: string, v2?: string) => {
-      setSelectedTracks({
-        track1: tracks.find((t) => t.vssId === v1),
-        track2: tracks.find((t) => t.vssId === v2),
-      });
-      setStore(undefined);
-      if (v1 && v2) {
-        saveSelectedTracks({ tracks, vssId1: v1, vssId2: v2, youtubeId });
-      }
-    },
-    [tracks, youtubeId],
+}: CaptionPanelProps) {
+  const queryClient = useQueryClient();
+  const [runtime] = useState(
+    () =>
+      new CaptionPanelRuntime({
+        storage,
+        videoMeta,
+        tracks,
+        fetchJson3: (track) =>
+          queryClient.fetchQuery({
+            queryKey: ["json3", videoMeta.youtubeId, track.vssId],
+            queryFn: () => fetchJson3(track),
+            retry: 3,
+          }),
+      }),
   );
 
-  if (!store) {
+  useEffect(() => {
+    void runtime.restore();
+  }, [runtime]);
+
+  useEffect(() => player && runtime.attachPlayer(player), [runtime, player]);
+
+  const restoring = useStoreSelector(runtime.store, (s) => s.restoring);
+  const session = useStoreSelector(runtime.store, (s) => s.session);
+
+  // TODO: better indicator?
+  if (restoring) {
+    return null;
+  }
+
+  if (!session) {
     if (sessionOnly) {
       return (
         <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
@@ -120,104 +80,46 @@ function CaptionPanelInner({
         </div>
       );
     }
-    return (
-      <CaptionPanelLoading
-        storage={storage}
-        tracks={tracks}
-        fetchJson3={fetchJson3}
-        videoMeta={videoMeta}
-        track1={selectedTracks.track1}
-        track2={selectedTracks.track2}
-        onSelectTracks={selectTracks}
-        setStore={setStore}
-      />
-    );
+    return <CaptionPanelLoading runtime={runtime} />;
   }
 
   return (
-    <CaptionPanelWithStore
-      store={store}
+    <CaptionPanelWithSession
+      runtime={runtime}
+      session={session}
       sessionOnly={!!sessionOnly}
-      tracks={tracks}
-      player={player}
-      onSelectTracks={selectTracks}
       useSync={useSync}
     />
   );
 }
 
-// Builds a new session from the selected tracks and hands it up with setStore.
-function CaptionPanelLoading({
-  storage,
-  tracks,
-  fetchJson3,
-  videoMeta,
-  track1,
-  track2,
-  onSelectTracks,
-  setStore,
-}: {
-  storage: CaptionStorage;
-  tracks: YouTubeCaptionTrack[];
-  fetchJson3: (track: YouTubeCaptionTrack) => Promise<Json3File>;
-  videoMeta: YouTubeVideoData;
-  track1?: YouTubeCaptionTrack;
-  track2?: YouTubeCaptionTrack;
-  onSelectTracks: (v1?: string, v2?: string) => void;
-  setStore: (store: CaptionSessionManager) => void;
-}) {
-  const queryClient = useQueryClient();
-  const storeQuery = useQuery({
-    queryKey: [
-      "caption-session-build",
-      videoMeta.youtubeId,
-      track1?.vssId,
-      track2?.vssId,
-    ],
-    queryFn: () => {
-      return buildCaptionSession({
-        storage,
-        track1: track1!,
-        track2: track2!,
-        videoMeta,
-        fetchJson3: (track) => {
-          return queryClient.fetchQuery({
-            queryKey: ["json3", videoMeta.youtubeId, track.vssId],
-            queryFn: () => fetchJson3(track),
-          });
-        },
-      });
-    },
-    enabled: !!track1 && !!track2,
-    gcTime: 0,
-    staleTime: Infinity,
-  });
-
-  useEffect(() => {
-    if (storeQuery.data) {
-      setStore(storeQuery.data);
-    }
-  }, [storeQuery.data, setStore]);
+function CaptionPanelLoading({ runtime }: { runtime: CaptionPanelRuntime }) {
+  const vssId1 = useStoreSelector(runtime.store, (s) => s.selectedVssId1);
+  const vssId2 = useStoreSelector(runtime.store, (s) => s.selectedVssId2);
+  const building = useStoreSelector(runtime.store, (s) => s.building);
+  const buildError = useStoreSelector(runtime.store, (s) => s.buildError);
 
   return (
     <div className="flex h-full flex-col">
       <div className="flex items-center border-b">
         <div className="min-w-0 flex-1">
           <TrackPicker
-            tracks={tracks}
-            selectedVssId1={track1?.vssId}
-            selectedVssId2={track2?.vssId}
-            onSelect={(v1, v2) => onSelectTracks(v1, v2)}
+            tracks={runtime.tracks}
+            selectedVssId1={vssId1}
+            selectedVssId2={vssId2}
+            onSelect={(v1, v2) =>
+              runtime.selectTracks({ vssId1: v1, vssId2: v2 })
+            }
           />
         </div>
         <SettingsDropdownSkeleton />
       </div>
 
-      {storeQuery.error ? (
+      {buildError ? (
         <div className="flex h-full items-center justify-center text-sm text-destructive">
-          {String(storeQuery.error)}
+          {String(buildError)}
         </div>
-      ) : storeQuery.isLoading ? (
+      ) : building ? (
         <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
           Loading subtitles…
         </div>
@@ -226,23 +128,17 @@ function CaptionPanelLoading({
   );
 }
 
-function CaptionPanelWithStore({
-  store,
+function CaptionPanelWithSession({
+  runtime,
+  session,
   sessionOnly,
-  tracks,
-  player,
-  onSelectTracks,
   useSync,
 }: {
-  store: CaptionSessionManager;
+  runtime: CaptionPanelRuntime;
+  session: CaptionSession;
   sessionOnly: boolean;
-  tracks: YouTubeCaptionTrack[];
-  player?: YTPlayer;
-  onSelectTracks: (v1?: string, v2?: string) => void;
   useSync: UseSync;
 }) {
-  useSyncExternalStore(store.subscribe, () => store.version);
-
   const [autoScroll, setAutoScroll] =
     captionPanelPreferences.useValue("autoScroll");
 
@@ -252,29 +148,31 @@ function CaptionPanelWithStore({
         {!sessionOnly ? (
           <div className="min-w-0 flex-1">
             <TrackPicker
-              tracks={tracks}
-              selectedVssId1={store.vssId1}
-              selectedVssId2={store.vssId2}
-              onSelect={(v1, v2) => onSelectTracks(v1, v2)}
-              disabled={store.bookmarks.length > 0}
+              tracks={runtime.tracks}
+              selectedVssId1={session.vssId1}
+              selectedVssId2={session.vssId2}
+              onSelect={(v1, v2) =>
+                runtime.selectTracks({ vssId1: v1, vssId2: v2 })
+              }
+              disabled={session.bookmarks.length > 0}
             />
           </div>
         ) : (
           <span className="flex-1 px-2 py-1 text-sm text-muted-foreground lg:py-1.5">
-            {langName(store.vssId1)} · {langName(store.vssId2)}
+            {langName(session.vssId1)} · {langName(session.vssId2)}
           </span>
         )}
         <SettingsDropdown
-          store={store}
-          tracks={tracks}
+          runtime={runtime}
+          session={session}
           autoScroll={autoScroll}
           onSetAutoScroll={setAutoScroll}
           useSync={useSync}
         />
       </div>
       <CaptionPanelContent
-        store={store}
-        player={player}
+        runtime={runtime}
+        session={session}
         autoScroll={autoScroll}
       />
     </div>

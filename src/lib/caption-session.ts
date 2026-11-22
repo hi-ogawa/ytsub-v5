@@ -1,20 +1,14 @@
 import type { InferRouterInputs } from "@orpc/server";
 import type { Router } from "../server/rpc.ts";
-import { type MergedCaption, mergeCaptions } from "./caption-merge.ts";
+import type { MergedCaption } from "./caption-merge.ts";
 import type {
   CaptionStorage,
   PersistedCaptionSession,
 } from "./caption-storage.ts";
 import type { ExtensionBookmark } from "./extension-bookmarks.ts";
-import {
-  type Json3File,
-  type YouTubeCaptionTrack,
-  type YouTubeVideoData,
-  langFromVssId,
-  pickBestTrack,
-} from "./youtube.ts";
+import { type YouTubeCaptionTrack, pickBestTrack } from "./youtube.ts";
 
-type ExportData = InferRouterInputs<Router>["videos"]["importVideo"];
+export type ExportData = InferRouterInputs<Router>["videos"]["importVideo"];
 
 // --- Track preference persistence ---
 
@@ -161,164 +155,4 @@ export async function importExportData(
     })),
   };
   await storage.saveSession(session);
-}
-
-export async function buildCaptionSession(options: {
-  storage: CaptionStorage;
-  track1: YouTubeCaptionTrack;
-  track2: YouTubeCaptionTrack;
-  fetchJson3: (track: YouTubeCaptionTrack) => Promise<Json3File>;
-  videoMeta: YouTubeVideoData;
-}): Promise<CaptionSessionManager> {
-  const [json3_1, json3_2] = await Promise.all([
-    options.fetchJson3(options.track1),
-    options.fetchJson3(options.track2),
-  ]);
-  const rows = mergeCaptions(
-    { json3: json3_1, vssId: options.track1.vssId },
-    { json3: json3_2, vssId: options.track2.vssId },
-  );
-  const store = new CaptionSessionManager({
-    storage: options.storage,
-    videoMeta: options.videoMeta,
-    vssId1: options.track1.vssId,
-    vssId2: options.track2.vssId,
-    rows,
-    bookmarks: [],
-  });
-  await store.persistSession();
-  return store;
-}
-
-// --- Store ---
-
-export class CaptionSessionManager {
-  private readonly storage: CaptionStorage;
-  readonly videoMeta: YouTubeVideoData;
-  vssId1: string;
-  vssId2: string;
-  rows: MergedCaption[];
-  bookmarks: ExtensionBookmark[];
-  version = 0;
-  private listeners = new Set<() => void>();
-
-  constructor(params: {
-    storage: CaptionStorage;
-    videoMeta: YouTubeVideoData;
-    vssId1: string;
-    vssId2: string;
-    rows: MergedCaption[];
-    bookmarks: ExtensionBookmark[];
-  }) {
-    this.storage = params.storage;
-    this.videoMeta = params.videoMeta;
-    this.vssId1 = params.vssId1;
-    this.vssId2 = params.vssId2;
-    this.rows = params.rows;
-    this.bookmarks = params.bookmarks;
-  }
-
-  notify() {
-    this.version++;
-    for (const cb of this.listeners) {
-      cb();
-    }
-  }
-
-  subscribe = (cb: () => void) => {
-    this.listeners.add(cb);
-    return () => {
-      this.listeners.delete(cb);
-    };
-  };
-
-  // --- Operations ---
-
-  async createBookmarks(
-    selections: Omit<ExtensionBookmark, "id" | "createdAt">[],
-  ): Promise<void> {
-    const newBookmarks: ExtensionBookmark[] = selections.map((sel) => ({
-      id: crypto.randomUUID(),
-      createdAt: new Date().toISOString(),
-      ...sel,
-    }));
-    this.bookmarks = [...this.bookmarks, ...newBookmarks];
-    this.notify();
-    await this.persistSession();
-  }
-
-  async deleteBookmark(bookmarkId: string): Promise<void> {
-    this.bookmarks = this.bookmarks.filter((b) => b.id !== bookmarkId);
-    this.notify();
-    await this.persistSession();
-  }
-
-  async updateBookmarks(
-    entries: (Partial<ExtensionBookmark> & { id: string })[],
-  ): Promise<void> {
-    const updates = new Map(entries.map((e) => [e.id, e]));
-    this.bookmarks = this.bookmarks.map((b) => {
-      const u = updates.get(b.id);
-      return u ? { ...b, ...u } : b;
-    });
-    this.notify();
-    await this.persistSession();
-  }
-
-  async clearBookmarks(): Promise<void> {
-    this.bookmarks = [];
-    this.notify();
-    await this.persistSession();
-  }
-
-  async replace(options: {
-    captions: MergedCaption[];
-    bookmarks: ExtensionBookmark[];
-    vssId1?: string;
-    vssId2?: string;
-  }): Promise<void> {
-    this.rows = options.captions;
-    this.bookmarks = options.bookmarks;
-    if (options.vssId1 !== undefined) {
-      this.vssId1 = options.vssId1;
-    }
-    if (options.vssId2 !== undefined) {
-      this.vssId2 = options.vssId2;
-    }
-    this.notify();
-    await this.persistSession();
-  }
-
-  toExportData(): ExportData {
-    return sessionToExportData({
-      youtubeId: this.videoMeta.youtubeId,
-      title: this.videoMeta.title,
-      channelName: this.videoMeta.channelName,
-      channelId: this.videoMeta.channelId,
-      duration: this.videoMeta.duration,
-      language1: langFromVssId(this.vssId1),
-      language2: langFromVssId(this.vssId2),
-      vssId1: this.vssId1,
-      vssId2: this.vssId2,
-      captions: this.rows,
-      bookmarks: this.bookmarks,
-    });
-  }
-
-  async persistSession(): Promise<void> {
-    const session: PersistedCaptionSession = {
-      youtubeId: this.videoMeta.youtubeId,
-      title: this.videoMeta.title,
-      channelName: this.videoMeta.channelName,
-      channelId: this.videoMeta.channelId,
-      duration: this.videoMeta.duration,
-      vssId1: this.vssId1,
-      vssId2: this.vssId2,
-      language1: langFromVssId(this.vssId1),
-      language2: langFromVssId(this.vssId2),
-      captions: this.rows,
-      bookmarks: this.bookmarks,
-    };
-    await this.storage.saveSession(session);
-  }
 }

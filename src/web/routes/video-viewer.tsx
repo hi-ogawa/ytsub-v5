@@ -47,6 +47,7 @@ export function VideoViewerPage({ storage }: { storage: CaptionStorage }) {
       {/* Caption panel */}
       <div className="flex min-h-0 flex-[1_0_0] flex-col border-t lg:w-1/3 lg:flex-none lg:rounded lg:border">
         <CaptionPanel
+          key={youtubeId}
           storage={storage}
           sessionOnly
           tracks={[]}

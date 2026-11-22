@@ -1,13 +1,11 @@
 import { Bookmark, ChevronLeft, ChevronRight, X } from "lucide-react";
-import {
-  useEffect,
-  useImperativeHandle,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { useMemo, useRef, useState } from "react";
 import type { MergedCaption } from "../lib/caption-merge.ts";
-import type { CaptionSessionManager } from "../lib/caption-session.ts";
+import {
+  type CaptionPanelRuntime,
+  type CaptionSession,
+  sortBookmarks,
+} from "../lib/caption-panel-runtime.ts";
 import type { ExtensionBookmark } from "../lib/extension-bookmarks.ts";
 import {
   type BookmarksListHandle,
@@ -15,56 +13,32 @@ import {
 } from "./bookmarks-list.tsx";
 import { CaptionList, type CaptionListHandle } from "./caption-list.tsx";
 import { useBookmarkSelection } from "./use-bookmark-selection.ts";
-import type { YTPlayer } from "./youtube-player.tsx";
+import { useStoreSelector } from "./use-store-value.ts";
 
 export function CaptionPanelContent({
-  store,
-  player,
+  runtime,
+  session,
   autoScroll,
 }: {
-  store: CaptionSessionManager;
-  player?: YTPlayer;
+  runtime: CaptionPanelRuntime;
+  session: CaptionSession;
   autoScroll: boolean;
 }) {
+  const player = useStoreSelector(runtime.store, (s) => s.player);
   const [activeTab, setActiveTab] = useState<Tab>("captions");
   const contentRef = useRef<HTMLDivElement>(null);
-  const captionListRef = useRef<CaptionViewerHandle>(null);
+  const captionListRef = useRef<CaptionListHandle>(null);
   const bookmarksListRef = useRef<BookmarksListHandle>(null);
 
-  // Both tabs list and number bookmarks in playback order.
   const sortedBookmarks = useMemo(
-    () =>
-      [...store.bookmarks].sort(
-        (a, b) => a.timestamp - b.timestamp || a.offset - b.offset,
-      ),
-    [store.bookmarks],
+    () => sortBookmarks(session.bookmarks),
+    [session.bookmarks],
   );
 
-  // Previous and next wrap around. Previous skips a bookmark within the last
-  // second, so pressing it right after a jump moves on instead of repeating.
-  function onPrevBookmark() {
-    if (!player || sortedBookmarks.length === 0) {
-      return;
+  function scrollToBookmarkCaption(bookmark?: ExtensionBookmark) {
+    if (bookmark) {
+      captionListRef.current?.scrollToIndex(bookmark.captionIndex);
     }
-    const time = player.getCurrentTime();
-    const prev = sortedBookmarks.findLast((bm) => bm.timestamp < time - 1);
-    goToBookmarkCaption(prev ?? sortedBookmarks[sortedBookmarks.length - 1]);
-  }
-
-  function onNextBookmark() {
-    if (!player || sortedBookmarks.length === 0) {
-      return;
-    }
-    const time = player.getCurrentTime();
-    const next = sortedBookmarks.find((bm) => bm.timestamp > time + 0.5);
-    goToBookmarkCaption(next ?? sortedBookmarks[0]);
-  }
-
-  function goToBookmarkCaption(bookmark: ExtensionBookmark) {
-    player?.seekTo(bookmark.timestamp);
-    // The playback loop only follows the player while it plays, so a paused
-    // seek would otherwise leave the list on the old caption.
-    captionListRef.current?.showCaption(bookmark.captionIndex);
   }
 
   // Switching tabs first un-hides the target list, so the scroll waits a tick
@@ -83,7 +57,7 @@ export function CaptionPanelContent({
     });
   }
 
-  const bookmarkSelection = useBookmarkSelection(contentRef, store);
+  const bookmarkSelection = useBookmarkSelection(contentRef, runtime);
 
   return (
     <div ref={contentRef} className="flex min-h-0 flex-[1_0_0] flex-col">
@@ -91,8 +65,12 @@ export function CaptionPanelContent({
         activeTab={activeTab}
         bookmarkCount={sortedBookmarks.length}
         onSelectTab={setActiveTab}
-        onPrevBookmark={onPrevBookmark}
-        onNextBookmark={onNextBookmark}
+        onPrevBookmark={() =>
+          scrollToBookmarkCaption(runtime.seekToPreviousBookmark())
+        }
+        onNextBookmark={() =>
+          scrollToBookmarkCaption(runtime.seekToNextBookmark())
+        }
       />
 
       <div className="relative flex min-h-0 flex-[1_0_0] flex-col">
@@ -105,8 +83,8 @@ export function CaptionPanelContent({
         >
           <CaptionViewer
             ref={captionListRef}
-            rows={store.rows}
-            player={player}
+            runtime={runtime}
+            rows={session.rows}
             autoScroll={autoScroll}
             bookmarks={sortedBookmarks}
             onGoToBookmark={onGoToBookmark}
@@ -128,9 +106,9 @@ export function CaptionPanelContent({
             <ExtensionBookmarksList
               ref={bookmarksListRef}
               bookmarks={sortedBookmarks}
-              rows={store.rows}
+              rows={session.rows}
               player={player}
-              onDeleteBookmark={(id) => store.deleteBookmark(id)}
+              onDeleteBookmark={(id) => runtime.deleteBookmark(id)}
               onGoToCaption={onGoToCaption}
             />
           )}
@@ -244,64 +222,28 @@ function BookmarkActions({
   );
 }
 
-type CaptionViewerHandle = CaptionListHandle & {
-  showCaption: (index: number) => void;
-};
-
 function CaptionViewer({
   ref,
+  runtime,
   rows,
-  player,
   autoScroll,
   bookmarks,
   onGoToBookmark,
 }: {
-  ref: React.Ref<CaptionViewerHandle>;
+  ref: React.Ref<CaptionListHandle>;
+  runtime: CaptionPanelRuntime;
   rows: MergedCaption[];
-  player?: YTPlayer;
   autoScroll: boolean;
   bookmarks: ExtensionBookmark[];
   onGoToBookmark: (bookmarkId: string) => void;
 }) {
-  const [currentIndex, setCurrentIndex] = useState<number>();
-  const [isPlaying, setIsPlaying] = useState(false);
-  const listRef = useRef<CaptionListHandle>(null);
-
-  useImperativeHandle(ref, () => ({
-    scrollToIndex: (index) => listRef.current?.scrollToIndex(index),
-    showCaption: (index) => {
-      setCurrentIndex(index);
-      listRef.current?.scrollToIndex(index);
-    },
-  }));
-
-  useEffect(() => {
-    if (!player || rows.length === 0) {
-      return;
-    }
-    let rafId: number;
-
-    const loop = () => {
-      const playing = player.getPlayerState() === 1;
-      setIsPlaying(playing);
-      if (playing) {
-        const time = player.getCurrentTime();
-        for (let i = rows.length - 1; i >= 0; i--) {
-          if (rows[i].begin <= time) {
-            setCurrentIndex(i);
-            break;
-          }
-        }
-      }
-      rafId = requestAnimationFrame(loop);
-    };
-    rafId = requestAnimationFrame(loop);
-    return () => cancelAnimationFrame(rafId);
-  }, [player, rows]);
+  const currentIndex = useStoreSelector(runtime.store, (s) => s.currentIndex);
+  const isPlaying = useStoreSelector(runtime.store, (s) => s.isPlaying);
+  const player = useStoreSelector(runtime.store, (s) => s.player);
 
   return (
     <CaptionList
-      ref={listRef}
+      ref={ref}
       rows={rows}
       currentIndex={currentIndex}
       isPlaying={isPlaying}

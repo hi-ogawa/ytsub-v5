@@ -8,30 +8,32 @@ import {
   parseAiResult,
   pickFillToBookmarks,
 } from "../lib/ai-prompt.ts";
-import type { CaptionSessionManager } from "../lib/caption-session.ts";
-import type { YouTubeCaptionTrack } from "../lib/youtube.ts";
+import type {
+  CaptionPanelRuntime,
+  CaptionSession,
+} from "../lib/caption-panel-runtime.ts";
 import { downloadText } from "../utils/download-text.ts";
 
 export function AiPromptCopy({
-  store,
-  tracks,
+  runtime,
+  session,
 }: {
-  store: CaptionSessionManager;
-  tracks: YouTubeCaptionTrack[];
+  runtime: CaptionPanelRuntime;
+  session: CaptionSession;
 }) {
   const [selected, setSelected] = useState<AiTask>(AI_TASKS[0].task);
   const [copied, setCopied] = useState(false);
-  const { youtubeId, title } = store.videoMeta;
+  const { youtubeId, title } = runtime.videoMeta;
 
   function getPrompt(task: AiTask) {
     return makeAiPrompt(task, {
       youtubeId,
       title,
-      rows: store.rows,
-      bookmarks: store.bookmarks,
-      tracks,
-      vssId1: store.vssId1,
-      vssId2: store.vssId2,
+      rows: session.rows,
+      bookmarks: session.bookmarks,
+      tracks: runtime.tracks,
+      vssId1: session.vssId1,
+      vssId2: session.vssId2,
     });
   }
 
@@ -107,21 +109,22 @@ export function AiPromptCopy({
   );
 }
 
-export function importAiResult(store: CaptionSessionManager): void {
+export function importAiResult(runtime: CaptionPanelRuntime): void {
   const raw = window.prompt("Paste AI result JSON");
   if (!raw) {
     return;
   }
+  const session = runtime.getSession();
   try {
     const result = parseAiResult(raw);
     switch (result.type) {
       case "pick-fill": {
         const { bookmarks, warnings } = pickFillToBookmarks(
           result.entries,
-          store.rows,
+          session.rows,
         );
         if (bookmarks.length > 0) {
-          store.createBookmarks(bookmarks);
+          runtime.createBookmarks(bookmarks);
         }
         alert(
           `Created ${bookmarks.length} bookmarks` +
@@ -132,13 +135,13 @@ export function importAiResult(store: CaptionSessionManager): void {
         break;
       }
       case "fill":
-        store.updateBookmarks(result.entries);
+        runtime.updateBookmarks(result.entries);
         alert(`Filled ${result.entries.length} bookmarks`);
         break;
       case "fix-asr": {
         const { captions, bookmarks, errors } = alignResultToSession(
           result,
-          store.bookmarks,
+          session.bookmarks,
         );
         if (errors.length > 0) {
           alert(
@@ -146,8 +149,8 @@ export function importAiResult(store: CaptionSessionManager): void {
           );
           break;
         }
-        const moved = store.bookmarks.length;
-        store.replace({ captions, bookmarks });
+        const moved = session.bookmarks.length;
+        runtime.replace({ captions, bookmarks });
         alert(
           `Replaced captions with ${captions.length} rows, moved ${moved} bookmarks, and added ${bookmarks.length - moved}`,
         );

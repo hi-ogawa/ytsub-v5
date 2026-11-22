@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import type { CaptionSessionManager } from "../lib/caption-session.ts";
+import type { CaptionPanelRuntime } from "../lib/caption-panel-runtime.ts";
 import {
   type BookmarkSelection,
   extractBookmarkSelection,
@@ -12,7 +12,7 @@ import { getSelectionAt } from "../utils/get-selection.ts";
  */
 export function useBookmarkSelection(
   contentRef: React.RefObject<HTMLElement | null>,
-  store: CaptionSessionManager,
+  runtime: CaptionPanelRuntime,
 ) {
   const [selection, setSelection] = useState<BookmarkSelection>();
 
@@ -29,12 +29,11 @@ export function useBookmarkSelection(
     if (!selection) {
       return;
     }
-    const rows = store.rows;
-    const row = rows[selection.captionIndex];
+    const row = runtime.getSession().rows[selection.captionIndex];
     if (!row) {
       return;
     }
-    store.createBookmarks([
+    runtime.createBookmarks([
       {
         ...selection,
         timestamp: row.begin,

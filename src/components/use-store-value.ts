@@ -25,3 +25,14 @@ function useStoreValue<State, Key extends keyof State>(
   };
   return [value, setValue];
 }
+
+/**
+ * One value derived from a store, re-rendering only when it changes. The
+ * selector must return the same value for the same state, such as a field.
+ */
+export function useStoreSelector<State, Selection>(
+  store: Store<State>,
+  selector: (state: State) => Selection,
+): Selection {
+  return useSyncExternalStore(store.subscribe, () => selector(store.get()));
+}
