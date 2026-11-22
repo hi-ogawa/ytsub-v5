@@ -50,7 +50,6 @@ export interface CaptionPanelState {
   selectedVssId2?: string;
   building: boolean;
   buildError?: unknown;
-  player?: YTPlayer;
 }
 
 // Apart from the panel's state, because it changes with every caption while
@@ -86,6 +85,7 @@ export class CaptionPanelRuntime {
   readonly youtubeId: string;
   readonly trackSource?: CaptionTrackSource;
   private readonly buildTask = new RestartableTask();
+  private player?: YTPlayer;
 
   constructor(options: {
     storage: CaptionStorage;
@@ -295,7 +295,7 @@ export class CaptionPanelRuntime {
    * caption stays put while the player is paused.
    */
   attachPlayer(player: YTPlayer): () => void {
-    this.store.update({ player });
+    this.player = player;
     let rafId: number;
     const loop = () => {
       this.syncPlayback(player);
@@ -304,7 +304,7 @@ export class CaptionPanelRuntime {
     rafId = requestAnimationFrame(loop);
     return () => {
       cancelAnimationFrame(rafId);
-      this.store.update({ player: undefined });
+      this.player = undefined;
     };
   }
 
@@ -333,7 +333,7 @@ export class CaptionPanelRuntime {
 
   /** Seek to the bookmark before the playback position, and return it. */
   seekToPreviousBookmark(): ExtensionBookmark | undefined {
-    const { player } = this.store.get();
+    const { player } = this;
     const bookmarks = sortBookmarks(this.getSession().bookmarks);
     if (!player || bookmarks.length === 0) {
       return undefined;
@@ -348,7 +348,7 @@ export class CaptionPanelRuntime {
 
   /** Seek to the bookmark after the playback position, and return it. */
   seekToNextBookmark(): ExtensionBookmark | undefined {
-    const { player } = this.store.get();
+    const { player } = this;
     const bookmarks = sortBookmarks(this.getSession().bookmarks);
     if (!player || bookmarks.length === 0) {
       return undefined;
@@ -363,7 +363,7 @@ export class CaptionPanelRuntime {
   // The playback loop only follows the player while it plays, so a paused seek
   // sets the current caption itself.
   private seekToBookmark(bookmark: ExtensionBookmark): void {
-    this.store.get().player?.seekTo(bookmark.timestamp);
+    this.player?.seekTo(bookmark.timestamp);
     this.playbackStore.update({ currentIndex: bookmark.captionIndex });
   }
 }
