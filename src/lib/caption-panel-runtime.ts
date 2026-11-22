@@ -104,28 +104,27 @@ export class CaptionPanelRuntime {
       restoring: false,
       session: saved && toCaptionSession(saved),
     });
-    const tracksLoaded = await this.loadTracks();
-    if (tracksLoaded && !saved) {
-      await this.buildSession(
-        getInitialTracks(this.store.get().tracks, this.youtubeId),
-      );
+    const tracks = await this.loadTracks();
+    if (tracks && !saved) {
+      await this.buildSession(getInitialTracks(tracks, this.youtubeId));
     }
   }
 
-  // Resolves whether the tracks loaded. A failure stays in `tracksError`
-  // instead of rejecting, so it never hides a saved session.
-  private async loadTracks(): Promise<boolean> {
+  // Resolves the tracks, or undefined without a source or on failure. A failure
+  // stays in `tracksError` instead of rejecting, so it never hides a saved
+  // session.
+  private async loadTracks(): Promise<YouTubeCaptionTrack[] | undefined> {
     if (!this.trackSource) {
-      return false;
+      return undefined;
     }
     this.store.update({ loadingTracks: true });
     try {
       const { video, captionTracks } = await this.trackSource.fetchTracks();
       this.store.update({ loadingTracks: false, video, tracks: captionTracks });
-      return true;
+      return captionTracks;
     } catch (error) {
       this.store.update({ loadingTracks: false, tracksError: error });
-      return false;
+      return undefined;
     }
   }
 
