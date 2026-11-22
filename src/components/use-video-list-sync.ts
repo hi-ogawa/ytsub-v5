@@ -14,6 +14,11 @@ import { type VideoListEntry, mergeVideoEntries } from "../lib/sync.ts";
 
 export type VideoListSync = ReturnType<typeof useVideoListSync>;
 
+/**
+ * Sync status, push, and pull for every video on the video list. The web app
+ * and the extension share it because both list pages run on their app's own
+ * origin, where they read storage and call the server directly.
+ */
 export function useVideoListSync(storage: CaptionStorage) {
   const [videoIndex] = videoIndexStore.useValue("entries");
 

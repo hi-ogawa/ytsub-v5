@@ -14,6 +14,11 @@ type SyncAction =
   | { direction: "push" }
   | { direction: "pull"; runtime: CaptionPanelRuntime };
 
+/**
+ * Per-video sync for the caption panel on YouTube. The content script never
+ * holds the session token, so it reaches the server through the background
+ * (docs/extension-runtime.md). `useWebSync` is the web viewer's counterpart.
+ */
 export function useExtensionSync({
   storage,
   bgRpc,

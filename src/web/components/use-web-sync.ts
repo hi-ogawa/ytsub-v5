@@ -10,6 +10,10 @@ import {
   computeSyncState,
 } from "../../lib/sync.ts";
 
+/**
+ * Per-video sync for the web viewer's caption panel, which calls the server
+ * directly. `useExtensionSync` is the extension's counterpart.
+ */
 export function useWebSync({
   storage,
   youtubeId,
