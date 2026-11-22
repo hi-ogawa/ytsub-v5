@@ -84,7 +84,7 @@ test("bookmark arrows wrap around at the ends", async ({ context }) => {
         const before = await getCurrentTime();
         await host.getByRole("button", { name }).click();
         await expect.poll(getCurrentTime).not.toBe(before);
-        return await getCurrentTime();
+        return getCurrentTime();
       },
       { box: true },
     );
