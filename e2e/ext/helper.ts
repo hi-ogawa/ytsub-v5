@@ -123,7 +123,11 @@ export async function openYouTubeTab(
   );
 }
 
-/** Open a mocked YouTube watch page with the caption panel showing ko/en tracks */
+/**
+ * Open a mocked YouTube watch page with the caption panel showing ko/en tracks.
+ * Picking the tracks saves the video's session, so a reload restores it. The
+ * video isn't in the video index until it has a bookmark.
+ */
 export async function openPanelWithTracks(
   context: BrowserContext,
   youtubeId: string,

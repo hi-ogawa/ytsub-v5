@@ -3,10 +3,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import type { Router } from "../server/rpc.ts";
-import {
-  type CaptionSessionManager,
-  sessionToExportData,
-} from "./caption-session.ts";
+import type { CaptionPanelRuntime } from "./caption-panel-runtime.ts";
+import { sessionToExportData } from "./caption-session.ts";
 import {
   type CaptionStorage,
   type PersistedCaptionSession,
@@ -81,8 +79,8 @@ export type SyncStatus = {
   state: SyncState;
   error?: string;
   onNavigate: () => void;
-  onPush: (store: CaptionSessionManager) => void;
-  onPull: (store: CaptionSessionManager) => void;
+  onPush: (runtime: CaptionPanelRuntime) => void;
+  onPull: (runtime: CaptionPanelRuntime) => void;
 };
 
 export type UseSync = (options: { youtubeId: string }) => SyncStatus;
@@ -140,12 +138,12 @@ export function useSyncState({
   const syncMutation = useMutation({
     mutationFn: async (action: {
       direction: "push" | "pull";
-      store: CaptionSessionManager;
+      runtime: CaptionPanelRuntime;
     }) => {
       if (action.direction === "push") {
         const entry = await storage.getVideoIndexEntry(youtubeId);
         const result = await orpc.videos.importVideo.call(
-          action.store.toExportData({ editedAt: entry?.editedAt }),
+          action.runtime.toExportData({ editedAt: entry?.editedAt }),
         );
         await storage.markSynced({ youtubeId, editedAt: result.editedAt });
       } else {
@@ -154,7 +152,7 @@ export function useSyncState({
           throw new Error("Video not found on server");
         }
         const session = serverSessionToLocal(data);
-        await action.store.replace({
+        await action.runtime.replace({
           vssId1: session.vssId1,
           vssId2: session.vssId2,
           captions: session.captions,
@@ -202,8 +200,8 @@ export function useSyncState({
       ? `${variables?.direction === "pull" ? "Download" : "Upload"} failed: ${error.message}`
       : undefined,
     onNavigate,
-    onPush: (store) => syncMutation.mutate({ direction: "push", store }),
-    onPull: (store) => syncMutation.mutate({ direction: "pull", store }),
+    onPush: (runtime) => syncMutation.mutate({ direction: "push", runtime }),
+    onPull: (runtime) => syncMutation.mutate({ direction: "pull", runtime }),
   };
 }
 

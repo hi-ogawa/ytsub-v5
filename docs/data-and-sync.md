@@ -10,13 +10,15 @@ A caption session holds everything about one video: its title and channel, the t
 
 The caption panel creates a session the first time captions load for a video, and it saves the whole session after every change. Sessions are stored in IndexedDB, one record per video, keyed by its YouTube ID.
 
+A new session is saved before the panel shows it, so picking two tracks is enough for the video to reopen with them, even with no bookmarks yet. When the panel opens, it reads the saved session and asks YouTube for the video's caption tracks at the same time. The saved session needs nothing from YouTube, so it shows even when YouTube refuses the request, and only a video with nothing saved has to wait for the tracks.
+
 Browser storage belongs to an origin. The extension keeps its sessions on its own origin, where the bookmarks page, the background, and every YouTube tab can reach them ([Extension runtime](extension-runtime.md) explains how a YouTube tab gets there). The web app keeps its sessions on its own origin.
 
 ## List Videos From a Small Index
 
 Opening every session just to draw the bookmarks page would be slow, so the same database also keeps a video index, one entry per video. An entry holds a video's title, channel, and bookmark count, the time its content was last edited, and what that time was at its last push or pull.
 
-Saving a session updates its index entry in the same transaction, so the two never disagree. A video gets an entry once it has a bookmark, and keeps it at zero bookmarks so that deleting the last one can still be pushed. Each entry is its own record, so two pages that change different videos at once never overwrite each other.
+Saving a session updates its index entry in the same transaction, so the two never disagree. A video gets an entry once it has a bookmark, and keeps it at zero bookmarks so that deleting the last one can still be pushed. Until then, its session is stored but the video isn't listed anywhere. A pull from the bookmarks page adds the entry even with no bookmarks, so the pulled video shows up in the list. Each entry is its own record, so two pages that change different videos at once never overwrite each other.
 
 ## Give Each Video an Edit Time That Travels With It
 

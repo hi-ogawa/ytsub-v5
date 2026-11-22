@@ -155,3 +155,16 @@
 [data-flash] {
   animation: flash-highlight 3s ease-out;
 }
+
+/* Shows the element only after a grace period, so a wait that ends quickly
+   shows nothing instead of flashing a loading message. */
+@keyframes delayed-reveal {
+  to {
+    opacity: 1;
+  }
+}
+
+[data-delayed-reveal] {
+  opacity: 0;
+  animation: delayed-reveal 0s 500ms forwards;
+}

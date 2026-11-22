@@ -1,5 +1,5 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
-import type { CaptionSessionManager } from "../../lib/caption-session.ts";
+import type { CaptionPanelRuntime } from "../../lib/caption-panel-runtime.ts";
 import type { CaptionStorage } from "../../lib/caption-storage.ts";
 import {
   type SyncState,
@@ -12,7 +12,7 @@ import type { RpcClient } from "../lib/extension-rpc.ts";
 
 type SyncAction =
   | { direction: "push" }
-  | { direction: "pull"; store: CaptionSessionManager };
+  | { direction: "pull"; runtime: CaptionPanelRuntime };
 
 export function useExtensionSync({
   storage,
@@ -37,7 +37,7 @@ export function useExtensionSync({
         await storage.markSynced({ youtubeId, editedAt });
       } else {
         const { session, editedAt } = await bgRpc.fetchSession({ youtubeId });
-        await action.store.replace({
+        await action.runtime.replace({
           vssId1: session.vssId1,
           vssId2: session.vssId2,
           captions: session.captions,
@@ -83,6 +83,6 @@ export function useExtensionSync({
       : undefined,
     onNavigate: () => bgRpc.openBookmarks(),
     onPush: () => syncMutation.mutate({ direction: "push" }),
-    onPull: (store) => syncMutation.mutate({ direction: "pull", store }),
+    onPull: (runtime) => syncMutation.mutate({ direction: "pull", runtime }),
   };
 }
