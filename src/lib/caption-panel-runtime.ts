@@ -1,5 +1,5 @@
 import type { YTPlayer } from "../components/youtube-player.tsx";
-import { createAbortableStep } from "../utils/abortable-step.ts";
+import { RestartableTask } from "../utils/restartable-task.ts";
 import { createStore } from "../utils/store.ts";
 import { type MergedCaption, mergeCaptions } from "./caption-merge.ts";
 import {
@@ -85,7 +85,7 @@ export class CaptionPanelRuntime {
   private restorePromise?: Promise<void>;
   // A new build aborts the running one, so a build that finishes after the
   // tracks changed again is dropped.
-  private buildController?: AbortController;
+  private readonly buildTask = new RestartableTask();
 
   constructor(options: {
     storage: CaptionStorage;
@@ -186,9 +186,7 @@ export class CaptionPanelRuntime {
     vssId1?: string;
     vssId2?: string;
   }): Promise<void> {
-    this.buildController?.abort();
-    const controller = new AbortController();
-    this.buildController = controller;
+    const { step, signal } = this.buildTask.restart();
     const { tracks, video } = this.store.get();
     const track1 = tracks.find((t) => t.vssId === selection.vssId1);
     const track2 = tracks.find((t) => t.vssId === selection.vssId2);
@@ -202,7 +200,6 @@ export class CaptionPanelRuntime {
     if (!track1 || !track2 || !this.trackSource || !video) {
       return;
     }
-    const step = createAbortableStep(controller.signal);
     try {
       const [json3_1, json3_2] = await step(
         Promise.all([
@@ -223,7 +220,7 @@ export class CaptionPanelRuntime {
       await step(this.saveSession(session));
       this.store.update({ session, building: false });
     } catch (error) {
-      if (!controller.signal.aborted) {
+      if (!signal.aborted) {
         this.store.update({ building: false, buildError: error });
       }
     }
