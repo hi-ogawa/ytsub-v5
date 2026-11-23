@@ -11,26 +11,26 @@ const rpc = (request: any, path: string, data: any = {}) =>
     data: { json: data },
   });
 
-const json = async (res: any) => {
-  const body = await res.json();
+const json = async (response: any) => {
+  const body = await response.json();
   return body.json;
 };
 
 test.describe("auth endpoints", () => {
   test("unauthenticated API calls return 401", async ({ request }) => {
-    const res = await rpc(request, "videos/listVideos", {});
-    expect(res.status()).toBe(401);
+    const response = await rpc(request, "videos/listVideos", {});
+    expect(response.status()).toBe(401);
   });
 
   test("register creates user and sets session cookie", async ({ request }) => {
-    const res = await rpc(request, "auth/register", {
+    const response = await rpc(request, "auth/register", {
       username: "newuser",
       password: "testpassword",
     });
-    expect(res.ok()).toBe(true);
-    const body = await json(res);
+    expect(response.ok()).toBe(true);
+    const body = await json(response);
     expect(body.ok).toBe(true);
-    const setCookie = res.headers()["set-cookie"];
+    const setCookie = response.headers()["set-cookie"];
     expect(setCookie).toContain("session=");
     expect(setCookie).toContain("HttpOnly");
   });
@@ -42,11 +42,11 @@ test.describe("auth endpoints", () => {
       password: "testpassword",
     });
     // Try again
-    const res = await rpc(request, "auth/register", {
+    const response = await rpc(request, "auth/register", {
       username: "dupuser",
       password: "testpassword",
     });
-    expect(res.status()).toBe(409);
+    expect(response.status()).toBe(409);
   });
 
   test("login with wrong password returns 401", async ({ request }) => {
@@ -55,11 +55,11 @@ test.describe("auth endpoints", () => {
       username: "wrongpw",
       password: "testpassword",
     });
-    const res = await rpc(request, "auth/login", {
+    const response = await rpc(request, "auth/login", {
       username: "wrongpw",
       password: "badpassword",
     });
-    expect(res.status()).toBe(401);
+    expect(response.status()).toBe(401);
   });
 
   test("login with correct password sets session cookie", async ({
@@ -70,12 +70,12 @@ test.describe("auth endpoints", () => {
       username: "loginuser",
       password: "testpassword",
     });
-    const res = await rpc(request, "auth/login", {
+    const response = await rpc(request, "auth/login", {
       username: "loginuser",
       password: "testpassword",
     });
-    expect(res.ok()).toBe(true);
-    const setCookie = res.headers()["set-cookie"];
+    expect(response.ok()).toBe(true);
+    const setCookie = response.headers()["set-cookie"];
     expect(setCookie).toContain("session=");
     expect(setCookie).toContain("HttpOnly");
   });
@@ -87,8 +87,8 @@ test.describe("auth endpoints", () => {
     });
 
     // Now API calls should work (Playwright request context keeps cookies)
-    const res = await rpc(request, "videos/listVideos", {});
-    expect(res.ok()).toBe(true);
+    const response = await rpc(request, "videos/listVideos", {});
+    expect(response.ok()).toBe(true);
   });
 
   test("auth check returns status", async ({ request }) => {
@@ -115,11 +115,11 @@ test.describe("auth endpoints", () => {
     // Logout to clear cookie
     await rpc(request, "auth/logout");
 
-    const res = await rpc(request, "auth/login", {
+    const response = await rpc(request, "auth/login", {
       username: "tokenuser",
       password: "testpassword",
     });
-    const body = await json(res);
+    const body = await json(response);
     expect(body.token).toBeTruthy();
     expect(typeof body.token).toBe("string");
   });
@@ -129,24 +129,24 @@ test.describe("auth endpoints", () => {
       username: "beareruser",
       password: "testpassword",
     });
-    const loginRes = await rpc(request, "auth/login", {
+    const loginResponse = await rpc(request, "auth/login", {
       username: "beareruser",
       password: "testpassword",
     });
-    const { token } = await json(loginRes);
+    const { token } = await json(loginResponse);
 
     // Logout to clear cookie — force bearer-only path
     await rpc(request, "auth/logout");
 
     // Use bearer token directly
-    const res = await request.post("/api/videos/listVideos", {
+    const response = await request.post("/api/videos/listVideos", {
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       },
       data: { json: {} },
     });
-    expect(res.ok()).toBe(true);
+    expect(response.ok()).toBe(true);
   });
 
   test("bearer token auth check works", async ({ request }) => {
@@ -154,22 +154,22 @@ test.describe("auth endpoints", () => {
       username: "bearercheck",
       password: "testpassword",
     });
-    const loginRes = await rpc(request, "auth/login", {
+    const loginResponse = await rpc(request, "auth/login", {
       username: "bearercheck",
       password: "testpassword",
     });
-    const { token } = await json(loginRes);
+    const { token } = await json(loginResponse);
     await rpc(request, "auth/logout");
 
-    const res = await request.post("/api/auth/check", {
+    const response = await request.post("/api/auth/check", {
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       },
       data: { json: {} },
     });
-    expect(res.ok()).toBe(true);
-    const body = await res.json();
+    expect(response.ok()).toBe(true);
+    const body = await response.json();
     expect(body.json.authenticated).toBe(true);
   });
 
@@ -179,9 +179,9 @@ test.describe("auth endpoints", () => {
       password: "testpassword",
     });
 
-    const logoutRes = await rpc(request, "auth/logout");
-    expect(logoutRes.ok()).toBe(true);
-    const setCookie = logoutRes.headers()["set-cookie"];
+    const logoutResponse = await rpc(request, "auth/logout");
+    expect(logoutResponse.ok()).toBe(true);
+    const setCookie = logoutResponse.headers()["set-cookie"];
     expect(setCookie).toContain("Max-Age=0");
   });
 });
