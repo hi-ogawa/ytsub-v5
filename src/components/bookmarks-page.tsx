@@ -1,6 +1,8 @@
 import {
   ArrowDownToLine,
   ArrowUpFromLine,
+  Bookmark,
+  Cloud,
   EllipsisVertical,
   Loader2,
   Trash2,
@@ -72,14 +74,7 @@ export function BookmarksPage({
               }
               badge={
                 <>
-                  <span
-                    data-testid="video-card-storage"
-                    className="rounded bg-muted px-2 py-0.5"
-                  >
-                    {entry.bookmarkCount === undefined
-                      ? "Not on this device"
-                      : `${entry.bookmarkCount} bookmark${entry.bookmarkCount === 1 ? "" : "s"}`}
-                  </span>
+                  <BookmarkCount count={entry.bookmarkCount} />
                   <EditTime time={entry.editedAt} />
                   {sync && entry.syncStatus && (
                     <span className="ml-auto">
@@ -100,6 +95,30 @@ export function BookmarksPage({
         </div>
       )}
     </div>
+  );
+}
+
+function BookmarkCount({ count }: { count?: number }) {
+  const label =
+    count === undefined
+      ? "Not on this device"
+      : `${count} bookmark${count === 1 ? "" : "s"}`;
+  return (
+    <span
+      role="img"
+      aria-label={label}
+      title={label}
+      className="flex items-center gap-1"
+    >
+      {count === undefined ? (
+        <Cloud className="size-3.5" />
+      ) : (
+        <>
+          <Bookmark className="size-3.5" />
+          {count}
+        </>
+      )}
+    </span>
   );
 }
 
