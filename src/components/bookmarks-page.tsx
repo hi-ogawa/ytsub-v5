@@ -2,7 +2,6 @@ import {
   ArrowDownToLine,
   ArrowUpFromLine,
   Bookmark,
-  Cloud,
   EllipsisVertical,
   Loader2,
   Trash2,
@@ -110,14 +109,8 @@ function BookmarkCount({ count }: { count?: number }) {
       title={label}
       className="flex items-center gap-1"
     >
-      {count === undefined ? (
-        <Cloud className="size-3.5" />
-      ) : (
-        <>
-          <Bookmark className="size-3.5" />
-          {count}
-        </>
-      )}
+      <Bookmark className="size-3.5" />
+      {count ?? "–"}
     </span>
   );
 }
