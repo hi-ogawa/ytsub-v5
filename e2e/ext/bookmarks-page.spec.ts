@@ -50,15 +50,13 @@ test("bookmark captions, then push them from the bookmarks page", async ({
   const card = page.getByTestId(`video-card-${SEED_YOUTUBE_ID}`);
   await expect(card).toContainText("cloud palace");
   await expect(card).toContainText("Billlie");
-  await expect(card.getByTestId("video-card-storage")).toHaveText("1 bookmark");
+  await expect(card.getByRole("img", { name: "1 bookmark" })).toBeVisible();
 
   // Another bookmark updates the count
   await createBookmarkAt(host, { index: 1, start: 0, end: 2 });
   await expect(host.getByRole("tab", { name: "Bookmarks (2)" })).toBeVisible();
   await page.reload();
-  await expect(card.getByTestId("video-card-storage")).toHaveText(
-    "2 bookmarks",
-  );
+  await expect(card.getByRole("img", { name: "2 bookmarks" })).toBeVisible();
 
   // Push the session the content script saved
   await login(page, { username: "dev-empty" });
@@ -155,8 +153,8 @@ test("shows local entries without login", async ({ page, extensionId }) => {
 
   await expect(page.getByText("Test Video One")).toBeVisible();
   await expect(page.getByText("Test Video Two")).toBeVisible();
-  await expect(page.getByText("3 bookmarks")).toBeVisible();
-  await expect(page.getByText("1 bookmark")).toBeVisible();
+  await expect(page.getByRole("img", { name: "3 bookmarks" })).toBeVisible();
+  await expect(page.getByRole("img", { name: "1 bookmark" })).toBeVisible();
   await expect(page.getByTestId("video-sync-badge")).toHaveCount(0);
 
   // Each card shows its edit time
@@ -189,11 +187,13 @@ test("shows local entries with sync badges after login", async ({
   await expect(
     page
       .getByTestId(`video-card-${SEED_YOUTUBE_ID}`)
-      .getByTestId("video-card-storage"),
-  ).toHaveText("Not on this device");
+      .getByRole("img", { name: "Not on this device" }),
+  ).toBeVisible();
   await expect(
-    page.getByTestId("video-card-abc123").getByTestId("video-card-storage"),
-  ).toHaveText("3 bookmarks");
+    page
+      .getByTestId("video-card-abc123")
+      .getByRole("img", { name: "3 bookmarks" }),
+  ).toBeVisible();
 });
 
 test("load, login, logout", async ({ page, extensionId }) => {
@@ -343,9 +343,7 @@ test("pull works without a YouTube tab", async ({ page, extensionId }) => {
   await badge.click();
   await expect(badge).toHaveAttribute("data-sync-status", "synced");
   checkpoint("pull synced");
-  await expect(card.getByTestId("video-card-storage")).toHaveText(
-    "15 bookmarks",
-  );
+  await expect(card.getByRole("img", { name: "15 bookmarks" })).toBeVisible();
 });
 
 test("a pulled video keeps the place its edit time gives it", async ({
