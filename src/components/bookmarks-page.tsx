@@ -74,6 +74,7 @@ export function BookmarksPage({
               badge={
                 <>
                   <BookmarkCount count={entry.bookmarkCount} />
+                  <span aria-hidden>·</span>
                   <EditTime time={entry.editedAt} />
                   {sync && entry.syncStatus && (
                     <span className="ml-auto">
@@ -107,9 +108,9 @@ function BookmarkCount({ count }: { count?: number }) {
       role="img"
       aria-label={label}
       title={label}
-      className="flex items-center gap-1"
+      className="flex items-center gap-0.5"
     >
-      <Bookmark className="size-3.5" />
+      <Bookmark className="size-3 -translate-y-px" />
       {count ?? "–"}
     </span>
   );
