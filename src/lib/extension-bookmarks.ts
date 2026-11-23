@@ -75,13 +75,13 @@ export function indexBookmarks(bookmarks: ExtensionBookmark[]) {
   const bookmarksByIndex = new Map<number, ExtensionBookmark[]>();
   const bookmarkNumberById = new Map<string, number>();
   for (let index = 0; index < bookmarks.length; index++) {
-    const bm = bookmarks[index];
-    bookmarkNumberById.set(bm.id, index + 1);
-    const list = bookmarksByIndex.get(bm.captionIndex);
+    const bookmark = bookmarks[index];
+    bookmarkNumberById.set(bookmark.id, index + 1);
+    const list = bookmarksByIndex.get(bookmark.captionIndex);
     if (list) {
-      list.push(bm);
+      list.push(bookmark);
     } else {
-      bookmarksByIndex.set(bm.captionIndex, [bm]);
+      bookmarksByIndex.set(bookmark.captionIndex, [bookmark]);
     }
   }
   return { bookmarksByIndex, bookmarkNumberById };

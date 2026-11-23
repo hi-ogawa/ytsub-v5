@@ -205,10 +205,10 @@ export class CaptionPanelRuntime {
   async createBookmarks(
     selections: Omit<ExtensionBookmark, "id" | "createdAt">[],
   ): Promise<void> {
-    const newBookmarks: ExtensionBookmark[] = selections.map((sel) => ({
+    const newBookmarks: ExtensionBookmark[] = selections.map((selection) => ({
       id: crypto.randomUUID(),
       createdAt: new Date().toISOString(),
-      ...sel,
+      ...selection,
     }));
     const session = this.getSession();
     await this.updateSession({
@@ -229,9 +229,9 @@ export class CaptionPanelRuntime {
     const updates = new Map(entries.map((e) => [e.id, e]));
     const session = this.getSession();
     await this.updateSession({
-      bookmarks: session.bookmarks.map((b) => {
-        const u = updates.get(b.id);
-        return u ? { ...b, ...u } : b;
+      bookmarks: session.bookmarks.map((bookmark) => {
+        const update = updates.get(bookmark.id);
+        return update ? { ...bookmark, ...update } : bookmark;
       }),
     });
   }
@@ -404,7 +404,7 @@ export class CaptionPanelRuntime {
     }
     const time = player.getCurrentTime();
     const bookmark =
-      bookmarks.findLast((bm) => bm.timestamp < time - 1) ??
+      bookmarks.findLast((b) => b.timestamp < time - 1) ??
       bookmarks[bookmarks.length - 1];
     this.seekToBookmark(bookmark);
     return bookmark;
@@ -419,7 +419,7 @@ export class CaptionPanelRuntime {
     }
     const time = player.getCurrentTime();
     const bookmark =
-      bookmarks.find((bm) => bm.timestamp > time + 0.5) ?? bookmarks[0];
+      bookmarks.find((b) => b.timestamp > time + 0.5) ?? bookmarks[0];
     this.seekToBookmark(bookmark);
     return bookmark;
   }
