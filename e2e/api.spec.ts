@@ -171,10 +171,10 @@ test.describe("videos API", () => {
     });
     expect(res.ok()).toBe(true);
 
-    const caps = await json(
+    const captions = await json(
       await rpc(request, "videos/listCaptions", { videoId }),
     );
-    expect(caps.map((c: any) => [c.text1, c.text2])).toEqual([
+    expect(captions.map((c: any) => [c.text1, c.text2])).toEqual([
       ["안녕하세요", "Hello"],
       ["감사합니다", "Thank you"],
     ]);
@@ -230,15 +230,15 @@ test.describe("importVideo API", () => {
     expect(video.captionCount).toBe(2);
 
     // Verify bookmark was created with resolved captionId
-    const bms = await json(
+    const bookmarks = await json(
       await rpc(request, "bookmarks/listBookmarks", {
         videoId: result.videoId,
       }),
     );
-    expect(bms.total).toBe(1);
-    expect(bms.items[0].text).toBe("안녕");
-    expect(bms.items[0].captionId).toBeGreaterThan(0);
-    expect(bms.items[0].timestamp).toBe(0);
+    expect(bookmarks.total).toBe(1);
+    expect(bookmarks.items[0].text).toBe("안녕");
+    expect(bookmarks.items[0].captionId).toBeGreaterThan(0);
+    expect(bookmarks.items[0].timestamp).toBe(0);
   });
 
   test("imports large caption set (300+) without hitting SQL variable limit", async ({
@@ -246,7 +246,7 @@ test.describe("importVideo API", () => {
   }) => {
     const youtubeId = `large-${uid()}`;
     const captionCount = 350;
-    const caps = Array.from({ length: captionCount }, (_, i) => ({
+    const captions = Array.from({ length: captionCount }, (_, i) => ({
       idx: i,
       begin: i * 2,
       end: i * 2 + 2,
@@ -255,7 +255,7 @@ test.describe("importVideo API", () => {
     }));
     const res = await rpc(request, "videos/importVideo", {
       video: { youtubeId, title: "Large Video", ...defaultTrackFields },
-      captions: caps,
+      captions,
     });
     expect(res.ok()).toBe(true);
     const result = await json(res);
@@ -272,14 +272,14 @@ test.describe("importVideo API", () => {
   }) => {
     const youtubeId = `large-bm-${uid()}`;
     const bookmarkCount = 50;
-    const caps = Array.from({ length: bookmarkCount }, (_, i) => ({
+    const captions = Array.from({ length: bookmarkCount }, (_, i) => ({
       idx: i,
       begin: i * 2,
       end: i * 2 + 2,
       text1: `자막${i}`,
       text2: `caption${i}`,
     }));
-    const bms = Array.from({ length: bookmarkCount }, (_, i) => ({
+    const bookmarks = Array.from({ length: bookmarkCount }, (_, i) => ({
       text: `단어${i}`,
       translation: `word${i}`,
       captionIdx: i,
@@ -293,21 +293,21 @@ test.describe("importVideo API", () => {
         title: "Large Bookmark Video",
         ...defaultTrackFields,
       },
-      captions: caps,
-      bookmarks: bms,
+      captions,
+      bookmarks,
     });
     expect(res.ok()).toBe(true);
     const result = await json(res);
     expect(result.captions).toBe(bookmarkCount);
     expect(result.bookmarks).toBe(bookmarkCount);
 
-    const bmList = await json(
+    const bookmarkList = await json(
       await rpc(request, "bookmarks/listBookmarks", {
         videoId: result.videoId,
         limit: 100,
       }),
     );
-    expect(bmList.total).toBe(bookmarkCount);
+    expect(bookmarkList.total).toBe(bookmarkCount);
   });
 
   test("re-import replaces captions and bookmarks", async ({ request }) => {
@@ -344,10 +344,10 @@ test.describe("importVideo API", () => {
     expect(video.title).toBe("V2");
     expect(video.captionCount).toBe(2);
 
-    const caps = await json(
+    const captions = await json(
       await rpc(request, "videos/listCaptions", { videoId: res2.videoId }),
     );
-    expect(caps[0].text1).toBe("갱신");
+    expect(captions[0].text1).toBe("갱신");
   });
 });
 

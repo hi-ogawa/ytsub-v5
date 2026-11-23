@@ -41,15 +41,15 @@ export function mergeStrict(
       return undefined;
     }
   }
-  return cues1.map((c1, i) => ({
+  return cues1.map((cue1, i) => ({
     idx: i,
-    begin: c1.begin,
-    end: c1.end,
-    text1: c1.text,
+    begin: cue1.begin,
+    end: cue1.end,
+    text1: cue1.text,
     text2: cues2[i].text,
     cue1Indices: [i],
     cue2Indices: [i],
-    text1Segments: [c1.text],
+    text1Segments: [cue1.text],
     text2Segments: [cues2[i].text],
   }));
 }
