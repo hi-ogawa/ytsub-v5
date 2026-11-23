@@ -211,7 +211,7 @@ test("server errors show a notice over the local list", async ({
     expect(async () => {
       await page.clock.fastForward(4000);
       await expect(notice).toBeVisible({ timeout: 100 });
-    }).toPass();
+    }).toPass({ intervals: [100] });
 
   // A failed auth check shows the notice over the local list
   await page.route("**/api/auth/check", (route) => route.abort());
