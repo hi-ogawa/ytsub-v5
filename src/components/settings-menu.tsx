@@ -50,8 +50,8 @@ export function SettingsDropdown({
         <SyncMenuItem useSync={useSync} runtime={runtime} />
         <DropdownMenuItem
           data-checked={autoScroll}
-          onSelect={(e) => {
-            e.preventDefault();
+          onSelect={(event) => {
+            event.preventDefault();
             onSetAutoScroll((v) => !v);
           }}
         >

@@ -45,9 +45,9 @@ function listenWorldMessage(
 ) {
   window.addEventListener(
     "message",
-    (e) => {
-      const message = e.data as WorldMessage | undefined;
-      if (e.source !== window) {
+    (event) => {
+      const message = event.data as WorldMessage | undefined;
+      if (event.source !== window) {
         return;
       }
       if (message?.channel !== channel || message.kind !== kind) {
@@ -129,10 +129,10 @@ export function setupRpcRelay() {
         ? { id, error: result.__error }
         : { id, result };
       postWorldMessage(RPC_CHANNEL, "response", response);
-    } catch (err) {
+    } catch (error) {
       const response: RpcResponse = {
         id,
-        error: err instanceof Error ? err.message : "Unknown error",
+        error: error instanceof Error ? error.message : "Unknown error",
       };
       postWorldMessage(RPC_CHANNEL, "response", response);
     }
@@ -152,10 +152,10 @@ export function registerRpcHandlers(handlers: Record<string, Function>) {
       sendResponse(undefined);
       return;
     }
-    handler(params).then(sendResponse, (err: unknown) => {
-      console.error(`[zamak rpc] ${method}:`, err);
+    handler(params).then(sendResponse, (error: unknown) => {
+      console.error(`[zamak rpc] ${method}:`, error);
       sendResponse({
-        __error: err instanceof Error ? err.message : "Unknown error",
+        __error: error instanceof Error ? error.message : "Unknown error",
       });
     });
     return true; // keep channel open for async response

@@ -116,24 +116,24 @@ function waitForFrame(options: ConnectOptions): Promise<Connection> {
     }, options.timeoutMs);
     window.addEventListener(
       "message",
-      (e) => {
-        const message = e.data as FrameMessage | undefined;
+      (event) => {
+        const message = event.data as FrameMessage | undefined;
         if (message?.type !== "zamak-frame:ready") {
           return;
         }
-        if (!e.origin.startsWith("chrome-extension://")) {
+        if (!event.origin.startsWith("chrome-extension://")) {
           return;
         }
         const frame = document.getElementById(options.frameId);
         if (
           !(frame instanceof HTMLIFrameElement) ||
-          e.source !== frame.contentWindow
+          event.source !== frame.contentWindow
         ) {
           return;
         }
         clearTimeout(timer);
         controller.abort();
-        resolve({ frame: frame.contentWindow!, origin: e.origin });
+        resolve({ frame: frame.contentWindow!, origin: event.origin });
       },
       { signal: controller.signal },
     );
@@ -171,12 +171,12 @@ export function serveFrameRpc<Event>(
       }
       const result = await handlers[method]!(...params);
       postTo(parent, { type: "zamak-frame:response", id, result });
-    } catch (err) {
-      console.error(`[zamak frame] ${method}:`, err);
+    } catch (error) {
+      console.error(`[zamak frame] ${method}:`, error);
       postTo(parent, {
         type: "zamak-frame:response",
         id,
-        error: err instanceof Error ? err.message : "Unknown error",
+        error: error instanceof Error ? error.message : "Unknown error",
       });
     }
   });
@@ -202,11 +202,14 @@ function listenFrom(
 ) {
   window.addEventListener(
     "message",
-    (e) => {
-      if (e.source !== connection.frame || e.origin !== connection.origin) {
+    (event) => {
+      if (
+        event.source !== connection.frame ||
+        event.origin !== connection.origin
+      ) {
         return;
       }
-      const message = e.data as FrameMessage | undefined;
+      const message = event.data as FrameMessage | undefined;
       if (message?.type) {
         listener(message);
       }

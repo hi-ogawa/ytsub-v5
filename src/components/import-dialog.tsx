@@ -57,8 +57,8 @@ export function ImportDialog({
       );
       onOpenChange(false);
       setParsed(undefined);
-    } catch (e) {
-      setImportError(e instanceof Error ? e.message : "Import failed");
+    } catch (error) {
+      setImportError(error instanceof Error ? error.message : "Import failed");
     } finally {
       setImporting(false);
     }
@@ -71,17 +71,23 @@ export function ImportDialog({
 
         <div
           className="mb-4 rounded-lg border-2 border-dashed border-border p-6 text-center text-sm text-muted-foreground"
-          onDragOver={(e) => {
-            e.preventDefault();
-            e.currentTarget.classList.add("border-ring", "bg-highlight-bg");
+          onDragOver={(event) => {
+            event.preventDefault();
+            event.currentTarget.classList.add("border-ring", "bg-highlight-bg");
           }}
-          onDragLeave={(e) => {
-            e.currentTarget.classList.remove("border-ring", "bg-highlight-bg");
+          onDragLeave={(event) => {
+            event.currentTarget.classList.remove(
+              "border-ring",
+              "bg-highlight-bg",
+            );
           }}
-          onDrop={(e) => {
-            e.preventDefault();
-            e.currentTarget.classList.remove("border-ring", "bg-highlight-bg");
-            const file = e.dataTransfer.files[0];
+          onDrop={(event) => {
+            event.preventDefault();
+            event.currentTarget.classList.remove(
+              "border-ring",
+              "bg-highlight-bg",
+            );
+            const file = event.dataTransfer.files[0];
             if (file) {
               handleFile(file);
             }
@@ -103,8 +109,8 @@ export function ImportDialog({
             accept=".json"
             className="hidden"
             data-testid="file-input"
-            onChange={(e) => {
-              const file = e.target.files?.[0];
+            onChange={(event) => {
+              const file = event.target.files?.[0];
               if (file) {
                 handleFile(file);
               }

@@ -45,8 +45,8 @@ const transact = createTransact<Stores>({
       // sync, which the server's edited_at started from. An entry unchanged
       // since then takes the same value as its editedAt, so it stays synced.
       const videos = transaction.objectStore(STORE_NAMES.videos);
-      videos.openCursor().onsuccess = (e) => {
-        const cursor = (e.target as IDBRequest<IDBCursorWithValue>).result;
+      videos.openCursor().onsuccess = (event) => {
+        const cursor = (event.target as IDBRequest<IDBCursorWithValue>).result;
         if (!cursor) {
           return;
         }

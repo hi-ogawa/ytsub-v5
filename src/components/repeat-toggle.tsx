@@ -21,8 +21,8 @@ export function RepeatToggle({
       ].join(" ")}
       title="Repeat"
       aria-pressed={isRepeating}
-      onClick={(e) => {
-        e.stopPropagation();
+      onClick={(event) => {
+        event.stopPropagation();
         onToggle();
       }}
     >

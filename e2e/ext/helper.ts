@@ -54,8 +54,8 @@ export async function gotoBookmarks(page: Page, extensionId: string) {
           console.log(`[browser:console.error] ${message.text()}`);
         }
       });
-      page.on("pageerror", (err) => {
-        console.log(`[browser:pageerror] ${err}`);
+      page.on("pageerror", (error) => {
+        console.log(`[browser:pageerror] ${error}`);
       });
       page.on("requestfailed", (request) => {
         console.log(

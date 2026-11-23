@@ -56,9 +56,9 @@ export function useVideoListSync(storage: CaptionStorage) {
     try {
       await fn();
       serverQuery.refetch();
-    } catch (err) {
-      console.error("[zamak sync]", err);
-      toast.error(err instanceof Error ? err.message : "Sync failed");
+    } catch (error) {
+      console.error("[zamak sync]", error);
+      toast.error(error instanceof Error ? error.message : "Sync failed");
     } finally {
       setSyncing((s) => {
         const next = new Set(s);

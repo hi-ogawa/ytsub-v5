@@ -175,8 +175,8 @@ function BookmarkCard({
             <button
               className="rounded p-0.5 text-muted-foreground hover:bg-accent hover:text-foreground"
               title="Go to caption"
-              onClick={(e) => {
-                e.stopPropagation();
+              onClick={(event) => {
+                event.stopPropagation();
                 onGoToCaption();
               }}
             >

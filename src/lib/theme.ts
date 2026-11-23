@@ -47,7 +47,8 @@ export function useTheme() {
       return;
     }
     const darkQuery = matchMedia("(prefers-color-scheme: dark)");
-    const handler = (e: MediaQueryListEvent) => applyDarkClass(e.matches);
+    const handler = (event: MediaQueryListEvent) =>
+      applyDarkClass(event.matches);
     darkQuery.addEventListener("change", handler);
     return () => darkQuery.removeEventListener("change", handler);
   }, [theme]);

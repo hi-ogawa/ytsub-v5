@@ -342,15 +342,15 @@ function BookmarkWord({
         avoidCollisions
         onOpenAutoFocus={(e) => e.preventDefault()}
         onClick={(e) => e.stopPropagation()}
-        onPointerDownOutside={(e) => {
+        onPointerDownOutside={(event) => {
           // When modal=false (extension shadow DOM), DismissableLayer closes
           // on pointerdown before the trigger's click can toggle. Prevent the
           // dismiss when clicking the trigger so the toggle handles it.
           // Use composedPath() because shadow DOM retargets event.target to
           // the host element.
-          const target = e.detail.originalEvent.composedPath()[0] as Node;
+          const target = event.detail.originalEvent.composedPath()[0] as Node;
           if (triggerRef.current?.contains(target)) {
-            e.preventDefault();
+            event.preventDefault();
           }
         }}
       >
@@ -385,8 +385,8 @@ function BookmarkWord({
           <button
             className="mt-1 rounded p-0.5 text-muted-foreground hover:bg-accent hover:text-foreground"
             title="Go to bookmark"
-            onMouseDown={(e) => {
-              e.stopPropagation();
+            onMouseDown={(event) => {
+              event.stopPropagation();
               // The Captions tab gets hidden rather than unmounted, so an open
               // popover would stay on screen, anchored to a zero-size trigger.
               changeOpen(false);
