@@ -42,31 +42,31 @@ export function ExtensionBookmarksList({
 
   useImperativeHandle(ref, () => ({
     scrollToBookmark: (bookmarkId: string) => {
-      const el = scrollRef.current?.querySelector(
+      const element = scrollRef.current?.querySelector(
         `[data-bookmark-id="${bookmarkId}"]`,
       ) as HTMLElement | null;
-      if (el) {
-        el.scrollIntoView({ behavior: "smooth", block: "center" });
-        flashHighlight(el);
+      if (element) {
+        element.scrollIntoView({ behavior: "smooth", block: "center" });
+        flashHighlight(element);
       }
     },
   }));
 
   return (
     <div ref={scrollRef} className="flex flex-col gap-1.5 p-1.5">
-      {bookmarks.map((bm, bmIndex) => (
+      {bookmarks.map((bookmark, index) => (
         <BookmarkCard
-          key={bm.id}
-          bookmark={bm}
-          bookmarkNumber={bmIndex + 1}
-          caption={rows[bm.captionIndex]}
-          isCurrent={bm.captionIndex === currentIndex}
+          key={bookmark.id}
+          bookmark={bookmark}
+          bookmarkNumber={index + 1}
+          caption={rows[bookmark.captionIndex]}
+          isCurrent={bookmark.captionIndex === currentIndex}
           isPlaying={isPlaying}
-          isRepeating={bm.captionIndex === repeatIndex}
-          onClick={() => onClickBookmark(bm)}
-          onToggleRepeat={() => onToggleRepeat(bm.captionIndex)}
-          onDelete={() => onDeleteBookmark(bm.id)}
-          onGoToCaption={() => onGoToCaption(bm.captionIndex)}
+          isRepeating={bookmark.captionIndex === repeatIndex}
+          onClick={() => onClickBookmark(bookmark)}
+          onToggleRepeat={() => onToggleRepeat(bookmark.captionIndex)}
+          onDelete={() => onDeleteBookmark(bookmark.id)}
+          onGoToCaption={() => onGoToCaption(bookmark.captionIndex)}
         />
       ))}
     </div>

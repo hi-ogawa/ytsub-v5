@@ -35,9 +35,10 @@ test("clicking a row seeks to its start and plays, and clicking the current row 
 }) => {
   const { ytPage, host } = await openPanelWithTracks(context, SEED_YOUTUBE_ID);
   const video = ytPage.locator("video");
-  const isPaused = () => video.evaluate((el: HTMLVideoElement) => el.paused);
+  const isPaused = () =>
+    video.evaluate((element: HTMLVideoElement) => element.paused);
   const getCurrentTime = () =>
-    video.evaluate((el: HTMLVideoElement) => el.currentTime);
+    video.evaluate((element: HTMLVideoElement) => element.currentTime);
 
   const row = host.locator("[data-index='2']");
   await row.click();
@@ -56,12 +57,16 @@ test("repeat replays a row from its start until another row is clicked", async (
 }) => {
   const { ytPage, host } = await openPanelWithTracks(context, SEED_YOUTUBE_ID);
   const video = ytPage.locator("video");
-  const isPaused = () => video.evaluate((el: HTMLVideoElement) => el.paused);
+  const isPaused = () =>
+    video.evaluate((element: HTMLVideoElement) => element.paused);
   const getCurrentTime = () =>
-    video.evaluate((el: HTMLVideoElement) => el.currentTime);
+    video.evaluate((element: HTMLVideoElement) => element.currentTime);
   // The mock video has no source, so its time moves only when set by hand.
   const setCurrentTime = (time: number) =>
-    video.evaluate((el: HTMLVideoElement, t) => (el.currentTime = t), time);
+    video.evaluate(
+      (element: HTMLVideoElement, t) => (element.currentTime = t),
+      time,
+    );
 
   // Row 2 spans 35.597–38.206
   const repeat = host.locator("[data-index='2']").getByTitle("Repeat");

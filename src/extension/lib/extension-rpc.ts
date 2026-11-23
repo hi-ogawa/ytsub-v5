@@ -96,7 +96,7 @@ export function createRuntimeRelayRpc<
   return createRpcProxy<Handlers>((method, params) => {
     const id = crypto.randomUUID();
     return new Promise((resolve, reject) => {
-      const ac = new AbortController();
+      const controller = new AbortController();
       listenWorldMessage(
         RPC_CHANNEL,
         "response",
@@ -104,14 +104,14 @@ export function createRuntimeRelayRpc<
           if (response.id !== id) {
             return;
           }
-          ac.abort();
+          controller.abort();
           if (response.error) {
             reject(new Error(response.error));
           } else {
             resolve(response.result);
           }
         },
-        { signal: ac.signal },
+        { signal: controller.signal },
       );
       postWorldMessage(RPC_CHANNEL, "request", { id, method, params });
     });
@@ -142,11 +142,11 @@ export function setupRpcRelay() {
 // --- Background: handler registration ---
 
 export function registerRpcHandlers(handlers: Record<string, Function>) {
-  chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
-    if (msg?.type !== "zamak-rpc") {
+  chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+    if (message?.type !== "zamak-rpc") {
       return;
     }
-    const { method, params } = msg as RpcRequest;
+    const { method, params } = message as RpcRequest;
     const handler = handlers[method];
     if (!handler) {
       sendResponse(undefined);
