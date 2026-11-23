@@ -83,3 +83,23 @@ test("import JSON file adds video to list with captions and bookmarks", async ({
   await page.getByRole("tab", { name: /Bookmarks/ }).click();
   await expect(page.locator("[data-bookmark-id]").first()).toBeVisible();
 });
+
+test("layout starts as a list on a phone and remembers the switch", async ({
+  page,
+}) => {
+  await setupDb({ seed: true });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await login(page);
+
+  const card = page.getByRole("link", { name: /cloud palace/ });
+  const listButton = page.getByRole("button", { name: "List" });
+  const gridButton = page.getByRole("button", { name: "Grid" });
+  await expect(listButton).toHaveAttribute("aria-pressed", "true");
+  expect((await card.locator("img").boundingBox())!.width).toBeLessThan(200);
+
+  await gridButton.click();
+  await expect(gridButton).toHaveAttribute("aria-pressed", "true");
+  await page.reload();
+  await expect(gridButton).toHaveAttribute("aria-pressed", "true");
+  expect((await card.locator("img").boundingBox())!.width).toBeGreaterThan(300);
+});

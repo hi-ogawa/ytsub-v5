@@ -25,6 +25,7 @@ Read the [product overview](docs/product.md) and the [architecture overview](doc
 - File names: kebab-case
 - Give each build target its own folder under `src/` (`web/`, `extension/`, `server/`), and keep code they share at the top level of `src/`
 - Put code that knows nothing about the app in `src/utils/`, so it imports nothing else from `src/`. App logic goes in `src/lib/`
+- Variable names: use full words, such as `bookmark` rather than `bm` and `event` rather than `e`. A one-letter name is fine only as the parameter of a one-expression callback, where the collection names it. Terms the code base or its ecosystem uses as words, such as `id`, `url`, `db`, and `props`, count as full words
 - Function names: start with a verb for the action the function performs, so a call site reads as what happens rather than what comes back. This includes class accessors, so write a `get`-prefixed method rather than a getter. Components, hooks, and other constructs with their own ecosystem naming conventions follow those instead
 - Do not add compatibility paths or handling for edge cases that do not occur in practice
 - Organize code so each chunk can be validated by one body of expertise. A reader meets files and diffs linearly and loads one such body at a time. Ask which single specialist could review a chunk alone, split where the needed expertise changes even with one caller, and keep code together when it shares one domain regardless of length
