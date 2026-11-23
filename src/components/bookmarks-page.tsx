@@ -3,11 +3,17 @@ import {
   ArrowUpFromLine,
   Bookmark,
   EllipsisVertical,
+  LayoutGrid,
+  List,
   Loader2,
   Trash2,
 } from "lucide-react";
 import { useState } from "react";
 import type { VideoIndexEntry } from "../lib/caption-storage.ts";
+import {
+  type VideoListLayout,
+  videoListPreferences,
+} from "../lib/video-list-preferences.ts";
 import { formatRelativeTime } from "../utils/relative-time.ts";
 import { syncStateDisplay } from "./sync-state.tsx";
 import { Dialog, DialogContent, DialogTitle } from "./ui/dialog.tsx";
@@ -40,15 +46,24 @@ export function BookmarksPage({
   const sorted = [...displayEntries].sort((a, b) =>
     b.editedAt.localeCompare(a.editedAt),
   );
+  const [savedLayout, setLayout] = videoListPreferences.useValue("layout");
+  // Below the width where the grid gets a second column, a card fills the
+  // screen, so the list is the better start
+  const layout =
+    savedLayout ??
+    (window.matchMedia("(min-width: 768px)").matches ? "grid" : "list");
 
   return (
-    <div className="mx-auto max-w-5xl p-8">
-      <div className="mb-6 flex items-center gap-2">
+    <div className="mx-auto max-w-5xl p-4 sm:p-8">
+      <div
+        className={`${layout === "list" ? "mb-2" : "mb-6"} flex items-center gap-2`}
+      >
         <h1 className="text-2xl font-bold">Bookmarked Videos</h1>
         {sync?.isPending && (
           <Loader2 className="size-4 animate-spin text-muted-foreground" />
         )}
         <div className="flex-1" />
+        <LayoutSwitch layout={layout} onChange={setLayout} />
       </div>
       {sorted.length === 0 && !sync?.isPending ? (
         (emptyState ?? (
@@ -58,10 +73,17 @@ export function BookmarksPage({
           </p>
         ))
       ) : (
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div
+          className={
+            layout === "list"
+              ? "divide-y divide-border"
+              : "grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3"
+          }
+        >
           {sorted.map((entry) => (
             <VideoCard
               key={entry.youtubeId}
+              layout={layout}
               youtubeId={entry.youtubeId}
               href={videoHref(entry.youtubeId)}
               title={entry.title}
@@ -71,29 +93,55 @@ export function BookmarksPage({
                   <CardMenu entry={entry} onDelete={() => onDelete(entry)} />
                 )
               }
-              badge={
-                <>
-                  <BookmarkCount count={entry.bookmarkCount} />
-                  <span aria-hidden>·</span>
-                  <EditTime time={entry.editedAt} />
-                  {sync && entry.syncStatus && (
-                    <span className="ml-auto">
-                      <SyncBadge
-                        status={entry.syncStatus}
-                        localEditedAt={entry.editedAt}
-                        serverEditedAt={entry.serverEditedAt}
-                        syncing={sync.syncing.has(entry.youtubeId)}
-                        onPull={() => sync.onPull(entry.youtubeId)}
-                        onPush={() => sync.onPush(entry.youtubeId)}
-                      />
-                    </span>
-                  )}
-                </>
+              bookmarkCount={<BookmarkCount count={entry.bookmarkCount} />}
+              editTime={<EditTime time={entry.editedAt} />}
+              syncBadge={
+                sync &&
+                entry.syncStatus && (
+                  <SyncBadge
+                    status={entry.syncStatus}
+                    localEditedAt={entry.editedAt}
+                    serverEditedAt={entry.serverEditedAt}
+                    syncing={sync.syncing.has(entry.youtubeId)}
+                    onPull={() => sync.onPull(entry.youtubeId)}
+                    onPush={() => sync.onPush(entry.youtubeId)}
+                  />
+                )
               }
             />
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+function LayoutSwitch({
+  layout,
+  onChange,
+}: {
+  layout: VideoListLayout;
+  onChange: (layout: VideoListLayout) => void;
+}) {
+  const options = [
+    { value: "grid", label: "Grid", icon: <LayoutGrid className="size-4" /> },
+    { value: "list", label: "List", icon: <List className="size-4" /> },
+  ] as const;
+  return (
+    <div className="flex rounded-md border border-border p-0.5">
+      {options.map((option) => (
+        <button
+          key={option.value}
+          type="button"
+          title={option.label}
+          aria-label={option.label}
+          aria-pressed={layout === option.value}
+          className={`rounded p-1.5 ${layout === option.value ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+          onClick={() => onChange(option.value)}
+        >
+          {option.icon}
+        </button>
+      ))}
     </div>
   );
 }
