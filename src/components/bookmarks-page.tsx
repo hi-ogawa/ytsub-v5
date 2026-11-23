@@ -67,7 +67,10 @@ export function BookmarksPage({
         <LayoutSwitch layout={layout} onChange={setLayout} />
       </div>
       {sync?.serverError && (
-        <ServerErrorNotice message={sync.serverError.message} />
+        <ServerErrorNotice
+          message={sync.serverError.message}
+          retrying={sync.serverRetrying}
+        />
       )}
       {sorted.length === 0 && !sync?.isPending ? (
         (emptyState ?? (
@@ -120,7 +123,13 @@ export function BookmarksPage({
   );
 }
 
-function ServerErrorNotice({ message }: { message: string }) {
+function ServerErrorNotice({
+  message,
+  retrying,
+}: {
+  message: string;
+  retrying: boolean;
+}) {
   return (
     <div
       role="alert"
@@ -131,7 +140,7 @@ function ServerErrorNotice({ message }: { message: string }) {
         <p className="font-medium">Couldn't load videos from the server</p>
         <p className="break-words text-muted-foreground">{message}</p>
         <p className="text-muted-foreground">
-          Showing the videos on this device.
+          Showing the videos on this device.{retrying && " Retrying…"}
         </p>
       </div>
     </div>

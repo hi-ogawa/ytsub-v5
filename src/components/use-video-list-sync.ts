@@ -99,18 +99,26 @@ export function useVideoListSync(storage: CaptionStorage) {
     });
   };
 
+  // A failed attempt stops the wait for server data, so the local entries
+  // and the error show while React Query keeps retrying
+  const failingQuery = hasFailed(authQuery)
+    ? authQuery
+    : authenticated && hasFailed(serverQuery)
+      ? serverQuery
+      : undefined;
   const isPending =
-    authQuery.isLoading || (authenticated && serverQuery.isLoading);
+    !failingQuery &&
+    (authQuery.isLoading || (authenticated && serverQuery.isLoading));
   const entries: VideoListEntry[] = serverQuery.data ?? videoIndex;
   const serverError =
-    authQuery.error ??
-    (authenticated ? serverQuery.error : undefined) ??
-    undefined;
+    failingQuery?.failureReason ?? failingQuery?.error ?? undefined;
+  const serverRetrying = failingQuery?.isFetching === true;
 
   return {
     authenticated,
     isPending,
     serverError,
+    serverRetrying,
     entries,
     syncing,
     onPull,
@@ -122,6 +130,15 @@ export function useVideoListSync(storage: CaptionStorage) {
       }
     },
   };
+}
+
+// failureReason is set from the first failed attempt, while error waits until
+// the retries run out. A refetch clears failureReason but keeps error.
+function hasFailed(query: {
+  failureReason: Error | null;
+  error: Error | null;
+}) {
+  return Boolean(query.failureReason ?? query.error);
 }
 
 function mergeVideoEntries(
