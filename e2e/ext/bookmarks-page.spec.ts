@@ -203,16 +203,22 @@ test("server errors show a notice over the local list", async ({
   await setupDb({ seed: true });
   const notice = page.getByRole("alert");
   // React Query retries a failed query three times with 1s, 2s, and 4s
-  // backoff before it reports the error, measured at about 7.5s
-  const errorTimeout = 10_000;
+  // backoff before it reports the error. Each retry schedules its delay only
+  // after the previous request fails, so keep skipping ahead until the notice
+  // shows.
+  await page.clock.install();
+  const expectNotice = () =>
+    expect(async () => {
+      await page.clock.fastForward(4000);
+      await expect(notice).toBeVisible({ timeout: 100 });
+    }).toPass();
 
   // A failed auth check shows the notice over the local list
   await page.route("**/api/auth/check", (route) => route.abort());
   await gotoBookmarks(page, extensionId);
   await seedVideoIndex(page, fixtureEntries);
-  await expect(notice).toContainText("Couldn't load videos from the server", {
-    timeout: errorTimeout,
-  });
+  await expectNotice();
+  await expect(notice).toContainText("Couldn't load videos from the server");
   await expect(page.getByText("Test Video One")).toBeVisible();
 
   // A failed video list keeps the local entries without sync badges
@@ -220,7 +226,7 @@ test("server errors show a notice over the local list", async ({
   await login(page);
   await page.route("**/api/videos/listVideos", (route) => route.abort());
   await page.reload();
-  await expect(notice).toBeVisible({ timeout: errorTimeout });
+  await expectNotice();
   await expect(page.getByText("Test Video One")).toBeVisible();
   await expect(page.getByTestId("video-sync-badge")).toHaveCount(0);
 });
