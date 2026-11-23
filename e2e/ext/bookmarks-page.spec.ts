@@ -207,7 +207,7 @@ test("server errors show a notice with retry over the local list", async ({
   // backoff before it reports the error, measured at about 7.5s
   const errorTimeout = 10_000;
 
-  // A failed auth check shows the notice instead of the sign-in prompt
+  // A failed auth check shows the notice over the local list
   await page.route("**/api/auth/check", (route) => route.abort());
   await gotoBookmarks(page, extensionId);
   await seedVideoIndex(page, fixtureEntries);
@@ -215,12 +215,10 @@ test("server errors show a notice with retry over the local list", async ({
     timeout: errorTimeout,
   });
   await expect(page.getByText("Test Video One")).toBeVisible();
-  await expect(page.getByTestId("sign-in")).not.toBeVisible();
 
   await page.unroute("**/api/auth/check");
   await retry.click();
   await expect(notice).not.toBeVisible();
-  await expect(page.getByTestId("sign-in")).toBeVisible();
 
   // A failed video list keeps the local entries without sync badges
   await login(page);

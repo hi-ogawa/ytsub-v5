@@ -77,16 +77,16 @@ export function ExtensionBookmarksPage({
           </span>
         </span>
         <div className="flex items-center gap-2">
-          {sync.authenticated && usernameQuery.data && (
-            <span
-              data-testid="auth-username"
-              className="text-xs text-muted-foreground"
-            >
-              {usernameQuery.data}
-            </span>
-          )}
-          {/* A failed auth check doesn't mean signed out, and the list's notice reports it */}
-          {!sync.authenticated && !sync.serverError && (
+          {sync.authenticated ? (
+            usernameQuery.data && (
+              <span
+                data-testid="auth-username"
+                className="text-xs text-muted-foreground"
+              >
+                {usernameQuery.data}
+              </span>
+            )
+          ) : (
             <button
               type="button"
               data-testid="sign-in"
