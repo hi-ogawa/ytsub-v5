@@ -64,12 +64,12 @@ export function CaptionList({
   // scroll, so auto-scroll doesn't pull the list away from it right after.
   useImperativeHandle(ref, () => ({
     scrollToIndex: (index: number) => {
-      const el = scrollRef.current?.querySelector(
+      const element = scrollRef.current?.querySelector(
         `[data-index="${index}"]`,
       ) as HTMLElement | null;
-      if (el) {
-        el.scrollIntoView({ behavior: "smooth", block: "center" });
-        flashHighlight(el);
+      if (element) {
+        element.scrollIntoView({ behavior: "smooth", block: "center" });
+        flashHighlight(element);
       }
       manualScroll.trigger();
     },
@@ -91,24 +91,27 @@ export function CaptionList({
       return;
     }
 
-    const scrollEl = scrollRef.current;
-    if (!scrollEl) {
+    const scrollElement = scrollRef.current;
+    if (!scrollElement) {
       return;
     }
 
-    const el = scrollEl.querySelector(`[data-index="${currentIndex}"]`);
-    if (!el) {
+    const element = scrollElement.querySelector(
+      `[data-index="${currentIndex}"]`,
+    );
+    if (!element) {
       return;
     }
 
-    const { scrollTop, clientHeight } = scrollEl;
+    const { scrollTop, clientHeight } = scrollElement;
     const currentCenter = scrollTop + clientHeight / 2;
-    const itemRect =
-      (el as HTMLElement).offsetTop + (el as HTMLElement).offsetHeight / 2;
+    const itemCenter =
+      (element as HTMLElement).offsetTop +
+      (element as HTMLElement).offsetHeight / 2;
     const threshold = clientHeight / 6;
 
-    if (Math.abs(itemRect - currentCenter) > threshold) {
-      el.scrollIntoView({ behavior: "smooth", block: "center" });
+    if (Math.abs(itemCenter - currentCenter) > threshold) {
+      element.scrollIntoView({ behavior: "smooth", block: "center" });
     }
   }, [currentIndex]);
 

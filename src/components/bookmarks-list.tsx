@@ -42,12 +42,12 @@ export function ExtensionBookmarksList({
 
   useImperativeHandle(ref, () => ({
     scrollToBookmark: (bookmarkId: string) => {
-      const el = scrollRef.current?.querySelector(
+      const element = scrollRef.current?.querySelector(
         `[data-bookmark-id="${bookmarkId}"]`,
       ) as HTMLElement | null;
-      if (el) {
-        el.scrollIntoView({ behavior: "smooth", block: "center" });
-        flashHighlight(el);
+      if (element) {
+        element.scrollIntoView({ behavior: "smooth", block: "center" });
+        flashHighlight(element);
       }
     },
   }));

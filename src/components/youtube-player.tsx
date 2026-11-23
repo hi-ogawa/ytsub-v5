@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, type RefCallback } from "react";
 
 declare let YT: {
   Player: new (
-    el: HTMLElement | string,
+    element: HTMLElement | string,
     options: {
       videoId: string;
       width?: string;
@@ -47,12 +47,12 @@ export function useYouTubePlayer(youtubeId?: string) {
   const [player, setPlayer] = useState<YTPlayer>();
   const playerRef = useRef<YTPlayer>(undefined);
 
-  const ref: RefCallback<HTMLDivElement> = (el) => {
-    if (!el || !youtubeId || playerRef.current) {
+  const ref: RefCallback<HTMLDivElement> = (element) => {
+    if (!element || !youtubeId || playerRef.current) {
       return;
     }
     loadYoutubeIframeApi().then(() => {
-      const p = new YT.Player(el, {
+      const p = new YT.Player(element, {
         videoId: youtubeId,
         width: "100%",
         height: "100%",
