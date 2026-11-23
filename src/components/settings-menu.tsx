@@ -50,7 +50,7 @@ export function SettingsDropdown({
         <SyncMenuItem useSync={useSync} runtime={runtime} />
         <DropdownMenuItem
           data-checked={autoScroll}
-          onSelect={(e) => {
+          onClick={(e) => {
             e.preventDefault();
             onSetAutoScroll((v) => !v);
           }}
@@ -61,7 +61,7 @@ export function SettingsDropdown({
           Auto-scroll
         </DropdownMenuItem>
         <AiPromptCopy session={session} tracks={tracks} />
-        <DropdownMenuItem onSelect={() => importAiResult({ runtime, session })}>
+        <DropdownMenuItem onClick={() => importAiResult({ runtime, session })}>
           <ClipboardPaste className="mr-2 size-4" />
           Import AI result
         </DropdownMenuItem>

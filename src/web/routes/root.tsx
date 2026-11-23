@@ -101,7 +101,7 @@ function HeaderMenu({
         <DropdownMenuContent className="w-36">
           {authenticated && (
             <DropdownMenuItem
-              onSelect={() => setShowImport(true)}
+              onClick={() => setShowImport(true)}
               className="gap-2"
             >
               <Upload className="size-4" />
@@ -111,7 +111,7 @@ function HeaderMenu({
           <DropdownMenuItem
             data-testid="theme-toggle"
             data-theme={theme}
-            onSelect={(e) => {
+            onClick={(e) => {
               e.preventDefault();
               cycle();
             }}
@@ -121,7 +121,7 @@ function HeaderMenu({
             <span className="capitalize">{theme}</span>
           </DropdownMenuItem>
           {authenticated && (
-            <DropdownMenuItem onSelect={() => logoutMutation.mutate({})}>
+            <DropdownMenuItem onClick={() => logoutMutation.mutate({})}>
               Log out
             </DropdownMenuItem>
           )}

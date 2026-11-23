@@ -36,7 +36,7 @@ export function SyncMenuItem({
         {action ? (
           <DropdownMenuItem
             className="min-w-0 flex-1"
-            onSelect={(e) => {
+            onClick={(e) => {
               if (action.keepOpen) {
                 e.preventDefault();
               }
@@ -57,7 +57,7 @@ export function SyncMenuItem({
         <div className="shrink-0">
           <DropdownMenuItem
             className="px-1.5 text-muted-foreground"
-            onSelect={onNavigate}
+            onClick={onNavigate}
             title="Open bookmarks page"
             aria-label="Open bookmarks page"
           >

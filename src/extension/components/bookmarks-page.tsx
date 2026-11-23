@@ -106,7 +106,7 @@ export function ExtensionBookmarksPage({
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-44">
               <DropdownMenuItem
-                onSelect={(e) => {
+                onClick={(e) => {
                   e.preventDefault();
                   cycle();
                 }}
@@ -117,7 +117,7 @@ export function ExtensionBookmarksPage({
               </DropdownMenuItem>
               {isDevelopment && (
                 <DropdownMenuItem
-                  onSelect={() => setAdvancedOpen(true)}
+                  onClick={() => setAdvancedOpen(true)}
                   className="gap-2"
                 >
                   <Settings className="size-4" />
@@ -126,7 +126,7 @@ export function ExtensionBookmarksPage({
               )}
               {sync.authenticated && (
                 <DropdownMenuItem
-                  onSelect={() =>
+                  onClick={() =>
                     window.open(serverUrl, "_blank", "noopener,noreferrer")
                   }
                   className="gap-2"
@@ -140,7 +140,7 @@ export function ExtensionBookmarksPage({
                   <div className="my-1 h-px bg-border" />
                   <DropdownMenuItem
                     data-testid="sign-out"
-                    onSelect={handleLogout}
+                    onClick={handleLogout}
                     className="gap-2"
                   >
                     <LogOut className="size-4" />

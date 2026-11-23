@@ -122,38 +122,39 @@ function CardMenu({
   entry: VideoListEntry;
   onDelete: () => void;
 }) {
+  // The menu sits inside the card's link. Stop its clicks from navigating only
+  // after they bubble, because the trigger skips its toggle on a click that is
+  // already default-prevented.
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger
-        data-testid="video-card-menu"
-        className="-mr-1.5 -mt-1 shrink-0 rounded p-1.5 text-muted-foreground hover:bg-muted"
-        onClick={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-        }}
-      >
-        <EllipsisVertical className="size-4" />
-      </DropdownMenuTrigger>
-      <DropdownMenuContent
-        align="end"
-        onClick={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-        }}
-      >
-        <DropdownMenuItem
-          className="text-destructive focus:text-destructive"
-          onClick={() => {
-            if (window.confirm(`Delete "${entry.title}"?`)) {
-              onDelete();
-            }
-          }}
+    <div
+      className="contents"
+      onClick={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+      }}
+    >
+      <DropdownMenu>
+        <DropdownMenuTrigger
+          data-testid="video-card-menu"
+          className="-mr-1.5 -mt-1 shrink-0 rounded p-1.5 text-muted-foreground hover:bg-muted"
         >
-          <Trash2 className="mr-2 size-4" />
-          Delete
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+          <EllipsisVertical className="size-4" />
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem
+            className="text-destructive"
+            onClick={() => {
+              if (window.confirm(`Delete "${entry.title}"?`)) {
+                onDelete();
+              }
+            }}
+          >
+            <Trash2 className="mr-2 size-4" />
+            Delete
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
   );
 }
 

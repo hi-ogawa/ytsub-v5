@@ -134,7 +134,7 @@ function BookmarkCard({
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
             <DropdownMenuItem
-              className="text-destructive focus:text-destructive"
+              className="text-destructive"
               onClick={() => {
                 if (confirm(`Delete bookmark "${bookmark.text}"?`)) {
                   onDelete();
