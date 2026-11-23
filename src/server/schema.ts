@@ -101,5 +101,8 @@ export const bookmarks = sqliteTable(
       .notNull()
       .default(sql`(datetime('now'))`),
   },
-  (t) => [index("idx_bookmarks_video").on(t.videoId)],
+  (t) => [
+    index("idx_bookmarks_video").on(t.videoId),
+    index("idx_bookmarks_caption").on(t.captionId),
+  ],
 );
