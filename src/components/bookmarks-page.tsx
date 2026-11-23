@@ -1,4 +1,5 @@
 import {
+  AlertTriangle,
   ArrowDownToLine,
   ArrowUpFromLine,
   Bookmark,
@@ -65,6 +66,13 @@ export function BookmarksPage({
         <div className="flex-1" />
         <LayoutSwitch layout={layout} onChange={setLayout} />
       </div>
+      {sync?.serverError && (
+        <ServerErrorNotice
+          message={sync.serverError.message}
+          retrying={sync.isFetching}
+          onRetry={sync.refetch}
+        />
+      )}
       {sorted.length === 0 && !sync?.isPending ? (
         (emptyState ?? (
           <p className="text-sm text-muted-foreground">
@@ -112,6 +120,41 @@ export function BookmarksPage({
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+function ServerErrorNotice({
+  message,
+  retrying,
+  onRetry,
+}: {
+  message: string;
+  retrying: boolean;
+  onRetry: () => void;
+}) {
+  return (
+    <div
+      role="alert"
+      className="mb-4 flex items-start gap-3 rounded-md border border-destructive/50 px-3 py-2 text-sm"
+    >
+      <AlertTriangle className="mt-0.5 size-4 shrink-0 text-destructive" />
+      <div className="min-w-0 flex-1">
+        <p className="font-medium">Couldn't load videos from the server</p>
+        <p className="break-words text-muted-foreground">{message}</p>
+        <p className="text-muted-foreground">
+          Showing the videos on this device.
+        </p>
+      </div>
+      <button
+        type="button"
+        disabled={retrying}
+        onClick={onRetry}
+        className="flex shrink-0 items-center gap-1 rounded border border-border px-2 py-1 hover:bg-muted disabled:opacity-50"
+      >
+        {retrying && <Loader2 className="size-3 animate-spin" />}
+        Retry
+      </button>
     </div>
   );
 }
