@@ -67,11 +67,7 @@ export function BookmarksPage({
         <LayoutSwitch layout={layout} onChange={setLayout} />
       </div>
       {sync?.serverError && (
-        <ServerErrorNotice
-          message={sync.serverError.message}
-          retrying={sync.isFetching}
-          onRetry={sync.refetch}
-        />
+        <ServerErrorNotice message={sync.serverError.message} />
       )}
       {sorted.length === 0 && !sync?.isPending ? (
         (emptyState ?? (
@@ -124,15 +120,7 @@ export function BookmarksPage({
   );
 }
 
-function ServerErrorNotice({
-  message,
-  retrying,
-  onRetry,
-}: {
-  message: string;
-  retrying: boolean;
-  onRetry: () => void;
-}) {
+function ServerErrorNotice({ message }: { message: string }) {
   return (
     <div
       role="alert"
@@ -146,15 +134,6 @@ function ServerErrorNotice({
           Showing the videos on this device.
         </p>
       </div>
-      <button
-        type="button"
-        disabled={retrying}
-        onClick={onRetry}
-        className="flex shrink-0 items-center gap-1 rounded border border-border px-2 py-1 hover:bg-muted disabled:opacity-50"
-      >
-        {retrying && <Loader2 className="size-3 animate-spin" />}
-        Retry
-      </button>
     </div>
   );
 }

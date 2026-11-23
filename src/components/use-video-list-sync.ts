@@ -109,7 +109,6 @@ export function useVideoListSync(storage: CaptionStorage) {
     authenticated,
     isPending,
     serverError: serverError ?? undefined,
-    isFetching: authQuery.isFetching || serverQuery.isFetching,
     entries,
     syncing,
     onPull,
