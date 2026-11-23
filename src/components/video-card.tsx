@@ -9,7 +9,7 @@ export function VideoCard({
   title,
   titleRight,
   channelName,
-  bookmarkLabel,
+  bookmarkCount,
   editTime,
   syncBadge,
 }: {
@@ -19,7 +19,7 @@ export function VideoCard({
   title: string;
   titleRight?: ReactNode;
   channelName: string;
-  bookmarkLabel: string;
+  bookmarkCount: ReactNode;
   editTime: ReactNode;
   syncBadge?: ReactNode;
 }) {
@@ -53,12 +53,14 @@ export function VideoCard({
             <p data-testid="video-card-channel" className="min-w-0 truncate">
               {channel}
             </p>
-            <span className="shrink-0">·</span>
-            <span data-testid="video-card-storage" className="shrink-0">
-              {bookmarkLabel}
+            <span aria-hidden className="shrink-0">
+              ·
             </span>
+            <span className="shrink-0">{bookmarkCount}</span>
             {/* On a phone, the time would leave the channel only a few characters */}
-            <span className="hidden shrink-0 sm:inline">·</span>
+            <span aria-hidden className="hidden shrink-0 sm:inline">
+              ·
+            </span>
             <span className="hidden shrink-0 sm:inline">{editTime}</span>
             {syncBadge && (
               <span className="-my-1.5 -mr-1.5 ml-auto shrink-0">
@@ -103,12 +105,8 @@ export function VideoCard({
           data-testid="video-card-badge"
           className="flex items-center gap-2 text-xs text-muted-foreground"
         >
-          <span
-            data-testid="video-card-storage"
-            className="rounded bg-muted px-2 py-0.5"
-          >
-            {bookmarkLabel}
-          </span>
+          {bookmarkCount}
+          <span aria-hidden>·</span>
           {editTime}
           {syncBadge && <span className="ml-auto">{syncBadge}</span>}
         </div>

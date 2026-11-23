@@ -1,6 +1,7 @@
 import {
   ArrowDownToLine,
   ArrowUpFromLine,
+  Bookmark,
   EllipsisVertical,
   LayoutGrid,
   List,
@@ -92,11 +93,7 @@ export function BookmarksPage({
                   <CardMenu entry={entry} onDelete={() => onDelete(entry)} />
                 )
               }
-              bookmarkLabel={
-                entry.bookmarkCount === undefined
-                  ? "Not on this device"
-                  : `${entry.bookmarkCount} bookmark${entry.bookmarkCount === 1 ? "" : "s"}`
-              }
+              bookmarkCount={<BookmarkCount count={entry.bookmarkCount} />}
               editTime={<EditTime time={entry.editedAt} />}
               syncBadge={
                 sync &&
@@ -146,6 +143,24 @@ function LayoutSwitch({
         </button>
       ))}
     </div>
+  );
+}
+
+function BookmarkCount({ count }: { count?: number }) {
+  const label =
+    count === undefined
+      ? "Not on this device"
+      : `${count} bookmark${count === 1 ? "" : "s"}`;
+  return (
+    <span
+      role="img"
+      aria-label={label}
+      title={label}
+      className="flex items-center gap-0.5"
+    >
+      <Bookmark className="size-3 -translate-y-px" />
+      {count ?? "–"}
+    </span>
   );
 }
 
