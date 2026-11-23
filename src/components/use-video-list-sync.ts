@@ -103,12 +103,14 @@ export function useVideoListSync(storage: CaptionStorage) {
     authQuery.isLoading || (authenticated && serverQuery.isLoading);
   const entries: VideoListEntry[] = serverQuery.data ?? videoIndex;
   const serverError =
-    authQuery.error ?? (authenticated ? serverQuery.error : undefined);
+    authQuery.error ??
+    (authenticated ? serverQuery.error : undefined) ??
+    undefined;
 
   return {
     authenticated,
     isPending,
-    serverError: serverError ?? undefined,
+    serverError,
     entries,
     syncing,
     onPull,
