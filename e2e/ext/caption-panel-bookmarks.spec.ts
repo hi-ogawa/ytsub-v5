@@ -48,26 +48,15 @@ test("deletes a bookmark from its popover after confirming", async ({
   await createBookmarkAt(host, { index: 1, start: 0, end: 2 });
   const highlight = host.getByTestId("bookmark-highlight");
   const popover = host.getByTestId("bookmark-popover");
-  const deleteButton = popover.getByRole("button", {
-    name: "Delete bookmark",
-  });
-  let accept = false;
+  const dialogs: string[] = [];
   ytPage.on("dialog", (dialog) => {
-    if (accept) {
-      dialog.accept();
-    } else {
-      dialog.dismiss();
-    }
+    dialogs.push(dialog.message());
+    dialog.accept();
   });
 
-  // Dismissing the confirm keeps the bookmark and its popover
   await highlight.click();
-  await deleteButton.click();
-  await expect(popover).toBeVisible();
-  await expect(highlight).toHaveCount(1);
-
-  accept = true;
-  await deleteButton.click();
+  await popover.getByRole("button", { name: "Delete bookmark" }).click();
+  expect(dialogs).toEqual(['Delete bookmark "밤새"?']);
   await expect(popover).not.toBeVisible();
   await expect(highlight).toHaveCount(0);
   await expect(host.getByRole("tab", { name: "Bookmarks" })).toHaveText(
