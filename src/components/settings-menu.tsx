@@ -3,6 +3,8 @@ import {
   ClipboardPaste,
   Download,
   EllipsisVertical,
+  Minus,
+  Plus,
   Trash2,
   Type,
 } from "lucide-react";
@@ -126,7 +128,7 @@ function TextSizeStepper({
             onSetTextSize(textSize - 1);
           }}
         >
-          A−
+          <Minus className="size-4" />
         </DropdownMenuItem>
         <DropdownMenuItem
           className="w-10 justify-center tabular-nums"
@@ -150,7 +152,7 @@ function TextSizeStepper({
             onSetTextSize(textSize + 1);
           }}
         >
-          A+
+          <Plus className="size-4" />
         </DropdownMenuItem>
       </div>
     </div>
