@@ -55,6 +55,20 @@ export function useWebSync({
           throw new Error("Video not found on server");
         }
         const session = serverSessionToLocal(data);
+        // A server-only video has no session to replace, so the pull saves
+        // one and restores it into the panel.
+        if (!action.runtime.store.get().session) {
+          await storage.saveSession(session, {
+            forceIndex: true,
+            editedAt: data.video.editedAt,
+          });
+          await storage.markSynced({
+            youtubeId,
+            editedAt: data.video.editedAt,
+          });
+          await action.runtime.restore();
+          return;
+        }
         await action.runtime.replace({
           vssId1: session.vssId1,
           vssId2: session.vssId2,

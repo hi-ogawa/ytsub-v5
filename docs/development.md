@@ -23,7 +23,7 @@ The web app reloads on every save, so it is the fastest way to see a change to t
 2. On the bookmarks page, click a seed video's sync badge to pull it.
 3. Click the video to open it in the viewer at `/videos/:id`.
 
-The viewer only opens pulled videos, so it shows "No session available" until step 2. It can't fetch from YouTube, so it also has no track picker and can't start a new session. Use the extension for those.
+The viewer only shows pulled videos. Opening one that isn't pulled yet shows a Pull button in the panel in place of step 2. The viewer can't fetch from YouTube, so it also has no track picker and can't start a new session. Use the extension for those.
 
 ## Work on the Extension
 

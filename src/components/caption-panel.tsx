@@ -76,7 +76,7 @@ export function CaptionPanel({
   }
 
   if (!runtime.trackSource) {
-    return <PanelMessage>No session available</PanelMessage>;
+    return <CaptionPanelPull runtime={runtime} useSync={useSync} />;
   }
   if (state.loadingTracks) {
     return <PanelMessage>Loading subtitles…</PanelMessage>;
@@ -99,6 +99,34 @@ function PanelMessage({
       className={`flex h-full items-center justify-center text-sm ${error ? "text-destructive" : "text-muted-foreground"}`}
     >
       {children}
+    </div>
+  );
+}
+
+// Without a track source, a video with no local session can only come from
+// the server.
+function CaptionPanelPull({
+  runtime,
+  useSync,
+}: {
+  runtime: CaptionPanelRuntime;
+  useSync: UseSync;
+}) {
+  const { state, error, onPull } = useSync({ youtubeId: runtime.youtubeId });
+  return (
+    <div className="flex h-full flex-col items-center justify-center gap-3 p-4 text-center text-sm">
+      <p className="text-muted-foreground">
+        This video isn't on this device yet.
+      </p>
+      <button
+        type="button"
+        disabled={state === "syncing"}
+        onClick={() => onPull(runtime)}
+        className="rounded bg-primary px-3 py-2 text-primary-foreground hover:bg-primary-hover disabled:opacity-50"
+      >
+        {state === "syncing" ? "Pulling…" : "Pull from server"}
+      </button>
+      {error && <p className="text-destructive">{error}</p>}
     </div>
   );
 }
