@@ -1,4 +1,4 @@
-import { type YouTubeCaptionTrack, langFromVssId } from "../lib/youtube.ts";
+import { type YouTubeCaptionTrack, getLangName } from "../lib/youtube.ts";
 
 function trackLabel(track: YouTubeCaptionTrack): string {
   if (track.vssId.includes(".t.")) {
@@ -28,7 +28,7 @@ export function TrackPicker({
   const renderOptions = (selectedVssId?: string) =>
     loading ? (
       selectedVssId ? (
-        <option value={selectedVssId}>{langName(selectedVssId)}</option>
+        <option value={selectedVssId}>{getLangName(selectedVssId)}</option>
       ) : null
     ) : (
       tracks.map((t) => (
@@ -67,11 +67,4 @@ export function TrackPicker({
       </select>
     </div>
   );
-}
-
-const displayNames = new Intl.DisplayNames(["en"], { type: "language" });
-
-export function langName(vssId: string): string {
-  const code = langFromVssId(vssId);
-  return displayNames.of(code) ?? code;
 }
