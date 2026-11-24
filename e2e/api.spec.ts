@@ -425,6 +425,35 @@ test.describe("importVideo API", () => {
       ["안녕", rewritten[0].id, 0],
     ]);
   });
+
+  test("re-import with no bookmarks deletes stored bookmarks", async ({
+    request,
+  }) => {
+    const youtubeId = `reimport-empty-${uid()}`;
+    const video = { youtubeId, title: "V", ...defaultTrackFields };
+    const captions = [
+      { idx: 0, begin: 0, end: 1, text1: "안녕하세요", text2: "Hello" },
+    ];
+    const { videoId } = await json(
+      await rpc(request, "videos/importVideo", {
+        video,
+        captions,
+        bookmarks: [{ text: "안녕", captionIdx: 0 }],
+      }),
+    );
+
+    const response = await rpc(request, "videos/importVideo", {
+      video,
+      captions,
+      bookmarks: [],
+    });
+    expect(response.ok()).toBe(true);
+
+    const bookmarks = await json(
+      await rpc(request, "bookmarks/listBookmarks", { videoId }),
+    );
+    expect(bookmarks.total).toBe(0);
+  });
 });
 
 test.describe("bookmarks API", () => {

@@ -256,6 +256,10 @@ export const videosRouter = authed.router({
         })
         .returning();
 
+      // A push carries the video's whole bookmark list, so replace it even
+      // when the list is empty
+      await db.delete(bookmarks).where(eq(bookmarks.videoId, video.id));
+
       // Most pushes only change bookmarks, so keep the caption rows when they
       // match. D1 bills every rewritten row and its index entries as writes.
       const storedCaptions = await db
@@ -293,7 +297,7 @@ export const videosRouter = authed.router({
       }
 
       // Insert bookmarks (resolve captionIdx → captionId)
-      if (input.captions.length > 0 && input.bookmarks.length > 0) {
+      if (input.bookmarks.length > 0) {
         // Build idx → captionId map
         const captionMap = new Map(captionRows.map((c) => [c.idx, c.id]));
         const bookmarkRows = input.bookmarks.map((b) => ({
@@ -308,8 +312,6 @@ export const videosRouter = authed.router({
           etymology: b.etymology,
           notes: b.notes,
         }));
-        // Delete existing bookmarks for this video first
-        await db.delete(bookmarks).where(eq(bookmarks.videoId, video.id));
         for (let i = 0; i < bookmarkRows.length; i += BOOKMARK_BATCH_SIZE) {
           const batch = bookmarkRows.slice(i, i + BOOKMARK_BATCH_SIZE);
           await db.insert(bookmarks).values(batch);
