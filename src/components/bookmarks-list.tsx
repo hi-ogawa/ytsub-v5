@@ -156,7 +156,7 @@ function BookmarkCard({
           </div>
         </div>
       ) : (
-        <div className="flex items-center justify-end gap-1 text-sm">
+        <div className="flex items-center justify-end gap-1">
           {!bookmark.translation && <UnfilledChip />}
           <DeleteBookmarkButton bookmark={bookmark} onDelete={onDelete} />
         </div>
@@ -167,7 +167,7 @@ function BookmarkCard({
 
 function UnfilledChip() {
   return (
-    <span className="rounded bg-muted px-1 text-muted-foreground">
+    <span className="rounded bg-muted px-1 text-xs text-muted-foreground">
       unfilled
     </span>
   );
