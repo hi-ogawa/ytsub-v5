@@ -131,12 +131,14 @@ test("text size setting resizes captions and persists across reload", async ({
   const caption = host.locator("[data-index='0'] [data-side='0']");
   await expect(caption).toHaveCSS("font-size", "14px");
 
+  // The menu stays open while stepping
   await host.getByTitle("Settings").click();
-  await host.getByRole("menuitemradio", { name: "20 px" }).click();
-  await expect(caption).toHaveCSS("font-size", "20px");
+  await host.getByRole("menuitem", { name: "Larger text" }).click();
+  await host.getByRole("menuitem", { name: "Larger text" }).click();
+  await expect(caption).toHaveCSS("font-size", "16px");
 
   await ytPage.reload();
-  await expect(caption).toHaveCSS("font-size", "20px");
+  await expect(caption).toHaveCSS("font-size", "16px");
 });
 
 test("export downloads valid import.json", async ({ context }) => {

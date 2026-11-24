@@ -20,9 +20,6 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu.tsx";
 
@@ -46,11 +43,6 @@ export function SettingsDropdown({
   useSync: UseSync;
 }) {
   const hasBookmarks = session.bookmarks.length > 0;
-  // Temporary switch for comparing the two text size controls in #470.
-  const TextSizeControl =
-    new URLSearchParams(location.search).get("text-size-control") === "stepper"
-      ? TextSizeStepper
-      : TextSizeRadioItems;
 
   return (
     <DropdownMenu>
@@ -74,7 +66,7 @@ export function SettingsDropdown({
           />
           Auto-scroll
         </DropdownMenuItem>
-        <TextSizeControl textSize={textSize} onSetTextSize={onSetTextSize} />
+        <TextSizeStepper textSize={textSize} onSetTextSize={onSetTextSize} />
         <AiPromptCopy session={session} tracks={tracks} />
         <DropdownMenuItem onSelect={() => importAiResult({ runtime, session })}>
           <ClipboardPaste className="mr-2 size-4" />
@@ -105,34 +97,6 @@ export function SettingsDropdown({
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
-  );
-}
-
-const TEXT_SIZE_CHOICES = [14, 16, 18, 20];
-
-function TextSizeRadioItems({
-  textSize,
-  onSetTextSize,
-}: {
-  textSize: number;
-  onSetTextSize: (value: number) => void;
-}) {
-  return (
-    <>
-      <div className="my-1 h-px bg-border" />
-      <DropdownMenuLabel>Text size</DropdownMenuLabel>
-      <DropdownMenuRadioGroup
-        value={String(textSize)}
-        onValueChange={(value) => onSetTextSize(Number(value))}
-      >
-        {TEXT_SIZE_CHOICES.map((size) => (
-          <DropdownMenuRadioItem key={size} value={String(size)}>
-            {size} px
-          </DropdownMenuRadioItem>
-        ))}
-      </DropdownMenuRadioGroup>
-      <div className="my-1 h-px bg-border" />
-    </>
   );
 }
 
