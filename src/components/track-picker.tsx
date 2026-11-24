@@ -25,18 +25,6 @@ export function TrackPicker({
   // language name, so the header keeps its shape until the full list arrives.
   loading?: boolean;
 }) {
-  const renderOptions = (selectedVssId?: string) =>
-    loading ? (
-      selectedVssId ? (
-        <option value={selectedVssId}>{getLangName(selectedVssId)}</option>
-      ) : null
-    ) : (
-      tracks.map((t) => (
-        <option key={t.vssId} value={t.vssId}>
-          {trackLabel(t)}
-        </option>
-      ))
-    );
   const selectDisabled = disabled || loading;
 
   return (
@@ -54,7 +42,11 @@ export function TrackPicker({
         disabled={selectDisabled}
       >
         <option value="">None</option>
-        {renderOptions(selectedVssId1)}
+        <TrackOptions
+          tracks={tracks}
+          selectedVssId={selectedVssId1}
+          loading={loading}
+        />
       </select>
       <select
         className={`min-w-0 flex-1 rounded border bg-background px-1 py-0.5 text-sm ${selectDisabled ? "cursor-not-allowed opacity-50" : ""}`}
@@ -63,8 +55,33 @@ export function TrackPicker({
         disabled={selectDisabled}
       >
         <option value="">None</option>
-        {renderOptions(selectedVssId2)}
+        <TrackOptions
+          tracks={tracks}
+          selectedVssId={selectedVssId2}
+          loading={loading}
+        />
       </select>
     </div>
   );
+}
+
+function TrackOptions({
+  tracks,
+  selectedVssId,
+  loading,
+}: {
+  tracks: YouTubeCaptionTrack[];
+  selectedVssId?: string;
+  loading?: boolean;
+}) {
+  if (loading) {
+    return selectedVssId ? (
+      <option value={selectedVssId}>{getLangName(selectedVssId)}</option>
+    ) : null;
+  }
+  return tracks.map((t) => (
+    <option key={t.vssId} value={t.vssId}>
+      {trackLabel(t)}
+    </option>
+  ));
 }
