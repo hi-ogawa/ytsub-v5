@@ -13,6 +13,7 @@ export function ExtensionBookmarksList({
   ref,
   bookmarks,
   rows,
+  languages,
   currentIndex,
   isPlaying,
   repeatIndex,
@@ -24,6 +25,8 @@ export function ExtensionBookmarksList({
   ref: React.Ref<BookmarksListHandle>;
   bookmarks: ExtensionBookmark[];
   rows: MergedCaption[];
+  /** Language codes of the two caption tracks, indexed by side */
+  languages: [string, string];
   currentIndex?: number;
   isPlaying: boolean;
   repeatIndex?: number;
@@ -54,6 +57,7 @@ export function ExtensionBookmarksList({
           bookmark={bookmark}
           bookmarkNumber={index + 1}
           caption={rows[bookmark.captionIndex]}
+          languages={languages}
           isCurrent={bookmark.captionIndex === currentIndex}
           isPlaying={bookmark.captionIndex === currentIndex && isPlaying}
           isRepeating={bookmark.captionIndex === repeatIndex}
@@ -71,6 +75,7 @@ function BookmarkCard({
   bookmark,
   bookmarkNumber,
   caption,
+  languages,
   isCurrent,
   isPlaying,
   isRepeating,
@@ -82,6 +87,7 @@ function BookmarkCard({
   bookmark: ExtensionBookmark;
   bookmarkNumber: number;
   caption?: MergedCaption;
+  languages: [string, string];
   isCurrent: boolean;
   isPlaying: boolean;
   isRepeating: boolean;
@@ -107,7 +113,9 @@ function BookmarkCard({
         <span className="shrink-0 text-xs text-muted-foreground">
           #{bookmarkNumber}
         </span>
-        <div className="flex-1 font-medium">{bookmark.text}</div>
+        <div className="flex-1 font-medium" lang={languages[bookmark.side]}>
+          {bookmark.text}
+        </div>
         <span className="shrink-0 text-xs text-muted-foreground">
           {formatTimestamp(bookmark.timestamp)}
         </span>
@@ -131,8 +139,8 @@ function BookmarkCard({
       {caption ? (
         <div className="mt-0.5 flex items-end gap-1 border-t border-border pt-1 text-muted-foreground">
           <div className="flex-1">
-            <div>{caption.text1}</div>
-            <div>{caption.text2}</div>
+            <div lang={languages[0]}>{caption.text1}</div>
+            <div lang={languages[1]}>{caption.text2}</div>
           </div>
           <div className="flex shrink-0 flex-col items-end gap-0.5">
             {!bookmark.translation && <UnfilledChip />}
