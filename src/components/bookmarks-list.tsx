@@ -95,7 +95,7 @@ function BookmarkCard({
       data-bookmark-id={bookmark.id}
       aria-current={isCurrent || undefined}
       className={[
-        "flex cursor-pointer flex-col gap-1 border p-2 hover:bg-muted",
+        "flex cursor-pointer flex-col gap-1 border p-2 text-(length:--caption-text-size) leading-(--text-sm--line-height) hover:bg-muted",
         isPlaying && "ring-2 ring-ring",
         isCurrent ? "border-ring" : "border-border",
       ]
@@ -107,7 +107,7 @@ function BookmarkCard({
         <span className="shrink-0 text-xs text-muted-foreground">
           #{bookmarkNumber}
         </span>
-        <div className="flex-1 text-sm font-medium">{bookmark.text}</div>
+        <div className="flex-1 font-medium">{bookmark.text}</div>
         <span className="shrink-0 text-xs text-muted-foreground">
           {formatTimestamp(bookmark.timestamp)}
         </span>
@@ -120,20 +120,16 @@ function BookmarkCard({
         )}
       </div>
       {bookmark.translation && (
-        <div className="text-sm text-muted-foreground">
-          {bookmark.translation}
-        </div>
+        <div className="text-muted-foreground">{bookmark.translation}</div>
       )}
       {bookmark.etymology && (
-        <div className="text-sm text-muted-foreground">
-          {bookmark.etymology}
-        </div>
+        <div className="text-muted-foreground">{bookmark.etymology}</div>
       )}
       {bookmark.notes && (
-        <div className="text-sm text-muted-foreground">{bookmark.notes}</div>
+        <div className="text-muted-foreground">{bookmark.notes}</div>
       )}
       {caption ? (
-        <div className="mt-0.5 flex items-end gap-1 border-t border-border pt-1 text-sm text-muted-foreground">
+        <div className="mt-0.5 flex items-end gap-1 border-t border-border pt-1 text-muted-foreground">
           <div className="flex-1">
             <div>{caption.text1}</div>
             <div>{caption.text2}</div>

@@ -1,6 +1,11 @@
 import { expect, type Locator } from "@playwright/test";
 import { OTHER_YOUTUBE_ID, SEED_YOUTUBE_ID } from "../helper";
-import { openPanelWithTracks, openYouTubeTab, test } from "./helper";
+import {
+  createBookmarkAt,
+  openPanelWithTracks,
+  openYouTubeTab,
+  test,
+} from "./helper";
 
 test("FAB toggles the panel and keeps its state per video across reloads", async ({
   context,
@@ -139,6 +144,13 @@ test("text size setting resizes captions and persists across reload", async ({
 
   await ytPage.reload();
   await expect(caption).toHaveCSS("font-size", "16px");
+
+  // Bookmark cards follow it too
+  await createBookmarkAt(host, { index: 0, start: 0, end: 3 });
+  await host.getByRole("tab", { name: /Bookmarks/ }).click();
+  await expect(
+    host.locator("[data-bookmark-id]").getByText("꼬집어", { exact: true }),
+  ).toHaveCSS("font-size", "16px");
 });
 
 test("export downloads valid import.json", async ({ context }) => {
