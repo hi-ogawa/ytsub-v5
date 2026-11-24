@@ -77,7 +77,7 @@ export function VideoCard({
     <Link
       to={href}
       data-testid={`video-card-${youtubeId}`}
-      className="block overflow-hidden rounded-lg border border-border bg-card shadow-sm transition-all hover:border-ring hover:shadow-md"
+      className="flex h-full flex-col overflow-hidden rounded-lg border border-border bg-card shadow-sm transition-all hover:border-ring hover:shadow-md"
     >
       <img
         src={thumbnailSrc}
@@ -85,7 +85,7 @@ export function VideoCard({
         loading="lazy"
         className="aspect-video w-full object-cover"
       />
-      <div className="p-4">
+      <div className="flex flex-1 flex-col p-4">
         <div className="mb-1 flex items-start gap-1">
           <h2
             data-testid="video-card-title"
@@ -103,7 +103,7 @@ export function VideoCard({
         </p>
         <div
           data-testid="video-card-badge"
-          className="flex items-center gap-2 text-xs text-muted-foreground"
+          className="mt-auto flex items-center gap-2 text-xs text-muted-foreground"
         >
           {bookmarkCount}
           <span aria-hidden>·</span>
