@@ -1,5 +1,11 @@
 import { Bookmark, ChevronLeft, ChevronRight, X } from "lucide-react";
-import { useMemo, useRef, useState, useSyncExternalStore } from "react";
+import {
+  Activity,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
 import type { MergedCaption } from "../lib/caption-merge.ts";
 import {
   type CaptionPanelRuntime,
@@ -44,8 +50,8 @@ export function CaptionPanelContent({
     }
   }
 
-  // Switching tabs first un-hides the target list, so the scroll waits a tick
-  // until it has a layout.
+  // The target list stays hidden, with its handle detached, until the tab
+  // switch commits, so the scroll waits a tick.
   function onGoToCaption(captionIndex: number) {
     setActiveTab("captions");
     setTimeout(() => {
@@ -81,13 +87,9 @@ export function CaptionPanelContent({
       />
 
       <div className="relative flex min-h-0 flex-[1_0_0] flex-col">
-        {/* Captions — hidden (not unmounted) to preserve scroll position */}
-        <div
-          className="flex min-h-0 flex-[1_0_0] flex-col"
-          style={{
-            display: activeTab === "captions" ? undefined : "none",
-          }}
-        >
+        {/* A hidden tab keeps its DOM and scroll position, and its re-renders
+            wait until it is shown again. */}
+        <Activity mode={activeTab === "captions" ? "visible" : "hidden"}>
           <CaptionViewer
             ref={captionListRef}
             runtime={runtime}
@@ -96,38 +98,36 @@ export function CaptionPanelContent({
             bookmarks={sortedBookmarks}
             onGoToBookmark={onGoToBookmark}
           />
-        </div>
+        </Activity>
 
-        {/* Bookmarks — hidden (not unmounted) to preserve scroll position */}
-        <div
-          className="flex-[1_0_0] overflow-y-auto"
-          style={{
-            display: activeTab === "bookmarks" ? undefined : "none",
-          }}
-        >
-          {sortedBookmarks.length === 0 ? (
-            <div className="flex h-full items-center justify-center">
-              <p className="text-sm text-muted-foreground">No bookmarks yet</p>
-            </div>
-          ) : (
-            <ExtensionBookmarksList
-              ref={bookmarksListRef}
-              bookmarks={sortedBookmarks}
-              rows={session.rows}
-              currentIndex={currentIndex}
-              isPlaying={isPlaying}
-              repeatIndex={repeatIndex}
-              onClickBookmark={(bookmark) =>
-                runtime.playOrToggleRow(bookmark.captionIndex)
-              }
-              onToggleRepeat={(captionIndex) =>
-                runtime.toggleRepeat(captionIndex)
-              }
-              onDeleteBookmark={(id) => runtime.deleteBookmark(id)}
-              onGoToCaption={onGoToCaption}
-            />
-          )}
-        </div>
+        <Activity mode={activeTab === "bookmarks" ? "visible" : "hidden"}>
+          <div className="flex-[1_0_0] overflow-y-auto">
+            {sortedBookmarks.length === 0 ? (
+              <div className="flex h-full items-center justify-center">
+                <p className="text-sm text-muted-foreground">
+                  No bookmarks yet
+                </p>
+              </div>
+            ) : (
+              <ExtensionBookmarksList
+                ref={bookmarksListRef}
+                bookmarks={sortedBookmarks}
+                rows={session.rows}
+                currentIndex={currentIndex}
+                isPlaying={isPlaying}
+                repeatIndex={repeatIndex}
+                onClickBookmark={(bookmark) =>
+                  runtime.playOrToggleRow(bookmark.captionIndex)
+                }
+                onToggleRepeat={(captionIndex) =>
+                  runtime.toggleRepeat(captionIndex)
+                }
+                onDeleteBookmark={(id) => runtime.deleteBookmark(id)}
+                onGoToCaption={onGoToCaption}
+              />
+            )}
+          </div>
+        </Activity>
 
         {bookmarkSelection.selection && (
           <BookmarkActions

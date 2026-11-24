@@ -398,6 +398,25 @@ test("go-to-caption button switches from bookmarks to captions tab", async ({
   await expect(host.locator("[data-index='0']")).toBeVisible();
 });
 
+test("captions tab follows playback that moved while it was hidden", async ({
+  context,
+}) => {
+  const { host } = await openPanelWithTracks(context, SEED_YOUTUBE_ID);
+  const panel = host.getByTestId("resizable-panel");
+  const row = host.locator("[data-index='40']");
+  await createBookmarkAt(host, { index: 40, start: 0, end: 2 });
+  await host
+    .getByTestId("caption-list")
+    .evaluate((element) => (element.scrollTop = 0));
+  await expect(row).not.toBeInViewport();
+
+  await panel.getByRole("tab", { name: /Bookmarks/ }).click();
+  await host.locator("[data-bookmark-id]").first().click();
+  await panel.getByRole("tab", { name: "Captions" }).click();
+  await expect(row).toHaveAttribute("aria-current", "true");
+  await expect(row).toBeInViewport();
+});
+
 test("delete bookmark from bookmarks tab", async ({ context }) => {
   const { ytPage, host } = await openPanelWithTracks(context, SEED_YOUTUBE_ID);
   const panel = host.getByTestId("resizable-panel");
@@ -490,7 +509,7 @@ test("popover go-to-bookmark switches to bookmarks tab and flashes the card", as
     "aria-selected",
     "true",
   );
-  await expect(host.getByTestId("bookmark-popover")).toHaveCount(0);
+  await expect(host.getByTestId("bookmark-popover")).toBeHidden();
 
   // Bookmark card should be visible and flashing
   await expect(cards.nth(0)).toBeVisible();

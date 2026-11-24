@@ -414,7 +414,7 @@ function BookmarkWord({
             onMouseDown={(event) => {
               event.stopPropagation();
               // The Captions tab gets hidden rather than unmounted, so an open
-              // popover would stay on screen, anchored to a zero-size trigger.
+              // popover would open again when the tab is shown.
               changeOpen(false);
               onGoToBookmark(bookmark.id);
             }}
