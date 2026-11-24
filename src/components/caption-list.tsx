@@ -409,7 +409,7 @@ function BookmarkWord({
             <Trash2 className="size-3.5" />
           </button>
           <button
-            className="rounded p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+            className="rounded p-0.5 text-muted-foreground hover:bg-border hover:text-foreground"
             title="Go to bookmark"
             onMouseDown={(event) => {
               event.stopPropagation();
