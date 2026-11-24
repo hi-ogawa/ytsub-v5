@@ -41,6 +41,29 @@ test("clicks inside the bookmark popover don't reach the caption row", async ({
   await expect.poll(isPaused).toBe(false);
 });
 
+test("deletes a bookmark from its popover after confirming", async ({
+  context,
+}) => {
+  const { ytPage, host } = await openPanelWithTracks(context, SEED_YOUTUBE_ID);
+  await createBookmarkAt(host, { index: 1, start: 0, end: 2 });
+  const highlight = host.getByTestId("bookmark-highlight");
+  const popover = host.getByTestId("bookmark-popover");
+  const dialogs: string[] = [];
+  ytPage.on("dialog", (dialog) => {
+    dialogs.push(dialog.message());
+    dialog.accept();
+  });
+
+  await highlight.click();
+  await popover.getByRole("button", { name: "Delete bookmark" }).click();
+  expect(dialogs).toEqual(['Delete bookmark "밤새"?']);
+  await expect(popover).not.toBeVisible();
+  await expect(highlight).toHaveCount(0);
+  await expect(host.getByRole("tab", { name: "Bookmarks" })).toHaveText(
+    "Bookmarks",
+  );
+});
+
 test("repeat on a bookmark card repeats its row, shared with the Captions tab", async ({
   context,
 }) => {

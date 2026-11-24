@@ -269,6 +269,7 @@ function CaptionViewer({
       onPlayOrToggleRow={(index) => runtime.playOrToggleRow(index)}
       onToggleRepeat={(index) => runtime.toggleRepeat(index)}
       onGoToBookmark={onGoToBookmark}
+      onDeleteBookmark={(id) => runtime.deleteBookmark(id)}
     />
   );
 }

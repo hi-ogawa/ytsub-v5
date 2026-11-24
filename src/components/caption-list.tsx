@@ -1,4 +1,4 @@
-import { ExternalLink } from "lucide-react";
+import { ExternalLink, Trash2 } from "lucide-react";
 import {
   useEffect,
   useImperativeHandle,
@@ -32,6 +32,7 @@ export function CaptionList({
   onPlayOrToggleRow,
   onToggleRepeat,
   onGoToBookmark,
+  onDeleteBookmark,
 }: {
   ref: React.Ref<CaptionListHandle>;
   rows: MergedCaption[];
@@ -43,6 +44,7 @@ export function CaptionList({
   onPlayOrToggleRow: (index: number) => void;
   onToggleRepeat: (index: number) => void;
   onGoToBookmark: (bookmarkId: string) => void;
+  onDeleteBookmark: (bookmarkId: string) => void;
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -150,6 +152,7 @@ export function CaptionList({
               onToggleRepeat(i);
             }}
             onGoToBookmark={onGoToBookmark}
+            onDeleteBookmark={onDeleteBookmark}
             onPopoverOpenChange={onPopoverOpenChange}
           />
         ))}
@@ -169,6 +172,7 @@ function CaptionRow({
   onClick,
   onToggleRepeat,
   onGoToBookmark,
+  onDeleteBookmark,
   onPopoverOpenChange,
 }: {
   row: MergedCaption;
@@ -181,6 +185,7 @@ function CaptionRow({
   onClick: () => void;
   onToggleRepeat: () => void;
   onGoToBookmark: (bookmarkId: string) => void;
+  onDeleteBookmark: (bookmarkId: string) => void;
   onPopoverOpenChange: (open: boolean) => void;
 }) {
   const text1Marks = bookmarks
@@ -225,6 +230,7 @@ function CaptionRow({
             text={row.text1}
             marks={text1Marks ?? []}
             onGoToBookmark={onGoToBookmark}
+            onDeleteBookmark={onDeleteBookmark}
             onPopoverOpenChange={onPopoverOpenChange}
           />
         </div>
@@ -233,6 +239,7 @@ function CaptionRow({
             text={row.text2}
             marks={text2Marks ?? []}
             onGoToBookmark={onGoToBookmark}
+            onDeleteBookmark={onDeleteBookmark}
             onPopoverOpenChange={onPopoverOpenChange}
           />
         </div>
@@ -245,11 +252,13 @@ function HighlightedText({
   text,
   marks,
   onGoToBookmark,
+  onDeleteBookmark,
   onPopoverOpenChange,
 }: {
   text: string;
   marks: { bookmark: ExtensionBookmark; bookmarkNumber?: number }[];
   onGoToBookmark: (bookmarkId: string) => void;
+  onDeleteBookmark: (bookmarkId: string) => void;
   onPopoverOpenChange: (open: boolean) => void;
 }) {
   if (marks.length === 0) {
@@ -276,6 +285,7 @@ function HighlightedText({
         bookmarkNumber={bookmarkNumber}
         offset={bookmark.offset}
         onGoToBookmark={onGoToBookmark}
+        onDeleteBookmark={onDeleteBookmark}
         onPopoverOpenChange={onPopoverOpenChange}
       >
         {text.slice(bookmark.offset, end)}
@@ -299,6 +309,7 @@ function BookmarkWord({
   offset,
   children,
   onGoToBookmark,
+  onDeleteBookmark,
   onPopoverOpenChange,
 }: {
   bookmark: ExtensionBookmark;
@@ -306,6 +317,7 @@ function BookmarkWord({
   offset: number;
   children: React.ReactNode;
   onGoToBookmark: (bookmarkId: string) => void;
+  onDeleteBookmark: (bookmarkId: string) => void;
   onPopoverOpenChange: (open: boolean) => void;
 }) {
   const filled = !!bookmark.translation;
@@ -382,6 +394,20 @@ function BookmarkWord({
           </span>
         )}
         <div className="mt-1 flex items-center justify-end gap-1">
+          <button
+            className="rounded p-0.5 text-muted-foreground hover:bg-destructive-subtle hover:text-destructive"
+            title="Delete bookmark"
+            onClick={() => {
+              if (confirm(`Delete bookmark "${bookmark.text}"?`)) {
+                // The highlight unmounts with the bookmark, which would leave
+                // the open state behind and auto-scroll paused.
+                changeOpen(false);
+                onDeleteBookmark(bookmark.id);
+              }
+            }}
+          >
+            <Trash2 className="size-3.5" />
+          </button>
           <button
             className="rounded p-0.5 text-muted-foreground hover:bg-accent hover:text-foreground"
             title="Go to bookmark"
