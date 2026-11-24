@@ -27,6 +27,13 @@ export function langFromVssId(vssId: string): string {
   return vssId.split(".").pop()!;
 }
 
+const displayNames = new Intl.DisplayNames(["en"], { type: "language" });
+
+export function getLangName(vssId: string): string {
+  const code = langFromVssId(vssId);
+  return displayNames.of(code) ?? code;
+}
+
 export interface YouTubeExtractionResult {
   video: YouTubeVideoData;
   captionTracks: YouTubeCaptionTrack[];
