@@ -27,6 +27,16 @@ TOKEN=$(curl -s -X POST https://zamak.hiro18181.workers.dev/api/auth/login \
 
 The response also sets a `session` cookie with the same token, but URL-encoded. Use the token from the body, because the encoded cookie value gets a 401 as a bearer token.
 
+## Cache Videos Locally
+
+For analysis across videos, keep the videos you fetch in one shared place, so later sessions can reuse them instead of fetching the whole library again. Save each `getFullSession` result as `~/.cache/zamak/videos/<youtubeId>.json`, unchanged.
+
+The server changes a video's `editedAt` only when its content changes, and `videos/listVideos` returns it for every video. So before you read a cached file, compare its `video.editedAt` with the one from `listVideos`, and fetch the video again only when they differ or the file is missing. A cached video that `listVideos` no longer returns was deleted on the server.
+
+Keep the token in memory, and don't write it to the cache or any other file.
+
+To change a video, read it with `getFullSession` first, as the next section describes, rather than from the cache.
+
 ## Edit a Video's Captions and Bookmarks
 
 1. Read the video with `videos/getFullSession { youtubeId }`. It returns `{ video, captions, bookmarks }`, or `null` when the server doesn't have the video. A bookmark points at its row by `captionId`, the row's server id, and a row's position is its `idx`. The video's `vssId1` and `vssId2` name the tracks the rows were first built from, and a rewrite such as fix-asr keeps them.
