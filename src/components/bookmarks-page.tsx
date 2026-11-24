@@ -104,7 +104,7 @@ export function BookmarksPage({
                 entry.syncStatus && (
                   <SyncBadge
                     status={entry.syncStatus}
-                    localEditedAt={entry.editedAt}
+                    localEditedAt={entry.localEditedAt}
                     serverEditedAt={entry.serverEditedAt}
                     syncing={sync.syncing.has(entry.youtubeId)}
                     onPull={() => sync.onPull(entry.youtubeId)}
@@ -249,7 +249,7 @@ function SyncBadge({
   onPush,
 }: {
   status: NonNullable<VideoListEntry["syncStatus"]>;
-  localEditedAt: string;
+  localEditedAt?: string;
   serverEditedAt?: string;
   syncing: boolean;
   onPull: () => void;
@@ -322,9 +322,11 @@ function SyncBadge({
               <ArrowUpFromLine className="size-4" />
               <span className="flex flex-col items-start">
                 Upload local
-                <span className="text-xs text-muted-foreground">
-                  Edited <EditTime time={localEditedAt} />
-                </span>
+                {localEditedAt && (
+                  <span className="text-xs text-muted-foreground">
+                    Edited <EditTime time={localEditedAt} />
+                  </span>
+                )}
               </span>
             </button>
             <button
