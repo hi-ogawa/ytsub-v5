@@ -26,12 +26,9 @@ export type VideoListEntry = {
   // Absent for a video that exists only on the server, whose video list has
   // no bookmark count
   bookmarkCount?: number;
-  // The later of the local and server edit times, so the list orders videos by
-  // their last edit anywhere
   editedAt: string;
   syncStatus?: ComputedSyncState;
   serverId?: number;
-  localEditedAt?: string;
   serverEditedAt?: string;
 };
 
@@ -145,12 +142,8 @@ function mergeVideoEntries(
       title: local.title,
       channelName: local.channelName,
       bookmarkCount: local.bookmarkCount,
-      editedAt:
-        server && server.editedAt > local.editedAt
-          ? server.editedAt
-          : local.editedAt,
+      editedAt: local.editedAt,
       serverId: server?.id,
-      localEditedAt: local.editedAt,
       serverEditedAt: server?.editedAt,
       syncStatus: status,
     });
