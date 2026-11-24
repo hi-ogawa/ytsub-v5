@@ -320,7 +320,7 @@ function SyncBadge({
           <div className="flex gap-2">
             <button
               type="button"
-              className="flex flex-1 items-center justify-center gap-2 rounded bg-muted px-4 py-2 text-sm hover:bg-accent"
+              className="flex flex-1 items-center justify-center gap-2 rounded bg-muted px-4 py-2 text-sm hover:bg-muted/80"
               onClick={(event) => {
                 event.stopPropagation();
                 setConflictOpen(false);
@@ -337,7 +337,7 @@ function SyncBadge({
             </button>
             <button
               type="button"
-              className="flex flex-1 items-center justify-center gap-2 rounded bg-muted px-4 py-2 text-sm hover:bg-accent"
+              className="flex flex-1 items-center justify-center gap-2 rounded bg-muted px-4 py-2 text-sm hover:bg-muted/80"
               onClick={(event) => {
                 event.stopPropagation();
                 setConflictOpen(false);
