@@ -256,11 +256,13 @@ export const videosRouter = authed.router({
         })
         .returning();
 
-      // Delete existing captions (cascade deletes bookmark caption refs)
+      // A push carries the video's whole bookmark list, so replace it even
+      // when the list is empty
+      await db.delete(bookmarks).where(eq(bookmarks.videoId, video.id));
       await db.delete(captions).where(eq(captions.videoId, video.id));
 
       // Insert captions in batches to avoid D1 SQL variable limit
-      let insertedCaptions = 0;
+      let allInserted: { idx: number; id: number }[] = [];
       if (input.captions.length > 0) {
         const rows = input.captions.map((c) => ({
           videoId: sql.raw(`${video.id}`),
@@ -270,36 +272,32 @@ export const videosRouter = authed.router({
           text1: c.text1,
           text2: c.text2,
         }));
-        let allInserted: { idx: number; id: number }[] = [];
         for (let i = 0; i < rows.length; i += CAPTION_BATCH_SIZE) {
           const batch = rows.slice(i, i + CAPTION_BATCH_SIZE);
           const result = await db.insert(captions).values(batch).returning();
           allInserted = allInserted.concat(result);
         }
-        insertedCaptions = allInserted.length;
+      }
 
-        // Insert bookmarks (resolve captionIdx → captionId)
-        if (input.bookmarks.length > 0) {
-          // Build idx → captionId map
-          const captionMap = new Map(allInserted.map((c) => [c.idx, c.id]));
-          const bookmarkRows = input.bookmarks.map((b) => ({
-            videoId: sql.raw(`${video.id}`),
-            captionId: sql.raw(`${captionMap.get(b.captionIdx) ?? "null"}`),
-            text: b.text,
-            side: sql.raw(`${b.side}`),
-            offset: sql.raw(`${b.offset}`),
-            translation: b.translation,
-            context: b.context,
-            timestamp: sql.raw(`${input.captions[b.captionIdx]?.begin ?? 0}`),
-            etymology: b.etymology,
-            notes: b.notes,
-          }));
-          // Delete existing bookmarks for this video first
-          await db.delete(bookmarks).where(eq(bookmarks.videoId, video.id));
-          for (let i = 0; i < bookmarkRows.length; i += BOOKMARK_BATCH_SIZE) {
-            const batch = bookmarkRows.slice(i, i + BOOKMARK_BATCH_SIZE);
-            await db.insert(bookmarks).values(batch);
-          }
+      // Insert bookmarks (resolve captionIdx → captionId)
+      if (input.bookmarks.length > 0) {
+        // Build idx → captionId map
+        const captionMap = new Map(allInserted.map((c) => [c.idx, c.id]));
+        const bookmarkRows = input.bookmarks.map((b) => ({
+          videoId: sql.raw(`${video.id}`),
+          captionId: sql.raw(`${captionMap.get(b.captionIdx) ?? "null"}`),
+          text: b.text,
+          side: sql.raw(`${b.side}`),
+          offset: sql.raw(`${b.offset}`),
+          translation: b.translation,
+          context: b.context,
+          timestamp: sql.raw(`${input.captions[b.captionIdx]?.begin ?? 0}`),
+          etymology: b.etymology,
+          notes: b.notes,
+        }));
+        for (let i = 0; i < bookmarkRows.length; i += BOOKMARK_BATCH_SIZE) {
+          const batch = bookmarkRows.slice(i, i + BOOKMARK_BATCH_SIZE);
+          await db.insert(bookmarks).values(batch);
         }
       }
 
@@ -307,7 +305,7 @@ export const videosRouter = authed.router({
         videoId: video.id,
         updatedAt: video.updatedAt,
         editedAt: video.editedAt,
-        captions: insertedCaptions,
+        captions: allInserted.length,
         bookmarks: input.bookmarks.length,
       };
     }),
