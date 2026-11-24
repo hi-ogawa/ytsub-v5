@@ -97,7 +97,11 @@ export function BookmarksPage({
                   <CardMenu entry={entry} onDelete={() => onDelete(entry)} />
                 )
               }
-              bookmarkCount={<BookmarkCount count={entry.bookmarkCount} />}
+              bookmarkCount={
+                entry.bookmarkCount !== undefined && (
+                  <BookmarkCount count={entry.bookmarkCount} />
+                )
+              }
               editTime={<EditTime time={getLatestEditedAt(entry)} />}
               syncBadge={
                 sync &&
@@ -176,20 +180,17 @@ function LayoutSwitch({
   );
 }
 
-function BookmarkCount({ count }: { count?: number }) {
-  const label =
-    count === undefined
-      ? "Not on this device"
-      : `${count} bookmark${count === 1 ? "" : "s"}`;
+function BookmarkCount({ count }: { count: number }) {
+  const label = `${count} bookmark${count === 1 ? "" : "s"}`;
   return (
     <span
       role="img"
       aria-label={label}
       title={label}
-      className="flex items-center gap-0.5"
+      className="inline-flex items-center gap-1 rounded-full bg-muted px-1.5 py-0.5 leading-none tabular-nums"
     >
-      <Bookmark className="size-3 -translate-y-px" />
-      {count ?? "–"}
+      <Bookmark className="size-3" />
+      {count}
     </span>
   );
 }

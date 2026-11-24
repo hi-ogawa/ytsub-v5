@@ -19,7 +19,7 @@ export function VideoCard({
   title: string;
   titleRight?: ReactNode;
   channelName: string;
-  bookmarkCount: ReactNode;
+  bookmarkCount?: ReactNode;
   editTime: ReactNode;
   syncBadge?: ReactNode;
 }) {
@@ -53,10 +53,7 @@ export function VideoCard({
             <p data-testid="video-card-channel" className="min-w-0 truncate">
               {channel}
             </p>
-            <span aria-hidden className="shrink-0">
-              ·
-            </span>
-            <span className="shrink-0">{bookmarkCount}</span>
+            {bookmarkCount && <span className="shrink-0">{bookmarkCount}</span>}
             {/* On a phone, the time would leave the channel only a few characters */}
             <span aria-hidden className="hidden shrink-0 sm:inline">
               ·
@@ -106,7 +103,6 @@ export function VideoCard({
           className="flex items-center gap-2 text-xs text-muted-foreground"
         >
           {bookmarkCount}
-          <span aria-hidden>·</span>
           {editTime}
           {syncBadge && <span className="ml-auto">{syncBadge}</span>}
         </div>

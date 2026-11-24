@@ -187,8 +187,8 @@ test("shows local entries with sync badges after login", async ({
   await expect(
     page
       .getByTestId(`video-card-${SEED_YOUTUBE_ID}`)
-      .getByRole("img", { name: "Not on this device" }),
-  ).toBeVisible();
+      .getByRole("img", { name: /bookmark/ }),
+  ).toHaveCount(0);
   await expect(
     page
       .getByTestId("video-card-abc123")
