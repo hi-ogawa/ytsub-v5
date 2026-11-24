@@ -395,7 +395,7 @@ function BookmarkWord({
         )}
         <div className="mt-1 flex items-center justify-end gap-1">
           <button
-            className="rounded p-0.5 text-muted-foreground hover:bg-accent hover:text-destructive"
+            className="rounded p-0.5 text-muted-foreground hover:bg-destructive-subtle hover:text-destructive"
             title="Delete bookmark"
             onClick={() => {
               if (confirm(`Delete bookmark "${bookmark.text}"?`)) {
