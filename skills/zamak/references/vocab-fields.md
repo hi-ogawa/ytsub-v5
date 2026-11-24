@@ -42,5 +42,5 @@ Other useful notes, after the breakdown:
 - a contrast with a similar form
 - for an idiom built on a concrete image, that image in one clause, such as for 딴지 걸다: 딴지 (= 딴죽) is a leg-hook trip, so hooking one means raising petty objections
 - when the pick is the less common form in its family, that it is, with the usual one, such as 굉장한 next to 굉장히, the form common in speech
-- a false friend: when reading the word through the Japanese sense of the same characters would leave a wrong idea of the word itself, beyond this line, that difference in one clause, such as for 인재: a talented person, while Japanese 人材 often means neutral personnel (Korean 인력). Skip it when the row's English settles the sense and nothing wrong carries over, as "study" does for 공부 (工夫).
+- a Japanese parallel, only when it actually helps understand the word, not as a routine gloss
 - related words, each tagged by what it is: `(.syn)` synonym, `(.ant)` antonym, `(.hon)` honorific form, `(.syn:native)` 순우리말 equivalent, `(.syn:casual)` or `(.syn:formal)` register variant. Separate multiple words with commas. Skip inflection pairs (닫히다 → 닫다) and contractions (뭐 → 무엇).
