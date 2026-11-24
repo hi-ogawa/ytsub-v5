@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { useEffect, useSyncExternalStore } from "react";
+import { useEffect, useRef, useSyncExternalStore } from "react";
 import { captionPanelPreferences } from "../lib/caption-panel-preferences.ts";
 import type {
   CaptionPanelRuntime,
@@ -76,7 +76,7 @@ export function CaptionPanel({
   }
 
   if (!runtime.trackSource) {
-    return <PanelMessage>No session available</PanelMessage>;
+    return <CaptionPanelPull runtime={runtime} useSync={useSync} />;
   }
   if (state.loadingTracks) {
     return <PanelMessage>Loading subtitles…</PanelMessage>;
@@ -100,6 +100,76 @@ function PanelMessage({
     >
       {children}
     </div>
+  );
+}
+
+// Without a track source, as in the web viewer, a video with nothing saved can
+// only come from the server, so the panel pulls it once the server reports a
+// copy.
+function CaptionPanelPull({
+  runtime,
+  useSync,
+}: {
+  runtime: CaptionPanelRuntime;
+  useSync: UseSync;
+}) {
+  const { state, error, onPull, onNavigate } = useSync({
+    youtubeId: runtime.youtubeId,
+  });
+
+  const pullStartedRef = useRef(false);
+  useEffect(() => {
+    if (state === "pull" && !pullStartedRef.current) {
+      pullStartedRef.current = true;
+      onPull(runtime);
+    }
+  }, [state, onPull, runtime]);
+
+  const listButton = (
+    <PanelButton onClick={onNavigate}>Open bookmarked videos</PanelButton>
+  );
+
+  if (state === "empty") {
+    return (
+      <PanelMessage>
+        <div className="flex flex-col items-center gap-2">
+          <p>This video isn't on the server</p>
+          {listButton}
+        </div>
+      </PanelMessage>
+    );
+  }
+  if (error || state === "error") {
+    return (
+      <PanelMessage error>
+        <div className="flex flex-col items-center gap-2">
+          <p>{error ?? "Can't reach the server"}</p>
+          <div className="flex gap-2">
+            <PanelButton onClick={() => onPull(runtime)}>Retry</PanelButton>
+            {listButton}
+          </div>
+        </div>
+      </PanelMessage>
+    );
+  }
+  return <PanelMessage>Downloading from the server…</PanelMessage>;
+}
+
+function PanelButton({
+  onClick,
+  children,
+}: {
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      className="rounded bg-muted px-3 py-1.5 text-foreground hover:bg-accent"
+      onClick={onClick}
+    >
+      {children}
+    </button>
   );
 }
 

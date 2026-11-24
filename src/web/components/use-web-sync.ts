@@ -55,13 +55,23 @@ export function useWebSync({
           throw new Error("Video not found on server");
         }
         const session = serverSessionToLocal(data);
-        await action.runtime.replace({
-          vssId1: session.vssId1,
-          vssId2: session.vssId2,
-          captions: session.captions,
-          bookmarks: session.bookmarks,
-          editedAt: data.video.editedAt,
-        });
+        if (action.runtime.store.get().session) {
+          await action.runtime.replace({
+            vssId1: session.vssId1,
+            vssId2: session.vssId2,
+            captions: session.captions,
+            bookmarks: session.bookmarks,
+            editedAt: data.video.editedAt,
+          });
+        } else {
+          // Nothing to replace yet, so save the pulled session as the video
+          // list's pull does and let the panel restore it from storage.
+          await storage.saveSession(session, {
+            forceIndex: true,
+            editedAt: data.video.editedAt,
+          });
+          await action.runtime.restore();
+        }
         await storage.markSynced({ youtubeId, editedAt: data.video.editedAt });
       }
     },

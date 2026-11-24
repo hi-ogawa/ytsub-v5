@@ -25,14 +25,14 @@ The extension and the web app render the same two pages from shared components:
 - **The caption panel** shows dual captions and handles bookmarking and the AI workflow. The extension draws it over YouTube's video page inside a shadow root. The web app shows it at `/videos/:id` next to an embedded player.
 - **The bookmarks page** lists your bookmarked videos with their sync status. The extension opens it as `bookmarks.html` in a full tab when you click its icon. The web app serves it at `/`.
 
-The pages differ where the two surfaces do. The web app can't fetch from YouTube, so its caption panel only opens a session already pulled from the server, and it has no controls for building a new one:
+The pages differ where the two surfaces do. The web app can't fetch from YouTube, so its caption panel only opens sessions from the server, pulling one when the video opens, and it has no controls for building a new one:
 
 |                                              | 🧩 Extension               | 🌐 Web app                 |
 | -------------------------------------------- | -------------------------- | -------------------------- |
 | Works without login                          | ✅ login only to sync      | ❌                         |
 | Caption source                               | ▶️ YouTube's tracks        | ☁️ pulled session only     |
 | Track picker, alignment strategy             | ✅                         | ❌ language label          |
-| Starts a new session                         | ✅                         | ❌ pull first              |
+| Starts a new session                         | ✅                         | ❌ pulls from the server   |
 | Floating, resizable panel                    | ✅                         | ❌ fixed beside the player |
 | Player                                       | ▶️ YouTube's video element | 📺 YouTube embed           |
 | Runs on phones                               | ❌                         | ✅                         |

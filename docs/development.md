@@ -20,10 +20,9 @@ The seed data has two users, both with the password `devpassword`. `dev` owns th
 The web app reloads on every save, so it is the fastest way to see a change to the bookmarks page or the caption panel.
 
 1. Open http://localhost:5173/ and log in as `dev`.
-2. On the bookmarks page, click a seed video's sync badge to pull it.
-3. Click the video to open it in the viewer at `/videos/:id`.
+2. Click a seed video to open it in the viewer at `/videos/:id`. The viewer pulls it from the server the first time.
 
-The viewer only opens pulled videos, so it shows "No session available" until step 2. It can't fetch from YouTube, so it also has no track picker and can't start a new session. Use the extension for those.
+The viewer can't fetch from YouTube, so it has no track picker and can't start a new session. Use the extension for those.
 
 ## Work on the Extension
 
