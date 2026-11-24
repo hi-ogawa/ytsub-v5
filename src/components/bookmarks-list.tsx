@@ -111,6 +111,13 @@ function BookmarkCard({
         <span className="shrink-0 text-xs text-muted-foreground">
           {formatTimestamp(bookmark.timestamp)}
         </span>
+        {caption && (
+          <RepeatToggle
+            className="-mt-0.5 shrink-0 text-muted-foreground"
+            isRepeating={isRepeating}
+            onToggle={() => onToggleRepeat(bookmark.captionIndex)}
+          />
+        )}
       </div>
       {bookmark.translation && (
         <div className="text-sm text-muted-foreground">
@@ -133,11 +140,6 @@ function BookmarkCard({
           </div>
           <div className="flex shrink-0 items-center gap-1">
             {!bookmark.translation && <UnfilledChip />}
-            <RepeatToggle
-              className="text-muted-foreground"
-              isRepeating={isRepeating}
-              onToggle={() => onToggleRepeat(bookmark.captionIndex)}
-            />
             <DeleteBookmarkButton bookmark={bookmark} onDelete={onDelete} />
             <button
               className="rounded p-0.5 text-muted-foreground hover:bg-border hover:text-foreground"
