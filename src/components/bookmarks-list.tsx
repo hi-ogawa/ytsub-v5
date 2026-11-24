@@ -138,19 +138,21 @@ function BookmarkCard({
             <div>{caption.text1}</div>
             <div>{caption.text2}</div>
           </div>
-          <div className="flex shrink-0 items-center gap-1">
+          <div className="flex shrink-0 flex-col items-end gap-0.5">
             {!bookmark.translation && <UnfilledChip />}
-            <DeleteBookmarkButton bookmark={bookmark} onDelete={onDelete} />
-            <button
-              className="rounded p-0.5 text-muted-foreground hover:bg-border hover:text-foreground"
-              title="Go to caption"
-              onClick={(event) => {
-                event.stopPropagation();
-                onGoToCaption(bookmark.captionIndex);
-              }}
-            >
-              <ExternalLink className="size-3.5" />
-            </button>
+            <div className="flex items-center gap-1">
+              <DeleteBookmarkButton bookmark={bookmark} onDelete={onDelete} />
+              <button
+                className="rounded p-0.5 text-muted-foreground hover:bg-border hover:text-foreground"
+                title="Go to caption"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onGoToCaption(bookmark.captionIndex);
+                }}
+              >
+                <ExternalLink className="size-3.5" />
+              </button>
+            </div>
           </div>
         </div>
       ) : (
