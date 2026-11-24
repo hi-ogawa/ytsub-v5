@@ -27,6 +27,20 @@ TOKEN=$(curl -s -X POST https://zamak.hiro18181.workers.dev/api/auth/login \
 
 The response also sets a `session` cookie with the same token, but URL-encoded. Use the token from the body, because the encoded cookie value gets a 401 as a bearer token.
 
+## Read the Whole Library
+
+For analysis across videos, such as finding which words the user already bookmarked, read a local copy of the library instead of fetching each video yourself. Run [`scripts/sync-library.ts`](../scripts/sync-library.ts) before you start:
+
+```bash
+ZAMAK_USERNAME=... ZAMAK_PASSWORD=... node skills/zamak/scripts/sync-library.ts
+```
+
+It logs in with the credentials from the environment, and it keeps the token in memory only. It keeps the copy in `~/.cache/zamak`, or in `$ZAMAK_CACHE_DIR` when that is set. `videos/<youtubeId>.json` holds each video's `getFullSession` result, and `index.json` maps each video to its `editedAt`.
+
+The server changes a video's `editedAt` only when its content changes. So each run fetches only the videos that are new or edited since the last run, and it removes the copies of videos that are gone from the server. It prints each video it fetches or removes, then a summary line such as `21 videos in /home/me/.cache/zamak: 0 fetched, 0 removed`.
+
+To change a video, still read it with `getFullSession` first, as the next section describes, because the copy is only as current as the last run.
+
 ## Edit a Video's Captions and Bookmarks
 
 1. Read the video with `videos/getFullSession { youtubeId }`. It returns `{ video, captions, bookmarks }`, or `null` when the server doesn't have the video. A bookmark points at its row by `captionId`, the row's server id, and a row's position is its `idx`. The video's `vssId1` and `vssId2` name the tracks the rows were first built from, and a rewrite such as fix-asr keeps them.
