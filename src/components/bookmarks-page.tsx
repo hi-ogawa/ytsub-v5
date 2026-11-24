@@ -45,7 +45,7 @@ export function BookmarksPage({
     ? []
     : (sync?.entries ?? entries);
   const sorted = [...displayEntries].sort((a, b) =>
-    b.editedAt.localeCompare(a.editedAt),
+    getLatestEditedAt(b).localeCompare(getLatestEditedAt(a)),
   );
   const [savedLayout, setLayout] = videoListPreferences.useValue("layout");
   // Below the width where the grid gets a second column, a card fills the
@@ -98,7 +98,7 @@ export function BookmarksPage({
                 )
               }
               bookmarkCount={<BookmarkCount count={entry.bookmarkCount} />}
-              editTime={<EditTime time={entry.editedAt} />}
+              editTime={<EditTime time={getLatestEditedAt(entry)} />}
               syncBadge={
                 sync &&
                 entry.syncStatus && (
@@ -118,6 +118,14 @@ export function BookmarksPage({
       )}
     </div>
   );
+}
+
+// The last edit anywhere, so a video edited elsewhere moves up before it is
+// pulled
+function getLatestEditedAt(entry: VideoListEntry) {
+  return entry.serverEditedAt && entry.serverEditedAt > entry.editedAt
+    ? entry.serverEditedAt
+    : entry.editedAt;
 }
 
 function ServerErrorNotice({ message }: { message: string }) {
