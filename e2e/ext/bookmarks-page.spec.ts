@@ -416,3 +416,41 @@ test("a pulled video keeps the place its edit time gives it", async ({
   await expect(badge).toHaveAttribute("data-sync-status", "synced");
   await expect(bothCards.first()).toContainText("Local Only Video");
 });
+
+test("a video edited on the server moves up before it is pulled", async ({
+  page,
+  extensionId,
+}) => {
+  await setupDb({ seed: true });
+  await setServerEditedAt(SEED_YOUTUBE_ID, "2026-06-01T00:00:00.000Z");
+  const localEntries = [
+    {
+      youtubeId: SEED_YOUTUBE_ID,
+      title: "Billlie | 'cloud palace' 𝐁efore sunrise live",
+      channelName: "Billlie",
+      bookmarkCount: 1,
+      editedAt: "2026-01-01T00:00:00.000Z",
+      syncedEditedAt: "2026-01-01T00:00:00.000Z",
+    },
+    {
+      youtubeId: "local-only-123",
+      title: "Local Only Video",
+      channelName: "Some Channel",
+      bookmarkCount: 1,
+      editedAt: "2026-03-15T00:00:00.000Z",
+    },
+  ];
+  await gotoBookmarks(page, extensionId);
+  await seedVideoIndex(page, localEntries);
+  await login(page);
+
+  const localCard = page.getByTestId("video-card-local-only-123");
+  const seedCard = page.getByTestId(`video-card-${SEED_YOUTUBE_ID}`);
+  const bothCards = localCard.or(seedCard);
+  await expect(bothCards).toHaveCount(2);
+  await expect(seedCard.getByTestId("video-sync-badge")).toHaveAttribute(
+    "data-sync-status",
+    "pull",
+  );
+  await expect(bothCards.first()).toContainText("cloud palace");
+});

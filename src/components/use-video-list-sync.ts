@@ -127,7 +127,7 @@ export function useVideoListSync(storage: CaptionStorage) {
   };
 }
 
-export function mergeVideoEntries(
+function mergeVideoEntries(
   localEntries: VideoIndexEntry[],
   serverVideos: ListVideosOutput["items"],
 ): VideoListEntry[] {
