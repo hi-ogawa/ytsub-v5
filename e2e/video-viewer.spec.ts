@@ -27,7 +27,7 @@ test("pulled video opens in the viewer with its bookmarks and session-only setti
   );
 });
 
-test("server-only video links back to the list to pull it", async ({
+test("server-only video links to the bookmarks page to pull it", async ({
   page,
 }) => {
   await page.route("https://www.youtube.com/**", (route) => route.abort());
@@ -38,7 +38,7 @@ test("server-only video links back to the list to pull it", async ({
   await expect(
     page.getByText("This video isn't on this device yet."),
   ).toBeVisible();
-  await page.getByRole("link", { name: "video list" }).click();
+  await page.getByRole("link", { name: "bookmarks page" }).click();
   await expect(page).toHaveURL("/");
   await expect(
     page

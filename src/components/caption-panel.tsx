@@ -80,9 +80,9 @@ export function CaptionPanel({
     return (
       <PanelMessage>
         <p className="px-4 text-center">
-          This video isn't on this device yet. Pull it from the{" "}
+          This video isn't on this device yet. Pull it from its card on the{" "}
           <Link to="/" className="text-primary underline">
-            video list
+            bookmarks page
           </Link>
           .
         </p>
