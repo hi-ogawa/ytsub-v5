@@ -406,11 +406,9 @@ test("delete bookmark from bookmarks tab", async ({ context }) => {
   await panel.getByRole("tab", { name: /Bookmarks/ }).click();
   await expect(host.locator("[data-bookmark-id]").first()).toBeVisible();
 
-  // Open dropdown and delete
   ytPage.on("dialog", (d) => d.accept());
   const bookmarkCard = host.locator("[data-bookmark-id]").first();
-  await bookmarkCard.getByTitle("Bookmark actions").click();
-  await host.getByRole("menuitem", { name: "Delete" }).click();
+  await bookmarkCard.getByRole("button", { name: "Delete bookmark" }).click();
 
   // Should show empty state
   await expect(host.getByText("No bookmarks yet")).toBeVisible();
@@ -449,8 +447,7 @@ test("bookmark numbers in popover and bookmarks tab", async ({ context }) => {
 
   // Deleting the first bookmark renumbers the rest
   ytPage.on("dialog", (d) => d.accept());
-  await cards.nth(0).getByTitle("Bookmark actions").click();
-  await host.getByRole("menuitem", { name: "Delete" }).click();
+  await cards.nth(0).getByRole("button", { name: "Delete bookmark" }).click();
   await expect(cards).toHaveCount(2);
   await expect(cards.nth(0)).toContainText("#1널");
   await expect(cards.nth(1)).toContainText("#2아직");
