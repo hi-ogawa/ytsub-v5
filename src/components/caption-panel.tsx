@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useSyncExternalStore } from "react";
+import { Link } from "react-router";
 import { captionPanelPreferences } from "../lib/caption-panel-preferences.ts";
 import type {
   CaptionPanelRuntime,
@@ -76,7 +77,17 @@ export function CaptionPanel({
   }
 
   if (!runtime.trackSource) {
-    return <PanelMessage>No session available</PanelMessage>;
+    return (
+      <PanelMessage>
+        <p className="px-4 text-center">
+          This video isn't on this device yet. Pull it from the{" "}
+          <Link to="/" className="text-primary underline">
+            video list
+          </Link>
+          .
+        </p>
+      </PanelMessage>
+    );
   }
   if (state.loadingTracks) {
     return <PanelMessage>Loading subtitles…</PanelMessage>;
