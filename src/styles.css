@@ -139,6 +139,16 @@
     background-color: var(--color-background);
     color: var(--color-foreground);
   }
+
+  /* Neither Roboto nor Arial has Hangul, so without these the browser takes it
+     from whichever installed font covers it first, often a Chinese or Japanese
+     font whose Hangul is small and thin. */
+  :lang(ko) {
+    font-family:
+      "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans CJK KR",
+      "Noto Sans KR", "Roboto", "Arial", sans-serif;
+    word-break: keep-all;
+  }
 }
 
 @keyframes flash-highlight {

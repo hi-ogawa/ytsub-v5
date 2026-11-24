@@ -24,6 +24,7 @@ export type CaptionListHandle = {
 export function CaptionList({
   ref,
   rows,
+  languages,
   currentIndex,
   isPlaying,
   repeatIndex,
@@ -36,6 +37,8 @@ export function CaptionList({
 }: {
   ref: React.Ref<CaptionListHandle>;
   rows: MergedCaption[];
+  /** Language codes of the two caption tracks, indexed by side */
+  languages: [string, string];
   currentIndex?: number;
   isPlaying: boolean;
   repeatIndex?: number;
@@ -145,6 +148,7 @@ export function CaptionList({
           <CaptionRow
             key={i}
             row={row}
+            languages={languages}
             index={i}
             isCurrent={i === currentIndex}
             isPlaying={i === currentIndex && isPlaying}
@@ -168,6 +172,7 @@ export function CaptionList({
 // output.
 function CaptionRow({
   row,
+  languages,
   index,
   isCurrent,
   isPlaying,
@@ -181,6 +186,7 @@ function CaptionRow({
   onPopoverOpenChange,
 }: {
   row: MergedCaption;
+  languages: [string, string];
   index: number;
   isCurrent: boolean;
   isPlaying: boolean;
@@ -230,18 +236,20 @@ function CaptionRow({
         />
       </div>
       <div className="flex text-sm">
-        <div className="flex-1 border-r pr-2" data-side="0">
+        <div className="flex-1 border-r pr-2" data-side="0" lang={languages[0]}>
           <HighlightedText
             text={row.text1}
+            language={languages[0]}
             marks={text1Marks ?? []}
             onGoToBookmark={onGoToBookmark}
             onDeleteBookmark={onDeleteBookmark}
             onPopoverOpenChange={onPopoverOpenChange}
           />
         </div>
-        <div className="flex-1 pl-2" data-side="1">
+        <div className="flex-1 pl-2" data-side="1" lang={languages[1]}>
           <HighlightedText
             text={row.text2}
+            language={languages[1]}
             marks={text2Marks ?? []}
             onGoToBookmark={onGoToBookmark}
             onDeleteBookmark={onDeleteBookmark}
@@ -255,12 +263,14 @@ function CaptionRow({
 
 function HighlightedText({
   text,
+  language,
   marks,
   onGoToBookmark,
   onDeleteBookmark,
   onPopoverOpenChange,
 }: {
   text: string;
+  language: string;
   marks: { bookmark: ExtensionBookmark; bookmarkNumber?: number }[];
   onGoToBookmark: (bookmarkId: string) => void;
   onDeleteBookmark: (bookmarkId: string) => void;
@@ -288,6 +298,7 @@ function HighlightedText({
         key={bookmark.id}
         bookmark={bookmark}
         bookmarkNumber={bookmarkNumber}
+        language={language}
         offset={bookmark.offset}
         onGoToBookmark={onGoToBookmark}
         onDeleteBookmark={onDeleteBookmark}
@@ -311,6 +322,7 @@ function HighlightedText({
 function BookmarkWord({
   bookmark,
   bookmarkNumber,
+  language,
   offset,
   children,
   onGoToBookmark,
@@ -319,6 +331,8 @@ function BookmarkWord({
 }: {
   bookmark: ExtensionBookmark;
   bookmarkNumber?: number;
+  /** The popover renders in a portal, outside the caption's `lang` */
+  language: string;
   offset: number;
   children: React.ReactNode;
   onGoToBookmark: (bookmarkId: string) => void;
@@ -377,7 +391,7 @@ function BookmarkWord({
               #{bookmarkNumber}
             </span>
           )}
-          {bookmark.text}
+          <span lang={language}>{bookmark.text}</span>
         </span>
         {bookmark.translation ? (
           <span className="block text-xs text-popover-foreground">

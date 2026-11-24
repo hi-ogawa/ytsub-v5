@@ -7,6 +7,7 @@ import {
   sortBookmarks,
 } from "../lib/caption-panel-runtime.ts";
 import type { ExtensionBookmark } from "../lib/extension-bookmarks.ts";
+import { langFromVssId } from "../lib/youtube.ts";
 import {
   type BookmarksListHandle,
   ExtensionBookmarksList,
@@ -37,6 +38,10 @@ export function CaptionPanelContent({
     () => sortBookmarks(session.bookmarks),
     [session.bookmarks],
   );
+  const languages: [string, string] = [
+    langFromVssId(session.vssId1),
+    langFromVssId(session.vssId2),
+  ];
 
   function scrollToBookmarkCaption(bookmark?: ExtensionBookmark) {
     if (bookmark) {
@@ -96,6 +101,7 @@ export function CaptionPanelContent({
             ref={captionListRef}
             runtime={runtime}
             rows={session.rows}
+            languages={languages}
             autoScroll={autoScroll}
             bookmarks={sortedBookmarks}
             onGoToBookmark={onGoToBookmark}
@@ -119,6 +125,7 @@ export function CaptionPanelContent({
               ref={bookmarksListRef}
               bookmarks={sortedBookmarks}
               rows={session.rows}
+              languages={languages}
               currentIndex={currentIndex}
               isPlaying={isPlaying}
               repeatIndex={repeatIndex}
@@ -246,6 +253,7 @@ function CaptionViewer({
   ref,
   runtime,
   rows,
+  languages,
   autoScroll,
   bookmarks,
   onGoToBookmark,
@@ -253,6 +261,7 @@ function CaptionViewer({
   ref: React.Ref<CaptionListHandle>;
   runtime: CaptionPanelRuntime;
   rows: MergedCaption[];
+  languages: [string, string];
   autoScroll: boolean;
   bookmarks: ExtensionBookmark[];
   onGoToBookmark: (bookmarkId: string) => void;
@@ -266,6 +275,7 @@ function CaptionViewer({
     <CaptionList
       ref={ref}
       rows={rows}
+      languages={languages}
       currentIndex={currentIndex}
       isPlaying={isPlaying}
       repeatIndex={repeatIndex}
