@@ -235,7 +235,7 @@ function CaptionRow({
           onToggle={() => onToggleRepeat(index)}
         />
       </div>
-      <div className="flex text-sm">
+      <div className="flex text-(length:--caption-text-size) leading-(--text-sm--line-height)">
         <div className="flex-1 border-r pr-2" data-side="0" lang={languages[0]}>
           <HighlightedText
             text={row.text1}

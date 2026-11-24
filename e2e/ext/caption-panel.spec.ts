@@ -1,6 +1,11 @@
 import { expect, type Locator } from "@playwright/test";
 import { OTHER_YOUTUBE_ID, SEED_YOUTUBE_ID } from "../helper";
-import { openPanelWithTracks, openYouTubeTab, test } from "./helper";
+import {
+  createBookmarkAt,
+  openPanelWithTracks,
+  openYouTubeTab,
+  test,
+} from "./helper";
 
 test("FAB toggles the panel and keeps its state per video across reloads", async ({
   context,
@@ -122,6 +127,30 @@ test("auto-scroll toggle persists across reload", async ({ context }) => {
   await expect(host.locator("[data-index='0']")).toBeVisible();
   await host.getByTitle("Settings").click();
   await expect(autoScrollItem).toHaveAttribute("data-checked", "false");
+});
+
+test("text size setting resizes captions and persists across reload", async ({
+  context,
+}) => {
+  const { ytPage, host } = await openPanelWithTracks(context, SEED_YOUTUBE_ID);
+  const caption = host.locator("[data-index='0'] [data-side='0']");
+  await expect(caption).toHaveCSS("font-size", "14px");
+
+  // The menu stays open while stepping
+  await host.getByTitle("Settings").click();
+  await host.getByRole("menuitem", { name: "Larger text" }).click();
+  await host.getByRole("menuitem", { name: "Larger text" }).click();
+  await expect(caption).toHaveCSS("font-size", "16px");
+
+  await ytPage.reload();
+  await expect(caption).toHaveCSS("font-size", "16px");
+
+  // Bookmark cards follow it too
+  await createBookmarkAt(host, { index: 0, start: 0, end: 3 });
+  await host.getByRole("tab", { name: /Bookmarks/ }).click();
+  await expect(
+    host.locator("[data-bookmark-id]").getByText("꼬집어", { exact: true }),
+  ).toHaveCSS("font-size", "16px");
 });
 
 test("export downloads valid import.json", async ({ context }) => {

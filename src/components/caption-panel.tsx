@@ -162,10 +162,14 @@ function CaptionPanelWithSession({
 }) {
   const [autoScroll, setAutoScroll] =
     captionPanelPreferences.useValue("autoScroll");
+  const [textSize, setTextSize] = captionPanelPreferences.useValue("textSize");
   const { tracks, loadingTracks, tracksError } = state;
 
   return (
-    <div className="flex h-full flex-col">
+    <div
+      className="flex h-full flex-col"
+      style={{ "--caption-text-size": `${textSize}px` } as React.CSSProperties}
+    >
       <div className="flex items-center border-b gap-1">
         {loadingTracks || tracks.length > 0 ? (
           <div className="min-w-0 flex-1">
@@ -191,6 +195,8 @@ function CaptionPanelWithSession({
           tracks={tracks}
           autoScroll={autoScroll}
           onSetAutoScroll={setAutoScroll}
+          textSize={textSize}
+          onSetTextSize={setTextSize}
           useSync={useSync}
         />
       </div>
