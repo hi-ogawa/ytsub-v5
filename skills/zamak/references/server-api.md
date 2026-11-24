@@ -27,15 +27,15 @@ TOKEN=$(curl -s -X POST https://zamak.hiro18181.workers.dev/api/auth/login \
 
 The response also sets a `session` cookie with the same token, but URL-encoded. Use the token from the body, because the encoded cookie value gets a 401 as a bearer token.
 
-## Cache Videos Locally
+## Keep a Local Copy of Videos
 
-For analysis across videos, keep the videos you fetch in one shared place, so later sessions can reuse them instead of fetching the whole library again. Save each `getFullSession` result as `~/.cache/zamak/videos/<youtubeId>.json`, unchanged.
+For analysis across videos, keep the videos you fetch in one shared place, so later sessions can reuse them instead of fetching the whole library again. Save each `getFullSession` result as `~/.local/share/zamak/videos/<youtubeId>.json`, unchanged.
 
-The server changes a video's `editedAt` only when its content changes, and `videos/listVideos` returns it for every video. So before you read a cached file, compare its `video.editedAt` with the one from `listVideos`, and fetch the video again only when they differ or the file is missing. A cached video that `listVideos` no longer returns was deleted on the server.
+The server changes a video's `editedAt` only when its content changes, and `videos/listVideos` returns it for every video. So before you read a local file, compare its `video.editedAt` with the one from `listVideos`, and fetch the video again only when they differ or the file is missing. A local video that `listVideos` no longer returns was deleted on the server.
 
-Keep the token in memory, and don't write it to the cache or any other file.
+Keep the token in memory, and don't write it to the local copy or any other file.
 
-To change a video, read it with `getFullSession` first, as the next section describes, rather than from the cache.
+To change a video, read it with `getFullSession` first, as the next section describes, rather than from the local copy.
 
 ## Edit a Video's Captions and Bookmarks
 
