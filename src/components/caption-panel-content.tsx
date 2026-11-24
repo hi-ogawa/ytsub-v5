@@ -81,12 +81,16 @@ export function CaptionPanelContent({
       />
 
       <div className="relative flex min-h-0 flex-[1_0_0] flex-col">
-        {/* Captions — hidden (not unmounted) to preserve scroll position */}
+        {/* The tabs stack with the active one on top. The inactive one skips
+            rendering but keeps its layout and scroll position, so showing it
+            again doesn't lay out every row from scratch. */}
         <div
-          className="flex min-h-0 flex-[1_0_0] flex-col"
-          style={{
-            display: activeTab === "captions" ? undefined : "none",
-          }}
+          className="absolute inset-0 flex flex-col"
+          style={
+            activeTab === "captions"
+              ? { zIndex: 1 }
+              : { contentVisibility: "hidden" }
+          }
         >
           <CaptionViewer
             ref={captionListRef}
@@ -98,12 +102,13 @@ export function CaptionPanelContent({
           />
         </div>
 
-        {/* Bookmarks — hidden (not unmounted) to preserve scroll position */}
         <div
-          className="flex-[1_0_0] overflow-y-auto"
-          style={{
-            display: activeTab === "bookmarks" ? undefined : "none",
-          }}
+          className="absolute inset-0 overflow-y-auto"
+          style={
+            activeTab === "bookmarks"
+              ? { zIndex: 1 }
+              : { contentVisibility: "hidden" }
+          }
         >
           {sortedBookmarks.length === 0 ? (
             <div className="flex h-full items-center justify-center">
@@ -218,7 +223,7 @@ function BookmarkActions({
   onCreate: () => void;
 }) {
   return (
-    <div className="absolute bottom-2 right-2 flex gap-2">
+    <div className="absolute bottom-2 right-2 z-10 flex gap-2">
       <button
         className="flex h-10 w-10 items-center justify-center rounded-full bg-muted shadow hover:bg-muted/80"
         onClick={onCancel}
