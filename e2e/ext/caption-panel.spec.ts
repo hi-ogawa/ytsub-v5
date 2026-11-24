@@ -124,6 +124,21 @@ test("auto-scroll toggle persists across reload", async ({ context }) => {
   await expect(autoScrollItem).toHaveAttribute("data-checked", "false");
 });
 
+test("text size setting resizes captions and persists across reload", async ({
+  context,
+}) => {
+  const { ytPage, host } = await openPanelWithTracks(context, SEED_YOUTUBE_ID);
+  const caption = host.locator("[data-index='0'] [data-side='0']");
+  await expect(caption).toHaveCSS("font-size", "14px");
+
+  await host.getByTitle("Settings").click();
+  await host.getByRole("menuitemradio", { name: "20 px" }).click();
+  await expect(caption).toHaveCSS("font-size", "20px");
+
+  await ytPage.reload();
+  await expect(caption).toHaveCSS("font-size", "20px");
+});
+
 test("export downloads valid import.json", async ({ context }) => {
   const { ytPage, host } = await openPanelWithTracks(context, SEED_YOUTUBE_ID);
 

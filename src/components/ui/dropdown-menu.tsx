@@ -1,3 +1,4 @@
+import { Check } from "lucide-react";
 import { DropdownMenu as DropdownMenuPrimitive } from "radix-ui";
 import {
   createContext,
@@ -87,18 +88,55 @@ function DropdownMenuContent({
   );
 }
 
+const ITEM_CLASS_NAME =
+  "flex w-full cursor-default items-center rounded-sm px-2 py-1.5 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50";
+
 function DropdownMenuItem({
   className,
   ...props
 }: ComponentProps<typeof DropdownMenuPrimitive.Item>) {
   return (
     <DropdownMenuPrimitive.Item
+      className={ITEM_CLASS_NAME + (className ? ` ${className}` : "")}
+      {...props}
+    />
+  );
+}
+
+function DropdownMenuLabel({
+  className,
+  ...props
+}: ComponentProps<typeof DropdownMenuPrimitive.Label>) {
+  return (
+    <DropdownMenuPrimitive.Label
       className={
-        "flex w-full cursor-default items-center rounded-sm px-2 py-1.5 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50" +
+        "px-2 py-1.5 text-xs text-muted-foreground" +
         (className ? ` ${className}` : "")
       }
       {...props}
     />
+  );
+}
+
+const DropdownMenuRadioGroup = DropdownMenuPrimitive.RadioGroup;
+
+function DropdownMenuRadioItem({
+  className,
+  children,
+  ...props
+}: ComponentProps<typeof DropdownMenuPrimitive.RadioItem>) {
+  return (
+    <DropdownMenuPrimitive.RadioItem
+      className={ITEM_CLASS_NAME + (className ? ` ${className}` : "")}
+      {...props}
+    >
+      <span className="mr-2 size-4">
+        <DropdownMenuPrimitive.ItemIndicator>
+          <Check className="size-4" />
+        </DropdownMenuPrimitive.ItemIndicator>
+      </span>
+      {children}
+    </DropdownMenuPrimitive.RadioItem>
   );
 }
 
@@ -107,4 +145,7 @@ export {
   DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
 };

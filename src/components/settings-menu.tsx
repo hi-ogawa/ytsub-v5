@@ -4,7 +4,9 @@ import {
   Download,
   EllipsisVertical,
   Trash2,
+  Type,
 } from "lucide-react";
+import { TEXT_SIZE } from "../lib/caption-panel-preferences.ts";
 import type {
   CaptionPanelRuntime,
   CaptionSession,
@@ -18,6 +20,9 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu.tsx";
 
@@ -27,6 +32,8 @@ export function SettingsDropdown({
   tracks,
   autoScroll,
   onSetAutoScroll,
+  textSize,
+  onSetTextSize,
   useSync,
 }: {
   runtime: CaptionPanelRuntime;
@@ -34,9 +41,16 @@ export function SettingsDropdown({
   tracks: YouTubeCaptionTrack[];
   autoScroll: boolean;
   onSetAutoScroll: (value: boolean | ((prev: boolean) => boolean)) => void;
+  textSize: number;
+  onSetTextSize: (value: number) => void;
   useSync: UseSync;
 }) {
   const hasBookmarks = session.bookmarks.length > 0;
+  // Temporary switch for comparing the two text size controls in #470.
+  const TextSizeControl =
+    new URLSearchParams(location.search).get("text-size-control") === "stepper"
+      ? TextSizeStepper
+      : TextSizeRadioItems;
 
   return (
     <DropdownMenu>
@@ -60,6 +74,7 @@ export function SettingsDropdown({
           />
           Auto-scroll
         </DropdownMenuItem>
+        <TextSizeControl textSize={textSize} onSetTextSize={onSetTextSize} />
         <AiPromptCopy session={session} tracks={tracks} />
         <DropdownMenuItem onSelect={() => importAiResult({ runtime, session })}>
           <ClipboardPaste className="mr-2 size-4" />
@@ -90,6 +105,91 @@ export function SettingsDropdown({
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
+  );
+}
+
+const TEXT_SIZE_CHOICES = [14, 16, 18, 20];
+
+function TextSizeRadioItems({
+  textSize,
+  onSetTextSize,
+}: {
+  textSize: number;
+  onSetTextSize: (value: number) => void;
+}) {
+  return (
+    <>
+      <div className="my-1 h-px bg-border" />
+      <DropdownMenuLabel>Text size</DropdownMenuLabel>
+      <DropdownMenuRadioGroup
+        value={String(textSize)}
+        onValueChange={(value) => onSetTextSize(Number(value))}
+      >
+        {TEXT_SIZE_CHOICES.map((size) => (
+          <DropdownMenuRadioItem key={size} value={String(size)}>
+            {size} px
+          </DropdownMenuRadioItem>
+        ))}
+      </DropdownMenuRadioGroup>
+      <div className="my-1 h-px bg-border" />
+    </>
+  );
+}
+
+// Each button keeps the menu open, so the captions behind it resize live
+// while stepping.
+function TextSizeStepper({
+  textSize,
+  onSetTextSize,
+}: {
+  textSize: number;
+  onSetTextSize: (value: number) => void;
+}) {
+  return (
+    <div className="flex items-center">
+      <div className="flex min-w-0 flex-1 items-center px-2 py-1.5 text-sm">
+        <Type className="mr-2 size-4" />
+        Text size
+      </div>
+      <div className="flex shrink-0 items-center">
+        <DropdownMenuItem
+          className="px-1.5"
+          title="Smaller text"
+          aria-label="Smaller text"
+          disabled={textSize <= TEXT_SIZE.min}
+          onSelect={(event) => {
+            event.preventDefault();
+            onSetTextSize(textSize - 1);
+          }}
+        >
+          A−
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          className="w-10 justify-center tabular-nums"
+          title={`Reset to ${TEXT_SIZE.default} px`}
+          aria-label={`Text size ${textSize} px, reset to ${TEXT_SIZE.default} px`}
+          data-testid="text-size-value"
+          onSelect={(event) => {
+            event.preventDefault();
+            onSetTextSize(TEXT_SIZE.default);
+          }}
+        >
+          {textSize}
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          className="px-1.5"
+          title="Larger text"
+          aria-label="Larger text"
+          disabled={textSize >= TEXT_SIZE.max}
+          onSelect={(event) => {
+            event.preventDefault();
+            onSetTextSize(textSize + 1);
+          }}
+        >
+          A+
+        </DropdownMenuItem>
+      </div>
+    </div>
   );
 }
 
