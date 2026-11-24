@@ -1,5 +1,7 @@
 import { ExternalLink, Trash2 } from "lucide-react";
 import {
+  memo,
+  useCallback,
   useEffect,
   useImperativeHandle,
   useMemo,
@@ -58,9 +60,9 @@ export function CaptionList({
   const manualScroll = useTimedFlag(2000);
   const isPopoverOpenRef = useRef(false);
 
-  function onPopoverOpenChange(open: boolean) {
+  const onPopoverOpenChange = useCallback((open: boolean) => {
     isPopoverOpenRef.current = open;
-  }
+  }, []);
 
   // A jump to a row, such as from the bookmarks tab, counts as a manual
   // scroll, so auto-scroll doesn't pull the list away from it right after.
@@ -119,13 +121,24 @@ export function CaptionList({
 
   // A click that ends a text selection is for bookmarking, not playback.
   // Any other click resumes auto-scroll.
-  function onClickRow(index: number) {
-    if (getSelectionAt(scrollRef.current)?.toString()) {
-      return;
-    }
-    manualScroll.clear();
-    onPlayOrToggleRow(index);
-  }
+  const onClickRow = useCallback(
+    (index: number) => {
+      if (getSelectionAt(scrollRef.current)?.toString()) {
+        return;
+      }
+      manualScroll.clear();
+      onPlayOrToggleRow(index);
+    },
+    [manualScroll, onPlayOrToggleRow],
+  );
+
+  const onToggleRowRepeat = useCallback(
+    (index: number) => {
+      manualScroll.clear();
+      onToggleRepeat(index);
+    },
+    [manualScroll, onToggleRepeat],
+  );
 
   return (
     <div
@@ -142,15 +155,12 @@ export function CaptionList({
             row={row}
             index={i}
             isCurrent={i === currentIndex}
-            isPlaying={isPlaying}
+            isPlaying={i === currentIndex && isPlaying}
             isRepeating={i === repeatIndex}
             bookmarks={bookmarksByIndex.get(i)}
             bookmarkNumberById={bookmarkNumberById}
-            onClick={() => onClickRow(i)}
-            onToggleRepeat={() => {
-              manualScroll.clear();
-              onToggleRepeat(i);
-            }}
+            onClick={onClickRow}
+            onToggleRepeat={onToggleRowRepeat}
             onGoToBookmark={onGoToBookmark}
             onDeleteBookmark={onDeleteBookmark}
             onPopoverOpenChange={onPopoverOpenChange}
@@ -161,7 +171,9 @@ export function CaptionList({
   );
 }
 
-function CaptionRow({
+// Memoized with stable callbacks, so a playback update or a tab switch
+// re-renders only the rows whose own state changed.
+const CaptionRow = memo(function CaptionRow({
   row,
   index,
   isCurrent,
@@ -182,8 +194,8 @@ function CaptionRow({
   isRepeating: boolean;
   bookmarks?: ExtensionBookmark[];
   bookmarkNumberById: Map<string, number>;
-  onClick: () => void;
-  onToggleRepeat: () => void;
+  onClick: (index: number) => void;
+  onToggleRepeat: (index: number) => void;
   onGoToBookmark: (bookmarkId: string) => void;
   onDeleteBookmark: (bookmarkId: string) => void;
   onPopoverOpenChange: (open: boolean) => void;
@@ -207,12 +219,12 @@ function CaptionRow({
       aria-current={isCurrent || undefined}
       className={[
         "flex w-full cursor-pointer flex-col gap-1 border p-1 px-2 hover:bg-muted",
-        isCurrent && isPlaying && "ring-2 ring-ring",
+        isPlaying && "ring-2 ring-ring",
         isCurrent ? "border-ring" : "border-border",
       ]
         .filter(Boolean)
         .join(" ")}
-      onClick={onClick}
+      onClick={() => onClick(index)}
     >
       <div className="flex items-center text-xs text-muted-foreground">
         <span>
@@ -221,7 +233,7 @@ function CaptionRow({
         <RepeatToggle
           className="-my-0.5 ml-auto"
           isRepeating={isRepeating}
-          onToggle={onToggleRepeat}
+          onToggle={() => onToggleRepeat(index)}
         />
       </div>
       <div className="flex text-sm">
@@ -246,7 +258,7 @@ function CaptionRow({
       </div>
     </div>
   );
-}
+});
 
 function HighlightedText({
   text,

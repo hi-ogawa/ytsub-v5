@@ -1,5 +1,11 @@
 import { Bookmark, ChevronLeft, ChevronRight, X } from "lucide-react";
-import { useMemo, useRef, useState, useSyncExternalStore } from "react";
+import {
+  useCallback,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
 import type { MergedCaption } from "../lib/caption-merge.ts";
 import {
   type CaptionPanelRuntime,
@@ -46,19 +52,38 @@ export function CaptionPanelContent({
 
   // Switching tabs first un-hides the target list, so the scroll waits a tick
   // until it has a layout.
-  function onGoToCaption(captionIndex: number) {
+  const onGoToCaption = useCallback((captionIndex: number) => {
     setActiveTab("captions");
     setTimeout(() => {
       captionListRef.current?.scrollToIndex(captionIndex);
     });
-  }
+  }, []);
 
-  function onGoToBookmark(bookmarkId: string) {
+  const onGoToBookmark = useCallback((bookmarkId: string) => {
     setActiveTab("bookmarks");
     setTimeout(() => {
       bookmarksListRef.current?.scrollToBookmark(bookmarkId);
     });
-  }
+  }, []);
+
+  // The rows and cards are memoized, so their callbacks stay stable.
+  const onPlayOrToggleRow = useCallback(
+    (index: number) => runtime.playOrToggleRow(index),
+    [runtime],
+  );
+  const onClickBookmark = useCallback(
+    (bookmark: ExtensionBookmark) =>
+      runtime.playOrToggleRow(bookmark.captionIndex),
+    [runtime],
+  );
+  const onToggleRepeat = useCallback(
+    (index: number) => runtime.toggleRepeat(index),
+    [runtime],
+  );
+  const onDeleteBookmark = useCallback(
+    (id: string) => runtime.deleteBookmark(id),
+    [runtime],
+  );
 
   const bookmarkSelection = useBookmarkSelection({
     contentRef,
@@ -98,7 +123,10 @@ export function CaptionPanelContent({
             rows={session.rows}
             autoScroll={autoScroll}
             bookmarks={sortedBookmarks}
+            onPlayOrToggleRow={onPlayOrToggleRow}
+            onToggleRepeat={onToggleRepeat}
             onGoToBookmark={onGoToBookmark}
+            onDeleteBookmark={onDeleteBookmark}
           />
         </div>
 
@@ -122,13 +150,9 @@ export function CaptionPanelContent({
               currentIndex={currentIndex}
               isPlaying={isPlaying}
               repeatIndex={repeatIndex}
-              onClickBookmark={(bookmark) =>
-                runtime.playOrToggleRow(bookmark.captionIndex)
-              }
-              onToggleRepeat={(captionIndex) =>
-                runtime.toggleRepeat(captionIndex)
-              }
-              onDeleteBookmark={(id) => runtime.deleteBookmark(id)}
+              onClickBookmark={onClickBookmark}
+              onToggleRepeat={onToggleRepeat}
+              onDeleteBookmark={onDeleteBookmark}
               onGoToCaption={onGoToCaption}
             />
           )}
@@ -248,14 +272,20 @@ function CaptionViewer({
   rows,
   autoScroll,
   bookmarks,
+  onPlayOrToggleRow,
+  onToggleRepeat,
   onGoToBookmark,
+  onDeleteBookmark,
 }: {
   ref: React.Ref<CaptionListHandle>;
   runtime: CaptionPanelRuntime;
   rows: MergedCaption[];
   autoScroll: boolean;
   bookmarks: ExtensionBookmark[];
+  onPlayOrToggleRow: (index: number) => void;
+  onToggleRepeat: (index: number) => void;
   onGoToBookmark: (bookmarkId: string) => void;
+  onDeleteBookmark: (bookmarkId: string) => void;
 }) {
   const { currentIndex, isPlaying, repeatIndex } = useSyncExternalStore(
     runtime.playbackStore.subscribe,
@@ -271,10 +301,10 @@ function CaptionViewer({
       repeatIndex={repeatIndex}
       autoScroll={autoScroll}
       bookmarks={bookmarks}
-      onPlayOrToggleRow={(index) => runtime.playOrToggleRow(index)}
-      onToggleRepeat={(index) => runtime.toggleRepeat(index)}
+      onPlayOrToggleRow={onPlayOrToggleRow}
+      onToggleRepeat={onToggleRepeat}
       onGoToBookmark={onGoToBookmark}
-      onDeleteBookmark={(id) => runtime.deleteBookmark(id)}
+      onDeleteBookmark={onDeleteBookmark}
     />
   );
 }

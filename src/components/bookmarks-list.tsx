@@ -1,5 +1,5 @@
 import { EllipsisVertical, ExternalLink, Trash2 } from "lucide-react";
-import { useImperativeHandle, useRef } from "react";
+import { memo, useImperativeHandle, useRef } from "react";
 import type { MergedCaption } from "../lib/caption-merge.ts";
 import type { ExtensionBookmark } from "../lib/extension-bookmarks.ts";
 import { flashHighlight } from "../lib/flash-highlight.ts";
@@ -61,19 +61,19 @@ export function ExtensionBookmarksList({
           bookmarkNumber={index + 1}
           caption={rows[bookmark.captionIndex]}
           isCurrent={bookmark.captionIndex === currentIndex}
-          isPlaying={isPlaying}
+          isPlaying={bookmark.captionIndex === currentIndex && isPlaying}
           isRepeating={bookmark.captionIndex === repeatIndex}
-          onClick={() => onClickBookmark(bookmark)}
-          onToggleRepeat={() => onToggleRepeat(bookmark.captionIndex)}
-          onDelete={() => onDeleteBookmark(bookmark.id)}
-          onGoToCaption={() => onGoToCaption(bookmark.captionIndex)}
+          onClick={onClickBookmark}
+          onToggleRepeat={onToggleRepeat}
+          onDelete={onDeleteBookmark}
+          onGoToCaption={onGoToCaption}
         />
       ))}
     </div>
   );
 }
 
-function BookmarkCard({
+const BookmarkCard = memo(function BookmarkCard({
   bookmark,
   bookmarkNumber,
   caption,
@@ -91,10 +91,10 @@ function BookmarkCard({
   isCurrent: boolean;
   isPlaying: boolean;
   isRepeating: boolean;
-  onClick: () => void;
-  onToggleRepeat: () => void;
-  onDelete: () => void;
-  onGoToCaption: () => void;
+  onClick: (bookmark: ExtensionBookmark) => void;
+  onToggleRepeat: (captionIndex: number) => void;
+  onDelete: (id: string) => void;
+  onGoToCaption: (captionIndex: number) => void;
 }) {
   return (
     <div
@@ -102,12 +102,12 @@ function BookmarkCard({
       aria-current={isCurrent || undefined}
       className={[
         "flex cursor-pointer flex-col gap-1 border p-2 hover:bg-muted",
-        isCurrent && isPlaying && "ring-2 ring-ring",
+        isPlaying && "ring-2 ring-ring",
         isCurrent ? "border-ring" : "border-border",
       ]
         .filter(Boolean)
         .join(" ")}
-      onClick={onClick}
+      onClick={() => onClick(bookmark)}
     >
       <div className="flex items-start gap-1">
         <span className="shrink-0 text-xs text-muted-foreground">
@@ -121,7 +121,7 @@ function BookmarkCard({
           <RepeatToggle
             className="-mt-0.5 shrink-0 text-muted-foreground"
             isRepeating={isRepeating}
-            onToggle={onToggleRepeat}
+            onToggle={() => onToggleRepeat(bookmark.captionIndex)}
           />
         )}
         <DropdownMenu>
@@ -137,7 +137,7 @@ function BookmarkCard({
               className="text-destructive focus:text-destructive"
               onClick={() => {
                 if (confirm(`Delete bookmark "${bookmark.text}"?`)) {
-                  onDelete();
+                  onDelete(bookmark.id);
                 }
               }}
             >
@@ -177,7 +177,7 @@ function BookmarkCard({
               title="Go to caption"
               onClick={(event) => {
                 event.stopPropagation();
-                onGoToCaption();
+                onGoToCaption(bookmark.captionIndex);
               }}
             >
               <ExternalLink className="size-3.5" />
@@ -194,7 +194,7 @@ function BookmarkCard({
       )}
     </div>
   );
-}
+});
 
 function formatTimestamp(seconds: number): string {
   const m = Math.floor(seconds / 60);
