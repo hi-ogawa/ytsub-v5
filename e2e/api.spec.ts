@@ -354,6 +354,78 @@ test.describe("importVideo API", () => {
     expect(captions[0].text1).toBe("갱신");
   });
 
+  test("re-import keeps unchanged caption rows and rewrites changed ones", async ({
+    request,
+  }) => {
+    const youtubeId = `keep-captions-${uid()}`;
+    const video = { youtubeId, title: "V", ...defaultTrackFields };
+    const captions = [
+      { idx: 0, begin: 0, end: 1.5, text1: "안녕하세요", text2: "Hello" },
+      { idx: 1, begin: 1.5, end: 3, text1: "감사합니다", text2: "Thank you" },
+    ];
+    const listCaptions = async (videoId: number) =>
+      json(await rpc(request, "videos/listCaptions", { videoId }));
+    const listBookmarks = async (videoId: number) => {
+      const { items } = await json(
+        await rpc(request, "bookmarks/listBookmarks", { videoId }),
+      );
+      return items
+        .map((b: any) => [b.text, b.captionId, b.timestamp])
+        .sort((a: any, b: any) => a[0].localeCompare(b[0]));
+    };
+
+    const { videoId } = await json(
+      await rpc(request, "videos/importVideo", {
+        video,
+        captions,
+        bookmarks: [{ text: "안녕", captionIdx: 0 }],
+      }),
+    );
+    const before = await listCaptions(videoId);
+
+    // Bookmarks-only push
+    const bookmarksOnly = await json(
+      await rpc(request, "videos/importVideo", {
+        video,
+        captions,
+        bookmarks: [
+          { text: "안녕", captionIdx: 0 },
+          { text: "감사", captionIdx: 1 },
+        ],
+      }),
+    );
+    expect(bookmarksOnly.captions).toBe(2);
+    expect(bookmarksOnly.bookmarks).toBe(2);
+    const kept = await listCaptions(videoId);
+    expect(kept.map((c: any) => c.id)).toEqual(before.map((c: any) => c.id));
+    expect(await listBookmarks(videoId)).toEqual([
+      ["감사", kept[1].id, 1.5],
+      ["안녕", kept[0].id, 0],
+    ]);
+
+    // Changed captions
+    await rpc(request, "videos/importVideo", {
+      video,
+      captions: [captions[0], { ...captions[1], text1: "고맙습니다" }],
+      bookmarks: [
+        { text: "안녕", captionIdx: 0 },
+        { text: "고맙", captionIdx: 1 },
+      ],
+    });
+    const rewritten = await listCaptions(videoId);
+    expect(rewritten.map((c: any) => c.text1)).toEqual([
+      "안녕하세요",
+      "고맙습니다",
+    ]);
+    for (const caption of rewritten) {
+      expect(before.map((c: any) => c.id)).not.toContain(caption.id);
+    }
+    expect(await listBookmarks(videoId)).toEqual([
+      ["고맙", rewritten[1].id, 1.5],
+      ["안녕", rewritten[0].id, 0],
+    ]);
+  });
+
   test("re-import with no bookmarks deletes stored bookmarks", async ({
     request,
   }) => {
