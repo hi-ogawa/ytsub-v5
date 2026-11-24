@@ -8,13 +8,12 @@ import type {
   CaptionSession,
 } from "../lib/caption-panel-runtime.ts";
 import type { UseSync } from "../lib/sync.ts";
-import { langFromVssId } from "../lib/youtube.ts";
 import { CaptionPanelContent } from "./caption-panel-content.tsx";
 import {
   SettingsDropdown,
   SettingsDropdownSkeleton,
 } from "./settings-menu.tsx";
-import { TrackPicker } from "./track-picker.tsx";
+import { TrackPicker, langName } from "./track-picker.tsx";
 import type { YTPlayer } from "./youtube-player.tsx";
 
 export function CaptionPanel({
@@ -162,12 +161,12 @@ function CaptionPanelWithSession({
 }) {
   const [autoScroll, setAutoScroll] =
     captionPanelPreferences.useValue("autoScroll");
-  const { tracks, tracksError } = state;
+  const { tracks, loadingTracks, tracksError } = state;
 
   return (
     <div className="flex h-full flex-col">
       <div className="flex items-center border-b gap-1">
-        {tracks.length > 0 ? (
+        {loadingTracks || tracks.length > 0 ? (
           <div className="min-w-0 flex-1">
             <TrackPicker
               tracks={tracks}
@@ -177,6 +176,7 @@ function CaptionPanelWithSession({
                 runtime.selectTracks({ vssId1: v1, vssId2: v2 })
               }
               disabled={session.bookmarks.length > 0}
+              loading={loadingTracks}
             />
           </div>
         ) : (
@@ -208,11 +208,4 @@ function CaptionPanelWithSession({
       />
     </div>
   );
-}
-
-const displayNames = new Intl.DisplayNames(["en"], { type: "language" });
-
-function langName(vssId: string): string {
-  const code = langFromVssId(vssId);
-  return displayNames.of(code) ?? code;
 }

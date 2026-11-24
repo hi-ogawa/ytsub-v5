@@ -193,6 +193,34 @@ async function getWidth(locator: Locator) {
   return (await locator.boundingBox())!.width;
 }
 
+test("saved session keeps the track dropdowns while tracks load", async ({
+  context,
+}) => {
+  const { ytPage, host } = await openPanelWithTracks(context, SEED_YOUTUBE_ID);
+  const { promise: release, resolve: releaseRequest } =
+    Promise.withResolvers<void>();
+  await context.route(
+    "https://www.youtube.com/youtubei/v1/player",
+    async (route) => {
+      await release;
+      await route.fallback();
+    },
+  );
+
+  // The saved session shows while the player API request is held
+  await ytPage.reload();
+  await expect(host.locator("[data-index='0']")).toBeVisible();
+  const selects = host.getByTestId("track-picker").locator("select");
+  await expect(selects.nth(0)).toBeDisabled();
+  await expect(selects.nth(0).locator("option:checked")).toHaveText("Korean");
+  await expect(selects.nth(1).locator("option:checked")).toHaveText("English");
+  await expect(host.getByText("Korean · English")).toHaveCount(0);
+
+  releaseRequest();
+  await expect(selects.nth(0)).toBeEnabled();
+  await expect(selects.nth(0).locator("option")).not.toHaveCount(2);
+});
+
 test("saved captions show when YouTube refuses the player API request", async ({
   context,
 }) => {
@@ -214,6 +242,7 @@ test("saved captions show when YouTube refuses the player API request", async ({
   await expect(host.getByTestId("tracks-error")).toContainText(
     "LOGIN_REQUIRED (Sign in to confirm you're not a bot)",
   );
+  await expect(host.getByText("Korean · English")).toBeVisible();
 
   // A video with nothing saved has only the error to show
   await ytPage.goto(`https://www.youtube.com/watch?v=${OTHER_YOUTUBE_ID}`);

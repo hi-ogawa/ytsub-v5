@@ -1,4 +1,4 @@
-import type { YouTubeCaptionTrack } from "../lib/youtube.ts";
+import { type YouTubeCaptionTrack, langFromVssId } from "../lib/youtube.ts";
 
 function trackLabel(track: YouTubeCaptionTrack): string {
   if (track.vssId.includes(".t.")) {
@@ -14,13 +14,31 @@ export function TrackPicker({
   selectedVssId2,
   onSelect,
   disabled,
+  loading,
 }: {
   tracks: YouTubeCaptionTrack[];
   selectedVssId1?: string;
   selectedVssId2?: string;
   onSelect: (vssId1?: string, vssId2?: string) => void;
   disabled?: boolean;
+  // While the tracks load, each select shows only its selected track, by
+  // language name, so the header keeps its shape until the full list arrives.
+  loading?: boolean;
 }) {
+  const renderOptions = (selectedVssId?: string) =>
+    loading ? (
+      selectedVssId ? (
+        <option value={selectedVssId}>{langName(selectedVssId)}</option>
+      ) : null
+    ) : (
+      tracks.map((t) => (
+        <option key={t.vssId} value={t.vssId}>
+          {trackLabel(t)}
+        </option>
+      ))
+    );
+  const selectDisabled = disabled || loading;
+
   return (
     <div
       data-testid="track-picker"
@@ -30,31 +48,30 @@ export function TrackPicker({
       }
     >
       <select
-        className={`min-w-0 flex-1 rounded border bg-background px-1 py-0.5 text-sm ${disabled ? "cursor-not-allowed opacity-50" : ""}`}
+        className={`min-w-0 flex-1 rounded border bg-background px-1 py-0.5 text-sm ${selectDisabled ? "cursor-not-allowed opacity-50" : ""}`}
         value={selectedVssId1 ?? ""}
         onChange={(e) => onSelect(e.target.value || undefined, selectedVssId2)}
-        disabled={disabled}
+        disabled={selectDisabled}
       >
         <option value="">None</option>
-        {tracks.map((t) => (
-          <option key={t.vssId} value={t.vssId}>
-            {trackLabel(t)}
-          </option>
-        ))}
+        {renderOptions(selectedVssId1)}
       </select>
       <select
-        className={`min-w-0 flex-1 rounded border bg-background px-1 py-0.5 text-sm ${disabled ? "cursor-not-allowed opacity-50" : ""}`}
+        className={`min-w-0 flex-1 rounded border bg-background px-1 py-0.5 text-sm ${selectDisabled ? "cursor-not-allowed opacity-50" : ""}`}
         value={selectedVssId2 ?? ""}
         onChange={(e) => onSelect(selectedVssId1, e.target.value || undefined)}
-        disabled={disabled}
+        disabled={selectDisabled}
       >
         <option value="">None</option>
-        {tracks.map((t) => (
-          <option key={t.vssId} value={t.vssId}>
-            {trackLabel(t)}
-          </option>
-        ))}
+        {renderOptions(selectedVssId2)}
       </select>
     </div>
   );
+}
+
+const displayNames = new Intl.DisplayNames(["en"], { type: "language" });
+
+export function langName(vssId: string): string {
+  const code = langFromVssId(vssId);
+  return displayNames.of(code) ?? code;
 }
