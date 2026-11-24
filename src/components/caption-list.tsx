@@ -127,6 +127,11 @@ export function CaptionList({
     onPlayOrToggleRow(index);
   }
 
+  function onToggleRowRepeat(index: number) {
+    manualScroll.clear();
+    onToggleRepeat(index);
+  }
+
   return (
     <div
       data-testid="caption-list"
@@ -142,15 +147,12 @@ export function CaptionList({
             row={row}
             index={i}
             isCurrent={i === currentIndex}
-            isPlaying={isPlaying}
+            isPlaying={i === currentIndex && isPlaying}
             isRepeating={i === repeatIndex}
             bookmarks={bookmarksByIndex.get(i)}
             bookmarkNumberById={bookmarkNumberById}
-            onClick={() => onClickRow(i)}
-            onToggleRepeat={() => {
-              manualScroll.clear();
-              onToggleRepeat(i);
-            }}
+            onClick={onClickRow}
+            onToggleRepeat={onToggleRowRepeat}
             onGoToBookmark={onGoToBookmark}
             onDeleteBookmark={onDeleteBookmark}
             onPopoverOpenChange={onPopoverOpenChange}
@@ -161,6 +163,9 @@ export function CaptionList({
   );
 }
 
+// The rows share one callback each and see `isPlaying` only when current, so
+// with React Compiler a row whose own state didn't change returns its cached
+// output.
 function CaptionRow({
   row,
   index,
@@ -182,8 +187,8 @@ function CaptionRow({
   isRepeating: boolean;
   bookmarks?: ExtensionBookmark[];
   bookmarkNumberById: Map<string, number>;
-  onClick: () => void;
-  onToggleRepeat: () => void;
+  onClick: (index: number) => void;
+  onToggleRepeat: (index: number) => void;
   onGoToBookmark: (bookmarkId: string) => void;
   onDeleteBookmark: (bookmarkId: string) => void;
   onPopoverOpenChange: (open: boolean) => void;
@@ -207,12 +212,12 @@ function CaptionRow({
       aria-current={isCurrent || undefined}
       className={[
         "flex w-full cursor-pointer flex-col gap-1 border p-1 px-2 hover:bg-muted",
-        isCurrent && isPlaying && "ring-2 ring-ring",
+        isPlaying && "ring-2 ring-ring",
         isCurrent ? "border-ring" : "border-border",
       ]
         .filter(Boolean)
         .join(" ")}
-      onClick={onClick}
+      onClick={() => onClick(index)}
     >
       <div className="flex items-center text-xs text-muted-foreground">
         <span>
@@ -221,7 +226,7 @@ function CaptionRow({
         <RepeatToggle
           className="-my-0.5 ml-auto"
           isRepeating={isRepeating}
-          onToggle={onToggleRepeat}
+          onToggle={() => onToggleRepeat(index)}
         />
       </div>
       <div className="flex text-sm">
