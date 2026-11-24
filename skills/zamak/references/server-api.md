@@ -33,8 +33,6 @@ For analysis across videos, keep the videos you fetch in one shared place, so la
 
 The server changes a video's `editedAt` only when its content changes, and `videos/listVideos` returns it for every video. So before you read a local file, compare its `video.editedAt` with the one from `listVideos`, and fetch the video again only when they differ or the file is missing. A local video that `listVideos` no longer returns was deleted on the server.
 
-Don't save the login token in this directory or anywhere else on disk. A token stays valid for 30 days, and logging out doesn't revoke it.
-
 To change a video, read it with `getFullSession` first, as the next section describes, rather than from the local copy.
 
 ## Edit a Video's Captions and Bookmarks
