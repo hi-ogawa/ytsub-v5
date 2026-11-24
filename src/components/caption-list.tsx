@@ -381,9 +381,9 @@ function BookmarkWord({
             {bookmark.notes}
           </span>
         )}
-        {onGoToBookmark && (
+        <div className="mt-1 flex items-center justify-end gap-1">
           <button
-            className="mt-1 rounded p-0.5 text-muted-foreground hover:bg-accent hover:text-foreground"
+            className="rounded p-0.5 text-muted-foreground hover:bg-accent hover:text-foreground"
             title="Go to bookmark"
             onMouseDown={(event) => {
               event.stopPropagation();
@@ -395,7 +395,7 @@ function BookmarkWord({
           >
             <ExternalLink className="size-3.5" />
           </button>
-        )}
+        </div>
       </PopoverContent>
     </Popover>
   );
