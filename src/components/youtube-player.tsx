@@ -12,7 +12,7 @@ declare let YT: {
       playerVars?: { start?: number; autoplay?: 0 | 1 };
       events?: { onReady?: () => void };
     },
-  ) => YTPlayer;
+  ) => YTIframePlayer;
 };
 
 export interface YTPlayer {
@@ -22,6 +22,11 @@ export interface YTPlayer {
   getCurrentTime(): number;
   getPlayerState(): number;
   destroy(): void;
+}
+
+interface YTIframePlayer extends YTPlayer {
+  loadVideoById(options: { videoId: string; startSeconds?: number }): void;
+  cueVideoById(options: { videoId: string }): void;
 }
 
 // --- YouTube IFrame API loader (singleton) ---
@@ -48,8 +53,9 @@ export function useYouTubePlayer(
   youtubeId?: string,
   options?: { playFrom?: number },
 ) {
-  const [player, setPlayer] = useState<YTPlayer>();
-  const playerRef = useRef<YTPlayer>(undefined);
+  const [player, setPlayer] = useState<YTIframePlayer>();
+  const playerRef = useRef<YTIframePlayer>(undefined);
+  const loadedRef = useRef<{ youtubeId: string; playFrom?: number }>(undefined);
 
   const ref: RefCallback<HTMLDivElement> = (element) => {
     if (!element || !youtubeId || playerRef.current) {
@@ -68,12 +74,39 @@ export function useYouTubePlayer(
         events: {
           onReady: () => {
             playerRef.current = p;
+            loadedRef.current = { youtubeId, playFrom: options?.playFrom };
             setPlayer(p);
           },
         },
       });
     });
   };
+
+  // The player is created once, so a route change to another video or start
+  // time switches it in place instead of loading a new embed.
+  const playFrom = options?.playFrom;
+  useEffect(() => {
+    const loaded = loadedRef.current;
+    if (
+      !player ||
+      !youtubeId ||
+      !loaded ||
+      (loaded.youtubeId === youtubeId && loaded.playFrom === playFrom)
+    ) {
+      return;
+    }
+    loadedRef.current = { youtubeId, playFrom };
+    if (playFrom === undefined) {
+      if (loaded.youtubeId !== youtubeId) {
+        player.cueVideoById({ videoId: youtubeId });
+      }
+    } else if (loaded.youtubeId === youtubeId) {
+      player.seekTo(playFrom, true);
+      player.playVideo();
+    } else {
+      player.loadVideoById({ videoId: youtubeId, startSeconds: playFrom });
+    }
+  }, [player, youtubeId, playFrom]);
 
   useEffect(() => {
     return () => {
