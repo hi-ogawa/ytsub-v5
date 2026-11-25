@@ -135,12 +135,15 @@ test("text size setting resizes captions and persists across reload", async ({
   const { ytPage, host } = await openPanelWithTracks(context, SEED_YOUTUBE_ID);
   const caption = host.locator("[data-index='0'] [data-side='0']");
   await expect(caption).toHaveCSS("font-size", "14px");
+  await expect(caption).toHaveCSS("line-height", "20px");
 
   // The menu stays open while stepping
   await host.getByTitle("Settings").click();
   await host.getByRole("menuitem", { name: "Larger text" }).click();
   await host.getByRole("menuitem", { name: "Larger text" }).click();
   await expect(caption).toHaveCSS("font-size", "16px");
+  // Line height grows with it rather than staying at 20px
+  await expect(caption).toHaveCSS("line-height", "22.8571px");
 
   await ytPage.reload();
   await expect(caption).toHaveCSS("font-size", "16px");
