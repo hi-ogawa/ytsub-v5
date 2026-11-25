@@ -3,7 +3,7 @@ import { openPulledVideo, SEED_YOUTUBE_ID, setupDb } from "./helper.ts";
 
 test.use({ hasTouch: true });
 
-test("dropdown opens on tap but not on a scroll that starts on its trigger", async ({
+test("dropdown toggles on tap but not on a scroll that starts on its trigger", async ({
   page,
 }) => {
   await setupDb({ seed: true });
@@ -24,5 +24,13 @@ test("dropdown opens on tap but not on a scroll that starts on its trigger", asy
   await trigger.tap();
   await expect(menu).toBeVisible();
   await page.touchscreen.tap(5, 5);
+  await expect(menu).not.toBeVisible();
+
+  // A tap on the trigger of an open menu closes it, rather than closing and
+  // reopening it. Tap by position, because the modal menu sets
+  // pointer-events:none on the page, which fails locator.tap()'s checks.
+  await trigger.tap();
+  await expect(menu).toBeVisible();
+  await page.touchscreen.tap(box.x + box.width / 2, box.y + box.height / 2);
   await expect(menu).not.toBeVisible();
 });
