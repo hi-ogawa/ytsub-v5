@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate, useParams } from "react-router";
+import { useNavigate, useParams, useSearchParams } from "react-router";
 import { CaptionPanel } from "../../components/caption-panel.tsx";
 import {
   type YTPlayer,
@@ -11,8 +11,16 @@ import { useWebSync } from "../components/use-web-sync.ts";
 
 export function VideoViewerPage({ storage }: { storage: CaptionStorage }) {
   const { youtubeId } = useParams<"youtubeId">();
+  const startTime = getStartTime(useSearchParams()[0]);
 
-  const { ref: playerElRef, player } = useYouTubePlayer(youtubeId);
+  // The player waits paused a moment before the caption for the lead-in,
+  // because mobile browsers block sound on a page opened from a link.
+  const { ref: playerElRef, player } = useYouTubePlayer(youtubeId, {
+    startSeconds:
+      startTime === undefined
+        ? undefined
+        : Math.max(0, Math.floor(startTime - START_LEAD_IN_SECONDS)),
+  });
 
   if (!youtubeId) {
     return (
@@ -42,20 +50,32 @@ export function VideoViewerPage({ storage }: { storage: CaptionStorage }) {
           storage={storage}
           youtubeId={youtubeId}
           player={player}
+          startTime={startTime}
         />
       </div>
     </div>
   );
 }
 
+const START_LEAD_IN_SECONDS = 2;
+
+// `?t=<seconds>` opens the video at a scene, as Anki cards link to it.
+function getStartTime(searchParams: URLSearchParams): number | undefined {
+  const value = searchParams.get("t");
+  const time = value ? Number(value) : NaN;
+  return Number.isFinite(time) && time >= 0 ? time : undefined;
+}
+
 function ViewerCaptionPanel({
   storage,
   youtubeId,
   player,
+  startTime,
 }: {
   storage: CaptionStorage;
   youtubeId: string;
   player?: YTPlayer;
+  startTime?: number;
 }) {
   const [runtime] = useState(
     () => new CaptionPanelRuntime({ storage, youtubeId }),
@@ -64,6 +84,7 @@ function ViewerCaptionPanel({
     <CaptionPanel
       runtime={runtime}
       player={player}
+      startTime={startTime}
       useSync={({ youtubeId }) => useViewerSync({ storage, youtubeId })}
     />
   );

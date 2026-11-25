@@ -27,6 +27,16 @@ test("pulled video opens in the viewer with its bookmarks and session-only setti
   );
 });
 
+test("a link with a time shows its caption row", async ({ page }) => {
+  await openPulledVideo(page, SEED_YOUTUBE_ID);
+
+  // Row 41 runs from 169.695 to 172.213
+  await page.goto(`/videos/${SEED_YOUTUBE_ID}?t=170`);
+  const row = page.getByTestId("caption-list").locator('[data-index="41"]');
+  await expect(row).toHaveAttribute("aria-current", "true");
+  await expect(row).toBeInViewport();
+});
+
 test("server-only video links to the bookmarks page to pull it", async ({
   page,
 }) => {

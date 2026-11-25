@@ -20,10 +20,13 @@ import type { YTPlayer } from "./youtube-player.tsx";
 export function CaptionPanel({
   runtime,
   player,
+  startTime,
   useSync,
 }: {
   runtime: CaptionPanelRuntime;
   player?: YTPlayer;
+  /** Time in seconds whose caption row to show when the session opens */
+  startTime?: number;
   // Called by the sync menu each time it opens, so its queries refetch then.
   useSync: UseSync;
 }) {
@@ -71,6 +74,7 @@ export function CaptionPanel({
         runtime={runtime}
         state={state}
         session={state.session}
+        startTime={startTime}
         useSync={useSync}
       />
     );
@@ -153,11 +157,13 @@ function CaptionPanelWithSession({
   runtime,
   state,
   session,
+  startTime,
   useSync,
 }: {
   runtime: CaptionPanelRuntime;
   state: CaptionPanelState;
   session: CaptionSession;
+  startTime?: number;
   useSync: UseSync;
 }) {
   const [autoScroll, setAutoScroll] =
@@ -212,6 +218,7 @@ function CaptionPanelWithSession({
         runtime={runtime}
         session={session}
         autoScroll={autoScroll}
+        startTime={startTime}
       />
     </div>
   );

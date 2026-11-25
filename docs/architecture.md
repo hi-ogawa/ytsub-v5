@@ -22,7 +22,7 @@ YouTube also requires a proof-of-origin token for subtitles requested by its web
 
 The extension and the web app render the same two pages from shared components:
 
-- **The caption panel** shows dual captions and handles bookmarking and the AI workflow. The extension draws it over YouTube's video page inside a shadow root. The web app shows it at `/videos/:id` next to an embedded player.
+- **The caption panel** shows dual captions and handles bookmarking and the AI workflow. The extension draws it over YouTube's video page inside a shadow root. The web app shows it at `/videos/:id` next to an embedded player, and `?t=<seconds>` opens it at the caption row playing then, as links from Anki cards do.
 - **The bookmarks page** lists your bookmarked videos with their sync status. The extension opens it as `bookmarks.html` in a full tab when you click its icon. The web app serves it at `/`.
 
 The pages differ where the two surfaces do. The web app can't fetch from YouTube, so its caption panel only opens a session already pulled from the server, and it has no controls for building a new one:

@@ -392,6 +392,18 @@ export class CaptionPanelRuntime {
     }
   }
 
+  /** Make the row playing at this time current without playing it, and return its index. */
+  showRowAt(time: number): number | undefined {
+    const index = this.getSession().rows.findLastIndex(
+      (row) => row.begin <= time,
+    );
+    if (index < 0) {
+      return undefined;
+    }
+    this.playbackStore.update({ currentIndex: index });
+    return index;
+  }
+
   // Previous and next wrap around. Previous skips a bookmark within the last
   // second, so pressing it right after a jump moves on instead of repeating.
 
