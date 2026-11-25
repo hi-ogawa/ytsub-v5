@@ -7,16 +7,12 @@ import {
 } from "../../components/youtube-player.tsx";
 import { CaptionPanelRuntime } from "../../lib/caption-panel-runtime.ts";
 import type { CaptionStorage } from "../../lib/caption-storage.ts";
+import type { UseSync } from "../../lib/sync.ts";
 import { useWebSync } from "../components/use-web-sync.ts";
 
 export function VideoViewerPage({ storage }: { storage: CaptionStorage }) {
   const { youtubeId } = useParams<"youtubeId">();
-
-  // Where a browser blocks autoplay, as mobile browsers do on a page opened
-  // from a link, the player waits paused there until the first tap.
-  const { ref: playerElRef, player } = useYouTubePlayer(youtubeId, {
-    playFrom: getStartTime(useSearchParams()[0]),
-  });
+  const [searchParams] = useSearchParams();
 
   if (!youtubeId) {
     return (
@@ -25,6 +21,33 @@ export function VideoViewerPage({ storage }: { storage: CaptionStorage }) {
       </div>
     );
   }
+
+  return (
+    <VideoViewer
+      storage={storage}
+      youtubeId={youtubeId}
+      startTime={getStartTime(searchParams)}
+      useSync={({ youtubeId }) => useViewerSync({ storage, youtubeId })}
+    />
+  );
+}
+
+export function VideoViewer({
+  storage,
+  youtubeId,
+  startTime,
+  useSync,
+}: {
+  storage: CaptionStorage;
+  youtubeId: string;
+  startTime?: number;
+  useSync: UseSync;
+}) {
+  // Where a browser blocks autoplay, as mobile browsers do on a page opened
+  // from a link, the player waits paused there until the first tap.
+  const { ref: playerElRef, player } = useYouTubePlayer(youtubeId, {
+    playFrom: startTime,
+  });
 
   return (
     <div className="flex h-full w-full flex-col lg:flex-row lg:gap-2 lg:p-2">
@@ -46,6 +69,7 @@ export function VideoViewerPage({ storage }: { storage: CaptionStorage }) {
           storage={storage}
           youtubeId={youtubeId}
           player={player}
+          useSync={useSync}
         />
       </div>
     </div>
@@ -63,21 +87,17 @@ function ViewerCaptionPanel({
   storage,
   youtubeId,
   player,
+  useSync,
 }: {
   storage: CaptionStorage;
   youtubeId: string;
   player?: YTPlayer;
+  useSync: UseSync;
 }) {
   const [runtime] = useState(
     () => new CaptionPanelRuntime({ storage, youtubeId }),
   );
-  return (
-    <CaptionPanel
-      runtime={runtime}
-      player={player}
-      useSync={({ youtubeId }) => useViewerSync({ storage, youtubeId })}
-    />
-  );
+  return <CaptionPanel runtime={runtime} player={player} useSync={useSync} />;
 }
 
 function useViewerSync({

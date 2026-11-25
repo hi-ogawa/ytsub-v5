@@ -25,6 +25,12 @@ The web app reloads on every save, so it is the fastest way to see a change to t
 
 The viewer only opens pulled videos, so it shows "No session available" until step 2. It can't fetch from YouTube, so it also has no track picker and can't start a new session. Use the extension for those.
 
+## Look at the UI Without Logging In
+
+`/_preview` shows the bookmarks page and the viewer with the seed videos and a fake sync status, so it needs no login and no data on the server. It works on `pnpm dev` and on each PR's Preview deployment, which makes it the quickest way to look at a change from a phone. The bar at the top switches between the two pages, the light and dark themes, and the sync states, and the URL keeps each choice, so a link such as `/_preview?page=watch&theme=dark&sync=conflict` opens that view directly. Bookmark edits last until the page reloads.
+
+The page is for looking only. E2E tests run against the logged-in web app and the extension, which are what users run.
+
 ## Work on the Extension
 
 1. In Chrome, open `chrome://extensions`, turn on Developer mode, and load `dist/extension/` with Load unpacked. Do this once.
