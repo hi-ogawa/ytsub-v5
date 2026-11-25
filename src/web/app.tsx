@@ -29,6 +29,11 @@ export function App({ storage }: { storage: CaptionStorage }) {
 function createAppRouter(storage: CaptionStorage) {
   return createBrowserRouter([
     {
+      path: "/_preview",
+      lazy: () => import("./preview/preview-page.tsx"),
+      HydrateFallback: () => null,
+    },
+    {
       id: "root",
       element: <RootLayout storage={storage} />,
       loader: authLoader,
