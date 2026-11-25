@@ -31,4 +31,9 @@ The server's bookmark ids differ from the app's, so a Fill Bookmarks result buil
 
 ## Point to a Moment
 
-When you mention a moment of a video to the user, such as a row in a report, link its m:ss to the web viewer at that time, `https://zamak.hiro18181.workers.dev/videos/<youtubeId>?t=<seconds>`, such as [8:50](https://zamak.hiro18181.workers.dev/videos/88Ige2xSrkA?t=530). The viewer opens the video there, so the user gets to the moment in one click.
+When you mention a moment of a video to the user, such as a row in a report, link its m:ss so they get there in one click. Two links reach it, and each covers what the other misses:
+
+- The web viewer, `https://zamak.hiro18181.workers.dev/videos/<youtubeId>?t=<seconds>`, such as [8:50](https://zamak.hiro18181.workers.dev/videos/88Ige2xSrkA?t=530). It opens the video there with its rows, but shows only videos already pulled to that device. Use it by default.
+- YouTube, `https://www.youtube.com/watch?v=<youtubeId>&t=<seconds>s`. It works for any video, and on a desktop with the Zamak extension the caption panel comes up next to it.
+
+Give both where the user comes back to the link later, such as a study record, and the viewer link alone in a passing reply.
