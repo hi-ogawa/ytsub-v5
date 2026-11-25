@@ -1,5 +1,11 @@
 import { expect, test } from "@playwright/test";
-import { login, openPulledVideo, SEED_YOUTUBE_ID, setupDb } from "./helper.ts";
+import {
+  getOffsetFromListCenter,
+  login,
+  openPulledVideo,
+  SEED_YOUTUBE_ID,
+  setupDb,
+} from "./helper.ts";
 
 test.beforeAll(async () => {
   await setupDb({ seed: true });
@@ -25,6 +31,20 @@ test("pulled video opens in the viewer with its bookmarks and session-only setti
     "data-sync-state",
     "synced",
   );
+});
+
+test("?t link marks and shows its caption before the player plays", async ({
+  page,
+}) => {
+  // The player stays off the network, so only the link can pick the caption
+  await openPulledVideo(page, SEED_YOUTUBE_ID);
+  // Row 30 runs from 128.7s to 133.8s
+  await page.goto(`/videos/${SEED_YOUTUBE_ID}?t=130`);
+
+  const row = page.locator("[data-index='30']");
+  await expect(row).toHaveAttribute("aria-current", "true");
+  await expect.poll(() => getOffsetFromListCenter(row)).toBeLessThan(2);
+  await expect(page.locator("[data-index='0']")).not.toBeInViewport();
 });
 
 test("server-only video links to the bookmarks page to pull it", async ({

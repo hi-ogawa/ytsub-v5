@@ -82,7 +82,8 @@ export function CaptionList({
   }));
 
   // Follows the current caption, scrolling only when it drifts more than a
-  // sixth of the viewport from the center.
+  // sixth of the viewport from the center. The first move jumps, because a
+  // smooth scroll deep into a long list takes a while to settle.
   const prevScrollIndex = useRef<number | undefined>(undefined);
   useEffect(() => {
     if (
@@ -91,6 +92,7 @@ export function CaptionList({
     ) {
       return;
     }
+    const isFirstMove = prevScrollIndex.current === undefined;
     prevScrollIndex.current = currentIndex;
 
     if (!autoScroll || manualScroll.isActive() || isPopoverOpenRef.current) {
@@ -117,7 +119,10 @@ export function CaptionList({
     const threshold = clientHeight / 6;
 
     if (Math.abs(itemCenter - currentCenter) > threshold) {
-      element.scrollIntoView({ behavior: "smooth", block: "center" });
+      element.scrollIntoView({
+        behavior: isFirstMove ? "instant" : "smooth",
+        block: "center",
+      });
     }
   }, [currentIndex]);
 

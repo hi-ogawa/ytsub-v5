@@ -1,7 +1,7 @@
 import { exec } from "node:child_process";
 import { globSync, statSync } from "node:fs";
 import { promisify } from "node:util";
-import { expect, type Page, test } from "@playwright/test";
+import { expect, type Locator, type Page, test } from "@playwright/test";
 
 export const execAsync = promisify(exec);
 
@@ -89,6 +89,17 @@ export async function openPulledVideo(page: Page, youtubeId: string) {
     },
     { box: true },
   );
+}
+
+/** Distance in pixels between a caption row's center and its list's center. */
+export function getOffsetFromListCenter(row: Locator): Promise<number> {
+  return row.evaluate((element) => {
+    const list = element
+      .closest("[data-testid='caption-list']")!
+      .getBoundingClientRect();
+    const rect = element.getBoundingClientRect();
+    return Math.abs(rect.top + rect.height / 2 - (list.top + list.height / 2));
+  });
 }
 
 /** Log elapsed checkpoints while investigating E2E timing. */

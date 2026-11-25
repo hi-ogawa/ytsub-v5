@@ -68,6 +68,7 @@ export function VideoViewer({
           key={youtubeId}
           storage={storage}
           youtubeId={youtubeId}
+          startTime={startTime}
           player={player}
           useSync={useSync}
         />
@@ -86,16 +87,18 @@ function getStartTime(searchParams: URLSearchParams): number | undefined {
 function ViewerCaptionPanel({
   storage,
   youtubeId,
+  startTime,
   player,
   useSync,
 }: {
   storage: CaptionStorage;
   youtubeId: string;
+  startTime?: number;
   player?: YTPlayer;
   useSync: UseSync;
 }) {
   const [runtime] = useState(
-    () => new CaptionPanelRuntime({ storage, youtubeId }),
+    () => new CaptionPanelRuntime({ storage, youtubeId, startTime }),
   );
   return <CaptionPanel runtime={runtime} player={player} useSync={useSync} />;
 }
