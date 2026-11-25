@@ -1,5 +1,5 @@
 import { expect } from "@playwright/test";
-import { SEED_YOUTUBE_ID } from "../helper";
+import { getOffsetFromListCenter, SEED_YOUTUBE_ID } from "../helper";
 import {
   createBookmarkAt,
   openPanelWithTracks,
@@ -173,17 +173,7 @@ test("bookmark arrows show the caption while paused", async ({ context }) => {
   await expect(row).not.toBeInViewport();
 
   await host.getByRole("button", { name: "Next bookmark" }).click();
-  const getOffsetFromCenter = () =>
-    row.evaluate((element) => {
-      const list = element
-        .closest("[data-testid='caption-list']")!
-        .getBoundingClientRect();
-      const rect = element.getBoundingClientRect();
-      return Math.abs(
-        rect.top + rect.height / 2 - (list.top + list.height / 2),
-      );
-    });
-  await expect.poll(getOffsetFromCenter).toBeLessThan(2);
+  await expect.poll(() => getOffsetFromListCenter(row)).toBeLessThan(2);
   await expect(row).toHaveAttribute("aria-current", "true");
 });
 
