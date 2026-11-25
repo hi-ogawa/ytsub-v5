@@ -7,6 +7,7 @@ import {
   useState,
 } from "react";
 import type { MergedCaption } from "../lib/caption-merge.ts";
+import { captionPanelPreferences } from "../lib/caption-panel-preferences.ts";
 import {
   type ExtensionBookmark,
   indexBookmarks,
@@ -342,6 +343,7 @@ function BookmarkWord({
   const filled = !!bookmark.translation;
   const triggerRef = useRef<HTMLSpanElement>(null);
   const [open, setOpen] = useState(false);
+  const [textSize] = captionPanelPreferences.useValue("textSize");
   function changeOpen(next: boolean) {
     setOpen(next);
     onPopoverOpenChange(next);
@@ -369,6 +371,15 @@ function BookmarkWord({
       </PopoverTrigger>
       <PopoverContent
         data-testid="bookmark-popover"
+        // The portal escapes the panel element that sets --caption-text-size,
+        // so the popover sizes its text from the preference itself. Its width
+        // is in em so that larger text doesn't squeeze each line to a few words.
+        className="leading-[1.33]"
+        style={{
+          fontSize: `${textSize - 2}px`,
+          width: "21em",
+          maxWidth: "var(--radix-popover-content-available-width)",
+        }}
         side="top"
         avoidCollisions
         onOpenAutoFocus={(e) => e.preventDefault()}
@@ -385,7 +396,7 @@ function BookmarkWord({
           }
         }}
       >
-        <span className="block text-xs font-medium text-popover-foreground">
+        <span className="block font-medium text-popover-foreground">
           {bookmarkNumber !== undefined && (
             <span className="mr-1 text-muted-foreground">
               #{bookmarkNumber}
@@ -394,21 +405,19 @@ function BookmarkWord({
           <span lang={language}>{bookmark.text}</span>
         </span>
         {bookmark.translation ? (
-          <span className="block text-xs text-popover-foreground">
+          <span className="block text-popover-foreground">
             {bookmark.translation}
           </span>
         ) : (
-          <span className="block text-xs italic text-muted-foreground">
-            unfilled
-          </span>
+          <span className="block italic text-muted-foreground">unfilled</span>
         )}
         {bookmark.etymology && (
-          <span className="mt-1 block text-xs text-muted-foreground">
+          <span className="mt-1 block text-muted-foreground">
             {bookmark.etymology}
           </span>
         )}
         {bookmark.notes && (
-          <span className="mt-1 block max-h-24 overflow-y-auto text-xs text-muted-foreground">
+          <span className="mt-1 block max-h-[8em] overflow-y-auto text-muted-foreground">
             {bookmark.notes}
           </span>
         )}

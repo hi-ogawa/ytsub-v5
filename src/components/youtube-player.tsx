@@ -82,8 +82,8 @@ export function useYouTubePlayer(
     });
   };
 
-  // The player is created once, so a later route to another video or start
-  // time, as a link handed to the open app brings, switches it in place.
+  // The player is created once, so a route change to another video or start
+  // time switches it in place instead of loading a new embed.
   const playFrom = options?.playFrom;
   useEffect(() => {
     const loaded = loadedRef.current;
