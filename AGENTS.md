@@ -17,7 +17,7 @@ Read the [product overview](docs/product.md) and the [architecture overview](doc
 
 ## Conventions
 
-- Commit messages: use Conventional Commits (`feat:`, `fix:`, `docs:`, `refactor:`, `chore:`)
+- Commit messages: use Conventional Commits (`feat:`, `fix:`, `docs:`, `refactor:`, `chore:`) without a scope, such as `docs: link video moments in the zamak skill`. The whole repo is Zamak, so a scope like `(zamak)` adds nothing, and the subject can name the part it touches
 - Never rebase, amend, or force push. Merge `origin/main` into the branch when needed
 - Never run long-running tasks (dev servers, watch modes, etc.). Use `pnpm build` to verify code, not `pnpm dev`
 - Never use `--` to pass args to pnpm scripts. pnpm doesn't need `--` and it silently breaks filtering. Write `pnpm test "filename" -t "pattern"` or `pnpm test-e2e "filename" -g "pattern"` directly.
