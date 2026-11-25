@@ -1,11 +1,5 @@
 import { Bookmark, ChevronLeft, ChevronRight, X } from "lucide-react";
-import {
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  useSyncExternalStore,
-} from "react";
+import { useMemo, useRef, useState, useSyncExternalStore } from "react";
 import type { MergedCaption } from "../lib/caption-merge.ts";
 import {
   type CaptionPanelRuntime,
@@ -25,12 +19,10 @@ export function CaptionPanelContent({
   runtime,
   session,
   autoScroll,
-  startTime,
 }: {
   runtime: CaptionPanelRuntime;
   session: CaptionSession;
   autoScroll: boolean;
-  startTime?: number;
 }) {
   const [activeTab, setActiveTab] = useState<Tab>("captions");
   const contentRef = useRef<HTMLDivElement>(null);
@@ -50,18 +42,6 @@ export function CaptionPanelContent({
     langFromVssId(session.vssId1),
     langFromVssId(session.vssId2),
   ];
-
-  // Shows the start row once when the session opens, and playback moves on
-  // from it like after any jump.
-  useEffect(() => {
-    if (startTime === undefined) {
-      return;
-    }
-    const index = runtime.showRowAt(startTime);
-    if (index !== undefined) {
-      captionListRef.current?.scrollToIndex(index);
-    }
-  }, []);
 
   function scrollToBookmarkCaption(bookmark?: ExtensionBookmark) {
     if (bookmark) {

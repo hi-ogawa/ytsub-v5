@@ -13,10 +13,10 @@ export function VideoViewerPage({ storage }: { storage: CaptionStorage }) {
   const { youtubeId } = useParams<"youtubeId">();
   const startTime = getStartTime(useSearchParams()[0]);
 
-  // The player waits paused a moment before the caption for the lead-in,
-  // because mobile browsers block sound on a page opened from a link.
+  // Where a browser blocks autoplay, as mobile browsers do on a page opened
+  // from a link, the player waits paused there until the first tap.
   const { ref: playerElRef, player } = useYouTubePlayer(youtubeId, {
-    startSeconds:
+    playFrom:
       startTime === undefined
         ? undefined
         : Math.max(0, Math.floor(startTime - START_LEAD_IN_SECONDS)),
@@ -50,7 +50,6 @@ export function VideoViewerPage({ storage }: { storage: CaptionStorage }) {
           storage={storage}
           youtubeId={youtubeId}
           player={player}
-          startTime={startTime}
         />
       </div>
     </div>
@@ -70,12 +69,10 @@ function ViewerCaptionPanel({
   storage,
   youtubeId,
   player,
-  startTime,
 }: {
   storage: CaptionStorage;
   youtubeId: string;
   player?: YTPlayer;
-  startTime?: number;
 }) {
   const [runtime] = useState(
     () => new CaptionPanelRuntime({ storage, youtubeId }),
@@ -84,7 +81,6 @@ function ViewerCaptionPanel({
     <CaptionPanel
       runtime={runtime}
       player={player}
-      startTime={startTime}
       useSync={({ youtubeId }) => useViewerSync({ storage, youtubeId })}
     />
   );
