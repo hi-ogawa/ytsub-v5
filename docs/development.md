@@ -27,7 +27,7 @@ The viewer only opens pulled videos, so it shows "No session available" until st
 
 ## Look at the UI Without Logging In
 
-`/_preview` shows the bookmarks page and the viewer with the seed videos and a fake sync status, so it needs no login and no data on the server. It works on `pnpm dev` and on each PR's Preview deployment, which makes it the quickest way to look at a change from a phone. A card on the bookmarks page opens that video in the viewer. The bar at the top switches the light and dark themes and the sync states, and the URL keeps each choice, so a link such as `/_preview?page=watch&theme=dark&sync=conflict` opens that view directly. Bookmark edits last until the page reloads.
+`/_preview` shows the bookmarks page and the viewer with the seed videos and a fake sync status, so it needs no login and no data on the server. It works on `pnpm dev` and on each PR's Preview deployment, which makes it the quickest way to look at a change from a phone. A card on the bookmarks page opens that video in the viewer. The page uses the app's header, so its menu switches the theme as in the app. Next to it, a control picks the server error on the bookmarks page or the sync state in the viewer, and the URL keeps the choice, so a link such as `/_preview?page=watch&sync=conflict` opens that view directly. Bookmark edits last until the page reloads.
 
 The page is for looking only. E2E tests run against the logged-in web app and the extension, which are what users run.
 

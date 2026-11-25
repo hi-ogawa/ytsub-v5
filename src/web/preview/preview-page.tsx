@@ -1,17 +1,13 @@
-import { Moon, Sun } from "lucide-react";
-import { useEffect, useState } from "react";
-import {
-  Link,
-  useLoaderData,
-  useNavigate,
-  useSearchParams,
-} from "react-router";
+import { useState } from "react";
+import { useLoaderData, useNavigate, useSearchParams } from "react-router";
 import { BookmarksPage } from "../../components/bookmarks-page.tsx";
 import type {
   VideoListEntry,
   VideoListSync,
 } from "../../components/use-video-list-sync.ts";
+import type { CaptionStorage } from "../../lib/caption-storage.ts";
 import type { SyncState, SyncStatus } from "../../lib/sync.ts";
+import { AppHeader } from "../routes/root.tsx";
 import { VideoViewer } from "../routes/video-viewer.tsx";
 import {
   createPreviewListEntries,
@@ -42,11 +38,7 @@ export async function loader() {
 export function Component() {
   const [searchParams, setSearchParams] = useSearchParams();
   const page = searchParams.get("page") === "watch" ? "watch" : "list";
-  const theme = getTheme(searchParams);
-
-  useEffect(() => {
-    document.documentElement.classList.toggle("dark", theme === "dark");
-  }, [theme]);
+  const { storage } = useLoaderData() as Awaited<ReturnType<typeof loader>>;
 
   function setParam(name: string, value?: string) {
     setSearchParams(
@@ -63,18 +55,14 @@ export function Component() {
   }
 
   function getPageHref(params: Record<string, string>) {
-    const next = new URLSearchParams({ ...params, theme });
-    return `/_preview?${next}`;
+    return `/_preview?${new URLSearchParams(params)}`;
   }
 
   return (
     <div className="flex h-dvh flex-col">
-      <header className="flex h-9 flex-none items-center gap-2 border-b px-3 text-sm">
-        <Link to={getPageHref({ page: "list" })} className="font-semibold">
-          Preview
-        </Link>
+      <AppHeader homeHref="/_preview" storage={storage} authenticated={false}>
         {page === "list" ? (
-          <label className="flex items-center gap-1 text-muted-foreground">
+          <label className="flex items-center gap-1 text-sm text-muted-foreground">
             <input
               type="checkbox"
               checked={searchParams.has("error")}
@@ -87,7 +75,7 @@ export function Component() {
         ) : (
           <select
             aria-label="Sync state"
-            className="rounded border bg-background px-1 py-0.5"
+            className="rounded border bg-background px-1 py-0.5 text-sm"
             value={getSyncState(searchParams)}
             onChange={(event) => setParam("sync", event.target.value)}
           >
@@ -98,21 +86,7 @@ export function Component() {
             ))}
           </select>
         )}
-        <div className="flex-1" />
-        <button
-          type="button"
-          title="Toggle theme"
-          aria-label="Toggle theme"
-          className="rounded p-1 text-muted-foreground hover:bg-muted"
-          onClick={() => setParam("theme", theme === "dark" ? "light" : "dark")}
-        >
-          {theme === "dark" ? (
-            <Moon className="size-4" />
-          ) : (
-            <Sun className="size-4" />
-          )}
-        </button>
-      </header>
+      </AppHeader>
       <main className="flex-1 overflow-auto">
         {page === "list" ? (
           <ListPreview
@@ -123,6 +97,7 @@ export function Component() {
           />
         ) : (
           <WatchPreview
+            storage={storage}
             youtubeId={searchParams.get("video") ?? previewVideoIds[0]}
             syncState={getSyncState(searchParams)}
             listHref={getPageHref({ page: "list" })}
@@ -131,15 +106,6 @@ export function Component() {
       </main>
     </div>
   );
-}
-
-// Without `?theme=`, follow the system like the app's default.
-function getTheme(searchParams: URLSearchParams): "light" | "dark" {
-  const value = searchParams.get("theme");
-  if (value === "light" || value === "dark") {
-    return value;
-  }
-  return matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
 }
 
 function getSyncState(searchParams: URLSearchParams): SyncState {
@@ -212,15 +178,16 @@ function ListPreview({
 }
 
 function WatchPreview({
+  storage,
   youtubeId,
   syncState,
   listHref,
 }: {
+  storage: CaptionStorage;
   youtubeId: string;
   syncState: SyncState;
   listHref: string;
 }) {
-  const { storage } = useLoaderData() as Awaited<ReturnType<typeof loader>>;
   const navigate = useNavigate();
   const sync: SyncStatus = {
     state: syncState,

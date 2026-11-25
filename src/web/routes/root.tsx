@@ -34,12 +34,7 @@ export function RootLayout({ storage }: { storage: CaptionStorage }) {
 
   return (
     <div className="flex h-dvh flex-col">
-      <header className="flex h-8 flex-none items-center justify-between border-b px-3 lg:h-10">
-        <Link to="/" className="text-sm font-semibold">
-          Zamak
-        </Link>
-        <HeaderMenu storage={storage} authenticated={authenticated} />
-      </header>
+      <AppHeader homeHref="/" storage={storage} authenticated={authenticated} />
       <main className="flex-1 overflow-auto">
         <Outlet />
       </main>
@@ -69,6 +64,29 @@ export function AuthLayout() {
     return <Navigate to="/login" replace />;
   }
   return <Outlet />;
+}
+
+export function AppHeader({
+  homeHref,
+  storage,
+  authenticated,
+  children,
+}: {
+  homeHref: string;
+  storage: CaptionStorage;
+  authenticated: boolean;
+  children?: React.ReactNode;
+}) {
+  return (
+    <header className="flex h-8 flex-none items-center gap-2 border-b px-3 lg:h-10">
+      <Link to={homeHref} className="text-sm font-semibold">
+        Zamak
+      </Link>
+      {children}
+      <div className="flex-1" />
+      <HeaderMenu storage={storage} authenticated={authenticated} />
+    </header>
+  );
 }
 
 function HeaderMenu({
