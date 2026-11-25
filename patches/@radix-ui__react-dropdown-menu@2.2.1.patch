@@ -1,5 +1,5 @@
 diff --git a/dist/index.js b/dist/index.js
-index bebbcf754e77fa8531ed5000231b51d99d0c1806..ed675367360c7f5c8cc021113525a5594112266c 100644
+index bebbcf754e77fa8531ed5000231b51d99d0c1806..0534646f58674804f4adc37c73e012c1c5ce6cad 100644
 --- a/dist/index.js
 +++ b/dist/index.js
 @@ -127,6 +127,7 @@ var DropdownMenuTrigger = /* @__PURE__ */ React.forwardRef(
@@ -10,16 +10,18 @@ index bebbcf754e77fa8531ed5000231b51d99d0c1806..ed675367360c7f5c8cc021113525a559
      return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(MenuPrimitive.Anchor, { asChild: true, ...menuScope, children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
        import_react_primitive.Primitive.button,
        {
-@@ -141,11 +142,27 @@ var DropdownMenuTrigger = /* @__PURE__ */ React.forwardRef(
+@@ -141,11 +142,29 @@ var DropdownMenuTrigger = /* @__PURE__ */ React.forwardRef(
          ...triggerProps,
          ref: composedRefs,
          onPointerDown: (0, import_primitive.composeEventHandlers)(props.onPointerDown, (event) => {
 +          tapRef.current = void 0;
            if (!disabled && event.button === 0 && event.ctrlKey === false) {
-+            // Patched: toggle on click for touch and pen, like Select.Trigger, so a
-+            // touch scroll that starts on the trigger doesn't open the menu. The click
-+            // toggles from the state at pointerdown, because that pointerdown already
-+            // closes an open menu as a press outside its content.
++            // Patched: a pointerdown comes before the browser knows whether a touch is
++            // a tap or a scroll, and a modal menu that opens then locks the page, so the
++            // scroll never happens. Touch and pen toggle on click instead, which the
++            // browser fires only for a tap. The click toggles from the state at
++            // pointerdown, because that pointerdown already closes an open menu as a
++            // press outside its content.
 +            if (event.pointerType !== "mouse") {
 +              tapRef.current = { wasOpen: context.open };
 +              return;
@@ -39,7 +41,7 @@ index bebbcf754e77fa8531ed5000231b51d99d0c1806..ed675367360c7f5c8cc021113525a559
            if (disabled) return;
            if (["Enter", " "].includes(event.key)) context.onOpenToggle();
 diff --git a/dist/index.mjs b/dist/index.mjs
-index 0395cf017e9b35798e41a0ca13fbe23c5d898a81..e1154649ec33e94114ec554b404f7dac39ada610 100644
+index 0395cf017e9b35798e41a0ca13fbe23c5d898a81..2b221ccb6a264ced6ae12526e3e9038476ccfbd3 100644
 --- a/dist/index.mjs
 +++ b/dist/index.mjs
 @@ -61,6 +61,7 @@ var DropdownMenuTrigger = /* @__PURE__ */ React.forwardRef(
@@ -50,16 +52,18 @@ index 0395cf017e9b35798e41a0ca13fbe23c5d898a81..e1154649ec33e94114ec554b404f7dac
      return /* @__PURE__ */ jsx(MenuPrimitive.Anchor, { asChild: true, ...menuScope, children: /* @__PURE__ */ jsx(
        Primitive.button,
        {
-@@ -75,11 +76,27 @@ var DropdownMenuTrigger = /* @__PURE__ */ React.forwardRef(
+@@ -75,11 +76,29 @@ var DropdownMenuTrigger = /* @__PURE__ */ React.forwardRef(
          ...triggerProps,
          ref: composedRefs,
          onPointerDown: composeEventHandlers(props.onPointerDown, (event) => {
 +          tapRef.current = void 0;
            if (!disabled && event.button === 0 && event.ctrlKey === false) {
-+            // Patched: toggle on click for touch and pen, like Select.Trigger, so a
-+            // touch scroll that starts on the trigger doesn't open the menu. The click
-+            // toggles from the state at pointerdown, because that pointerdown already
-+            // closes an open menu as a press outside its content.
++            // Patched: a pointerdown comes before the browser knows whether a touch is
++            // a tap or a scroll, and a modal menu that opens then locks the page, so the
++            // scroll never happens. Touch and pen toggle on click instead, which the
++            // browser fires only for a tap. The click toggles from the state at
++            // pointerdown, because that pointerdown already closes an open menu as a
++            // press outside its content.
 +            if (event.pointerType !== "mouse") {
 +              tapRef.current = { wasOpen: context.open };
 +              return;
