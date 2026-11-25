@@ -57,35 +57,15 @@ function ListPreview({
   videoHref: (youtubeId: string) => string;
 }) {
   const [entries, setEntries] = useState(createPreviewListEntries);
-  const [syncing, setSyncing] = useState<Set<string>>(new Set());
-
-  // Shows the spinner for a moment, then the video as synced.
-  function fakeSync(youtubeId: string) {
-    setSyncing((ids) => new Set(ids).add(youtubeId));
-    setTimeout(() => {
-      setSyncing((ids) => {
-        const next = new Set(ids);
-        next.delete(youtubeId);
-        return next;
-      });
-      setEntries((current) =>
-        current.map((entry) =>
-          entry.youtubeId === youtubeId
-            ? { ...entry, syncStatus: "synced" }
-            : entry,
-        ),
-      );
-    }, 1000);
-  }
 
   const sync: VideoListSync = {
     authenticated: true,
     isPending: false,
     serverError: undefined,
     entries,
-    syncing,
-    onPull: async (youtubeId) => fakeSync(youtubeId),
-    onPush: async (youtubeId) => fakeSync(youtubeId),
+    syncing: new Set(),
+    onPull: async () => {},
+    onPush: async () => {},
     refetch: async () => {},
   };
 
