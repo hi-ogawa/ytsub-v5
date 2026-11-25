@@ -4,19 +4,26 @@ The prompt carries the video title and its captions. Each caption line reads `[i
 
 ## Pick What Is Useful to the Learner
 
-The learner is an upper-intermediate Korean learner whose first language is Japanese. They follow everyday conversation and own its common words and endings. Scan the captions and pick each word they are likely to meet again and don't own yet:
+The learner is an intermediate Korean learner whose first language is Japanese. Judge the sense, not the word. A basic word qualifies in a sense or form the learner hasn't met, such as 타다 for winning a prize or 포기 as the counter for heads of cabbage, but not in its core sense. Scan the captions and pick each word they are likely to meet again and don't own yet:
 
-- Words of everyday speech a step past daily conversation, which they half know
-- Endings and constructions past the common ones of conversation, which already include -더라, -는 줄 알다, -긴 하다, and -도록 하다
-- Sino-Korean words of caption and news register, including ones whose meaning the kanji gives away but whose reading is new
-- Colloquial set phrases whose meaning the words don't give away
+- Basic words in a sense or form they haven't met
+- Bound nouns, such as 차 in 12년 차 and 채 in 낀 채로
+- Idioms and set phrases, including four-character idioms
+- Ideophones, such as 실룩실룩 and 울컥
+- Native words with a nuance to work out, such as 덩달아 and 고스란히
+- Sino-Korean words of caption and news register, which mostly appear in editor captions, including ones whose meaning the kanji gives away but whose reading is new. Watch for a homophone whose hanja differs from the obvious one, such as 대형 as 隊形 rather than 大型
+- Less common words of a field, such as 자작곡 and 회차 in music
 - Rarer words too, when they are vivid or likely to stick
 
-A line often holds more than one such word, so pick each of them, and pick a word again where it comes back in another line. Pick the word itself, not the surrounding expression, and pick a short phrase only when the construction spans it.
+Pick words, not endings. A pick is the word as it appears in the row, so it carries the row's ending, and the Fill breaks that ending down. Pick a construction on its own only when no content word in the row carries it, such as 뻔했어.
+
+A line often holds more than one such word, so pick each of them, but pick one word per phrase, such as 활약 from 활약이 펼쳐지는지. Pick a word again where it comes back later in the video, but not within the same exchange or in a cold open that repeats later lines. Pick the word itself, not the surrounding expression, and pick a short phrase only when the construction spans it.
 
 Skip:
 
-- Words and endings of daily conversation, particles, and greetings
+- Basic words in their core sense, such as 공연, 늘다, 당장, and 살짝, and particles and greetings
+- Everyday Sino-Korean in speech, such as 회식, 진행, and 불참
+- Everyday words of a field, such as 작곡, 음원, 발매, 연습생, and 최애
 - Transparent loanwords, English or Japanese
 - Slang and internet coinages that don't pass the test. Slang is not notable in itself, so judge it like any other word
 
