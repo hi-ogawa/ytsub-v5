@@ -9,6 +9,7 @@ declare let YT: {
       videoId: string;
       width?: string;
       height?: string;
+      playerVars?: { start?: number; autoplay?: 0 | 1 };
       events?: { onReady?: () => void };
     },
   ) => YTPlayer;
@@ -43,7 +44,10 @@ function loadYoutubeIframeApi(): Promise<void> {
 
 // --- Hook ---
 
-export function useYouTubePlayer(youtubeId?: string) {
+export function useYouTubePlayer(
+  youtubeId?: string,
+  options?: { playFrom?: number },
+) {
   const [player, setPlayer] = useState<YTPlayer>();
   const playerRef = useRef<YTPlayer>(undefined);
 
@@ -56,6 +60,11 @@ export function useYouTubePlayer(youtubeId?: string) {
         videoId: youtubeId,
         width: "100%",
         height: "100%",
+        // `start` takes whole seconds
+        playerVars:
+          options?.playFrom === undefined
+            ? undefined
+            : { start: Math.floor(options.playFrom), autoplay: 1 },
         events: {
           onReady: () => {
             playerRef.current = p;
