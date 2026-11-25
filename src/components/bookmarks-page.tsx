@@ -80,7 +80,7 @@ export function BookmarksPage({
         <div
           className={
             layout === "list"
-              ? "divide-y divide-border"
+              ? "-mx-2 divide-y divide-border"
               : "grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3"
           }
         >

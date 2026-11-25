@@ -31,7 +31,7 @@ export function VideoCard({
       <Link
         to={href}
         data-testid={`video-card-${youtubeId}`}
-        className="flex gap-3 py-2.5 hover:bg-muted/60"
+        className="flex gap-3 rounded px-2 py-2.5 hover:bg-muted/60"
       >
         <img
           src={thumbnailSrc}
