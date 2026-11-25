@@ -87,6 +87,7 @@ export class CaptionPanelRuntime {
   readonly storage: CaptionStorage;
   readonly youtubeId: string;
   readonly trackSource?: CaptionTrackSource;
+  private readonly startTime?: number;
   private readonly buildTask = new RestartableTask();
   private player?: YTPlayer;
 
@@ -94,19 +95,28 @@ export class CaptionPanelRuntime {
     storage: CaptionStorage;
     youtubeId: string;
     trackSource?: CaptionTrackSource;
+    /** Where the player starts, whose caption is current before playback */
+    startTime?: number;
   }) {
     this.storage = options.storage;
     this.youtubeId = options.youtubeId;
     this.trackSource = options.trackSource;
+    this.startTime = options.startTime;
   }
 
   /** Show the saved session, or build one from the tracks picked last time. */
   async restore(): Promise<void> {
     const saved = await this.storage.getSession(this.youtubeId);
-    this.store.update({
-      restoring: false,
-      session: saved && toCaptionSession(saved),
-    });
+    const session = saved && toCaptionSession(saved);
+    // The playback loop marks a caption only once the player plays, which a
+    // page opened from a link waits a tap for.
+    if (session && this.startTime !== undefined) {
+      const index = findRowIndexAt(session.rows, this.startTime);
+      if (index >= 0) {
+        this.playbackStore.update({ currentIndex: index });
+      }
+    }
+    this.store.update({ restoring: false, session });
     const tracks = await this.loadTracks();
     if (tracks && !saved) {
       await this.buildSession(getInitialTracks(tracks, this.youtubeId));
@@ -342,7 +352,7 @@ export class CaptionPanelRuntime {
         player.seekTo(repeatRow.begin);
         return;
       }
-      const index = rows.findLastIndex((row) => row.begin <= time);
+      const index = findRowIndexAt(rows, time);
       if (index >= 0) {
         currentIndex = index;
       }
@@ -433,6 +443,10 @@ export class CaptionPanelRuntime {
       repeatIndex: undefined,
     });
   }
+}
+
+function findRowIndexAt(rows: MergedCaption[], time: number): number {
+  return rows.findLastIndex((row) => row.begin <= time);
 }
 
 /** Bookmarks in playback order, the order both panel tabs list them in. */

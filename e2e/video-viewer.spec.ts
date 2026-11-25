@@ -27,6 +27,17 @@ test("pulled video opens in the viewer with its bookmarks and session-only setti
   );
 });
 
+test("?t link marks and shows its caption before the player plays", async ({
+  page,
+}) => {
+  // The player stays off the network, so only the link can pick the caption
+  await openPulledVideo(page, SEED_YOUTUBE_ID);
+  await page.goto(`/videos/${SEED_YOUTUBE_ID}?t=100000`);
+
+  await expect(page.locator("[data-index][aria-current]")).toBeInViewport();
+  await expect(page.locator('[data-index="0"]')).not.toBeInViewport();
+});
+
 test("server-only video links to the bookmarks page to pull it", async ({
   page,
 }) => {
