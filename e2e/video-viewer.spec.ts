@@ -44,6 +44,7 @@ test("?t link marks and shows its caption before the player plays", async ({
   const row = page.locator("[data-index='30']");
   await expect(row).toHaveAttribute("aria-current", "true");
   await expect.poll(() => getOffsetFromListCenter(row)).toBeLessThan(2);
+  await expect(page.locator("[data-index='0']")).not.toBeInViewport();
 });
 
 test("server-only video links to the bookmarks page to pull it", async ({
