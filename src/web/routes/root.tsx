@@ -70,20 +70,16 @@ export function AppHeader({
   homeHref,
   storage,
   authenticated,
-  children,
 }: {
   homeHref: string;
   storage: CaptionStorage;
   authenticated: boolean;
-  children?: React.ReactNode;
 }) {
   return (
-    <header className="flex h-8 flex-none items-center gap-2 border-b px-3 lg:h-10">
+    <header className="flex h-8 flex-none items-center justify-between border-b px-3 lg:h-10">
       <Link to={homeHref} className="text-sm font-semibold">
         Zamak
       </Link>
-      {children}
-      <div className="flex-1" />
       <HeaderMenu storage={storage} authenticated={authenticated} />
     </header>
   );

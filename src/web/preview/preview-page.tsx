@@ -36,23 +36,9 @@ export async function loader() {
 }
 
 export function Component() {
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
   const page = searchParams.get("page") === "watch" ? "watch" : "list";
   const { storage } = useLoaderData() as Awaited<ReturnType<typeof loader>>;
-
-  function setParam(name: string, value?: string) {
-    setSearchParams(
-      (params) => {
-        if (value === undefined) {
-          params.delete(name);
-        } else {
-          params.set(name, value);
-        }
-        return params;
-      },
-      { replace: true },
-    );
-  }
 
   function getPageHref(params: Record<string, string>) {
     return `/_preview?${new URLSearchParams(params)}`;
@@ -60,33 +46,7 @@ export function Component() {
 
   return (
     <div className="flex h-dvh flex-col">
-      <AppHeader homeHref="/_preview" storage={storage} authenticated={false}>
-        {page === "list" ? (
-          <label className="flex items-center gap-1 text-sm text-muted-foreground">
-            <input
-              type="checkbox"
-              checked={searchParams.has("error")}
-              onChange={(event) =>
-                setParam("error", event.target.checked ? "1" : undefined)
-              }
-            />
-            Server error
-          </label>
-        ) : (
-          <select
-            aria-label="Sync state"
-            className="rounded border bg-background px-1 py-0.5 text-sm"
-            value={getSyncState(searchParams)}
-            onChange={(event) => setParam("sync", event.target.value)}
-          >
-            {SYNC_STATES.map((state) => (
-              <option key={state} value={state}>
-                {state}
-              </option>
-            ))}
-          </select>
-        )}
-      </AppHeader>
+      <AppHeader homeHref="/_preview" storage={storage} authenticated={false} />
       <main className="flex-1 overflow-auto">
         {page === "list" ? (
           <ListPreview
