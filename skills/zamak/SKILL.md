@@ -29,11 +29,9 @@ A task without its prompt reads the video from the server with `videos/getFullSe
 
 The server's bookmark ids differ from the app's, so a Fill Bookmarks result built from them doesn't import in the app. Apply it through the server API with `bookmarks/updateBookmark` instead, and tell the user to pull when you are done.
 
-## Point to a Moment
+## Links to a Moment
 
-When you mention a moment of a video to the user, such as a row in a report, link its m:ss so they get there in one click. Two links reach it, and each covers what the other misses:
+Two links open a video at a moment:
 
-- The web viewer, `https://zamak.hiro18181.workers.dev/videos/<youtubeId>?t=<seconds>`, such as [8:50](https://zamak.hiro18181.workers.dev/videos/88Ige2xSrkA?t=530). It opens the video there with its rows, but shows only videos already pulled to that device. Use it by default.
-- YouTube, `https://www.youtube.com/watch?v=<youtubeId>&t=<seconds>s`. It works for any video, and on a desktop with the Zamak extension the caption panel comes up next to it.
-
-Give both where the user comes back to the link later, such as a study record, and the viewer link alone in a passing reply.
+- The web viewer, `https://zamak.hiro18181.workers.dev/videos/<youtubeId>?t=<seconds>`, such as [8:50](https://zamak.hiro18181.workers.dev/videos/88Ige2xSrkA?t=530), opens it there with its rows. It shows only videos already pulled to that device.
+- YouTube, `https://www.youtube.com/watch?v=<youtubeId>&t=<seconds>s`, works for any video. On a desktop with the Zamak extension, the caption panel comes up next to it.
