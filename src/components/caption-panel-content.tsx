@@ -50,18 +50,23 @@ export function CaptionPanelContent({
   }
 
   // Switching tabs first un-hides the target list, so the scroll waits a tick
-  // until it has a layout.
+  // until it has a layout. It jumps, because a smooth scroll in a list that was
+  // hidden only animates from where it was left.
   function onGoToCaption(captionIndex: number) {
     setActiveTab("captions");
     setTimeout(() => {
-      captionListRef.current?.scrollToIndex(captionIndex);
+      captionListRef.current?.scrollToIndex(captionIndex, {
+        behavior: "instant",
+      });
     });
   }
 
   function onGoToBookmark(bookmarkId: string) {
     setActiveTab("bookmarks");
     setTimeout(() => {
-      bookmarksListRef.current?.scrollToBookmark(bookmarkId);
+      bookmarksListRef.current?.scrollToBookmark(bookmarkId, {
+        behavior: "instant",
+      });
     });
   }
 
