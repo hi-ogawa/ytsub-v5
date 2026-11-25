@@ -7,3 +7,5 @@ catalog:
   vitest: 5.1.0
 overrides:
   vitest: "catalog:"
+patchedDependencies:
+  "@radix-ui/react-dropdown-menu@2.2.1": patches/@radix-ui__react-dropdown-menu@2.2.1.patch
