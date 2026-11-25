@@ -1,71 +1,22 @@
 import { DropdownMenu as DropdownMenuPrimitive } from "radix-ui";
-import {
-  createContext,
-  useContext,
-  useRef,
-  useState,
-  type ComponentProps,
-} from "react";
+import type { ComponentProps } from "react";
 import { usePortalContainer } from "./portal-container.tsx";
-
-const DropdownMenuOpenContext = createContext<
-  [boolean, (open: boolean) => void] | undefined
->(undefined);
 
 function DropdownMenu({
   modal,
   ...props
-}: Omit<
-  ComponentProps<typeof DropdownMenuPrimitive.Root>,
-  "open" | "defaultOpen" | "onOpenChange"
->) {
+}: ComponentProps<typeof DropdownMenuPrimitive.Root>) {
   const container = usePortalContainer();
-  const [open, setOpen] = useState(false);
   // In extension (shadow DOM), modal must be false to avoid setting
   // pointer-events:none and overflow:hidden on document.body.
   return (
-    <DropdownMenuOpenContext.Provider value={[open, setOpen]}>
-      <DropdownMenuPrimitive.Root
-        modal={modal ?? (container ? false : undefined)}
-        open={open}
-        onOpenChange={setOpen}
-        {...props}
-      />
-    </DropdownMenuOpenContext.Provider>
-  );
-}
-
-// Radix toggles the menu on pointerdown for every pointer type, so a touch
-// scroll that starts on the trigger opens it. Like Radix's Select.Trigger, open
-// on pointerdown only for a mouse, and on click for touch and pen, since the
-// browser doesn't fire a click once the finger moves to scroll.
-function DropdownMenuTrigger({
-  onPointerDown,
-  onClick,
-  ...props
-}: ComponentProps<typeof DropdownMenuPrimitive.Trigger>) {
-  const [open, setOpen] = useContext(DropdownMenuOpenContext)!;
-  const pointerTypeRef = useRef("touch");
-  return (
-    <DropdownMenuPrimitive.Trigger
-      onPointerDown={(event) => {
-        onPointerDown?.(event);
-        pointerTypeRef.current = event.pointerType;
-        // Radix skips its toggle when the event is already default-prevented.
-        if (event.pointerType !== "mouse") {
-          event.preventDefault();
-        }
-      }}
-      onClick={(event) => {
-        onClick?.(event);
-        if (pointerTypeRef.current !== "mouse") {
-          setOpen(!open);
-        }
-      }}
+    <DropdownMenuPrimitive.Root
+      modal={modal ?? (container ? false : undefined)}
       {...props}
     />
   );
 }
+const DropdownMenuTrigger = DropdownMenuPrimitive.Trigger;
 
 function DropdownMenuContent({
   className,
