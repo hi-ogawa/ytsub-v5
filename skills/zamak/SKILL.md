@@ -28,3 +28,10 @@ Run the task the user asks for. When they name a task without pasting its prompt
 A task without its prompt reads the video from the server with `videos/getFullSession`, as [Use the Server API](references/server-api.md) describes. Each caption's `idx` is its `captionIndex`. The server has the user's latest rows only after they push, so ask them to push first. After a fix-asr, for example, the new rows reach the server only once the user imports the result and pushes.
 
 The server's bookmark ids differ from the app's, so a Fill Bookmarks result built from them doesn't import in the app. Apply it through the server API with `bookmarks/updateBookmark` instead, and tell the user to pull when you are done.
+
+## Links to a Moment
+
+Two links open a video at a moment:
+
+- The web viewer, `https://zamak.hiro18181.workers.dev/videos/<youtubeId>?t=<seconds>`, such as [8:50](https://zamak.hiro18181.workers.dev/videos/88Ige2xSrkA?t=530), opens it there with its rows. It shows only videos already pulled to that device.
+- YouTube, `https://www.youtube.com/watch?v=<youtubeId>&t=<seconds>s`, works for any video. On a desktop with the Zamak extension, the caption panel comes up next to it.
