@@ -70,19 +70,9 @@ export function Component() {
   return (
     <div className="flex h-dvh flex-col">
       <header className="flex h-9 flex-none items-center gap-2 border-b px-3 text-sm">
-        <span className="font-semibold">Preview</span>
-        <nav className="flex rounded-md border border-border p-0.5">
-          {(["list", "watch"] as const).map((name) => (
-            <Link
-              key={name}
-              to={getPageHref({ page: name })}
-              aria-current={page === name ? "page" : undefined}
-              className="rounded px-2 py-0.5 capitalize text-muted-foreground aria-[current=page]:bg-muted aria-[current=page]:text-foreground"
-            >
-              {name}
-            </Link>
-          ))}
-        </nav>
+        <Link to={getPageHref({ page: "list" })} className="font-semibold">
+          Preview
+        </Link>
         {page === "list" ? (
           <label className="flex items-center gap-1 text-muted-foreground">
             <input
