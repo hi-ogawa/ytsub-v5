@@ -37,37 +37,34 @@ function DropdownMenu({
 
 // Radix toggles the menu on pointerdown, before the browser knows whether a
 // touch is a tap or a scroll. A modal menu that opens then locks the page, so
-// the scroll never happens. Touch and pen toggle on click instead, which the
-// browser fires only for a tap. A mouse still toggles on press.
+// the scroll never happens. The trigger toggles on click instead, which the
+// browser fires only for a tap.
 //
-// A tap on the trigger of an open menu closes the menu on pointerdown, as a
+// A press on the trigger of an open menu closes the menu on pointerdown, as a
 // press outside its content, before the click arrives. So the click toggles
-// from the state the menu had when the tap started, and only for a tap that
-// started on the trigger. A modal menu blocks pointer events outside it, so
-// that pointerdown never reaches the trigger.
+// from the state the menu had when the press started, and only for a press
+// that started on the trigger. A modal menu blocks pointer events outside it,
+// so that pointerdown never reaches the trigger.
 function DropdownMenuTrigger({
   onPointerDown,
   onClick,
   ...props
 }: ComponentProps<typeof DropdownMenuPrimitive.Trigger>) {
   const [open, setOpen] = useContext(DropdownMenuOpenContext)!;
-  const tapRef = useRef<{ wasOpen: boolean }>(undefined);
+  const pressRef = useRef<{ wasOpen: boolean }>(undefined);
   return (
     <DropdownMenuPrimitive.Trigger
       onPointerDown={(event) => {
         onPointerDown?.(event);
-        tapRef.current = undefined;
+        pressRef.current = { wasOpen: open };
         // Radix skips its toggle when the event is already default-prevented.
-        if (event.pointerType !== "mouse") {
-          tapRef.current = { wasOpen: open };
-          event.preventDefault();
-        }
+        event.preventDefault();
       }}
       onClick={(event) => {
         onClick?.(event);
-        if (tapRef.current) {
-          setOpen(!tapRef.current.wasOpen);
-          tapRef.current = undefined;
+        if (pressRef.current) {
+          setOpen(!pressRef.current.wasOpen);
+          pressRef.current = undefined;
         }
       }}
       {...props}
