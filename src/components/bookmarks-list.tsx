@@ -6,7 +6,10 @@ import { flashHighlight } from "../lib/flash-highlight.ts";
 import { RepeatToggle } from "./repeat-toggle.tsx";
 
 export type BookmarksListHandle = {
-  scrollToBookmark: (bookmarkId: string) => void;
+  scrollToBookmark: (
+    bookmarkId: string,
+    options?: { behavior?: ScrollBehavior },
+  ) => void;
 };
 
 export function ExtensionBookmarksList({
@@ -38,12 +41,15 @@ export function ExtensionBookmarksList({
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useImperativeHandle(ref, () => ({
-    scrollToBookmark: (bookmarkId: string) => {
+    scrollToBookmark: (bookmarkId, options) => {
       const element = scrollRef.current?.querySelector(
         `[data-bookmark-id="${bookmarkId}"]`,
       ) as HTMLElement | null;
       if (element) {
-        element.scrollIntoView({ behavior: "smooth", block: "center" });
+        element.scrollIntoView({
+          behavior: options?.behavior ?? "smooth",
+          block: "center",
+        });
         flashHighlight(element);
       }
     },

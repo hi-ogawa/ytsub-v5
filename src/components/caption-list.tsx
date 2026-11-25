@@ -19,7 +19,10 @@ import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover.tsx";
 import { useTimedFlag } from "./use-timed-flag.ts";
 
 export type CaptionListHandle = {
-  scrollToIndex: (index: number) => void;
+  scrollToIndex: (
+    index: number,
+    options?: { behavior?: ScrollBehavior },
+  ) => void;
 };
 
 export function CaptionList({
@@ -69,12 +72,15 @@ export function CaptionList({
   // A jump to a row, such as from the bookmarks tab, counts as a manual
   // scroll, so auto-scroll doesn't pull the list away from it right after.
   useImperativeHandle(ref, () => ({
-    scrollToIndex: (index: number) => {
+    scrollToIndex: (index, options) => {
       const element = scrollRef.current?.querySelector(
         `[data-index="${index}"]`,
       ) as HTMLElement | null;
       if (element) {
-        element.scrollIntoView({ behavior: "smooth", block: "center" });
+        element.scrollIntoView({
+          behavior: options?.behavior ?? "smooth",
+          block: "center",
+        });
         flashHighlight(element);
       }
       manualScroll.trigger();
