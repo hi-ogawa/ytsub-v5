@@ -4,11 +4,12 @@ import { useEffect, useRef, useState, type RefCallback } from "react";
 
 declare let YT: {
   Player: new (
-    el: HTMLElement | string,
+    element: HTMLElement | string,
     options: {
       videoId: string;
       width?: string;
       height?: string;
+      playerVars?: { start?: number; autoplay?: 0 | 1 };
       events?: { onReady?: () => void };
     },
   ) => YTPlayer;
@@ -43,19 +44,27 @@ function loadYoutubeIframeApi(): Promise<void> {
 
 // --- Hook ---
 
-export function useYouTubePlayer(youtubeId?: string) {
+export function useYouTubePlayer(
+  youtubeId?: string,
+  options?: { playFrom?: number },
+) {
   const [player, setPlayer] = useState<YTPlayer>();
   const playerRef = useRef<YTPlayer>(undefined);
 
-  const ref: RefCallback<HTMLDivElement> = (el) => {
-    if (!el || !youtubeId || playerRef.current) {
+  const ref: RefCallback<HTMLDivElement> = (element) => {
+    if (!element || !youtubeId || playerRef.current) {
       return;
     }
     loadYoutubeIframeApi().then(() => {
-      const p = new YT.Player(el, {
+      const p = new YT.Player(element, {
         videoId: youtubeId,
         width: "100%",
         height: "100%",
+        // `start` takes whole seconds
+        playerVars:
+          options?.playFrom === undefined
+            ? undefined
+            : { start: Math.floor(options.playFrom), autoplay: 1 },
         events: {
           onReady: () => {
             playerRef.current = p;

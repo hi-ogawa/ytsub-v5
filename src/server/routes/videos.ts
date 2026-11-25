@@ -256,12 +256,30 @@ export const videosRouter = authed.router({
         })
         .returning();
 
-      // Delete existing captions (cascade deletes bookmark caption refs)
-      await db.delete(captions).where(eq(captions.videoId, video.id));
+      // A push carries the video's whole bookmark list, so replace it even
+      // when the list is empty
+      await db.delete(bookmarks).where(eq(bookmarks.videoId, video.id));
 
-      // Insert captions in batches to avoid D1 SQL variable limit
-      let insertedCaptions = 0;
-      if (input.captions.length > 0) {
+      // Most pushes only change bookmarks, so keep the caption rows when they
+      // match. D1 bills every rewritten row and its index entries as writes.
+      const storedCaptions = await db
+        .select({
+          id: captions.id,
+          idx: captions.idx,
+          begin: captions.begin,
+          end: captions.end,
+          text1: captions.text1,
+          text2: captions.text2,
+        })
+        .from(captions)
+        .where(eq(captions.videoId, video.id))
+        .orderBy(captions.idx);
+      let captionRows: { idx: number; id: number }[] = storedCaptions;
+      if (!isSameCaptions(storedCaptions, input.captions)) {
+        // Delete existing captions (cascade deletes bookmark caption refs)
+        await db.delete(captions).where(eq(captions.videoId, video.id));
+
+        // Insert captions in batches to avoid D1 SQL variable limit
         const rows = input.captions.map((c) => ({
           videoId: sql.raw(`${video.id}`),
           idx: sql.raw(`${c.idx}`),
@@ -270,36 +288,33 @@ export const videosRouter = authed.router({
           text1: c.text1,
           text2: c.text2,
         }));
-        let allInserted: { idx: number; id: number }[] = [];
+        captionRows = [];
         for (let i = 0; i < rows.length; i += CAPTION_BATCH_SIZE) {
           const batch = rows.slice(i, i + CAPTION_BATCH_SIZE);
           const result = await db.insert(captions).values(batch).returning();
-          allInserted = allInserted.concat(result);
+          captionRows = captionRows.concat(result);
         }
-        insertedCaptions = allInserted.length;
+      }
 
-        // Insert bookmarks (resolve captionIdx → captionId)
-        if (input.bookmarks.length > 0) {
-          // Build idx → captionId map
-          const captionMap = new Map(allInserted.map((c) => [c.idx, c.id]));
-          const bookmarkRows = input.bookmarks.map((b) => ({
-            videoId: sql.raw(`${video.id}`),
-            captionId: sql.raw(`${captionMap.get(b.captionIdx) ?? "null"}`),
-            text: b.text,
-            side: sql.raw(`${b.side}`),
-            offset: sql.raw(`${b.offset}`),
-            translation: b.translation,
-            context: b.context,
-            timestamp: sql.raw(`${input.captions[b.captionIdx]?.begin ?? 0}`),
-            etymology: b.etymology,
-            notes: b.notes,
-          }));
-          // Delete existing bookmarks for this video first
-          await db.delete(bookmarks).where(eq(bookmarks.videoId, video.id));
-          for (let i = 0; i < bookmarkRows.length; i += BOOKMARK_BATCH_SIZE) {
-            const batch = bookmarkRows.slice(i, i + BOOKMARK_BATCH_SIZE);
-            await db.insert(bookmarks).values(batch);
-          }
+      // Insert bookmarks (resolve captionIdx → captionId)
+      if (input.bookmarks.length > 0) {
+        // Build idx → captionId map
+        const captionMap = new Map(captionRows.map((c) => [c.idx, c.id]));
+        const bookmarkRows = input.bookmarks.map((b) => ({
+          videoId: sql.raw(`${video.id}`),
+          captionId: sql.raw(`${captionMap.get(b.captionIdx) ?? "null"}`),
+          text: b.text,
+          side: sql.raw(`${b.side}`),
+          offset: sql.raw(`${b.offset}`),
+          translation: b.translation,
+          context: b.context,
+          timestamp: sql.raw(`${input.captions[b.captionIdx]?.begin ?? 0}`),
+          etymology: b.etymology,
+          notes: b.notes,
+        }));
+        for (let i = 0; i < bookmarkRows.length; i += BOOKMARK_BATCH_SIZE) {
+          const batch = bookmarkRows.slice(i, i + BOOKMARK_BATCH_SIZE);
+          await db.insert(bookmarks).values(batch);
         }
       }
 
@@ -307,7 +322,7 @@ export const videosRouter = authed.router({
         videoId: video.id,
         updatedAt: video.updatedAt,
         editedAt: video.editedAt,
-        captions: insertedCaptions,
+        captions: captionRows.length,
         bookmarks: input.bookmarks.length,
       };
     }),
@@ -369,3 +384,24 @@ export const videosRouter = authed.router({
       return row;
     }),
 });
+
+type CaptionFields = Pick<
+  typeof captions.$inferSelect,
+  "idx" | "begin" | "end" | "text1" | "text2"
+>;
+
+function isSameCaptions(stored: CaptionFields[], incoming: CaptionFields[]) {
+  return (
+    stored.length === incoming.length &&
+    stored.every((caption, i) => {
+      const other = incoming[i];
+      return (
+        caption.idx === other.idx &&
+        caption.begin === other.begin &&
+        caption.end === other.end &&
+        caption.text1 === other.text1 &&
+        caption.text2 === other.text2
+      );
+    })
+  );
+}

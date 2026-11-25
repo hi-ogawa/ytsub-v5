@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { openPulledVideo, SEED_YOUTUBE_ID, setupDb } from "./helper.ts";
+import { login, openPulledVideo, SEED_YOUTUBE_ID, setupDb } from "./helper.ts";
 
 test.beforeAll(async () => {
   await setupDb({ seed: true });
@@ -25,4 +25,24 @@ test("pulled video opens in the viewer with its bookmarks and session-only setti
     "data-sync-state",
     "synced",
   );
+});
+
+test("server-only video links to the bookmarks page to pull it", async ({
+  page,
+}) => {
+  await page.route("https://www.youtube.com/**", (route) => route.abort());
+  await login(page);
+  await page.getByTestId(`video-card-${SEED_YOUTUBE_ID}`).click();
+  await expect(page).toHaveURL(`/videos/${SEED_YOUTUBE_ID}`);
+
+  await expect(
+    page.getByText("This video isn't on this device yet."),
+  ).toBeVisible();
+  await page.getByRole("link", { name: "bookmarks page" }).click();
+  await expect(page).toHaveURL("/");
+  await expect(
+    page
+      .getByTestId(`video-card-${SEED_YOUTUBE_ID}`)
+      .getByTestId("video-sync-badge"),
+  ).toBeVisible();
 });

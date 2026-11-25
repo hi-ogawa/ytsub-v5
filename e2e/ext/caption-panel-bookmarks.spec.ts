@@ -16,7 +16,8 @@ test("clicks inside the bookmark popover don't reach the caption row", async ({
     .selectText();
   await host.getByRole("button", { name: "Create bookmark" }).click();
   const video = ytPage.locator("video");
-  const isPaused = () => video.evaluate((el: HTMLVideoElement) => el.paused);
+  const isPaused = () =>
+    video.evaluate((element: HTMLVideoElement) => element.paused);
 
   const highlight = host
     .locator("[data-index='1']")
@@ -40,6 +41,29 @@ test("clicks inside the bookmark popover don't reach the caption row", async ({
   await expect.poll(isPaused).toBe(false);
 });
 
+test("deletes a bookmark from its popover after confirming", async ({
+  context,
+}) => {
+  const { ytPage, host } = await openPanelWithTracks(context, SEED_YOUTUBE_ID);
+  await createBookmarkAt(host, { index: 1, start: 0, end: 2 });
+  const highlight = host.getByTestId("bookmark-highlight");
+  const popover = host.getByTestId("bookmark-popover");
+  const dialogs: string[] = [];
+  ytPage.on("dialog", (dialog) => {
+    dialogs.push(dialog.message());
+    dialog.accept();
+  });
+
+  await highlight.click();
+  await popover.getByRole("button", { name: "Delete bookmark" }).click();
+  expect(dialogs).toEqual(['Delete bookmark "밤새"?']);
+  await expect(popover).not.toBeVisible();
+  await expect(highlight).toHaveCount(0);
+  await expect(host.getByRole("tab", { name: "Bookmarks" })).toHaveText(
+    "Bookmarks",
+  );
+});
+
 test("repeat on a bookmark card repeats its row, shared with the Captions tab", async ({
   context,
 }) => {
@@ -49,9 +73,10 @@ test("repeat on a bookmark card repeats its row, shared with the Captions tab", 
   await createBookmarkAt(host, { index: 2, start: 0, end: 2 });
   await createBookmarkAt(host, { index: 3, start: 0, end: 2 });
   const video = ytPage.locator("video");
-  const isPaused = () => video.evaluate((el: HTMLVideoElement) => el.paused);
+  const isPaused = () =>
+    video.evaluate((element: HTMLVideoElement) => element.paused);
   const getCurrentTime = () =>
-    video.evaluate((el: HTMLVideoElement) => el.currentTime);
+    video.evaluate((element: HTMLVideoElement) => element.currentTime);
   const cards = host.locator("[data-bookmark-id]");
   const cardRepeats = cards.getByTitle("Repeat");
   const rowRepeat = (index: number) =>
@@ -94,9 +119,10 @@ test("bookmark arrows keep the play state", async ({ context }) => {
   await expect(prevButton).toBeEnabled();
   await expect(nextButton).toBeEnabled();
   const video = ytPage.locator("video");
-  const isPaused = () => video.evaluate((el: HTMLVideoElement) => el.paused);
+  const isPaused = () =>
+    video.evaluate((element: HTMLVideoElement) => element.paused);
   const getCurrentTime = () =>
-    video.evaluate((el: HTMLVideoElement) => el.currentTime);
+    video.evaluate((element: HTMLVideoElement) => element.currentTime);
 
   // A paused video stays paused at the bookmark
   expect(await isPaused()).toBe(true);
@@ -117,7 +143,7 @@ test("bookmark arrows wrap around at the ends", async ({ context }) => {
   await createBookmarkAt(host, { index: 3, start: 0, end: 3 });
   const video = ytPage.locator("video");
   const getCurrentTime = () =>
-    video.evaluate((el: HTMLVideoElement) => el.currentTime);
+    video.evaluate((element: HTMLVideoElement) => element.currentTime);
   async function clickAndGetTime(name: string) {
     return await test.step(
       `Click ${name}`,
@@ -148,11 +174,11 @@ test("bookmark arrows show the caption while paused", async ({ context }) => {
 
   await host.getByRole("button", { name: "Next bookmark" }).click();
   const getOffsetFromCenter = () =>
-    row.evaluate((el) => {
-      const list = el
+    row.evaluate((element) => {
+      const list = element
         .closest("[data-testid='caption-list']")!
         .getBoundingClientRect();
-      const rect = el.getBoundingClientRect();
+      const rect = element.getBoundingClientRect();
       return Math.abs(
         rect.top + rect.height / 2 - (list.top + list.height / 2),
       );
@@ -193,7 +219,8 @@ test("clicking a card from the current row toggles play, like a caption row", as
   await createBookmarkAt(host, { index: 3, start: 0, end: 2 });
   await host.getByRole("tab", { name: /Bookmarks/ }).click();
   const video = ytPage.locator("video");
-  const isPaused = () => video.evaluate((el: HTMLVideoElement) => el.paused);
+  const isPaused = () =>
+    video.evaluate((element: HTMLVideoElement) => element.paused);
   const cards = host.locator("[data-bookmark-id]");
 
   await cards.nth(0).click();
@@ -379,11 +406,9 @@ test("delete bookmark from bookmarks tab", async ({ context }) => {
   await panel.getByRole("tab", { name: /Bookmarks/ }).click();
   await expect(host.locator("[data-bookmark-id]").first()).toBeVisible();
 
-  // Open dropdown and delete
   ytPage.on("dialog", (d) => d.accept());
   const bookmarkCard = host.locator("[data-bookmark-id]").first();
-  await bookmarkCard.getByTitle("Bookmark actions").click();
-  await host.getByRole("menuitem", { name: "Delete" }).click();
+  await bookmarkCard.getByRole("button", { name: "Delete bookmark" }).click();
 
   // Should show empty state
   await expect(host.getByText("No bookmarks yet")).toBeVisible();
@@ -422,8 +447,7 @@ test("bookmark numbers in popover and bookmarks tab", async ({ context }) => {
 
   // Deleting the first bookmark renumbers the rest
   ytPage.on("dialog", (d) => d.accept());
-  await cards.nth(0).getByTitle("Bookmark actions").click();
-  await host.getByRole("menuitem", { name: "Delete" }).click();
+  await cards.nth(0).getByRole("button", { name: "Delete bookmark" }).click();
   await expect(cards).toHaveCount(2);
   await expect(cards.nth(0)).toContainText("#1널");
   await expect(cards.nth(1)).toContainText("#2아직");

@@ -27,6 +27,13 @@ export function langFromVssId(vssId: string): string {
   return vssId.split(".").pop()!;
 }
 
+const displayNames = new Intl.DisplayNames(["en"], { type: "language" });
+
+export function getLangName(vssId: string): string {
+  const code = langFromVssId(vssId);
+  return displayNames.of(code) ?? code;
+}
+
 export interface YouTubeExtractionResult {
   video: YouTubeVideoData;
   captionTracks: YouTubeCaptionTrack[];
@@ -125,14 +132,16 @@ export function extractVideoData(): YouTubeExtractionResult {
 export async function fetchTrackJson3(baseUrl: string): Promise<Json3File> {
   const url = new URL(baseUrl);
   url.searchParams.set("fmt", "json3");
-  const res = await fetch(url.toString());
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`Failed to fetch json3: ${res.status} ${text}`);
+  const response = await fetch(url.toString());
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`Failed to fetch json3: ${response.status} ${text}`);
   }
-  const text = await res.text();
+  const text = await response.text();
   if (!text) {
-    throw new Error(`Empty response from json3 fetch (status ${res.status})`);
+    throw new Error(
+      `Empty response from json3 fetch (status ${response.status})`,
+    );
   }
   return JSON.parse(text);
 }
@@ -204,7 +213,7 @@ export async function fetchPlayerApi(options: {
     throw new Error("Could not extract visitorData from ytcfg");
   }
 
-  const res = await fetch("https://www.youtube.com/youtubei/v1/player", {
+  const response = await fetch("https://www.youtube.com/youtubei/v1/player", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -230,11 +239,11 @@ export async function fetchPlayerApi(options: {
     }),
   });
 
-  if (!res.ok) {
-    throw new Error(`Player API returned ${res.status}`);
+  if (!response.ok) {
+    throw new Error(`Player API returned ${response.status}`);
   }
 
-  const data = (await res.json()) as Record<string, unknown>;
+  const data = (await response.json()) as Record<string, unknown>;
 
   // Parse response (inlined — page.evaluate can't see external functions)
   // YouTube leaves out videoDetails when it refuses playback, such as with

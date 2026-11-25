@@ -1,15 +1,9 @@
-import { EllipsisVertical, ExternalLink, Trash2 } from "lucide-react";
+import { ExternalLink, Trash2 } from "lucide-react";
 import { useImperativeHandle, useRef } from "react";
 import type { MergedCaption } from "../lib/caption-merge.ts";
 import type { ExtensionBookmark } from "../lib/extension-bookmarks.ts";
 import { flashHighlight } from "../lib/flash-highlight.ts";
 import { RepeatToggle } from "./repeat-toggle.tsx";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "./ui/dropdown-menu.tsx";
 
 export type BookmarksListHandle = {
   scrollToBookmark: (bookmarkId: string) => void;
@@ -19,6 +13,7 @@ export function ExtensionBookmarksList({
   ref,
   bookmarks,
   rows,
+  languages,
   currentIndex,
   isPlaying,
   repeatIndex,
@@ -30,6 +25,8 @@ export function ExtensionBookmarksList({
   ref: React.Ref<BookmarksListHandle>;
   bookmarks: ExtensionBookmark[];
   rows: MergedCaption[];
+  /** Language codes of the two caption tracks, indexed by side */
+  languages: [string, string];
   currentIndex?: number;
   isPlaying: boolean;
   repeatIndex?: number;
@@ -42,31 +39,32 @@ export function ExtensionBookmarksList({
 
   useImperativeHandle(ref, () => ({
     scrollToBookmark: (bookmarkId: string) => {
-      const el = scrollRef.current?.querySelector(
+      const element = scrollRef.current?.querySelector(
         `[data-bookmark-id="${bookmarkId}"]`,
       ) as HTMLElement | null;
-      if (el) {
-        el.scrollIntoView({ behavior: "smooth", block: "center" });
-        flashHighlight(el);
+      if (element) {
+        element.scrollIntoView({ behavior: "smooth", block: "center" });
+        flashHighlight(element);
       }
     },
   }));
 
   return (
     <div ref={scrollRef} className="flex flex-col gap-1.5 p-1.5">
-      {bookmarks.map((bm, bmIndex) => (
+      {bookmarks.map((bookmark, index) => (
         <BookmarkCard
-          key={bm.id}
-          bookmark={bm}
-          bookmarkNumber={bmIndex + 1}
-          caption={rows[bm.captionIndex]}
-          isCurrent={bm.captionIndex === currentIndex}
-          isPlaying={isPlaying}
-          isRepeating={bm.captionIndex === repeatIndex}
-          onClick={() => onClickBookmark(bm)}
-          onToggleRepeat={() => onToggleRepeat(bm.captionIndex)}
-          onDelete={() => onDeleteBookmark(bm.id)}
-          onGoToCaption={() => onGoToCaption(bm.captionIndex)}
+          key={bookmark.id}
+          bookmark={bookmark}
+          bookmarkNumber={index + 1}
+          caption={rows[bookmark.captionIndex]}
+          languages={languages}
+          isCurrent={bookmark.captionIndex === currentIndex}
+          isPlaying={bookmark.captionIndex === currentIndex && isPlaying}
+          isRepeating={bookmark.captionIndex === repeatIndex}
+          onClick={onClickBookmark}
+          onToggleRepeat={onToggleRepeat}
+          onDelete={onDeleteBookmark}
+          onGoToCaption={onGoToCaption}
         />
       ))}
     </div>
@@ -77,6 +75,7 @@ function BookmarkCard({
   bookmark,
   bookmarkNumber,
   caption,
+  languages,
   isCurrent,
   isPlaying,
   isRepeating,
@@ -88,32 +87,35 @@ function BookmarkCard({
   bookmark: ExtensionBookmark;
   bookmarkNumber: number;
   caption?: MergedCaption;
+  languages: [string, string];
   isCurrent: boolean;
   isPlaying: boolean;
   isRepeating: boolean;
-  onClick: () => void;
-  onToggleRepeat: () => void;
-  onDelete: () => void;
-  onGoToCaption: () => void;
+  onClick: (bookmark: ExtensionBookmark) => void;
+  onToggleRepeat: (captionIndex: number) => void;
+  onDelete: (id: string) => void;
+  onGoToCaption: (captionIndex: number) => void;
 }) {
   return (
     <div
       data-bookmark-id={bookmark.id}
       aria-current={isCurrent || undefined}
       className={[
-        "flex cursor-pointer flex-col gap-1 border p-2 hover:bg-muted",
-        isCurrent && isPlaying && "ring-2 ring-ring",
+        "flex cursor-pointer flex-col gap-1 border p-2 text-(length:--caption-text-size) leading-(--text-sm--line-height) hover:bg-muted",
+        isPlaying && "ring-2 ring-ring",
         isCurrent ? "border-ring" : "border-border",
       ]
         .filter(Boolean)
         .join(" ")}
-      onClick={onClick}
+      onClick={() => onClick(bookmark)}
     >
       <div className="flex items-start gap-1">
         <span className="shrink-0 text-xs text-muted-foreground">
           #{bookmarkNumber}
         </span>
-        <div className="flex-1 text-sm font-medium">{bookmark.text}</div>
+        <div className="flex-1 font-medium" lang={languages[bookmark.side]}>
+          {bookmark.text}
+        </div>
         <span className="shrink-0 text-xs text-muted-foreground">
           {formatTimestamp(bookmark.timestamp)}
         </span>
@@ -121,78 +123,80 @@ function BookmarkCard({
           <RepeatToggle
             className="-mt-0.5 shrink-0 text-muted-foreground"
             isRepeating={isRepeating}
-            onToggle={onToggleRepeat}
+            onToggle={() => onToggleRepeat(bookmark.captionIndex)}
           />
         )}
-        <DropdownMenu>
-          <DropdownMenuTrigger
-            className="-mr-1 -mt-0.5 shrink-0 rounded p-1 text-muted-foreground hover:bg-muted"
-            title="Bookmark actions"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <EllipsisVertical className="size-3.5" />
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-            <DropdownMenuItem
-              className="text-destructive"
-              onClick={() => {
-                if (confirm(`Delete bookmark "${bookmark.text}"?`)) {
-                  onDelete();
-                }
-              }}
-            >
-              <Trash2 className="mr-2 size-4" />
-              Delete
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
       </div>
       {bookmark.translation && (
-        <div className="text-sm text-muted-foreground">
-          {bookmark.translation}
-        </div>
+        <div className="text-muted-foreground">{bookmark.translation}</div>
       )}
       {bookmark.etymology && (
-        <div className="text-sm text-muted-foreground">
-          {bookmark.etymology}
-        </div>
+        <div className="text-muted-foreground">{bookmark.etymology}</div>
       )}
       {bookmark.notes && (
-        <div className="text-sm text-muted-foreground">{bookmark.notes}</div>
+        <div className="text-muted-foreground">{bookmark.notes}</div>
       )}
-      {caption && (
-        <div className="mt-0.5 flex items-start gap-1 border-t border-border pt-1 text-sm text-muted-foreground">
+      {caption ? (
+        <div className="mt-0.5 flex items-end gap-1 border-t border-border pt-1 text-muted-foreground">
           <div className="flex-1">
-            <div>{caption.text1}</div>
-            <div>{caption.text2}</div>
+            <div lang={languages[0]}>{caption.text1}</div>
+            <div lang={languages[1]}>{caption.text2}</div>
           </div>
-          <div className="flex shrink-0 items-center gap-1">
-            {!bookmark.translation && (
-              <span className="rounded bg-muted px-1 text-muted-foreground">
-                unfilled
-              </span>
-            )}
-            <button
-              className="rounded p-0.5 text-muted-foreground hover:bg-accent hover:text-foreground"
-              title="Go to caption"
-              onClick={(e) => {
-                e.stopPropagation();
-                onGoToCaption();
-              }}
-            >
-              <ExternalLink className="size-3.5" />
-            </button>
+          <div className="flex shrink-0 flex-col items-end gap-0.5">
+            {!bookmark.translation && <UnfilledChip />}
+            <div className="flex items-center gap-1">
+              <DeleteBookmarkButton bookmark={bookmark} onDelete={onDelete} />
+              <button
+                className="rounded p-0.5 text-muted-foreground hover:bg-border hover:text-foreground"
+                title="Go to caption"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onGoToCaption(bookmark.captionIndex);
+                }}
+              >
+                <ExternalLink className="size-3.5" />
+              </button>
+            </div>
           </div>
         </div>
-      )}
-      {!caption && !bookmark.translation && (
-        <div className="text-xs">
-          <span className="rounded bg-muted px-1 text-muted-foreground">
-            unfilled
-          </span>
+      ) : (
+        <div className="flex items-center justify-end gap-1">
+          {!bookmark.translation && <UnfilledChip />}
+          <DeleteBookmarkButton bookmark={bookmark} onDelete={onDelete} />
         </div>
       )}
     </div>
+  );
+}
+
+function UnfilledChip() {
+  return (
+    <span className="rounded bg-muted px-1 text-xs text-muted-foreground">
+      unfilled
+    </span>
+  );
+}
+
+function DeleteBookmarkButton({
+  bookmark,
+  onDelete,
+}: {
+  bookmark: ExtensionBookmark;
+  onDelete: (id: string) => void;
+}) {
+  return (
+    <button
+      className="rounded p-0.5 text-muted-foreground hover:bg-destructive-subtle hover:text-destructive"
+      title="Delete bookmark"
+      onClick={(event) => {
+        event.stopPropagation();
+        if (confirm(`Delete bookmark "${bookmark.text}"?`)) {
+          onDelete(bookmark.id);
+        }
+      }}
+    >
+      <Trash2 className="size-3.5" />
+    </button>
   );
 }
 

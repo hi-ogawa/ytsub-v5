@@ -1,8 +1,17 @@
 // The attribute comes off once the flash ends or is cancelled. Otherwise hiding
-// the tab with `display: none` and showing it again replays the flash.
-export function flashHighlight(el: HTMLElement) {
-  el.dataset.flash = "";
-  const animation = el
+// the element with `display: none` and showing it again replays the flash.
+// A hidden tab keeps its flashes running, so a new flash ends any other in the
+// same list, rather than showing both when the tab is shown again.
+export function flashHighlight(element: HTMLElement) {
+  const others =
+    element.parentElement?.querySelectorAll<HTMLElement>(
+      ":scope > [data-flash]",
+    ) ?? [];
+  for (const other of others) {
+    delete other.dataset.flash;
+  }
+  element.dataset.flash = "";
+  const animation = element
     .getAnimations()
     .find(
       (a) => a instanceof CSSAnimation && a.animationName === "flash-highlight",
@@ -11,6 +20,6 @@ export function flashHighlight(el: HTMLElement) {
     return;
   }
   animation.currentTime = 0;
-  const remove = () => delete el.dataset.flash;
+  const remove = () => delete element.dataset.flash;
   animation.finished.then(remove, remove);
 }

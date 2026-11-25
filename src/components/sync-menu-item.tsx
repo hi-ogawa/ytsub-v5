@@ -36,9 +36,9 @@ export function SyncMenuItem({
         {action ? (
           <DropdownMenuItem
             className="min-w-0 flex-1"
-            onClick={(e) => {
+            onClick={(event) => {
               if (action.keepOpen) {
-                e.preventDefault();
+                event.preventDefault();
               }
               action.run();
             }}

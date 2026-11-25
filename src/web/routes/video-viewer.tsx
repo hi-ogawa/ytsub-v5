@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate, useParams } from "react-router";
+import { useNavigate, useParams, useSearchParams } from "react-router";
 import { CaptionPanel } from "../../components/caption-panel.tsx";
 import {
   type YTPlayer,
@@ -12,7 +12,11 @@ import { useWebSync } from "../components/use-web-sync.ts";
 export function VideoViewerPage({ storage }: { storage: CaptionStorage }) {
   const { youtubeId } = useParams<"youtubeId">();
 
-  const { ref: playerElRef, player } = useYouTubePlayer(youtubeId);
+  // Where a browser blocks autoplay, as mobile browsers do on a page opened
+  // from a link, the player waits paused there until the first tap.
+  const { ref: playerElRef, player } = useYouTubePlayer(youtubeId, {
+    playFrom: getStartTime(useSearchParams()[0]),
+  });
 
   if (!youtubeId) {
     return (
@@ -46,6 +50,13 @@ export function VideoViewerPage({ storage }: { storage: CaptionStorage }) {
       </div>
     </div>
   );
+}
+
+// `?t=<seconds>` opens the video at a scene, as Anki cards link to it.
+function getStartTime(searchParams: URLSearchParams): number | undefined {
+  const value = searchParams.get("t");
+  const time = value ? Number(value) : NaN;
+  return Number.isFinite(time) && time >= 0 ? time : undefined;
 }
 
 function ViewerCaptionPanel({

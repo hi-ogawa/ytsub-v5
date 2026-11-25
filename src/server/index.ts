@@ -16,9 +16,9 @@ const handler = new RPCHandler(router, {
     async (options) => {
       try {
         return await options.next();
-      } catch (e) {
-        console.error(e);
-        throw e;
+      } catch (error) {
+        console.error(error);
+        throw error;
       }
     },
   ],

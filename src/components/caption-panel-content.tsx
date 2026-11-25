@@ -7,6 +7,7 @@ import {
   sortBookmarks,
 } from "../lib/caption-panel-runtime.ts";
 import type { ExtensionBookmark } from "../lib/extension-bookmarks.ts";
+import { langFromVssId } from "../lib/youtube.ts";
 import {
   type BookmarksListHandle,
   ExtensionBookmarksList,
@@ -37,6 +38,10 @@ export function CaptionPanelContent({
     () => sortBookmarks(session.bookmarks),
     [session.bookmarks],
   );
+  const languages: [string, string] = [
+    langFromVssId(session.vssId1),
+    langFromVssId(session.vssId2),
+  ];
 
   function scrollToBookmarkCaption(bookmark?: ExtensionBookmark) {
     if (bookmark) {
@@ -81,29 +86,35 @@ export function CaptionPanelContent({
       />
 
       <div className="relative flex min-h-0 flex-[1_0_0] flex-col">
-        {/* Captions — hidden (not unmounted) to preserve scroll position */}
+        {/* The tabs stack with the active one on top. The inactive one skips
+            rendering but keeps its layout and scroll position, so showing it
+            again doesn't lay out every row from scratch. */}
         <div
-          className="flex min-h-0 flex-[1_0_0] flex-col"
-          style={{
-            display: activeTab === "captions" ? undefined : "none",
-          }}
+          className="absolute inset-0 flex flex-col"
+          style={
+            activeTab === "captions"
+              ? { zIndex: 1 }
+              : { contentVisibility: "hidden" }
+          }
         >
           <CaptionViewer
             ref={captionListRef}
             runtime={runtime}
             rows={session.rows}
+            languages={languages}
             autoScroll={autoScroll}
             bookmarks={sortedBookmarks}
             onGoToBookmark={onGoToBookmark}
           />
         </div>
 
-        {/* Bookmarks — hidden (not unmounted) to preserve scroll position */}
         <div
-          className="flex-[1_0_0] overflow-y-auto"
-          style={{
-            display: activeTab === "bookmarks" ? undefined : "none",
-          }}
+          className="absolute inset-0 overflow-y-auto"
+          style={
+            activeTab === "bookmarks"
+              ? { zIndex: 1 }
+              : { contentVisibility: "hidden" }
+          }
         >
           {sortedBookmarks.length === 0 ? (
             <div className="flex h-full items-center justify-center">
@@ -114,6 +125,7 @@ export function CaptionPanelContent({
               ref={bookmarksListRef}
               bookmarks={sortedBookmarks}
               rows={session.rows}
+              languages={languages}
               currentIndex={currentIndex}
               isPlaying={isPlaying}
               repeatIndex={repeatIndex}
@@ -218,7 +230,7 @@ function BookmarkActions({
   onCreate: () => void;
 }) {
   return (
-    <div className="absolute bottom-2 right-2 flex gap-2">
+    <div className="absolute bottom-2 right-2 z-10 flex gap-2">
       <button
         className="flex h-10 w-10 items-center justify-center rounded-full bg-muted shadow hover:bg-muted/80"
         onClick={onCancel}
@@ -241,6 +253,7 @@ function CaptionViewer({
   ref,
   runtime,
   rows,
+  languages,
   autoScroll,
   bookmarks,
   onGoToBookmark,
@@ -248,6 +261,7 @@ function CaptionViewer({
   ref: React.Ref<CaptionListHandle>;
   runtime: CaptionPanelRuntime;
   rows: MergedCaption[];
+  languages: [string, string];
   autoScroll: boolean;
   bookmarks: ExtensionBookmark[];
   onGoToBookmark: (bookmarkId: string) => void;
@@ -261,6 +275,7 @@ function CaptionViewer({
     <CaptionList
       ref={ref}
       rows={rows}
+      languages={languages}
       currentIndex={currentIndex}
       isPlaying={isPlaying}
       repeatIndex={repeatIndex}
@@ -269,6 +284,7 @@ function CaptionViewer({
       onPlayOrToggleRow={(index) => runtime.playOrToggleRow(index)}
       onToggleRepeat={(index) => runtime.toggleRepeat(index)}
       onGoToBookmark={onGoToBookmark}
+      onDeleteBookmark={(id) => runtime.deleteBookmark(id)}
     />
   );
 }

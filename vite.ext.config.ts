@@ -102,7 +102,7 @@ export default defineConfig({
         : "https://zamak.hiro18181.workers.dev",
     ),
   },
-  plugins: [react(), tailwindcss()],
+  plugins: [react({ compiler: true }), tailwindcss()],
   builder: {
     async buildApp(builder) {
       await builder.build(builder.environments.client);

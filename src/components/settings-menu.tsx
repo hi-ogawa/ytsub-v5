@@ -3,8 +3,12 @@ import {
   ClipboardPaste,
   Download,
   EllipsisVertical,
+  Minus,
+  Plus,
   Trash2,
+  Type,
 } from "lucide-react";
+import { TEXT_SIZE } from "../lib/caption-panel-preferences.ts";
 import type {
   CaptionPanelRuntime,
   CaptionSession,
@@ -27,6 +31,8 @@ export function SettingsDropdown({
   tracks,
   autoScroll,
   onSetAutoScroll,
+  textSize,
+  onSetTextSize,
   useSync,
 }: {
   runtime: CaptionPanelRuntime;
@@ -34,6 +40,8 @@ export function SettingsDropdown({
   tracks: YouTubeCaptionTrack[];
   autoScroll: boolean;
   onSetAutoScroll: (value: boolean | ((prev: boolean) => boolean)) => void;
+  textSize: number;
+  onSetTextSize: (value: number) => void;
   useSync: UseSync;
 }) {
   const hasBookmarks = session.bookmarks.length > 0;
@@ -50,8 +58,8 @@ export function SettingsDropdown({
         <SyncMenuItem useSync={useSync} runtime={runtime} />
         <DropdownMenuItem
           data-checked={autoScroll}
-          onClick={(e) => {
-            e.preventDefault();
+          onClick={(event) => {
+            event.preventDefault();
             onSetAutoScroll((v) => !v);
           }}
         >
@@ -60,6 +68,7 @@ export function SettingsDropdown({
           />
           Auto-scroll
         </DropdownMenuItem>
+        <TextSizeStepper textSize={textSize} onSetTextSize={onSetTextSize} />
         <AiPromptCopy session={session} tracks={tracks} />
         <DropdownMenuItem onClick={() => importAiResult({ runtime, session })}>
           <ClipboardPaste className="mr-2 size-4" />
@@ -90,6 +99,63 @@ export function SettingsDropdown({
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
+  );
+}
+
+// Each button keeps the menu open, so the captions behind it resize live
+// while stepping.
+function TextSizeStepper({
+  textSize,
+  onSetTextSize,
+}: {
+  textSize: number;
+  onSetTextSize: (value: number) => void;
+}) {
+  return (
+    <div className="flex items-center">
+      <div className="flex min-w-0 flex-1 items-center px-2 py-1.5 text-sm">
+        <Type className="mr-2 size-4" />
+        Text size
+      </div>
+      <div className="flex shrink-0 items-center">
+        <DropdownMenuItem
+          className="px-1.5"
+          title="Smaller text"
+          aria-label="Smaller text"
+          disabled={textSize <= TEXT_SIZE.min}
+          onClick={(event) => {
+            event.preventDefault();
+            onSetTextSize(textSize - 1);
+          }}
+        >
+          <Minus className="size-4" />
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          className="w-10 justify-center tabular-nums"
+          title={`Reset to ${TEXT_SIZE.default} px`}
+          aria-label={`Text size ${textSize} px, reset to ${TEXT_SIZE.default} px`}
+          data-testid="text-size-value"
+          onClick={(event) => {
+            event.preventDefault();
+            onSetTextSize(TEXT_SIZE.default);
+          }}
+        >
+          {textSize}
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          className="px-1.5"
+          title="Larger text"
+          aria-label="Larger text"
+          disabled={textSize >= TEXT_SIZE.max}
+          onClick={(event) => {
+            event.preventDefault();
+            onSetTextSize(textSize + 1);
+          }}
+        >
+          <Plus className="size-4" />
+        </DropdownMenuItem>
+      </div>
+    </div>
   );
 }
 

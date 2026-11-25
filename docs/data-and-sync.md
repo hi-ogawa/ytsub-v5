@@ -26,7 +26,7 @@ Each video carries the time its content was last edited. The side that makes an 
 
 ![Device A edits at 10:00 and pushes at 10:30. The server keeps the edit time 10:00. Device B, whose clock is three minutes behind, pulls and keeps the edit time 10:00. The edit time is the same on every side, and B's clock never stamps it.](images/edit-time.svg)
 
-The bookmarks page lists the most recently edited videos first. Syncing never changes the edit time, so it never moves a card, and every device lists the videos in the same order. Sorting compares times from different clocks, so devices whose clocks disagree can swap two videos edited within that difference. Only the order of those two cards changes.
+The bookmarks page lists the most recently edited videos first, by the later of the local and server edit times, and shows that time on each card. A video edited elsewhere moves up as soon as the list sees the server's newer time, before it is pulled. Syncing never changes the edit time, so it never moves a card, and every device lists the videos in the same order. Sorting compares times from different clocks, so devices whose clocks disagree can swap two videos edited within that difference. Only the order of those two cards changes.
 
 ## Decide the Sync Direction by Comparing Edit Times
 

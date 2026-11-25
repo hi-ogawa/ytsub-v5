@@ -49,17 +49,17 @@ export async function gotoBookmarks(page: Page, extensionId: string) {
     "Go to bookmarks",
     async () => {
       // surface client errors on playwright cli console
-      page.on("console", (msg) => {
-        if (msg.type() === "error") {
-          console.log(`[browser:console.error] ${msg.text()}`);
+      page.on("console", (message) => {
+        if (message.type() === "error") {
+          console.log(`[browser:console.error] ${message.text()}`);
         }
       });
-      page.on("pageerror", (err) => {
-        console.log(`[browser:pageerror] ${err}`);
+      page.on("pageerror", (error) => {
+        console.log(`[browser:pageerror] ${error}`);
       });
-      page.on("requestfailed", (req) => {
+      page.on("requestfailed", (request) => {
         console.log(
-          `[browser:requestfailed] ${req.url()} ${req.failure()?.errorText}`,
+          `[browser:requestfailed] ${request.url()} ${request.failure()?.errorText}`,
         );
       });
       // Override server URL for via chrome.storage.local
@@ -75,11 +75,14 @@ export async function seedChromeStorage(
   context: BrowserContext,
   data: Record<string, unknown>,
 ) {
-  let [sw] = context.serviceWorkers();
-  if (!sw) {
-    sw = await context.waitForEvent("serviceworker");
+  let [serviceWorker] = context.serviceWorkers();
+  if (!serviceWorker) {
+    serviceWorker = await context.waitForEvent("serviceworker");
   }
-  await sw.evaluate((items) => chrome.storage.local.set(items), data);
+  await serviceWorker.evaluate(
+    (items) => chrome.storage.local.set(items),
+    data,
+  );
 }
 
 /**
@@ -89,17 +92,17 @@ export async function seedChromeStorage(
 export async function seedVideoIndex(page: Page, entries: object[]) {
   await page.evaluate(async (entries) => {
     const db = await new Promise<IDBDatabase>((resolve, reject) => {
-      const req = indexedDB.open("zamak");
-      req.onsuccess = () => resolve(req.result);
-      req.onerror = () => reject(req.error);
+      const request = indexedDB.open("zamak");
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
     });
     await new Promise<void>((resolve, reject) => {
-      const tx = db.transaction("videos", "readwrite");
+      const transaction = db.transaction("videos", "readwrite");
       for (const entry of entries) {
-        tx.objectStore("videos").put(entry);
+        transaction.objectStore("videos").put(entry);
       }
-      tx.oncomplete = () => resolve();
-      tx.onerror = () => reject(tx.error);
+      transaction.oncomplete = () => resolve();
+      transaction.onerror = () => reject(transaction.error);
     });
     db.close();
   }, entries);
@@ -166,10 +169,10 @@ export async function selectTextInCaption(
         .locator(`[data-index='${index}'] [data-side='0'] [data-offset]`)
         .first()
         .evaluate(
-          (el, { start, end }) => {
+          (element, { start, end }) => {
             const range = document.createRange();
-            range.setStart(el.firstChild!, start);
-            range.setEnd(el.firstChild!, end);
+            range.setStart(element.firstChild!, start);
+            range.setEnd(element.firstChild!, end);
             const selection = document.getSelection()!;
             selection.removeAllRanges();
             selection.addRange(range);

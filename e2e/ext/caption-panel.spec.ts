@@ -1,6 +1,11 @@
 import { expect, type Locator } from "@playwright/test";
 import { OTHER_YOUTUBE_ID, SEED_YOUTUBE_ID } from "../helper";
-import { openPanelWithTracks, openYouTubeTab, test } from "./helper";
+import {
+  createBookmarkAt,
+  openPanelWithTracks,
+  openYouTubeTab,
+  test,
+} from "./helper";
 
 test("FAB toggles the panel and keeps its state per video across reloads", async ({
   context,
@@ -35,9 +40,10 @@ test("clicking a row seeks to its start and plays, and clicking the current row 
 }) => {
   const { ytPage, host } = await openPanelWithTracks(context, SEED_YOUTUBE_ID);
   const video = ytPage.locator("video");
-  const isPaused = () => video.evaluate((el: HTMLVideoElement) => el.paused);
+  const isPaused = () =>
+    video.evaluate((element: HTMLVideoElement) => element.paused);
   const getCurrentTime = () =>
-    video.evaluate((el: HTMLVideoElement) => el.currentTime);
+    video.evaluate((element: HTMLVideoElement) => element.currentTime);
 
   const row = host.locator("[data-index='2']");
   await row.click();
@@ -56,12 +62,16 @@ test("repeat replays a row from its start until another row is clicked", async (
 }) => {
   const { ytPage, host } = await openPanelWithTracks(context, SEED_YOUTUBE_ID);
   const video = ytPage.locator("video");
-  const isPaused = () => video.evaluate((el: HTMLVideoElement) => el.paused);
+  const isPaused = () =>
+    video.evaluate((element: HTMLVideoElement) => element.paused);
   const getCurrentTime = () =>
-    video.evaluate((el: HTMLVideoElement) => el.currentTime);
+    video.evaluate((element: HTMLVideoElement) => element.currentTime);
   // The mock video has no source, so its time moves only when set by hand.
   const setCurrentTime = (time: number) =>
-    video.evaluate((el: HTMLVideoElement, t) => (el.currentTime = t), time);
+    video.evaluate(
+      (element: HTMLVideoElement, t) => (element.currentTime = t),
+      time,
+    );
 
   // Row 2 spans 35.597–38.206
   const repeat = host.locator("[data-index='2']").getByTitle("Repeat");
@@ -117,6 +127,30 @@ test("auto-scroll toggle persists across reload", async ({ context }) => {
   await expect(host.locator("[data-index='0']")).toBeVisible();
   await host.getByTitle("Settings").click();
   await expect(autoScrollItem).toHaveAttribute("data-checked", "false");
+});
+
+test("text size setting resizes captions and persists across reload", async ({
+  context,
+}) => {
+  const { ytPage, host } = await openPanelWithTracks(context, SEED_YOUTUBE_ID);
+  const caption = host.locator("[data-index='0'] [data-side='0']");
+  await expect(caption).toHaveCSS("font-size", "14px");
+
+  // The menu stays open while stepping
+  await host.getByTitle("Settings").click();
+  await host.getByRole("menuitem", { name: "Larger text" }).click();
+  await host.getByRole("menuitem", { name: "Larger text" }).click();
+  await expect(caption).toHaveCSS("font-size", "16px");
+
+  await ytPage.reload();
+  await expect(caption).toHaveCSS("font-size", "16px");
+
+  // Bookmark cards follow it too
+  await createBookmarkAt(host, { index: 0, start: 0, end: 3 });
+  await host.getByRole("tab", { name: /Bookmarks/ }).click();
+  await expect(
+    host.locator("[data-bookmark-id]").getByText("꼬집어", { exact: true }),
+  ).toHaveCSS("font-size", "16px");
 });
 
 test("export downloads valid import.json", async ({ context }) => {
@@ -188,6 +222,34 @@ async function getWidth(locator: Locator) {
   return (await locator.boundingBox())!.width;
 }
 
+test("saved session keeps the track dropdowns while tracks load", async ({
+  context,
+}) => {
+  const { ytPage, host } = await openPanelWithTracks(context, SEED_YOUTUBE_ID);
+  const { promise: release, resolve: releaseRequest } =
+    Promise.withResolvers<void>();
+  await context.route(
+    "https://www.youtube.com/youtubei/v1/player",
+    async (route) => {
+      await release;
+      await route.fallback();
+    },
+  );
+
+  // The saved session shows while the player API request is held
+  await ytPage.reload();
+  await expect(host.locator("[data-index='0']")).toBeVisible();
+  const selects = host.getByTestId("track-picker").locator("select");
+  await expect(selects.nth(0)).toBeDisabled();
+  await expect(selects.nth(0).locator("option:checked")).toHaveText("Korean");
+  await expect(selects.nth(1).locator("option:checked")).toHaveText("English");
+  await expect(host.getByText("Korean · English")).toHaveCount(0);
+
+  releaseRequest();
+  await expect(selects.nth(0)).toBeEnabled();
+  await expect(selects.nth(0).locator("option")).not.toHaveCount(2);
+});
+
 test("saved captions show when YouTube refuses the player API request", async ({
   context,
 }) => {
@@ -209,6 +271,7 @@ test("saved captions show when YouTube refuses the player API request", async ({
   await expect(host.getByTestId("tracks-error")).toContainText(
     "LOGIN_REQUIRED (Sign in to confirm you're not a bot)",
   );
+  await expect(host.getByText("Korean · English")).toBeVisible();
 
   // A video with nothing saved has only the error to show
   await ytPage.goto(`https://www.youtube.com/watch?v=${OTHER_YOUTUBE_ID}`);

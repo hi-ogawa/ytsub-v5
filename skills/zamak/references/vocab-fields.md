@@ -8,16 +8,16 @@ The English meaning in this caption, not a dictionary dump. Keep it concise. Whe
 
 ## etymology
 
-The word's origin or structure when it helps learning, otherwise an empty string. Use a minimal format with no explanations:
+The word's origin or structure when it helps learning, otherwise an empty string. Use a minimal format with no explanations beyond a short gloss:
 
 - Sino-Korean: Hanja, followed by Japanese kanji when they differ (`價格 / 価格`, `希望`)
 - auxiliary verb compounds: `잊다 + 버리다`
 - passive, causative, and nominalization: `듣다 + 리 (passive)`, `웃다 + 기 (causative)`, `걷다 + 음 (nominalization)`
-- compounds, with each root before sound change: `개 + 아지` for 강아지, `갈비 + 湯` for 갈비탕
+- compounds, with each root before sound change and each native root's meaning in parentheses: `목 (throat) + 숨 (breath)` for 목숨, `개 (dog) + 아지 (diminutive)` for 강아지, `갈비 (ribs) + 湯` for 갈비탕. Hanja need no gloss, because the characters carry their meaning.
 - loanwords, with the borrowing path: `computer`, `アルバイト / Arbeit`
 - contractions: the full form, such as `아이` for 애
 
-Leave it empty for native words with no analyzable structure (가다, 좋다), obvious splits (숨소리 is 숨 + 소리), and origins that aren't established. Don't guess a folk etymology. This field is about the word itself, so the grammar of its inflection goes in `notes`.
+Leave it empty for native words with no analyzable structure (가다, 좋다) and origins that aren't established. Give every compound its split, even one that looks obvious, such as `숨 (breath) + 소리 (sound)` for 숨소리, because what is obvious depends on what the reader already knows. Don't guess a folk etymology. This field is about the word itself, so the grammar of its inflection goes in `notes`.
 
 ## notes
 
@@ -42,4 +42,5 @@ Other useful notes, after the breakdown:
 - a contrast with a similar form
 - for an idiom built on a concrete image, that image in one clause, such as for 딴지 걸다: 딴지 (= 딴죽) is a leg-hook trip, so hooking one means raising petty objections
 - when the pick is the less common form in its family, that it is, with the usual one, such as 굉장한 next to 굉장히, the form common in speech
+- a Japanese parallel, only when it actually helps understand the word, not as a routine gloss
 - related words, each tagged by what it is: `(.syn)` synonym, `(.ant)` antonym, `(.hon)` honorific form, `(.syn:native)` 순우리말 equivalent, `(.syn:casual)` or `(.syn:formal)` register variant. Separate multiple words with commas. Skip inflection pairs (닫히다 → 닫다) and contractions (뭐 → 무엇).

@@ -20,11 +20,11 @@ export function ResizablePanel({
   const widthRef = useRef(width);
   widthRef.current = width;
 
-  const onPointerDown = useCallback((e: React.PointerEvent) => {
-    e.preventDefault();
-    const target = e.currentTarget as HTMLElement;
-    target.setPointerCapture(e.pointerId);
-    const startX = e.clientX;
+  const onPointerDown = useCallback((event: React.PointerEvent) => {
+    event.preventDefault();
+    const target = event.currentTarget as HTMLElement;
+    target.setPointerCapture(event.pointerId);
+    const startX = event.clientX;
     const startWidth = widthRef.current;
 
     // A cross-origin iframe (the YouTube player) can take the pointer events
@@ -34,17 +34,17 @@ export function ResizablePanel({
       iframe.style.pointerEvents = "none";
     }
 
-    const onPointerMove = (e: PointerEvent) => {
+    const onPointerMove = (event: PointerEvent) => {
       // Dragging left = wider (panel is right-aligned)
       const newWidth = Math.max(
         MIN_WIDTH,
-        Math.min(MAX_WIDTH, startWidth + (startX - e.clientX)),
+        Math.min(MAX_WIDTH, startWidth + (startX - event.clientX)),
       );
       setWidth(newWidth);
     };
 
     const onPointerUp = () => {
-      target.releasePointerCapture(e.pointerId);
+      target.releasePointerCapture(event.pointerId);
       for (const iframe of iframes) {
         iframe.style.pointerEvents = "";
       }

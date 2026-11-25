@@ -56,9 +56,9 @@ export function useVideoListSync(storage: CaptionStorage) {
     try {
       await fn();
       serverQuery.refetch();
-    } catch (err) {
-      console.error("[zamak sync]", err);
-      toast.error(err instanceof Error ? err.message : "Sync failed");
+    } catch (error) {
+      console.error("[zamak sync]", error);
+      toast.error(error instanceof Error ? error.message : "Sync failed");
     } finally {
       setSyncing((s) => {
         const next = new Set(s);
@@ -102,10 +102,15 @@ export function useVideoListSync(storage: CaptionStorage) {
   const isPending =
     authQuery.isLoading || (authenticated && serverQuery.isLoading);
   const entries: VideoListEntry[] = serverQuery.data ?? videoIndex;
+  const serverError =
+    authQuery.error ??
+    (authenticated ? serverQuery.error : undefined) ??
+    undefined;
 
   return {
     authenticated,
     isPending,
+    serverError,
     entries,
     syncing,
     onPull,

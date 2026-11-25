@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useSyncExternalStore } from "react";
+import { Link } from "react-router";
 import { captionPanelPreferences } from "../lib/caption-panel-preferences.ts";
 import type {
   CaptionPanelRuntime,
@@ -7,7 +8,7 @@ import type {
   CaptionSession,
 } from "../lib/caption-panel-runtime.ts";
 import type { UseSync } from "../lib/sync.ts";
-import { langFromVssId } from "../lib/youtube.ts";
+import { getLangName } from "../lib/youtube.ts";
 import { CaptionPanelContent } from "./caption-panel-content.tsx";
 import {
   SettingsDropdown,
@@ -76,7 +77,17 @@ export function CaptionPanel({
   }
 
   if (!runtime.trackSource) {
-    return <PanelMessage>No session available</PanelMessage>;
+    return (
+      <PanelMessage>
+        <p className="px-4 text-center">
+          This video isn't on this device yet. Pull it from its card on the{" "}
+          <Link to="/" className="text-primary underline">
+            bookmarks page
+          </Link>
+          .
+        </p>
+      </PanelMessage>
+    );
   }
   if (state.loadingTracks) {
     return <PanelMessage>Loading subtitles…</PanelMessage>;
@@ -151,12 +162,16 @@ function CaptionPanelWithSession({
 }) {
   const [autoScroll, setAutoScroll] =
     captionPanelPreferences.useValue("autoScroll");
-  const { tracks, tracksError } = state;
+  const [textSize, setTextSize] = captionPanelPreferences.useValue("textSize");
+  const { tracks, loadingTracks, tracksError } = state;
 
   return (
-    <div className="flex h-full flex-col">
+    <div
+      className="flex h-full flex-col"
+      style={{ "--caption-text-size": `${textSize}px` } as React.CSSProperties}
+    >
       <div className="flex items-center border-b gap-1">
-        {tracks.length > 0 ? (
+        {loadingTracks || tracks.length > 0 ? (
           <div className="min-w-0 flex-1">
             <TrackPicker
               tracks={tracks}
@@ -166,11 +181,12 @@ function CaptionPanelWithSession({
                 runtime.selectTracks({ vssId1: v1, vssId2: v2 })
               }
               disabled={session.bookmarks.length > 0}
+              loading={loadingTracks}
             />
           </div>
         ) : (
           <span className="flex-1 px-2 py-1 text-sm text-muted-foreground lg:py-1.5">
-            {langName(session.vssId1)} · {langName(session.vssId2)}
+            {getLangName(session.vssId1)} · {getLangName(session.vssId2)}
           </span>
         )}
         <SettingsDropdown
@@ -179,6 +195,8 @@ function CaptionPanelWithSession({
           tracks={tracks}
           autoScroll={autoScroll}
           onSetAutoScroll={setAutoScroll}
+          textSize={textSize}
+          onSetTextSize={setTextSize}
           useSync={useSync}
         />
       </div>
@@ -197,11 +215,4 @@ function CaptionPanelWithSession({
       />
     </div>
   );
-}
-
-const displayNames = new Intl.DisplayNames(["en"], { type: "language" });
-
-function langName(vssId: string): string {
-  const code = langFromVssId(vssId);
-  return displayNames.of(code) ?? code;
 }

@@ -1,4 +1,4 @@
-import { ExternalLink } from "lucide-react";
+import { ExternalLink, Trash2 } from "lucide-react";
 import {
   useEffect,
   useImperativeHandle,
@@ -24,6 +24,7 @@ export type CaptionListHandle = {
 export function CaptionList({
   ref,
   rows,
+  languages,
   currentIndex,
   isPlaying,
   repeatIndex,
@@ -32,9 +33,12 @@ export function CaptionList({
   onPlayOrToggleRow,
   onToggleRepeat,
   onGoToBookmark,
+  onDeleteBookmark,
 }: {
   ref: React.Ref<CaptionListHandle>;
   rows: MergedCaption[];
+  /** Language codes of the two caption tracks, indexed by side */
+  languages: [string, string];
   currentIndex?: number;
   isPlaying: boolean;
   repeatIndex?: number;
@@ -43,6 +47,7 @@ export function CaptionList({
   onPlayOrToggleRow: (index: number) => void;
   onToggleRepeat: (index: number) => void;
   onGoToBookmark: (bookmarkId: string) => void;
+  onDeleteBookmark: (bookmarkId: string) => void;
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -64,12 +69,12 @@ export function CaptionList({
   // scroll, so auto-scroll doesn't pull the list away from it right after.
   useImperativeHandle(ref, () => ({
     scrollToIndex: (index: number) => {
-      const el = scrollRef.current?.querySelector(
+      const element = scrollRef.current?.querySelector(
         `[data-index="${index}"]`,
       ) as HTMLElement | null;
-      if (el) {
-        el.scrollIntoView({ behavior: "smooth", block: "center" });
-        flashHighlight(el);
+      if (element) {
+        element.scrollIntoView({ behavior: "smooth", block: "center" });
+        flashHighlight(element);
       }
       manualScroll.trigger();
     },
@@ -91,24 +96,27 @@ export function CaptionList({
       return;
     }
 
-    const scrollEl = scrollRef.current;
-    if (!scrollEl) {
+    const scrollElement = scrollRef.current;
+    if (!scrollElement) {
       return;
     }
 
-    const el = scrollEl.querySelector(`[data-index="${currentIndex}"]`);
-    if (!el) {
+    const element = scrollElement.querySelector(
+      `[data-index="${currentIndex}"]`,
+    );
+    if (!element) {
       return;
     }
 
-    const { scrollTop, clientHeight } = scrollEl;
+    const { scrollTop, clientHeight } = scrollElement;
     const currentCenter = scrollTop + clientHeight / 2;
-    const itemRect =
-      (el as HTMLElement).offsetTop + (el as HTMLElement).offsetHeight / 2;
+    const itemCenter =
+      (element as HTMLElement).offsetTop +
+      (element as HTMLElement).offsetHeight / 2;
     const threshold = clientHeight / 6;
 
-    if (Math.abs(itemRect - currentCenter) > threshold) {
-      el.scrollIntoView({ behavior: "smooth", block: "center" });
+    if (Math.abs(itemCenter - currentCenter) > threshold) {
+      element.scrollIntoView({ behavior: "smooth", block: "center" });
     }
   }, [currentIndex]);
 
@@ -120,6 +128,11 @@ export function CaptionList({
     }
     manualScroll.clear();
     onPlayOrToggleRow(index);
+  }
+
+  function onToggleRowRepeat(index: number) {
+    manualScroll.clear();
+    onToggleRepeat(index);
   }
 
   return (
@@ -135,18 +148,17 @@ export function CaptionList({
           <CaptionRow
             key={i}
             row={row}
+            languages={languages}
             index={i}
             isCurrent={i === currentIndex}
-            isPlaying={isPlaying}
+            isPlaying={i === currentIndex && isPlaying}
             isRepeating={i === repeatIndex}
             bookmarks={bookmarksByIndex.get(i)}
             bookmarkNumberById={bookmarkNumberById}
-            onClick={() => onClickRow(i)}
-            onToggleRepeat={() => {
-              manualScroll.clear();
-              onToggleRepeat(i);
-            }}
+            onClick={onClickRow}
+            onToggleRepeat={onToggleRowRepeat}
             onGoToBookmark={onGoToBookmark}
+            onDeleteBookmark={onDeleteBookmark}
             onPopoverOpenChange={onPopoverOpenChange}
           />
         ))}
@@ -155,8 +167,12 @@ export function CaptionList({
   );
 }
 
+// The rows share one callback each and see `isPlaying` only when current, so
+// with React Compiler a row whose own state didn't change returns its cached
+// output.
 function CaptionRow({
   row,
+  languages,
   index,
   isCurrent,
   isPlaying,
@@ -166,18 +182,21 @@ function CaptionRow({
   onClick,
   onToggleRepeat,
   onGoToBookmark,
+  onDeleteBookmark,
   onPopoverOpenChange,
 }: {
   row: MergedCaption;
+  languages: [string, string];
   index: number;
   isCurrent: boolean;
   isPlaying: boolean;
   isRepeating: boolean;
   bookmarks?: ExtensionBookmark[];
   bookmarkNumberById: Map<string, number>;
-  onClick: () => void;
-  onToggleRepeat: () => void;
+  onClick: (index: number) => void;
+  onToggleRepeat: (index: number) => void;
   onGoToBookmark: (bookmarkId: string) => void;
+  onDeleteBookmark: (bookmarkId: string) => void;
   onPopoverOpenChange: (open: boolean) => void;
 }) {
   const text1Marks = bookmarks
@@ -199,12 +218,12 @@ function CaptionRow({
       aria-current={isCurrent || undefined}
       className={[
         "flex w-full cursor-pointer flex-col gap-1 border p-1 px-2 hover:bg-muted",
-        isCurrent && isPlaying && "ring-2 ring-ring",
+        isPlaying && "ring-2 ring-ring",
         isCurrent ? "border-ring" : "border-border",
       ]
         .filter(Boolean)
         .join(" ")}
-      onClick={onClick}
+      onClick={() => onClick(index)}
     >
       <div className="flex items-center text-xs text-muted-foreground">
         <span>
@@ -213,23 +232,27 @@ function CaptionRow({
         <RepeatToggle
           className="-my-0.5 ml-auto"
           isRepeating={isRepeating}
-          onToggle={onToggleRepeat}
+          onToggle={() => onToggleRepeat(index)}
         />
       </div>
-      <div className="flex text-sm">
-        <div className="flex-1 border-r pr-2" data-side="0">
+      <div className="flex text-(length:--caption-text-size) leading-(--text-sm--line-height)">
+        <div className="flex-1 border-r pr-2" data-side="0" lang={languages[0]}>
           <HighlightedText
             text={row.text1}
+            language={languages[0]}
             marks={text1Marks ?? []}
             onGoToBookmark={onGoToBookmark}
+            onDeleteBookmark={onDeleteBookmark}
             onPopoverOpenChange={onPopoverOpenChange}
           />
         </div>
-        <div className="flex-1 pl-2" data-side="1">
+        <div className="flex-1 pl-2" data-side="1" lang={languages[1]}>
           <HighlightedText
             text={row.text2}
+            language={languages[1]}
             marks={text2Marks ?? []}
             onGoToBookmark={onGoToBookmark}
+            onDeleteBookmark={onDeleteBookmark}
             onPopoverOpenChange={onPopoverOpenChange}
           />
         </div>
@@ -240,13 +263,17 @@ function CaptionRow({
 
 function HighlightedText({
   text,
+  language,
   marks,
   onGoToBookmark,
+  onDeleteBookmark,
   onPopoverOpenChange,
 }: {
   text: string;
+  language: string;
   marks: { bookmark: ExtensionBookmark; bookmarkNumber?: number }[];
   onGoToBookmark: (bookmarkId: string) => void;
+  onDeleteBookmark: (bookmarkId: string) => void;
   onPopoverOpenChange: (open: boolean) => void;
 }) {
   if (marks.length === 0) {
@@ -271,8 +298,10 @@ function HighlightedText({
         key={bookmark.id}
         bookmark={bookmark}
         bookmarkNumber={bookmarkNumber}
+        language={language}
         offset={bookmark.offset}
         onGoToBookmark={onGoToBookmark}
+        onDeleteBookmark={onDeleteBookmark}
         onPopoverOpenChange={onPopoverOpenChange}
       >
         {text.slice(bookmark.offset, end)}
@@ -293,16 +322,21 @@ function HighlightedText({
 function BookmarkWord({
   bookmark,
   bookmarkNumber,
+  language,
   offset,
   children,
   onGoToBookmark,
+  onDeleteBookmark,
   onPopoverOpenChange,
 }: {
   bookmark: ExtensionBookmark;
   bookmarkNumber?: number;
+  /** The popover renders in a portal, outside the caption's `lang` */
+  language: string;
   offset: number;
   children: React.ReactNode;
   onGoToBookmark: (bookmarkId: string) => void;
+  onDeleteBookmark: (bookmarkId: string) => void;
   onPopoverOpenChange: (open: boolean) => void;
 }) {
   const filled = !!bookmark.translation;
@@ -345,7 +379,7 @@ function BookmarkWord({
               #{bookmarkNumber}
             </span>
           )}
-          {bookmark.text}
+          <span lang={language}>{bookmark.text}</span>
         </span>
         {bookmark.translation ? (
           <span className="block text-xs text-popover-foreground">
@@ -366,12 +400,26 @@ function BookmarkWord({
             {bookmark.notes}
           </span>
         )}
-        {onGoToBookmark && (
+        <div className="mt-1 flex items-center justify-end gap-1">
           <button
-            className="mt-1 rounded p-0.5 text-muted-foreground hover:bg-accent hover:text-foreground"
+            className="rounded p-0.5 text-muted-foreground hover:bg-destructive-subtle hover:text-destructive"
+            title="Delete bookmark"
+            onClick={() => {
+              if (confirm(`Delete bookmark "${bookmark.text}"?`)) {
+                // The highlight unmounts with the bookmark, which would leave
+                // the open state behind and auto-scroll paused.
+                changeOpen(false);
+                onDeleteBookmark(bookmark.id);
+              }
+            }}
+          >
+            <Trash2 className="size-3.5" />
+          </button>
+          <button
+            className="rounded p-0.5 text-muted-foreground hover:bg-border hover:text-foreground"
             title="Go to bookmark"
-            onMouseDown={(e) => {
-              e.stopPropagation();
+            onMouseDown={(event) => {
+              event.stopPropagation();
               // The Captions tab gets hidden rather than unmounted, so an open
               // popover would stay on screen, anchored to a zero-size trigger.
               changeOpen(false);
@@ -380,7 +428,7 @@ function BookmarkWord({
           >
             <ExternalLink className="size-3.5" />
           </button>
-        )}
+        </div>
       </PopoverContent>
     </Popover>
   );
