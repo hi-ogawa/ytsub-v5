@@ -11,15 +11,11 @@ import { useWebSync } from "../components/use-web-sync.ts";
 
 export function VideoViewerPage({ storage }: { storage: CaptionStorage }) {
   const { youtubeId } = useParams<"youtubeId">();
-  const startTime = getStartTime(useSearchParams()[0]);
 
   // Where a browser blocks autoplay, as mobile browsers do on a page opened
   // from a link, the player waits paused there until the first tap.
   const { ref: playerElRef, player } = useYouTubePlayer(youtubeId, {
-    playFrom:
-      startTime === undefined
-        ? undefined
-        : Math.max(0, Math.floor(startTime - START_LEAD_IN_SECONDS)),
+    playFrom: getStartTime(useSearchParams()[0]),
   });
 
   if (!youtubeId) {
@@ -55,8 +51,6 @@ export function VideoViewerPage({ storage }: { storage: CaptionStorage }) {
     </div>
   );
 }
-
-const START_LEAD_IN_SECONDS = 2;
 
 // `?t=<seconds>` opens the video at a scene, as Anki cards link to it.
 function getStartTime(searchParams: URLSearchParams): number | undefined {

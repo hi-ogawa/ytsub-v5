@@ -60,10 +60,11 @@ export function useYouTubePlayer(
         videoId: youtubeId,
         width: "100%",
         height: "100%",
+        // `start` takes whole seconds
         playerVars:
           options?.playFrom === undefined
             ? undefined
-            : { start: options.playFrom, autoplay: 1 },
+            : { start: Math.floor(options.playFrom), autoplay: 1 },
         events: {
           onReady: () => {
             playerRef.current = p;
