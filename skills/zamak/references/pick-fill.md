@@ -4,23 +4,23 @@ The prompt carries the video title and its captions. Each caption line reads `[i
 
 ## Pick What Is Useful to the Learner
 
-The learner is an intermediate Korean learner whose first language is Japanese. Scan the captions and pick each word they are likely to meet again and don't own yet:
+The learner is an upper-intermediate Korean learner whose first language is Japanese. They follow everyday conversation and own its common words and endings. Scan the captions and pick each word they are likely to meet again and don't own yet:
 
-- Common words of everyday speech that they half know
-- Endings and constructions beyond the beginner basics
+- Words of everyday speech a step past daily conversation, which they half know
+- Endings and constructions past the common ones of conversation, which already include -더라, -는 줄 알다, -긴 하다, and -도록 하다
 - Sino-Korean words of caption and news register, including ones whose meaning the kanji gives away but whose reading is new
-- Colloquial set phrases
+- Colloquial set phrases whose meaning the words don't give away
 - Rarer words too, when they are vivid or likely to stick
 
 A line often holds more than one such word, so pick each of them, and pick a word again where it comes back in another line. Pick the word itself, not the surrounding expression, and pick a short phrase only when the construction spans it.
 
 Skip:
 
-- Beginner words, particles, and greetings
+- Words and endings of daily conversation, particles, and greetings
 - Transparent loanwords, English or Japanese
 - Slang and internet coinages that don't pass the test. Slang is not notable in itself, so judge it like any other word
 
-Pick every word that passes this test, with no target count. A missed word costs the learner more than an extra one, because deleting a pick takes a second, while a missing word has to be noticed and added by hand.
+Pick every word that passes this test, with no target count. Before you add a pick, ask whether this learner already owns the word, because each pick they own is one more to delete, and many of them bury the words worth studying.
 
 ## Return the Picks
 
