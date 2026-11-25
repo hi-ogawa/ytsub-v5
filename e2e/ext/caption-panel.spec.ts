@@ -145,8 +145,13 @@ test("text size setting resizes captions and persists across reload", async ({
   await ytPage.reload();
   await expect(caption).toHaveCSS("font-size", "16px");
 
-  // Bookmark cards follow it too
+  // The bookmark popover follows it a step smaller, and bookmark cards follow it
   await createBookmarkAt(host, { index: 0, start: 0, end: 3 });
+  await host.getByTestId("bookmark-highlight").click();
+  await expect(
+    host.getByTestId("bookmark-popover").getByText("꼬집어", { exact: true }),
+  ).toHaveCSS("font-size", "14px");
+  await ytPage.keyboard.press("Escape");
   await host.getByRole("tab", { name: /Bookmarks/ }).click();
   await expect(
     host.locator("[data-bookmark-id]").getByText("꼬집어", { exact: true }),
