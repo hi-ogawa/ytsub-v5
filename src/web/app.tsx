@@ -4,6 +4,7 @@ import { createBrowserRouter, RouterProvider } from "react-router";
 import { Toaster } from "sonner";
 import type { CaptionStorage } from "../lib/caption-storage.ts";
 import { createAppQueryClient } from "../lib/query-client.ts";
+import { LaunchDiagnostics, recordLaunch } from "./launch-diagnostics.tsx";
 import { LoginPage, RegisterPage } from "./routes/login.tsx";
 import {
   AuthLayout,
@@ -23,6 +24,7 @@ export function App({ storage }: { storage: CaptionStorage }) {
     <QueryClientProvider client={queryClient}>
       <RouterProvider router={router} />
       <Toaster position="top-right" richColors />
+      <LaunchDiagnostics />
     </QueryClientProvider>
   );
 }
@@ -32,6 +34,7 @@ export function App({ storage }: { storage: CaptionStorage }) {
 function useLaunchQueue(router: ReturnType<typeof createAppRouter>) {
   useEffect(() => {
     window.launchQueue?.setConsumer(({ targetURL }) => {
+      recordLaunch(targetURL);
       if (!targetURL) {
         return;
       }
