@@ -35,10 +35,10 @@ function DropdownMenu({
   );
 }
 
-// Radix toggles the menu on pointerdown for every pointer type, so a touch
-// scroll that starts on the trigger opens it. Like Radix's Select.Trigger, open
-// on pointerdown only for a mouse, and on click for touch and pen, since the
-// browser doesn't fire a click once the finger moves to scroll.
+// Radix toggles the menu on pointerdown, before the browser knows whether a
+// touch is a tap or a scroll. A modal menu that opens then locks the page, so
+// the scroll never happens. Touch and pen toggle on click instead, which the
+// browser fires only for a tap. A mouse still toggles on press.
 //
 // A tap on the trigger of an open menu closes the menu on pointerdown, as a
 // press outside its content, before the click arrives. So the click toggles
