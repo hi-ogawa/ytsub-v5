@@ -31,13 +31,11 @@ import { VideoCard } from "./video-card.tsx";
 export function BookmarksPage({
   entries,
   videoHref,
-  onDelete,
   sync,
   emptyState,
 }: {
   entries: VideoIndexEntry[];
   videoHref: (youtubeId: string) => string;
-  onDelete?: (entry: VideoListEntry) => void;
   sync?: VideoListSync;
   emptyState?: React.ReactNode;
 }) {
@@ -93,8 +91,11 @@ export function BookmarksPage({
               title={entry.title}
               channelName={entry.channelName}
               titleRight={
-                onDelete && (
-                  <CardMenu entry={entry} onDelete={() => onDelete(entry)} />
+                sync && (
+                  <CardMenu
+                    entry={entry}
+                    onDelete={() => sync.onDelete(entry)}
+                  />
                 )
               }
               bookmarkCount={<BookmarkCount count={entry.bookmarkCount} />}
