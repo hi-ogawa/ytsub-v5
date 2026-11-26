@@ -13,7 +13,7 @@
 
 ## Key Docs
 
-Read the [product overview](docs/product.md) and the [architecture overview](docs/architecture.md) before implementing features. It also lists the UI surfaces. Read [extension runtime](docs/extension-runtime.md) and [data and sync](docs/data-and-sync.md) before changing extension messaging or storage. [docs/README.md](docs/README.md) indexes the rest of the docs.
+Read the [product overview](docs/product.md) and the [architecture overview](docs/architecture.md) before implementing features. It also lists the UI surfaces. The web app also serves the bookmarks page and the viewer at `/_preview` with static client-only data, so UI can be developed and reviewed on any build without a server, data, or login. Read [extension runtime](docs/extension-runtime.md) and [data and sync](docs/data-and-sync.md) before changing extension messaging or storage. [docs/README.md](docs/README.md) indexes the rest of the docs.
 
 ## Conventions
 
