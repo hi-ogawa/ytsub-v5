@@ -1,4 +1,4 @@
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import {
   EllipsisVertical,
   ExternalLink,
@@ -21,7 +21,6 @@ import {
   DropdownMenuTrigger,
 } from "../../components/ui/dropdown-menu.tsx";
 import { useVideoListSync } from "../../components/use-video-list-sync.ts";
-import type { VideoListEntry } from "../../components/use-video-list-sync.ts";
 import {
   type CaptionStorage,
   videoIndexStore,
@@ -47,19 +46,6 @@ export function ExtensionBookmarksPage({
   const sync = useVideoListSync(storage);
   const [showLogin, setShowLogin] = useState(false);
   const [advancedOpen, setAdvancedOpen] = useState(false);
-  const deleteMutation = useMutation(
-    orpc.videos.deleteVideo.mutationOptions({
-      onSuccess: () => sync.refetch(),
-    }),
-  );
-
-  async function onDelete(entry: VideoListEntry) {
-    if (entry.serverId) {
-      deleteMutation.mutate({ id: entry.serverId });
-    }
-    await storage.deleteVideo(entry.youtubeId);
-  }
-
   const handleLogout = async () => {
     await orpc.auth.logout.call({});
     await chromeStorage.remove(["session-token", "username"]);
@@ -191,7 +177,6 @@ export function ExtensionBookmarksPage({
         <BookmarksPage
           entries={entries}
           videoHref={(id) => `https://www.youtube.com/watch?v=${id}`}
-          onDelete={onDelete}
           sync={sync}
           emptyState={
             <p className="text-sm text-muted-foreground">

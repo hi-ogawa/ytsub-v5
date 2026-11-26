@@ -1,5 +1,5 @@
 import type { InferRouterOutputs } from "@orpc/server";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
 import {
@@ -99,6 +99,25 @@ export function useVideoListSync(storage: CaptionStorage) {
     });
   };
 
+  const deleteMutation = useMutation(orpc.videos.deleteVideo.mutationOptions());
+
+  // Local data goes only after the server delete succeeds, so a failed delete
+  // keeps any unpushed local changes
+  const onDelete = async (entry: VideoListEntry) => {
+    if (entry.serverId) {
+      try {
+        await deleteMutation.mutateAsync({ id: entry.serverId });
+      } catch {
+        // the global mutation toast reports the error
+        return;
+      }
+    }
+    await storage.deleteVideo(entry.youtubeId);
+    if (entry.serverId) {
+      serverQuery.refetch();
+    }
+  };
+
   const isPending =
     authQuery.isLoading || (authenticated && serverQuery.isLoading);
   const entries: VideoListEntry[] = serverQuery.data ?? videoIndex;
@@ -115,6 +134,7 @@ export function useVideoListSync(storage: CaptionStorage) {
     syncing,
     onPull,
     onPush,
+    onDelete,
     refetch: async () => {
       const result = await authQuery.refetch();
       if (result.data?.authenticated) {

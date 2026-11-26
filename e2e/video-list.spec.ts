@@ -43,6 +43,34 @@ test("cancel then confirm delete video", async ({ page }) => {
   await expect(card).not.toBeVisible();
 });
 
+test("a failed server delete keeps the local copy", async ({ page }) => {
+  await setupDb({ seed: true });
+  await login(page);
+
+  const card = page.getByTestId(`video-card-${SEED_YOUTUBE_ID}`);
+  const badge = card.getByTestId("video-sync-badge");
+  await badge.click();
+  await expect(badge).toHaveAttribute("data-sync-status", "synced");
+
+  await page.route("**/api/videos/deleteVideo", (route) =>
+    route.fulfill({
+      status: 500,
+      contentType: "application/json",
+      body: JSON.stringify({ json: { message: "Server error" } }),
+    }),
+  );
+  page.once("dialog", (dialog) => dialog.accept());
+  await card.getByTestId("video-card-menu").click();
+  await page.getByRole("menuitem", { name: /Delete/ }).click();
+
+  await expect(
+    page.locator("[data-sonner-toast][data-type='error']"),
+  ).toBeVisible();
+  // Without the local copy, the card would fall back to the server entry,
+  // which shows a pull badge
+  await expect(badge).toHaveAttribute("data-sync-status", "synced");
+});
+
 test("import JSON file adds video to list with captions and bookmarks", async ({
   page,
 }) => {

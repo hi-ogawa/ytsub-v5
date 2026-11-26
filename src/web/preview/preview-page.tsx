@@ -66,21 +66,14 @@ function ListPreview({
     syncing: new Set(),
     onPull: async () => {},
     onPush: async () => {},
+    onDelete: async (deleted) =>
+      setEntries((current) =>
+        current.filter((entry) => entry.youtubeId !== deleted.youtubeId),
+      ),
     refetch: async () => {},
   };
 
-  return (
-    <BookmarksPage
-      entries={[]}
-      videoHref={videoHref}
-      onDelete={(deleted) =>
-        setEntries((current) =>
-          current.filter((entry) => entry.youtubeId !== deleted.youtubeId),
-        )
-      }
-      sync={sync}
-    />
-  );
+  return <BookmarksPage entries={[]} videoHref={videoHref} sync={sync} />;
 }
 
 function WatchPreview({
