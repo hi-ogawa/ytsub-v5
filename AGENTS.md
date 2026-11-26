@@ -13,7 +13,7 @@
 
 ## Docs
 
-[docs/README.md](docs/README.md) indexes the docs. The web app also serves the bookmarks page and the viewer at `/_preview` with static client-only data, so UI can be developed and reviewed on any build without a server, data, or login.
+[docs/README.md](docs/README.md) indexes the docs, and [docs/AGENTS.md](docs/AGENTS.md) has the conventions for writing them.
 
 ## Conventions
 
@@ -38,11 +38,11 @@
 - Arguments are shaped so a call site reads clearly without the signature. A value is passed positionally only when the operation or the value's type makes its role obvious. Otherwise, an options object names each value.
 - Every `switch` case body has braces (`case "x": { ... }`, `default: { ... }`).
 - Docs, code comments, commit messages, and PR descriptions read naturally for a first-time reader, without the awkward or defensive tone that builds up when text is revised alongside code changes.
-- Docs follow the writing conventions in [docs/AGENTS.md](docs/AGENTS.md).
 
 ## Tests
 
 - CI runs the full e2e suite on every push to a PR. `pnpm test-e2e` builds the extension and the web app and runs every spec, so a local run is a quick smoke check, such as one targeted spec with `pnpm test-e2e "<file>" -g "<pattern>"`.
+- The web app serves the bookmarks page and the viewer at `/_preview` with static client-only data, so a UI change can be seen on any build without a server, data, or login.
 - A new test belongs where the repo already tests that kind of code and a regression would be visible to a user. Internal shapes, such as which fields saved data carries, aren't tested when a regression would break nothing.
 - When an existing test fails, its expectation is checked from first principles first. The implementation doesn't bend to keep an incorrect test passing.
 - E2E timeouts come from measurement. The relevant wait is measured with `createCheckpoint()` from `e2e/helper.ts`. Playwright's default timeout is preferred when it comfortably covers the measured duration, and a custom timeout leaves reasonable headroom, with the measured duration noted beside it.
