@@ -44,7 +44,7 @@ Read the [product overview](docs/product.md) and the [architecture overview](doc
 ## Tests
 
 - Leave the full e2e suite to CI, which runs it on every push to a PR, because `pnpm test-e2e` builds the extension and the web app and runs every spec. Locally, run only a quick smoke check, such as one targeted spec with `pnpm test-e2e "<file>" -g "<pattern>"`.
-- To see a UI change, such as for screenshots, open `/_preview` on the PR's Preview deployment, whose URL Workers Builds comments on the PR. It shows the bookmarks page and the viewer with static client-only data and needs no login.
+- To see a UI change, such as for screenshots, open `/_preview`. It shows the bookmarks page and the viewer with static client-only data, with no server data or login, so any build shows it: locally from a Playwright script against `pnpm build && pnpm preview`, as the e2e config serves it, or on the PR's Preview deployment.
 - Before adding a test, check that the repo tests that kind of code and that a regression would be visible to a user. Don't test internal shapes, such as which fields saved data carries, when a regression would break nothing.
 - When an existing test fails, first verify from first principles whether its expectation is correct. Do not compensate in the implementation merely to preserve an incorrect test.
 - Before adding or increasing an E2E timeout, measure the relevant wait with `createCheckpoint()` from `e2e/helper.ts`. Prefer Playwright's default timeout when it comfortably covers the measured duration. If a custom timeout is needed, allow reasonable headroom and document the measured duration beside it.
