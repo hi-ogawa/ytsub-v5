@@ -11,9 +11,9 @@
 | `pnpm build-ext`        | Builds the Chrome extension                                                                        |
 | `pnpm test-youtube`     | Runs the subtitle extraction tests against real YouTube pages                                      |
 
-## Key Docs
+## Docs
 
-The [product overview](docs/product.md) and the [architecture overview](docs/architecture.md) describe what the app does and how it is built, including its UI surfaces, and are the starting point for feature work. The web app also serves the bookmarks page and the viewer at `/_preview` with static client-only data, so UI can be developed and reviewed on any build without a server, data, or login. [Extension runtime](docs/extension-runtime.md) and [data and sync](docs/data-and-sync.md) cover extension messaging and storage. [docs/README.md](docs/README.md) indexes the rest of the docs.
+[docs/README.md](docs/README.md) indexes the docs. The web app also serves the bookmarks page and the viewer at `/_preview` with static client-only data, so UI can be developed and reviewed on any build without a server, data, or login.
 
 ## Conventions
 
