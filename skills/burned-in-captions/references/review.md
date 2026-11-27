@@ -1,14 +1,15 @@
 # Review
 
-In a review, a person goes over a finished run's doubts on a local page, which shows the picture and plays the speech at each one. It finds what the skill should do better, and fixes the track along the way.
+In a review, a person goes over a finished run's doubts on a local page, which shows the picture and plays the speech at each one. It finds what the skill should do better, and fixes the transcript along the way.
 
 ## Doubts
 
 Collect the run's doubts into `doubts.json`, both the ones it left open and the ones it settled, because a doubt settled wrong shows a gap in the steps:
 
 - reads with `[?]` or a `note`, from the readers' output, with the judgment the report gives for each
-- omitted captions, from `captions.json`
-- ASR lines that no caption matches, from the ASR against the track, with what the report says about them
+- omitted captions, from `transcript.json`
+- ASR lines that no caption matches, from the ASR against the transcript, with what the report says about them
+- `asr` entries whose fixes are guesses, from the report
 - judgment calls on `kind`, corrections, and doubts left open, from the report
 
 Each item has a time range, a group, and a one-line reason:
@@ -44,7 +45,7 @@ uv run scripts/review.py video.webm --video-id <youtube-id> --asr ko.json3 --out
 uv run python -m http.server 8765 --bind 127.0.0.1 --directory review
 ```
 
-Give the user the URL. For each item, the page plays the range with sound and the track's captions drawn over the player, shows frames with the caption boxes, and lists the track next to the ASR. The user marks each item and pastes back the text from "Copy review".
+Give the user the URL. For each item, the page plays the range with sound and the transcript's captions drawn over the player, shows frames with the caption boxes, and lists the transcript next to the ASR. The user marks each item and pastes back the text from "Copy review".
 
 ## Act on the review
 
