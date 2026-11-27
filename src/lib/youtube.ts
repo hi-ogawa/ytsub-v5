@@ -43,10 +43,11 @@ export function getLangNameFromVssId(vssId: string): string {
 export function getTrackSourceFromVssId(
   vssId: string,
 ): "manual" | "asr" | "translated" {
-  if (vssId.includes(".t.")) {
-    return "translated";
-  }
-  return vssId.startsWith("a.") ? "asr" : "manual";
+  return vssId.includes(".t.")
+    ? "translated"
+    : vssId.startsWith("a.")
+      ? "asr"
+      : "manual";
 }
 
 export function getTrackLabel(track: YouTubeCaptionTrack): string {
