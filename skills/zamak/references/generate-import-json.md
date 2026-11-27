@@ -200,7 +200,7 @@ The ASR Korean and the English cues don't line up. The ASR cuts its cues at fixe
 
 So the Korean text is fixed first, using the English and the other manual tracks as context. Then the fixed text is binned into the English cues, one row per cue. A row's Korean is what is said during its English line, and the row takes that cue's `begin` and `end`. This is the timing for most rows.
 
-Sometimes a binned row's English timing is off from when its line was spoken. The ASR words show this, because each one keeps the start time it has against the audio. So the ASR start time of a row's first word tells when the line actually begins. When that word starts clearly before the English `begin`, the word's start time is the better `begin` for the row. The row keeps its English `end`, and the previous row's `end` moves back to the new `begin`, because rows must not overlap.
+Sometimes a binned row's English timing is off from when its line was spoken. The ASR words show this, because each one keeps the start time it has against the audio. So the ASR start time of a row's first word tells when the line actually begins. When that word starts 0.5s or more before the English `begin`, the word's start time is the better `begin` for the row. The row keeps its English `end`, and the previous row's `end` moves back to the new `begin`, because rows must not overlap.
 
 Finding a row's first word among the ASR words is not always direct:
 
