@@ -1,11 +1,26 @@
-import { type YouTubeCaptionTrack, getLangName } from "../lib/youtube.ts";
+import {
+  type YouTubeCaptionTrack,
+  getLangName,
+  langFromVssId,
+} from "../lib/youtube.ts";
 
 function trackLabel(track: YouTubeCaptionTrack): string {
   if (track.vssId.includes(".t.")) {
-    return `${track.languageCode} (translated)`;
+    return labelFromVssId(track.vssId);
   }
   const kind = track.kind === "asr" ? " (auto)" : "";
   return `${track.name} [${track.languageCode}]${kind}`;
+}
+
+// Labels a track the select knows only by id, using the language name in
+// place of YouTube's track name. An id starting with "a." is auto-generated.
+function labelFromVssId(vssId: string): string {
+  const code = langFromVssId(vssId);
+  if (vssId.includes(".t.")) {
+    return `${code} (translated)`;
+  }
+  const kind = vssId.startsWith("a.") ? " (auto)" : "";
+  return `${getLangName(vssId)} [${code}]${kind}`;
 }
 
 export function TrackPicker({
@@ -21,8 +36,8 @@ export function TrackPicker({
   selectedVssId2?: string;
   onSelect: (vssId1?: string, vssId2?: string) => void;
   disabled?: boolean;
-  // While the tracks load, each select shows only its selected track, by
-  // language name, so the header keeps its shape until the full list arrives.
+  // While the tracks load, each select shows only its selected track, so the
+  // header keeps its shape until the full list arrives.
   loading?: boolean;
 }) {
   const selectDisabled = disabled || loading;
@@ -76,13 +91,13 @@ function TrackOptions({
 }) {
   const listedTracks = loading ? [] : tracks;
   // A session can hold a track the list lacks, such as a translation into a
-  // language the list doesn't build, so the select shows it by language name.
+  // language the list doesn't build, so the select adds it.
   const showSelected =
     selectedVssId && !listedTracks.some((t) => t.vssId === selectedVssId);
   return (
     <>
       {showSelected && (
-        <option value={selectedVssId}>{getLangName(selectedVssId)}</option>
+        <option value={selectedVssId}>{labelFromVssId(selectedVssId)}</option>
       )}
       {listedTracks.map((t) => (
         <option key={t.vssId} value={t.vssId}>
