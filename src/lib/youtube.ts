@@ -23,7 +23,7 @@ export interface YouTubeCaptionTrack {
   vssId: string;
 }
 
-export function langFromVssId(vssId: string): string {
+export function getLangCode(vssId: string): string {
   return vssId.split(".").pop()!;
 }
 
@@ -35,7 +35,7 @@ const displayNames = new Intl.DisplayNames(["en"], {
 });
 
 export function getLangName(vssId: string): string {
-  const code = langFromVssId(vssId);
+  const code = getLangCode(vssId);
   return displayNames.of(code) ?? code;
 }
 

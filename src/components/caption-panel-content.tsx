@@ -7,7 +7,7 @@ import {
   sortBookmarks,
 } from "../lib/caption-panel-runtime.ts";
 import type { ExtensionBookmark } from "../lib/extension-bookmarks.ts";
-import { langFromVssId } from "../lib/youtube.ts";
+import { getLangCode } from "../lib/youtube.ts";
 import {
   type BookmarksListHandle,
   ExtensionBookmarksList,
@@ -39,8 +39,8 @@ export function CaptionPanelContent({
     [session.bookmarks],
   );
   const languages: [string, string] = [
-    langFromVssId(session.vssId1),
-    langFromVssId(session.vssId2),
+    getLangCode(session.vssId1),
+    getLangCode(session.vssId2),
   ];
 
   function scrollToBookmarkCaption(bookmark?: ExtensionBookmark) {

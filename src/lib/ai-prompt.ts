@@ -4,7 +4,7 @@ import type { ExtensionBookmark } from "./extension-bookmarks.ts";
 import {
   type YouTubeCaptionTrack,
   getTrackSource,
-  langFromVssId,
+  getLangCode,
 } from "./youtube.ts";
 
 export const AI_TASKS = [
@@ -80,7 +80,7 @@ function formatTracks({
   const vssIds = [...new Set([vssId1, vssId2, ...tracks.map((t) => t.vssId)])];
   return vssIds
     .map((vssId) => {
-      const lang = langFromVssId(vssId);
+      const lang = getLangCode(vssId);
       const source = {
         manual: "manual",
         asr: "ASR",
