@@ -1,11 +1,11 @@
 ---
 name: burned-in-captions
-description: Read the captions burned into a video's picture into a timed caption track. Use when the user asks to read a video's burned-in captions (자막), such as for Fix & Align ASR in the Zamak skill.
+description: Read the captions burned into a video's picture and combine them with the ASR into a timed Korean transcript of every spoken line, plus the editor's other on-screen text. Use when the user asks to read a video's burned-in captions (자막).
 ---
 
 # Burned-In Captions
 
-Many Korean variety shows, talk shows, and vlogs burn captions into the picture. This skill reads them into a timed track. Local scripts find where the picture changes, you decide which frames to read, and readers transcribe them with vision.
+Many Korean variety shows, talk shows, and vlogs burn captions into the picture. This skill turns them and the video's ASR into one timed transcript. The two sources guide each other: the ASR helps read the picture, and the picture fixes what the ASR misheard. Along the way, the transcript picks up the editor's text that nobody says. Local scripts find where the picture changes, you decide which frames to read, and readers transcribe them with vision.
 
 You need a shell with `ffmpeg`, `uv`, and `yt-dlp`. Work in a folder of your own, outside this skill, and run the scripts with `uv run --project`, which takes their dependencies from this skill's `pyproject.toml`. With `S` set to this skill's folder:
 
@@ -17,9 +17,9 @@ The commands below shorten this to `uv run scripts/...`. Outputs go to the folde
 
 ## Input and Output
 
-**Input:** a video, as a YouTube ID or a file. Optionally, the video's ASR or other subtitle tracks, which help plan reads and check them, and a list of time ranges to read again (see [Reading Ranges Again](#reading-ranges-again)).
+**Input:** a video, as a YouTube ID or a file, and its Korean ASR, which step 1 fetches when you weren't given it. Optionally, other subtitle tracks, which help plan reads and check them, and a list of time ranges to read again (see [Reading Ranges Again](#reading-ranges-again)).
 
-**Output:** `captions.json`, the track that Fix & Align ASR in the [Zamak skill](../zamak/SKILL.md) takes. It is a list of captions in time order:
+**Output:** `transcript.json`, a list of entries in time order:
 
 ```json
 {
@@ -27,14 +27,16 @@ The commands below shorten this to `uv run scripts/...`. Outputs go to the folde
   "end": 14.25,
   "text": "진짜 몰랐어요??",
   "kind": "speech",
+  "source": "picture",
   "position": [470, 600, 340, 58]
 }
 ```
 
-- `kind` is `speech` for words someone says, and `other` for anything else the editor put on screen, whatever its frame. Fix & Align ASR uses a `speech` caption's text in place of the ASR's line at the same time, and turns `other` captions into rows as [Scenario G](../zamak/references/generate-import-json.md#use-burned-in-captions-scenario-g) describes. So tag a caption `speech` when someone in the video says its words aloud at that time, and use the ASR at that time to check. That includes a letter someone reads aloud, and a small popup beside a second speaker who talks over the first. Text filmed in the scene, such as signs, isn't a caption, so leave it out.
-- `position` is the caption's box `[x, y, w, h]` in the 1280×720 frame.
-- `text` is exactly what the picture shows, including nonstandard spelling, censored words such as ㅅㄲ, and spelled-out laughter.
-- `omitted` is a short reason, set on a caption whose text a reader declined to reproduce, such as copyrighted text. Its `text` is empty, and it keeps its time and position, so a user can fill it in by hand. Text that is only hard to read is not omitted, so mark it with `[?]` or read it again. Never put a placeholder label in `text` instead, because Fix & Align ASR would use the label as the caption's text.
+- `kind` is `speech` for words someone says at that time, and `other` for anything else the editor put on screen, whatever its frame. The ASR at that time confirms speech. Speech includes a letter someone reads aloud, and a small popup beside a second speaker who talks over the first. Text filmed in the scene, such as signs, is neither, so leave it out. Together, the `speech` entries cover every line someone says.
+- `source` is `picture` for an entry read from a caption, and `asr` for a spoken line that no caption shows, taken from the ASR and fixed as [step 6](#6-fill-in-the-speech-from-the-asr) describes. Every `other` entry comes from the picture.
+- `text` of a `picture` entry is exactly what the picture shows, including nonstandard spelling, censored words such as ㅅㄲ, and spelled-out laughter. Of an `asr` entry, it is what is said.
+- `position` is the caption's box `[x, y, w, h]` in the 1280×720 frame, on `picture` entries only.
+- `omitted` is a short reason, set on a caption whose text a reader declined to reproduce, such as copyrighted text. Its `text` is empty, and it keeps its time and position, so the transcript still shows that a caption was on screen there, and the report and a review can find the gap. When it is speech, step 6 still adds the spoken line from the ASR. Text that is only hard to read is not omitted, so mark it with `{?}` or read it again. Never put a placeholder label in `text` instead, because the transcript would then hold words that are neither on screen nor said.
 
 ## Read the Picture
 
@@ -66,7 +68,15 @@ yt-dlp -f 247 --download-sections '*600-780' --force-keyframes-at-cuts -o 'video
 
 The file starts at 0 s, so add the section's start to every time the scripts print or take. `--force-keyframes-at-cuts` makes the cut land exactly on the start, which a plain cut misses by up to a few seconds.
 
-If you weren't given the subtitle tracks, fetch them as [Fetch and Assess](../zamak/references/generate-import-json.md#fetch-and-assess) describes, because planning checks against them.
+If you weren't given the ASR, fetch it, because planning, checking, and step 6 all use it. Read the track list from the video's metadata, then download the track:
+
+```bash
+yt-dlp -J --skip-download <youtube-id> > yt.json
+jq -r '.automatic_captions | keys[] | select(test("^ko"))' yt.json
+yt-dlp --load-info-json yt.json --write-auto-sub --sub-lang ko-orig --sub-format json3 --skip-download -o asr
+```
+
+The automatic captions can list the Korean ASR as `ko-orig` next to `ko`, and `ko` is then a machine translation of another track, so take `ko-orig` when it is listed, and `ko` otherwise. `--load-info-json` reuses `yt.json`, so the download sends YouTube no second page request.
 
 Look at one sheet of 20 frames spread across the whole video:
 
@@ -76,7 +86,7 @@ uv run scripts/frames.py video.webm --spread 20 --out check/
 
 Decide whether the video has burned-in captions, and what style they are, such as white text with a dark outline, or text on a dark box. Note also how easily the captions read at this tile size, which guides the tile size for reading in step 4.
 
-- With no captions, return an empty track and say so.
+- With no captions, say so. The transcript is then the fixed ASR alone, from step 6.
 - If a channel record is available and has notes on this channel, use them.
 - If the captions have no dark around them, such as dark text on a light bubble, stop and report it. The scripts can't see that style, so it needs a code change.
 
@@ -135,11 +145,11 @@ If the captions keep to a band and look small in full-frame tiles, also give rea
 
 Give the sheets to reader subagents, with enough sheets per reader that its fixed overhead is small next to its reading. Start each reader's batch with the last tile of the batch before it, so a reader can link a caption across the boundary. Use the strongest model available: a cheaper one added a fluent ending that wasn't on screen. Give each reader the ASR for its time range if you have it, with this instruction:
 
-> Transcribe every caption in each frame exactly as shown, including nonstandard spelling, censored words, spelled-out laughter, and emoticons such as ㅠㅠ. The ASR is there to help you understand what is said. Where a caption differs from it, write what is on screen, never the ASR's words or standard Korean. Mark unclear or partial text with `[?]`.
+> Transcribe every caption in each frame exactly as shown, including nonstandard spelling, censored words, spelled-out laughter, and emoticons such as ㅠㅠ. The ASR is there to help you understand what is said. Where a caption differs from it, write what is on screen, never the ASR's words or standard Korean. Mark unclear or partial text with `{?}`.
 >
 > Tag each caption `speech` if it is words someone says, and `other` for anything else the editor put on screen. Words someone says can show outside the main dialogue line too, such as a small caption beside a second speaker who talks over the first, so tag those `speech` as well. Skip text filmed in the scene, such as signs, and list what you skipped in the tile's `skipped`, with the reason.
 >
-> Add a `note` to a caption, in your own words, whenever something about it could change how it goes into the track, including how it relates to other captions or to the speech. For example, the caption isn't fully shown in this frame, it is the same caption as in another tile (give that tile's time), its text is too small or unclear to read at this size, it comes from footage other than this video's own editing, the dialogue line is reading its items aloud one by one, or it is a dense graphic such as a card of reviews and ratings. Most captions need no note.
+> Add a `note` to a caption, in your own words, whenever something about it could change how it goes into the transcript, including how it relates to other captions or to the speech. For example, the caption isn't fully shown in this frame, it is the same caption as in another tile (give that tile's time), its text is too small or unclear to read at this size, it comes from footage other than this video's own editing, the dialogue line is reading its items aloud one by one, or it is a dense graphic such as a card of reviews and ratings. Most captions need no note.
 >
 > If you won't reproduce a caption's text, such as copyrighted text, return the caption with empty text and a short reason in `omitted`, rather than a placeholder in `text`.
 >
@@ -156,12 +166,12 @@ Turn the reads into captions:
 - Identical text read in neighboring runs becomes one caption.
 - A caption with `omitted` keeps its run's time and position like any other, and neighboring ones with the same reason in the same place become one.
 
-Reads with a `note` or a `[?]` need judgment. Judge each one together with the reads of the runs on either side: merge it into a neighbor, keep it as its own caption, drop it, or read it again from a later step or a closer crop, with a one-line reason. Look at the reads in full and in time order, so a caption that stays on screen sits next to the captions that change under it.
+Reads with a `note` or a `{?}` need judgment. Judge each one together with the reads of the runs on either side: merge it into a neighbor, keep it as its own caption, drop it, or read it again from a later step or a closer crop, with a one-line reason. Look at the reads in full and in time order, so a caption that stays on screen sits next to the captions that change under it.
 
 - A read of a caption that isn't fully shown merges into the read of the same caption once it settles.
 - Text too small or unclear to read gets read again from a closer crop.
-- Text from other footage stays only if it belongs in this video's track.
-- A graphic that stays on screen while the dialogue line reads its items aloud one by one keeps its own `other` caption, because the track records the picture. The speech captions carry its content, so Fix & Align ASR leaves it out of the rows.
+- Text from other footage stays only if it belongs in this video's transcript.
+- A graphic that stays on screen while the dialogue line reads its items aloud one by one keeps its own `other` caption, because the transcript records the picture, and the speech captions carry the same items as speech.
 - A dense graphic, such as a card with three reviews, star ratings, and a summary, isn't worth a caption for each element. Drop it, and list it in the report. A letter or memo read aloud isn't dense in this sense, because its text is the speech.
 - The note is the reader's own description of what it saw, so let it decide over how similar two texts look, because two different lines can differ by a single word. Fall back to text similarity only where neither a note nor identical text links two reads.
 
@@ -186,13 +196,24 @@ uv run scripts/frames.py video.webm --at 12.25 12.5 --crop 160,580,960,110 --out
 
 Give the extra frames to a new reader, together with the frames already read from the same run and the runs next to it, so it can tell a reveal from a swap.
 
-### 6. Record
+### 6. Fill in the speech from the ASR
+
+Once the corrections settle, the ASR lines that no caption matches are speech the editors didn't caption, which the frames have confirmed. Add each one as a `speech` entry with `source` set to `asr`:
+
+- Take its begin and end from the ASR's words. Split a long stretch at sentence ends, so each entry holds about one line.
+- Fix the text as for any ASR: misheard syllables, spacing, words cut off at a cue boundary, and `>>` speaker markers. Leave out annotations such as `[웃음]`, and drop an entry that is only noise.
+- Use the captions as evidence. They spell this video's names, slang, and recurring words, so settle each such word once and spell it the same way in every entry. Leave a fix out when nothing supports it, and list the guesses in the report.
+- Where an `other` caption stands in for a line someone says, such as editor text over the speaker, keep the caption and add the spoken line from the ASR too.
+
+An omitted `speech` caption shows a line without its text, so fill its range from the ASR like a line with no caption, and keep the omitted entry next to it. Elsewhere, an `asr` entry doesn't overlap a `picture` speech entry, so trim it where they meet. A stretch with no captions at all, such as an outtake after the edited part, becomes `asr` entries throughout.
+
+### 7. Record
 
 If a channel record is available, add anything new about the channel to it: its style, how closely its captions follow the speech, what went wrong, and the windows you checked. Add a feature signature to [the catalogue](references/catalogue.md) only when it took real effort to decode. Tell the user what you changed, because the next video on the channel relies on it.
 
 ## Reading Ranges Again
 
-The user or the Zamak skill can pass time ranges where it suspects a miss, such as Fix & Align ASR passing the times of ASR lines that no caption matches. Read every other step in each range, put the new reads through [Assemble and correct](#5-assemble-and-correct), and add the new captions to the track.
+The user can pass time ranges where they suspect a miss, such as a stretch where the transcript lacks speech they hear. Read every other step in each range, put the new reads through [Assemble and correct](#5-assemble-and-correct), and add the new captions to the track.
 
 ## Reviewing a Run
 

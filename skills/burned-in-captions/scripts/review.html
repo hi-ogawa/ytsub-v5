@@ -23,7 +23,7 @@
       [hidden] {
         display: none !important;
       }
-      /* Layout: one review column; each item is frames on top, track vs ASR side by side, verdict bar at the foot */
+      /* Layout: one review column; each item is frames on top, transcript vs ASR side by side, verdict bar at the foot */
       :root {
         --bg: #f4f5f3;
         --surface: #ffffff;
@@ -640,14 +640,14 @@
       <header>
         <h1>Burned-in captions review <span class="id" id="vid"></span></h1>
         <p class="lede">
-          These are the parts of <code>captions.json</code> the run wasn't sure
-          of. Each item shows still frames with the track's caption boxes drawn
-          on, the captions in the track for that range, and the auto-generated
-          ASR. Play, or the card's time range, plays the range with a second
-          either side in the YouTube player at the bottom right, with the
-          track's captions overlaid. Any other time seeks the player there
-          without starting it. Mark each one and copy the review back into the
-          session.
+          These are the parts of <code>transcript.json</code> the run wasn't
+          sure of. Each item shows still frames with the transcript's caption
+          boxes drawn on, the transcript's entries for that range, and the
+          auto-generated ASR. Play, or the card's time range, plays the range
+          with a second either side in the YouTube player at the bottom right,
+          with the transcript's captions overlaid. Any other time seeks the
+          player there without starting it. Mark each one and copy the review
+          back into the session.
         </p>
         <div class="stats" id="stats"></div>
       </header>
@@ -714,7 +714,7 @@
           /[&<>"]/g,
           (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c],
         );
-      const markQ = (s) => esc(s).replace(/\[\?\]/g, "<mark>[?]</mark>");
+      const markQ = (s) => esc(s).replace(/\{\?\}/g, "<mark>{?}</mark>");
       const yt = (t) =>
         `https://www.youtube.com/watch?v=${VIDEO}&t=${Math.max(0, Math.floor(t) - 1)}s`;
 
@@ -755,6 +755,7 @@
               (c) => c.begin <= f.t && c.end > f.t,
             );
             const boxes = vis
+              .filter((c) => c.pos)
               .map((c) => {
                 const [x, y, w, h] = c.pos;
                 return `<div class="box" style="left:${x / 12.8}%;top:${y / 7.2}%;width:${w / 12.8}%;height:${h / 7.2}%"><span>${c.kind}</span></div>`;
@@ -764,8 +765,8 @@
           })
           .join("");
         const caps = it.captions.length
-          ? `<ul class="lines">${it.captions.map((c) => `<li><button type="button" class="t seek" data-seek="${c.begin}">${fmt(c.begin)}–${fmt(c.end)}</button><span class="chip ${c.kind}">${c.kind}</span><span class="tx">${markQ(c.text)}</span></li>`).join("")}</ul>`
-          : '<span class="empty">No captions in the track here.</span>';
+          ? `<ul class="lines">${it.captions.map((c) => `<li><button type="button" class="t seek" data-seek="${c.begin}">${fmt(c.begin)}–${fmt(c.end)}</button><span class="chip ${c.kind}">${c.source === "asr" ? `${c.kind} · asr` : c.kind}</span><span class="tx">${markQ(c.text)}</span></li>`).join("")}</ul>`
+          : '<span class="empty">Nothing in the transcript here.</span>';
         const asr = it.asr.length
           ? `<ul class="lines asr">${it.asr.map((a) => `<li><button type="button" class="t seek" data-seek="${a.begin}">${fmt(a.begin)}–${fmt(a.end)}</button><span class="tx">${esc(a.text)}</span></li>`).join("")}</ul>`
           : '<span class="empty">No ASR lines here.</span>';
@@ -774,7 +775,7 @@
         el.innerHTML = `
     <div class="ihead"><button class="range" type="button" data-act="play" title="Play this range">${fmt(it.begin)}–${fmt(it.end)}</button><a class="ytlink" href="${yt(it.begin)}" target="_blank" rel="noopener">↗ YouTube</a><span class="inote">${esc(it.reason)}</span><span class="playctl"><button class="btn" type="button" data-act="play" title="Plays ${fmt(Math.max(0, it.begin - 1))}–${fmt(it.end + 1)}, a second either side">▶ Play</button><button class="btn ghost" type="button" data-act="loop" aria-pressed="false">Loop</button></span></div>
     <div class="frames">${frames}</div>
-    <div class="cols"><div class="col"><h3>In the track</h3>${caps}</div><div class="col"><h3>ASR</h3>${asr}</div></div>
+    <div class="cols"><div class="col"><h3>In the transcript</h3>${caps}</div><div class="col"><h3>ASR</h3>${asr}</div></div>
     <div class="verdict">
       <div class="seg" role="group" aria-label="Verdict">
         <button type="button" data-v="ok" aria-pressed="${st.v === "ok"}">Looks right</button>
@@ -842,7 +843,7 @@
         );
 
       function reviewText() {
-        const out = [`Review of ${VIDEO} captions.json`, ""];
+        const out = [`Review of ${VIDEO} transcript.json`, ""];
         for (const g of DATA.groups) {
           const rows = DATA.items.filter(
             (i) =>
@@ -1002,6 +1003,7 @@
         if (key === shown) return;
         shown = key;
         document.getElementById("live").innerHTML = vis
+          .filter((c) => c.pos)
           .map((c) => {
             const [x, y, w, h] = c.pos;
             return `<div class="box" style="left:${x / 12.8}%;top:${y / 7.2}%;width:${w / 12.8}%;height:${h / 7.2}%"><span>${c.kind}</span></div>`;

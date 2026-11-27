@@ -3,8 +3,8 @@ import type { MergedCaption } from "./caption-merge.ts";
 import type { ExtensionBookmark } from "./extension-bookmarks.ts";
 import {
   type YouTubeCaptionTrack,
-  getTrackSource,
-  langFromVssId,
+  getTrackSourceFromVssId,
+  getLangCodeFromVssId,
 } from "./youtube.ts";
 
 export const AI_TASKS = [
@@ -80,12 +80,8 @@ function formatTracks({
   const vssIds = [...new Set([vssId1, vssId2, ...tracks.map((t) => t.vssId)])];
   return vssIds
     .map((vssId) => {
-      const lang = langFromVssId(vssId);
-      const source = {
-        manual: "manual",
-        asr: "ASR",
-        translated: "translated",
-      }[getTrackSource(vssId)];
+      const lang = getLangCodeFromVssId(vssId);
+      const source = getTrackSourceFromVssId(vssId);
       const use =
         vssId === vssId1
           ? ", current text1"
