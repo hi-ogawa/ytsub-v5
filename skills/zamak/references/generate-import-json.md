@@ -120,15 +120,15 @@ A json3 file has an `events` array. An event's text is its `segs[].utf8` joined 
 
 After fetching and parsing, determine which scenario applies:
 
-| Scenario        | Ko source | En source | Approach                                          |
-| --------------- | --------- | --------- | ------------------------------------------------- |
-| A: Both manual  | manual    | manual    | Zip if aligned; otherwise LLM audit               |
-| B: Ko auto + En | auto      | manual    | Fix ko text using en as context, split rows by en |
-| C: Ko manual    | manual    | —         | LLM translates ko → en                            |
-| D: Ko auto only | auto      | —         | Fix ko text, then LLM translate                   |
-| E: Neither      | —         | —         | Stop                                              |
-| F: Lyrics + En  | lyrics    | manual    | Pair lyric lines with en cues, audit en           |
-| G: Burned-in    | picture   | either    | Captions are the ko text where they render speech |
+| Scenario        | Ko source | En source | Approach                                             |
+| --------------- | --------- | --------- | ---------------------------------------------------- |
+| A: Both manual  | manual    | manual    | Zip if aligned; otherwise LLM audit                  |
+| B: Ko auto + En | auto      | manual    | Fix ko text using en as context, bin it into en rows |
+| C: Ko manual    | manual    | —         | LLM translates ko → en                               |
+| D: Ko auto only | auto      | —         | Fix ko text, then LLM translate                      |
+| E: Neither      | —         | —         | Stop                                                 |
+| F: Lyrics + En  | lyrics    | manual    | Pair lyric lines with en cues, audit en              |
+| G: Burned-in    | picture   | either    | Captions are the ko text where they render speech    |
 
 For a song with official lyrics, use Scenario F even when a Korean track exists, because fixing auto-generated lyrics only guesses at what the lyrics already say. If auto-generated quality looks unsalvageable and there are no official lyrics, flag it, because a different video may be the better choice.
 
@@ -146,14 +146,14 @@ When both tracks are manual, they are often already one to one. If their cue cou
 
 Use the parsed cues (`ko.json`, `en.json`) as reference material and produce `captions.json` directly. This is a translation auditing task:
 
-| Scenario        | Ko source | En source | What to do                                          |
-| --------------- | --------- | --------- | --------------------------------------------------- |
-| A: Both manual  | manual    | manual    | Audit en translations against ko, fix misalignments |
-| B: Ko auto + En | auto      | manual    | Fix ko text using en as context, split rows by en   |
-| C: Ko manual    | manual    | —         | Translate ko → en                                   |
-| D: Ko auto only | auto      | —         | Fix ko text, then translate to en                   |
+| Scenario        | Ko source | En source | What to do                                           |
+| --------------- | --------- | --------- | ---------------------------------------------------- |
+| A: Both manual  | manual    | manual    | Audit en translations against ko, fix misalignments  |
+| B: Ko auto + En | auto      | manual    | Fix ko text using en as context, bin it into en rows |
+| C: Ko manual    | manual    | —         | Translate ko → en                                    |
+| D: Ko auto only | auto      | —         | Fix ko text, then translate to en                    |
 
-Use Korean timestamps as the basis for segmentation, except in scenario B, where the English cues split the rows and the ASR word timings can correct their start times.
+Use Korean timestamps as the basis for segmentation, except in scenario B, where the English cues set the rows and ASR word timings can correct a late row start.
 
 When fixing auto-generated Korean, watch for:
 
@@ -168,11 +168,13 @@ Watch also for a word the ASR doesn't know, because it can come back across the 
 
 On variety shows, the English track can mix speech with the editor's on-screen captions, such as `[...]` notes, name cards, title cards, and the lyrics of background music. The ASR can also miss short lines entirely, so some English rows have no Korean speech. On one such video, dropping the rows with no Korean speech worked well.
 
-### ASR Word Timings (Scenario B)
+### Bin the Fixed Korean Into English Rows (Scenario B)
 
-The two tracks are good at different jobs. A translator chose where each English line breaks, so one English cue usually holds one thought, while the ASR cuts its cues at fixed lengths in the middle of sentences. But the ASR times each word against the audio, while the English cues are placed by hand. English cues tend to start a little after the speech, and some start seconds late, such as a cue that waits for an editor caption or a scene cut.
+The ASR Korean and the English cues don't line up. The ASR cuts its cues at fixed lengths in the middle of sentences, while a translator chose where each English line breaks, so one English cue usually holds one thought. So once the Korean text is fixed, bin it into the English cues, one row per cue, and start each row at its English cue's time.
 
-So the ASR word timings can correct the start of a row whose English cue is late. In the ASR json3, each seg carries `tOffsetMs`, its offset from the event's `tStartMs`, which the first seg leaves out because it is 0, so a word starts at `tStartMs + tOffsetMs`. Finding a row's first word among the ASR words near its English start gives the time the speech begins.
+The ASR words keep their own times when they move into rows, so each row also knows when its first Korean word was spoken. The ASR times each word against the audio, while the English cues are placed by hand. Usually the first word comes just before the English cue starts, and the English time is fine. When it comes clearly earlier, the English cue is late, such as a cue that waits for an editor caption or a scene cut. That row can start at the ASR word time instead.
+
+In the ASR json3, each seg carries `tOffsetMs`, its offset from the event's `tStartMs`, which the first seg leaves out because it is 0, so a word starts at `tStartMs + tOffsetMs`.
 
 Matching rows to ASR words has pitfalls:
 
