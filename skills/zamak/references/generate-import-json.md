@@ -245,7 +245,7 @@ An `other` entry has Korean that only the picture has, and a learner can pick fr
 
 Make each row read as what it is. A `speech` row holds only what is said, and anything else is in brackets so it doesn't read as a spoken line. Leave out rows a learner gains nothing from, and settle each case by these two rules.
 
-Pair the rows with English as in Scenario B when there is a manual English track, or translate each row into English for `text2` as in Scenario D when there isn't.
+The rows keep the transcript's lines and times, because those come from the picture. When there is a manual English track, give each row the English of the cues that overlap it, and audit it against the Korean as in Scenario A. Where a cue spans two rows, split its English between them or translate the rows yourself. When there is no English track, translate each row into English for `text2` as in Scenario D.
 
 ### Output Format
 
