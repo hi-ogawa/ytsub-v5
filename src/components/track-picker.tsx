@@ -2,10 +2,9 @@ import { type YouTubeCaptionTrack, getLangName } from "../lib/youtube.ts";
 
 function trackLabel(track: YouTubeCaptionTrack): string {
   if (track.vssId.includes(".t.")) {
-    return `${track.languageCode} (translated)`;
+    return `${getLangName(track.vssId)} (translated)`;
   }
-  const kind = track.kind === "asr" ? " (auto)" : "";
-  return `${track.name} [${track.languageCode}]${kind}`;
+  return track.name;
 }
 
 export function TrackPicker({

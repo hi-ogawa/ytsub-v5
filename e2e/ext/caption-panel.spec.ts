@@ -99,6 +99,14 @@ test("track selection: default empty, select tracks, switch language", async ({
   await expect(selects.nth(0)).toHaveValue("");
   await expect(selects.nth(1)).toHaveValue("");
   await expect(host.locator("[data-index='0']")).not.toBeVisible();
+  await expect(selects.nth(0).locator("option")).toHaveText([
+    "None",
+    "English",
+    "Japanese",
+    "Korean",
+    "Korean (auto-generated)",
+    "Spanish",
+  ]);
 
   await selects.nth(0).selectOption(".ko");
   await selects.nth(1).selectOption(".en");
