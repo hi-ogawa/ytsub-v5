@@ -153,7 +153,7 @@ Use the parsed cues (`ko.json`, `en.json`) as reference material and produce `ca
 | C: Ko manual    | manual    | —         | Translate ko → en                                   |
 | D: Ko auto only | auto      | —         | Fix ko text, then translate to en                   |
 
-Use Korean timestamps as the basis for segmentation, except in scenario B, where the English cues split the rows and the ASR gives their start times.
+Use Korean timestamps as the basis for segmentation, except in scenario B, where the English cues split the rows and the ASR word timings can correct their start times.
 
 When fixing auto-generated Korean, watch for:
 
@@ -168,18 +168,18 @@ Watch also for a word the ASR doesn't know, because it can come back across the 
 
 On variety shows, the English track can mix speech with the editor's on-screen captions, such as `[...]` notes, name cards, title cards, and the lyrics of background music. The ASR can also miss short lines entirely, so some English rows have no Korean speech. On one such video, dropping the rows with no Korean speech worked well.
 
-### Take Start Times From the ASR (Scenario B)
+### ASR Word Timings (Scenario B)
 
 The two tracks are good at different jobs. A translator chose where each English line breaks, so one English cue usually holds one thought, while the ASR cuts its cues at fixed lengths in the middle of sentences. But the ASR times each word against the audio, while the English cues are placed by hand. English cues tend to start a little after the speech, and some start seconds late, such as a cue that waits for an editor caption or a scene cut.
 
-So keep the rows the English cues give, and start each row at the ASR time of its first spoken word. In the ASR json3, each seg carries `tOffsetMs`, its offset from the event's `tStartMs`, which the first seg leaves out because it is 0, so a word starts at `tStartMs + tOffsetMs`. Match the row's first word to the nearest ASR word within a few seconds of the English start, and end each row where the next row begins.
+So the ASR word timings can correct the start of a row whose English cue is late. In the ASR json3, each seg carries `tOffsetMs`, its offset from the event's `tStartMs`, which the first seg leaves out because it is 0, so a word starts at `tStartMs + tOffsetMs`. Finding a row's first word among the ASR words near its English start gives the time the speech begins.
 
-Some rows find no match or a wrong one:
+Matching rows to ASR words has pitfalls:
 
-- A short first word matches too many places, and the ASR sometimes joins two words into one seg. Match these rows by their first two or three words together.
-- A first word the ASR misheard no longer matches the fixed text. Match against the original ASR text of the row instead.
-- When people talk over each other, a match can land before the previous row's start. Keep the English start for that row, so the rows stay in order.
-- A line the ASR missed entirely keeps its English start.
+- A short first word can match many places, and the ASR sometimes joins two words into one seg.
+- A first word the ASR misheard no longer matches the fixed text, though it still matches the original ASR text.
+- When people talk over each other, a match can land before the previous row's start, which puts the rows out of order.
+- A line the ASR missed entirely has no word to match.
 
 ### Pair Official Lyrics With the Timed Track (Scenario F)
 
