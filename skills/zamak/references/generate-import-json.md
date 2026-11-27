@@ -116,19 +116,45 @@ Turn each track into a list of cues with `begin` and `end` in seconds, such as `
 
 A json3 file has an `events` array. An event's text is its `segs[].utf8` joined together, and its time is `tStartMs` and `dDurationMs` in milliseconds. Skip events with no `segs` or no text. Some tracks show two lines at a time, so each event repeats the previous line before the new one, separated by `\n`. Take only the new line, because otherwise the same line lands in two cues and the rows stop pairing.
 
+A manual track times only whole cues, so an event looks like this:
+
+```json
+{
+  "tStartMs": 13500,
+  "dDurationMs": 1900,
+  "segs": [{ "utf8": "Nice weather today." }]
+}
+```
+
+An ASR track also times each word, because its segs are words with their own offsets:
+
+```json
+{
+  "tStartMs": 13500,
+  "dDurationMs": 1900,
+  "segs": [
+    { "utf8": "오늘" },
+    { "utf8": " 날씨", "tOffsetMs": 300 },
+    { "utf8": " 좋네요", "tOffsetMs": 800 }
+  ]
+}
+```
+
+A word starts at its event's `tStartMs` plus its seg's `tOffsetMs`, so 날씨 starts at 13.8s. The first seg of an event has no `tOffsetMs`, because its offset is 0.
+
 ### Assess Source Quality
 
 After fetching and parsing, determine which scenario applies:
 
-| Scenario        | Ko source | En source | Approach                                            |
-| --------------- | --------- | --------- | --------------------------------------------------- |
-| A: Both manual  | manual    | manual    | Zip if aligned; otherwise LLM audit                 |
-| B: Ko auto + En | auto      | manual    | Fix ko text using en as context, align to en timing |
-| C: Ko manual    | manual    | —         | LLM translates ko → en                              |
-| D: Ko auto only | auto      | —         | Fix ko text, then LLM translate                     |
-| E: Neither      | —         | —         | Stop                                                |
-| F: Lyrics + En  | lyrics    | manual    | Pair lyric lines with en cues, audit en             |
-| G: Burned-in    | picture   | either    | The transcript's speech is the ko text              |
+| Scenario        | Ko source | En source | Approach                                             |
+| --------------- | --------- | --------- | ---------------------------------------------------- |
+| A: Both manual  | manual    | manual    | Zip if aligned; otherwise LLM audit                  |
+| B: Ko auto + En | auto      | manual    | Fix ko text using en as context, bin it into en rows |
+| C: Ko manual    | manual    | —         | LLM translates ko → en                               |
+| D: Ko auto only | auto      | —         | Fix ko text, then LLM translate                      |
+| E: Neither      | —         | —         | Stop                                                 |
+| F: Lyrics + En  | lyrics    | manual    | Pair lyric lines with en cues, audit en              |
+| G: Burned-in    | picture   | either    | The transcript's speech is the ko text               |
 
 For a song with official lyrics, use Scenario F even when a Korean track exists, because fixing auto-generated lyrics only guesses at what the lyrics already say. If auto-generated quality looks unsalvageable and there are no official lyrics, flag it, because a different video may be the better choice.
 
@@ -146,27 +172,43 @@ When both tracks are manual, they are often already one to one. If their cue cou
 
 Use the parsed cues (`ko.json`, `en.json`) as reference material and produce `captions.json` directly. This is a translation auditing task:
 
-| Scenario        | Ko source | En source | What to do                                          |
-| --------------- | --------- | --------- | --------------------------------------------------- |
-| A: Both manual  | manual    | manual    | Audit en translations against ko, fix misalignments |
-| B: Ko auto + En | auto      | manual    | Fix ko text using en as context, align to en timing |
-| C: Ko manual    | manual    | —         | Translate ko → en                                   |
-| D: Ko auto only | auto      | —         | Fix ko text, then translate to en                   |
+| Scenario        | Ko source | En source | What to do                                           |
+| --------------- | --------- | --------- | ---------------------------------------------------- |
+| A: Both manual  | manual    | manual    | Audit en translations against ko, fix misalignments  |
+| B: Ko auto + En | auto      | manual    | Fix ko text using en as context, bin it into en rows |
+| C: Ko manual    | manual    | —         | Translate ko → en                                    |
+| D: Ko auto only | auto      | —         | Fix ko text, then translate to en                    |
 
-Use Korean timestamps as the basis for segmentation, except in scenario B where English timing is more reliable.
+Use Korean timestamps as the basis for segmentation. Scenario B is the exception, because its English cues set the rows, as [Bin the Fixed Korean Into English Rows](#bin-the-fixed-korean-into-english-rows-scenario-b) describes.
 
 When fixing auto-generated Korean, watch for:
 
-- Misheard syllables (e.g. "두정" → "두바이 쿠키", "악몽꽃" → "악몽 꿨어")
+- Misheard syllables
 - Missing/wrong spacing
 - `>>` speaker markers, which should be removed
 - Truncated words at cue boundaries
 
-In Scenario B, include the other manual tracks in the subtitle download, parse them too, and use them as evidence for the fixes. Japanese follows Korean clause by clause, and its kanji confirm Sino-Korean words, so `ja` often settles a fix that the English only hints at, such as 3초째 → 3회째 from 3回目. A Chinese track can name people that the other tracks leave out. Leave a fix out when no track supports it, because a person who can hear the audio should check those spots.
+In Scenario B, include the other manual tracks in the subtitle download, parse them too, and use them as evidence for the fixes. Japanese follows Korean clause by clause, and its kanji confirm Sino-Korean words, so `ja` often settles a fix that the English only hints at. A Chinese track can name people that the other tracks leave out. Leave a fix out when no track supports it, because a person who can hear the audio should check those spots.
 
-Watch also for a word the ASR doesn't know, because it can come back across the whole video, garbled differently each time. On one variety video, the slang 남찍사 came out as 남직, 남사, and 남택사 in four places, and fixing them row by row left two of them as 남찍. The ASR can also get such a word right once and garble it elsewhere, as with 추구미 in one line and 죽음미 in two others. Names, unit names, and recent slang are the usual cases. So before you fix row by row, look through the whole ASR for words like these, settle each one once from the other tracks or its clean spot, and spell it the same way in every row.
+Watch also for a word the ASR doesn't know, because it can come back across the whole video, garbled differently each time, and fixing it row by row misses some of them. The ASR can also get such a word right once and garble it elsewhere. Names, unit names, and recent slang are the usual cases. So before you fix row by row, look through the whole ASR for words like these, settle each one once from the other tracks or its clean spot, and spell it the same way in every row.
 
-On variety shows, the English track can mix speech with the editor's on-screen captions, such as `[...]` notes, name cards, title cards, and the lyrics of background music. The ASR can also miss short lines entirely, so some English rows have no Korean speech. On one such video, dropping the rows with no Korean speech worked well.
+On variety shows, the English track can mix speech with the editor's on-screen captions, such as `[...]` notes, name cards, title cards, and the lyrics of background music. The ASR can also miss short lines entirely, so some English rows have no Korean speech. Drop the rows with no Korean speech.
+
+### Bin the Fixed Korean Into English Rows (Scenario B)
+
+The ASR Korean and the English cues don't line up. The ASR cuts its cues at fixed lengths, often in the middle of a sentence. A translator placed each English cue by hand, so one English cue usually holds one thought. This makes the English cues the better rows.
+
+So the Korean text is fixed first, using the English and the other manual tracks as context. Then the fixed text is binned into the English cues, one row per cue. A row's Korean is what is said during its English line, and the row takes that cue's `begin` and `end`. This is the timing for most rows.
+
+Sometimes a binned row's English timing is off from when its line was spoken. The ASR words show this, because each one keeps the start time it has against the audio. So the ASR start time of a row's first word tells when the line actually begins. When that word starts 0.5s or more before the English `begin`, the word's start time is the better `begin` for the row. The row keeps its English `end`, and the previous row's `end` moves back to the new `begin`, because rows must not overlap.
+
+Finding a row's first word among the ASR words is not always direct:
+
+- A short first word can appear in many places, so a match needs the words around it to agree too.
+- The ASR sometimes joins two words into one seg, so a word may not start a seg of its own.
+- A first word that the ASR misheard was changed by the fix, so it no longer matches the fixed text. It still matches the original ASR text.
+- When people talk over each other, a match can land before the previous row's start, which would put the rows out of order.
+- A line the ASR missed has no word to match, so the English timing is all there is.
 
 ### Pair Official Lyrics With the Timed Track (Scenario F)
 
@@ -188,7 +230,7 @@ jq --slurpfile k ko-lines.json \
 
 When the counts differ, the description usually leaves out a repeated chorus line that the translator heard. Find it through `ja` and fill it in from the matching chorus, and tell the person running the task to check that spot by ear.
 
-The translators worked from the Korean and can misread it, so audit `text2` as in Scenario A. For example, both tracks of one song translated 우리 서로의 이름을 묻어요 as "let's ask each other's names", but "ask" would conjugate as 물어요, so 묻어요 means "bury". English can also reorder a few lines, so that one cue's English belongs to its neighbor's Korean. Rewrite `text2` for those rows, or merge them.
+The translators worked from the Korean and can misread it, especially a word that looks like another word's conjugation, so audit `text2` as in Scenario A. English can also reorder a few lines, so that one cue's English belongs to its neighbor's Korean. Rewrite `text2` for those rows, or merge them.
 
 ### Use Burned-In Captions (Scenario G)
 
@@ -196,8 +238,8 @@ The burned-in captions skill returns a transcript of the video. Its `speech` ent
 
 An `other` entry has Korean that only the picture has, and a learner can pick from it. Rows must not overlap, because the caption list neither scrolls nor highlights overlapping rows well, so place each `other` entry by the speech it overlaps:
 
-- Put it in the row of the speech it overlaps, in brackets after the speech, such as `좋아한다 해야지 거기 명물이잖아 [눈치 챙기자]`.
-- When it spans two or more speech rows, join those rows into one if they read as one thought, such as `우리는 소인으로 해야 돼? 대인으로 해야 돼? [진짜 모름]`. Otherwise put it on the row it comments on.
+- Put it in the row of the speech it overlaps, in brackets after the speech.
+- When it spans two or more speech rows, join those rows into one if they read as one thought. Otherwise put it on the row it comments on.
 - Leave it out when the speech already carries its text, such as a memo whose items someone reads aloud.
 - Where no speech overlaps it, it becomes a row of its own.
 
@@ -255,7 +297,7 @@ Agents miscount character offsets, so check every bookmark against its row befor
 
 ### Re-anchor Existing Bookmarks
 
-When the video already has bookmarks, from an earlier export or in the app, keep them instead of picking new ones. The new rows are split differently, so each bookmark's old caption index means nothing. Find the row that now holds the bookmark's word, and write the bookmark to `bookmarks.json` with that row's `captionIdx`, its `side`, and its `text` as the row now spells it. A word you fixed changes too, such as 쌍거풀 → 쌍꺼풀. Then set `offset` and `context` from the new rows as [Validate Offsets](#validate-offsets) describes, and keep other fields, such as an `id`, as they are.
+When the video already has bookmarks, from an earlier export or in the app, keep them instead of picking new ones. The new rows are split differently, so each bookmark's old caption index means nothing. Find the row that now holds the bookmark's word, and write the bookmark to `bookmarks.json` with that row's `captionIdx`, its `side`, and its `text` as the row now spells it, which differs when you fixed the word. Then set `offset` and `context` from the new rows as [Validate Offsets](#validate-offsets) describes, and keep other fields, such as an `id`, as they are.
 
 ## Assemble import.json
 
