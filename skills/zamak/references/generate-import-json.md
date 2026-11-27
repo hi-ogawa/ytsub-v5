@@ -170,7 +170,7 @@ On variety shows, the English track can mix speech with the editor's on-screen c
 
 ### Take Start Times From the ASR (Scenario B)
 
-The two tracks are good at different jobs. A translator chose where each English line breaks, so one English cue usually holds one thought, while the ASR cuts its cues at fixed lengths in the middle of sentences. But the ASR times each word against the audio, while the English cues are placed by hand. On one variety video, most English cues started about 0.2s after the speech, and about 1 in 8 started 1 to 3 seconds late, usually because the cue waited for an editor caption or a scene cut.
+The two tracks are good at different jobs. A translator chose where each English line breaks, so one English cue usually holds one thought, while the ASR cuts its cues at fixed lengths in the middle of sentences. But the ASR times each word against the audio, while the English cues are placed by hand. English cues tend to start a little after the speech, and some start seconds late, such as a cue that waits for an editor caption or a scene cut.
 
 So keep the rows the English cues give, and start each row at the ASR time of its first spoken word. In the ASR json3, each seg carries `tOffsetMs`, its offset from the event's `tStartMs`, which the first seg leaves out because it is 0, so a word starts at `tStartMs + tOffsetMs`. Match the row's first word to the nearest ASR word within a few seconds of the English start, and end each row where the next row begins.
 
