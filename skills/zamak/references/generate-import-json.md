@@ -116,7 +116,31 @@ Turn each track into a list of cues with `begin` and `end` in seconds, such as `
 
 A json3 file has an `events` array. An event's text is its `segs[].utf8` joined together, and its time is `tStartMs` and `dDurationMs` in milliseconds. Skip events with no `segs` or no text. Some tracks show two lines at a time, so each event repeats the previous line before the new one, separated by `\n`. Take only the new line, because otherwise the same line lands in two cues and the rows stop pairing.
 
-An ASR track also times each word. Each word is a seg, and it starts at its event's `tStartMs` plus its own `tOffsetMs`. The first seg of an event has no `tOffsetMs`, because its offset is 0.
+A manual track times only whole cues, so an event looks like this:
+
+```json
+{
+  "tStartMs": 13500,
+  "dDurationMs": 1900,
+  "segs": [{ "utf8": "Nice weather today." }]
+}
+```
+
+An ASR track also times each word, because its segs are words with their own offsets:
+
+```json
+{
+  "tStartMs": 13500,
+  "dDurationMs": 1900,
+  "segs": [
+    { "utf8": "오늘" },
+    { "utf8": " 날씨", "tOffsetMs": 300 },
+    { "utf8": " 좋네요", "tOffsetMs": 800 }
+  ]
+}
+```
+
+A word starts at its event's `tStartMs` plus its seg's `tOffsetMs`, so 날씨 starts at 13.8s. The first seg of an event has no `tOffsetMs`, because its offset is 0.
 
 ### Assess Source Quality
 
