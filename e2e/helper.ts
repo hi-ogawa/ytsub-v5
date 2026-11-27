@@ -44,6 +44,14 @@ export async function setServerEditedAt(youtubeId: string, editedAt: string) {
   `);
 }
 
+/** Remove a server video's bookmarks, as for a video imported without any. */
+export async function clearServerBookmarks(youtubeId: string) {
+  await runSql(`
+    DELETE FROM bookmarks
+    WHERE video_id = (SELECT id FROM videos WHERE youtube_id = '${youtubeId}')
+  `);
+}
+
 async function runSql(sql: string) {
   await execAsync(`sqlite3 -cmd ".timeout 5000" ${findDbPath()} "${sql}"`);
 }

@@ -60,9 +60,8 @@ export function useWebSync({
           vssId2: session.vssId2,
           captions: session.captions,
           bookmarks: session.bookmarks,
-          editedAt: data.video.editedAt,
+          pulledEditedAt: data.video.editedAt,
         });
-        await storage.markSynced({ youtubeId, editedAt: data.video.editedAt });
       }
     },
     onSuccess: () => serverQuery.refetch(),

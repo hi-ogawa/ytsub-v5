@@ -47,9 +47,8 @@ export function useExtensionSync({
           vssId2: session.vssId2,
           captions: session.captions,
           bookmarks: session.bookmarks,
-          editedAt,
+          pulledEditedAt: editedAt,
         });
-        await storage.markSynced({ youtubeId, editedAt });
       }
     },
     onSuccess: () => serverQuery.refetch(),

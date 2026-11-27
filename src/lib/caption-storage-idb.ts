@@ -80,7 +80,8 @@ class IdbCaptionStorage implements CaptionStorage {
       async ({ sessions, videos }) => {
         sessions.put(session);
         const existing = await videos.get(session.youtubeId);
-        if (!existing && !options?.forceIndex && !session.bookmarks.length) {
+        const pulledEditedAt = options?.pulledEditedAt;
+        if (!existing && !pulledEditedAt && !session.bookmarks.length) {
           return;
         }
         videos.put({
@@ -88,8 +89,8 @@ class IdbCaptionStorage implements CaptionStorage {
           title: session.title,
           channelName: session.channelName,
           bookmarkCount: session.bookmarks.length,
-          editedAt: options?.editedAt ?? new Date().toISOString(),
-          syncedEditedAt: existing?.syncedEditedAt,
+          editedAt: pulledEditedAt ?? new Date().toISOString(),
+          syncedEditedAt: pulledEditedAt ?? existing?.syncedEditedAt,
         });
         return videos.getAll();
       },
