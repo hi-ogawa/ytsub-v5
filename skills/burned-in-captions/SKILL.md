@@ -36,7 +36,7 @@ The commands below shorten this to `uv run scripts/...`. Outputs go to the folde
 - `source` is `picture` for an entry read from a caption, and `asr` for a spoken line that no caption shows, taken from the ASR and fixed as [step 6](#6-fill-in-the-speech-from-the-asr) describes. Every `other` entry comes from the picture.
 - `text` of a `picture` entry is exactly what the picture shows, including nonstandard spelling, censored words such as ㅅㄲ, and spelled-out laughter. Of an `asr` entry, it is what is said.
 - `position` is the caption's box `[x, y, w, h]` in the 1280×720 frame, on `picture` entries only.
-- `omitted` is a short reason, set on a caption whose text a reader declined to reproduce, such as copyrighted text. Its `text` is empty, and it keeps its time and position, so a user can fill it in by hand. Text that is only hard to read is not omitted, so mark it with `[?]` or read it again. Never put a placeholder label in `text` instead, because the transcript would then hold words that are neither on screen nor said.
+- `omitted` is a short reason, set on a caption whose text a reader declined to reproduce, such as copyrighted text. Its `text` is empty, and it keeps its time and position, so a user can fill it in by hand. Text that is only hard to read is not omitted, so mark it with `{?}` or read it again. Never put a placeholder label in `text` instead, because the transcript would then hold words that are neither on screen nor said.
 
 ## Read the Picture
 
@@ -145,7 +145,7 @@ If the captions keep to a band and look small in full-frame tiles, also give rea
 
 Give the sheets to reader subagents, with enough sheets per reader that its fixed overhead is small next to its reading. Start each reader's batch with the last tile of the batch before it, so a reader can link a caption across the boundary. Use the strongest model available: a cheaper one added a fluent ending that wasn't on screen. Give each reader the ASR for its time range if you have it, with this instruction:
 
-> Transcribe every caption in each frame exactly as shown, including nonstandard spelling, censored words, spelled-out laughter, and emoticons such as ㅠㅠ. The ASR is there to help you understand what is said. Where a caption differs from it, write what is on screen, never the ASR's words or standard Korean. Mark unclear or partial text with `[?]`.
+> Transcribe every caption in each frame exactly as shown, including nonstandard spelling, censored words, spelled-out laughter, and emoticons such as ㅠㅠ. The ASR is there to help you understand what is said. Where a caption differs from it, write what is on screen, never the ASR's words or standard Korean. Mark unclear or partial text with `{?}`.
 >
 > Tag each caption `speech` if it is words someone says, and `other` for anything else the editor put on screen. Words someone says can show outside the main dialogue line too, such as a small caption beside a second speaker who talks over the first, so tag those `speech` as well. Skip text filmed in the scene, such as signs, and list what you skipped in the tile's `skipped`, with the reason.
 >
@@ -166,7 +166,7 @@ Turn the reads into captions:
 - Identical text read in neighboring runs becomes one caption.
 - A caption with `omitted` keeps its run's time and position like any other, and neighboring ones with the same reason in the same place become one.
 
-Reads with a `note` or a `[?]` need judgment. Judge each one together with the reads of the runs on either side: merge it into a neighbor, keep it as its own caption, drop it, or read it again from a later step or a closer crop, with a one-line reason. Look at the reads in full and in time order, so a caption that stays on screen sits next to the captions that change under it.
+Reads with a `note` or a `{?}` need judgment. Judge each one together with the reads of the runs on either side: merge it into a neighbor, keep it as its own caption, drop it, or read it again from a later step or a closer crop, with a one-line reason. Look at the reads in full and in time order, so a caption that stays on screen sits next to the captions that change under it.
 
 - A read of a caption that isn't fully shown merges into the read of the same caption once it settles.
 - Text too small or unclear to read gets read again from a closer crop.

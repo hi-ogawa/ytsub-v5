@@ -714,7 +714,7 @@
           /[&<>"]/g,
           (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c],
         );
-      const markQ = (s) => esc(s).replace(/\[\?\]/g, "<mark>[?]</mark>");
+      const markQ = (s) => esc(s).replace(/\{\?\}/g, "<mark>{?}</mark>");
       const yt = (t) =>
         `https://www.youtube.com/watch?v=${VIDEO}&t=${Math.max(0, Math.floor(t) - 1)}s`;
 

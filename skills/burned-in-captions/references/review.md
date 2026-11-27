@@ -6,7 +6,7 @@ In a review, a person goes over a finished run's doubts on a local page, which s
 
 Collect the run's doubts into `doubts.json`, both the ones it left open and the ones it settled, because a doubt settled wrong shows a gap in the steps:
 
-- reads with `[?]` or a `note`, from the readers' output, with the judgment the report gives for each
+- reads with `{?}` or a `note`, from the readers' output, with the judgment the report gives for each
 - omitted captions, from `transcript.json`
 - ASR lines that no caption matches, from the ASR against the transcript, with what the report says about them
 - `asr` entries whose fixes are guesses, from the report
@@ -19,7 +19,7 @@ Each item has a time range, a group, and a one-line reason:
   "groups": [
     {
       "title": "Partly legible text",
-      "why": "Readers marked part of the text [?]. Check the words against the frame."
+      "why": "Readers marked part of the text {?}. Check the words against the frame."
     }
   ],
   "items": [
