@@ -170,9 +170,9 @@ On variety shows, the English track can mix speech with the editor's on-screen c
 
 ### Bin the Fixed Korean Into English Rows (Scenario B)
 
-The ASR Korean and the English cues don't line up. The ASR cuts its cues at fixed lengths in the middle of sentences, while a translator chose where each English line breaks, so one English cue usually holds one thought. So once the Korean text is fixed, bin it into the English cues, one row per cue, and start each row at its English cue's time.
+The ASR Korean and the English cues don't line up. The ASR cuts its cues at fixed lengths in the middle of sentences, while a translator chose where each English line breaks, so one English cue usually holds one thought. So once the Korean text is fixed, bin it into the English cues, one row per cue. Each row takes its English cue's `begin` and `end`.
 
-The ASR words keep their own times when they move into rows, so each row also knows when its first Korean word was spoken. The ASR times each word against the audio, while the English cues are placed by hand. Usually the first word comes just before the English cue starts, and the English time is fine. When it comes clearly earlier, the English cue is late, such as a cue that waits for an editor caption or a scene cut. That row can start at the ASR word time instead.
+The binning also gives a check on that timing. Each ASR word has its own start time, measured against the audio, while the English cues are placed by hand. So compare a row's English `begin` with the ASR start time of the first Korean word binned into it. Usually the word starts just before the cue, and the English `begin` stands. When the word starts clearly earlier, the English cue is late, such as a cue that waits for an editor caption or a scene cut. Then the row's `begin` can move to the ASR word's start time.
 
 In the ASR json3, each seg carries `tOffsetMs`, its offset from the event's `tStartMs`, which the first seg leaves out because it is 0, so a word starts at `tStartMs + tOffsetMs`.
 
