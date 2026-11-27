@@ -174,7 +174,7 @@ The ASR Korean and the English cues don't line up. The ASR cuts its cues at fixe
 
 So the Korean text is fixed first, using the English and the other manual tracks as context. Then the fixed text is binned into the English cues, one row per cue. A row's Korean is what is said during its English line, and the row takes that cue's `begin` and `end`. This is the timing for most rows.
 
-Some English cues start seconds late, for example when the cue waits for an editor's caption or a scene cut. The ASR can show this, because it gives each word a start time measured against the audio. So while binning a row's Korean, the ASR start time of its first word is worth a look. When that word starts clearly before the cue, the cue is late, and the word's start time is the better `begin` for the row. The row keeps its English `end`, and the previous row's `end` moves back to the new `begin`, because rows must not overlap.
+The ASR gives each word a start time measured against the audio, so it can show when an English cue starts late. While binning a row's Korean, the ASR start time of its first word is worth a look. When that word starts clearly before the cue, the word's start time is the better `begin` for the row. The row keeps its English `end`, and the previous row's `end` moves back to the new `begin`, because rows must not overlap.
 
 In the ASR json3, each word is a seg. A seg starts at its event's `tStartMs` plus its own `tOffsetMs`. The first seg of an event has no `tOffsetMs`, because its offset is 0.
 
