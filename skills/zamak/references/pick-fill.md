@@ -12,7 +12,7 @@ The learner is an upper-intermediate Korean learner whose first language is Japa
 - Colloquial set phrases whose meaning the words don't give away
 - Rarer words too, when they are vivid or likely to stick
 
-A line often holds more than one such word, so pick each of them, and pick a word again where it comes back in another line. Pick the word itself, not the surrounding expression, and pick a short phrase only when the construction spans it.
+A line often holds more than one such word, so pick each of them. Pick a word once per video, even when it comes back in later lines. A later line gets its own pick only when the word comes back in a sense or form that passes the test on its own, such as 끼다 for wearing a ring and later 옆구리에 끼다 for tucking something under an arm. Pick the word itself, not the surrounding expression, and pick a short phrase only when the construction spans it.
 
 Skip:
 
