@@ -116,6 +116,8 @@ Turn each track into a list of cues with `begin` and `end` in seconds, such as `
 
 A json3 file has an `events` array. An event's text is its `segs[].utf8` joined together, and its time is `tStartMs` and `dDurationMs` in milliseconds. Skip events with no `segs` or no text. Some tracks show two lines at a time, so each event repeats the previous line before the new one, separated by `\n`. Take only the new line, because otherwise the same line lands in two cues and the rows stop pairing.
 
+Other tracks build each line word by word, so an event repeats the previous event's text and adds to it, such as `Excuse me!`, then `Excuse me! What happens`, then `Excuse me! What happens when a shoe gets mad?`. Merge such an event into the previous cue when its text starts with the previous text and it begins where the previous one ends. Keep the earlier `begin` and the later `end` and text, because otherwise each partial line becomes a cue of its own.
+
 ### Assess Source Quality
 
 After fetching and parsing, determine which scenario applies:
@@ -166,7 +168,7 @@ In Scenario B, include the other manual tracks in the subtitle download, parse t
 
 Watch also for a word the ASR doesn't know, because it can come back across the whole video, garbled differently each time. On one variety video, the slang 남찍사 came out as 남직, 남사, and 남택사 in four places, and fixing them row by row left two of them as 남찍. The ASR can also get such a word right once and garble it elsewhere, as with 추구미 in one line and 죽음미 in two others. Names, unit names, and recent slang are the usual cases. So before you fix row by row, look through the whole ASR for words like these, settle each one once from the other tracks or its clean spot, and spell it the same way in every row.
 
-On variety shows, the English track can mix speech with the editor's on-screen captions, such as `[...]` notes, name cards, title cards, and the lyrics of background music. The ASR can also miss short lines entirely, so some English rows have no Korean speech. On one such video, dropping the rows with no Korean speech worked well.
+On variety shows, the English track can mix speech with the editor's on-screen captions, such as `[...]` notes, name cards, title cards, and the lyrics of background music. The ASR can also miss short lines entirely, so some English rows have no Korean speech. On one such video, dropping the rows with no Korean speech worked well. A cue can also carry an editor note and a spoken line together, or label its speakers, such as `[Sneakers: READY] I showed up in sneakers!` or `Mia: Perfect running weather, right?? Beni: Yep. sure it is!!`. Keep only the spoken English in `text2`, without the bracketed note or the speaker names, so the row pairs with its Korean line.
 
 ### Pair Official Lyrics With the Timed Track (Scenario F)
 
