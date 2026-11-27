@@ -34,6 +34,36 @@ export function getLangName(vssId: string): string {
   return displayNames.of(code) ?? code;
 }
 
+/** An id starting with "a." is auto-generated, and one with ".t.<lang>" is translated. */
+export function getTrackSource(vssId: string): "manual" | "asr" | "translated" {
+  if (vssId.includes(".t.")) {
+    return "translated";
+  }
+  return vssId.startsWith("a.") ? "asr" : "manual";
+}
+
+export function getTrackLabel(track: YouTubeCaptionTrack): string {
+  if (getTrackSource(track.vssId) === "translated") {
+    return getVssIdLabel(track.vssId);
+  }
+  const kind = track.kind === "asr" ? " (auto)" : "";
+  return `${track.name} [${track.languageCode}]${kind}`;
+}
+
+/**
+ * Label a track known only by its id like a listed track, with the language
+ * name in place of YouTube's track name.
+ */
+export function getVssIdLabel(vssId: string): string {
+  const code = langFromVssId(vssId);
+  const source = getTrackSource(vssId);
+  if (source === "translated") {
+    return `${code} (translated)`;
+  }
+  const kind = source === "asr" ? " (auto)" : "";
+  return `${getLangName(vssId)} [${code}]${kind}`;
+}
+
 export interface YouTubeExtractionResult {
   video: YouTubeVideoData;
   captionTracks: YouTubeCaptionTrack[];

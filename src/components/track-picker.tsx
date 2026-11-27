@@ -1,27 +1,8 @@
 import {
   type YouTubeCaptionTrack,
-  getLangName,
-  langFromVssId,
+  getTrackLabel,
+  getVssIdLabel,
 } from "../lib/youtube.ts";
-
-function trackLabel(track: YouTubeCaptionTrack): string {
-  if (track.vssId.includes(".t.")) {
-    return labelFromVssId(track.vssId);
-  }
-  const kind = track.kind === "asr" ? " (auto)" : "";
-  return `${track.name} [${track.languageCode}]${kind}`;
-}
-
-// Labels a track the select knows only by id, using the language name in
-// place of YouTube's track name. An id starting with "a." is auto-generated.
-function labelFromVssId(vssId: string): string {
-  const code = langFromVssId(vssId);
-  if (vssId.includes(".t.")) {
-    return `${code} (translated)`;
-  }
-  const kind = vssId.startsWith("a.") ? " (auto)" : "";
-  return `${getLangName(vssId)} [${code}]${kind}`;
-}
 
 export function TrackPicker({
   tracks,
@@ -97,11 +78,11 @@ function TrackOptions({
   return (
     <>
       {showSelected && (
-        <option value={selectedVssId}>{labelFromVssId(selectedVssId)}</option>
+        <option value={selectedVssId}>{getVssIdLabel(selectedVssId)}</option>
       )}
       {listedTracks.map((t) => (
         <option key={t.vssId} value={t.vssId}>
-          {trackLabel(t)}
+          {getTrackLabel(t)}
         </option>
       ))}
     </>
