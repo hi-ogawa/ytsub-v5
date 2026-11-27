@@ -109,6 +109,41 @@ test("track selection: default empty, select tracks, switch language", async ({
   await expect(host.locator("[data-index='0']")).not.toHaveText(firstRowText!);
 });
 
+test("a session's track that the list lacks shows by language name", async ({
+  context,
+  extensionId,
+}) => {
+  const { ytPage, host } = await openPanelWithTracks(context, SEED_YOUTUBE_ID);
+
+  // English has its own track, so the list builds no translation into it
+  const extensionPage = await context.newPage();
+  await extensionPage.goto(`chrome-extension://${extensionId}/bookmarks.html`);
+  await extensionPage.evaluate(async (youtubeId) => {
+    const db = await new Promise<IDBDatabase>((resolve, reject) => {
+      const request = indexedDB.open("zamak");
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+    await new Promise<void>((resolve, reject) => {
+      const transaction = db.transaction("caption-sessions", "readwrite");
+      const store = transaction.objectStore("caption-sessions");
+      const request = store.get(youtubeId);
+      request.onsuccess = () => {
+        store.put({ ...request.result, vssId2: ".ko.t.en" });
+      };
+      transaction.oncomplete = () => resolve();
+      transaction.onerror = () => reject(transaction.error);
+    });
+    db.close();
+  }, SEED_YOUTUBE_ID);
+
+  await ytPage.reload();
+  const selects = host.getByTestId("track-picker").locator("select");
+  await expect(selects.nth(0)).toBeEnabled();
+  await expect(selects.nth(1)).toHaveValue(".ko.t.en");
+  await expect(selects.nth(1).locator("option:checked")).toHaveText("English");
+});
+
 test("auto-scroll toggle persists across reload", async ({ context }) => {
   const { ytPage, host } = await openPanelWithTracks(context, SEED_YOUTUBE_ID);
   const autoScrollItem = host.locator("[data-checked]");

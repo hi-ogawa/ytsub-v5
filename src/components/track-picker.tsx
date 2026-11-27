@@ -74,14 +74,21 @@ function TrackOptions({
   selectedVssId?: string;
   loading?: boolean;
 }) {
-  if (loading) {
-    return selectedVssId ? (
-      <option value={selectedVssId}>{getLangName(selectedVssId)}</option>
-    ) : null;
-  }
-  return tracks.map((t) => (
-    <option key={t.vssId} value={t.vssId}>
-      {trackLabel(t)}
-    </option>
-  ));
+  const listedTracks = loading ? [] : tracks;
+  // A session can hold a track the list lacks, such as a translation into a
+  // language the list doesn't build, so the select shows it by language name.
+  const showSelected =
+    selectedVssId && !listedTracks.some((t) => t.vssId === selectedVssId);
+  return (
+    <>
+      {showSelected && (
+        <option value={selectedVssId}>{getLangName(selectedVssId)}</option>
+      )}
+      {listedTracks.map((t) => (
+        <option key={t.vssId} value={t.vssId}>
+          {trackLabel(t)}
+        </option>
+      ))}
+    </>
+  );
 }
