@@ -23,15 +23,38 @@ export interface YouTubeCaptionTrack {
   vssId: string;
 }
 
-export function langFromVssId(vssId: string): string {
+export function getLangCodeFromVssId(vssId: string): string {
   return vssId.split(".").pop()!;
 }
 
-const displayNames = new Intl.DisplayNames(["en"], { type: "language" });
+// "standard" names regional variants the way YouTube does, such as
+// "English (United States)" rather than "American English".
+const displayNames = new Intl.DisplayNames(["en"], {
+  type: "language",
+  languageDisplay: "standard",
+});
 
-export function getLangName(vssId: string): string {
-  const code = langFromVssId(vssId);
+export function getLangNameFromVssId(vssId: string): string {
+  const code = getLangCodeFromVssId(vssId);
   return displayNames.of(code) ?? code;
+}
+
+/** An id starting with "a." is auto-generated, and one with ".t.<lang>" is translated. */
+export function getTrackSourceFromVssId(
+  vssId: string,
+): "manual" | "asr" | "translated" {
+  return vssId.includes(".t.")
+    ? "translated"
+    : vssId.startsWith("a.")
+      ? "asr"
+      : "manual";
+}
+
+export function getTrackLabel(track: YouTubeCaptionTrack): string {
+  if (getTrackSourceFromVssId(track.vssId) === "translated") {
+    return `${getLangNameFromVssId(track.vssId)} (translated)`;
+  }
+  return track.name;
 }
 
 export interface YouTubeExtractionResult {
