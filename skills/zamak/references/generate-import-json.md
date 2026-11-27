@@ -153,7 +153,7 @@ Use the parsed cues (`ko.json`, `en.json`) as reference material and produce `ca
 | C: Ko manual    | manual    | —         | Translate ko → en                                    |
 | D: Ko auto only | auto      | —         | Fix ko text, then translate to en                    |
 
-Use Korean timestamps as the basis for segmentation, except in scenario B, where the English cues set the rows and ASR word timings can correct a late row start.
+Use Korean timestamps as the basis for segmentation. Scenario B is the exception, because its English cues set the rows, as [Bin the Fixed Korean Into English Rows](#bin-the-fixed-korean-into-english-rows-scenario-b) describes.
 
 When fixing auto-generated Korean, watch for:
 
@@ -170,18 +170,21 @@ On variety shows, the English track can mix speech with the editor's on-screen c
 
 ### Bin the Fixed Korean Into English Rows (Scenario B)
 
-The ASR Korean and the English cues don't line up. The ASR cuts its cues at fixed lengths in the middle of sentences, while a translator chose where each English line breaks, so one English cue usually holds one thought. So once the Korean text is fixed, bin it into the English cues, one row per cue. Each row takes its English cue's `begin` and `end`.
+The ASR Korean and the English cues don't line up. The ASR cuts its cues at fixed lengths, often in the middle of a sentence. A translator placed each English cue by hand, so one English cue usually holds one thought. This makes the English cues the better rows.
 
-The binning also gives a check on that timing. Each ASR word has its own start time, measured against the audio, while the English cues are placed by hand. So compare a row's English `begin` with the ASR start time of the first Korean word binned into it. Usually the word starts just before the cue, and the English `begin` stands. When the word starts clearly earlier, the English cue is late, such as a cue that waits for an editor caption or a scene cut. Then the row's `begin` can move to the ASR word's start time.
+So the Korean text is fixed first, using the English and the other manual tracks as context. Then the fixed text is binned into the English cues, one row per cue. A row's Korean is what is said during its English line, and the row takes that cue's `begin` and `end`. This is the timing for most rows.
 
-In the ASR json3, each seg carries `tOffsetMs`, its offset from the event's `tStartMs`, which the first seg leaves out because it is 0, so a word starts at `tStartMs + tOffsetMs`.
+The English timing can be wrong in one way. A translator usually starts a cue a little after the speech starts, but some cues start seconds late, for example when the cue waits for an editor's caption or a scene cut. The ASR can show this, because it gives each word a start time measured against the audio. So while binning a row's Korean, the ASR start time of its first word is worth a look. A word that starts a little before the cue is normal, and the English `begin` is fine. A word that starts clearly earlier means the English cue is late, and the word's start time is the better `begin` for the row. The row keeps its English `end`, and the previous row's `end` comes back to the new `begin`, because rows must not overlap.
 
-Matching rows to ASR words has pitfalls:
+In the ASR json3, each word is a seg. A seg starts at its event's `tStartMs` plus its own `tOffsetMs`. The first seg of an event has no `tOffsetMs`, because its offset is 0.
 
-- A short first word can match many places, and the ASR sometimes joins two words into one seg.
-- A first word the ASR misheard no longer matches the fixed text, though it still matches the original ASR text.
-- When people talk over each other, a match can land before the previous row's start, which puts the rows out of order.
-- A line the ASR missed entirely has no word to match.
+Finding a row's first word among the ASR words is not always direct:
+
+- A short first word can appear in many places, so a match needs the words around it to agree too.
+- The ASR sometimes joins two words into one seg, so a word may not start a seg of its own.
+- A first word that the ASR misheard was changed by the fix, so it no longer matches the fixed text. It still matches the original ASR text.
+- When people talk over each other, a match can land before the previous row's start, which would put the rows out of order.
+- A line the ASR missed has no word to match, so the English timing is all there is.
 
 ### Pair Official Lyrics With the Timed Track (Scenario F)
 
