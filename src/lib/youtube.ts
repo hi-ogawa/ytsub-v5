@@ -27,7 +27,12 @@ export function langFromVssId(vssId: string): string {
   return vssId.split(".").pop()!;
 }
 
-const displayNames = new Intl.DisplayNames(["en"], { type: "language" });
+// "standard" names regional variants the way YouTube does, such as
+// "English (United States)" rather than "American English".
+const displayNames = new Intl.DisplayNames(["en"], {
+  type: "language",
+  languageDisplay: "standard",
+});
 
 export function getLangName(vssId: string): string {
   const code = langFromVssId(vssId);
@@ -46,22 +51,17 @@ export function getTrackLabel(track: YouTubeCaptionTrack): string {
   if (getTrackSource(track.vssId) === "translated") {
     return getVssIdLabel(track.vssId);
   }
-  const kind = track.kind === "asr" ? " (auto)" : "";
-  return `${track.name} [${track.languageCode}]${kind}`;
+  return track.name;
 }
 
-/**
- * Label a track known only by its id like a listed track, with the language
- * name in place of YouTube's track name.
- */
+/** Label a track known only by its id the way YouTube names a listed one. */
 export function getVssIdLabel(vssId: string): string {
-  const code = langFromVssId(vssId);
-  const source = getTrackSource(vssId);
-  if (source === "translated") {
-    return `${code} (translated)`;
-  }
-  const kind = source === "asr" ? " (auto)" : "";
-  return `${getLangName(vssId)} [${code}]${kind}`;
+  const suffix = {
+    manual: "",
+    asr: " (auto-generated)",
+    translated: " (translated)",
+  }[getTrackSource(vssId)];
+  return `${getLangName(vssId)}${suffix}`;
 }
 
 export interface YouTubeExtractionResult {
