@@ -194,13 +194,13 @@ In Scenario B, include the other manual tracks in the subtitle download, parse t
 
 Watch also for a word the ASR doesn't know, because it can come back across the whole video, garbled differently each time, and fixing it row by row misses some of them. The ASR can also get such a word right once and garble it elsewhere. Names, unit names, and recent slang are the usual cases. So before you fix row by row, look through the whole ASR for words like these, settle each one once from the other tracks or its clean spot, and spell it the same way in every row.
 
-On variety shows, the English track can mix speech with the editor's on-screen captions, such as `[...]` notes, name cards, title cards, and the lyrics of background music. The ASR can also miss short lines entirely, so some English rows have no Korean speech. Drop the rows with no Korean speech. A cue can also carry an editor note and a spoken line together, or name its speakers. Keep only the spoken English in `text2`, without the bracketed note or the speaker names, so the row pairs with its Korean line.
-
 ### Bin the Fixed Korean Into English Rows (Scenario B)
 
 The ASR Korean and the English cues don't line up. The ASR cuts its cues at fixed lengths, often in the middle of a sentence. A translator placed each English cue by hand, so one English cue usually holds one thought. This makes the English cues the better rows.
 
 So the Korean text is fixed first, using the English and the other manual tracks as context. Then the fixed text is binned into the English cues, one row per cue. A row's Korean is what is said during its English line, and the row takes that cue's `begin` and `end`. This is the timing for most rows.
+
+Some English cues have no Korean speech behind them, such as the editor's on-screen notes, name cards, and background music lyrics on variety shows, or a short line the ASR missed. Leave those rows without Korean rather than filling them from the neighboring rows, because that shifts the Korean of the rows around them.
 
 Sometimes a binned row's English timing is off from when its line was spoken. The ASR words show this, because each one keeps the start time it has against the audio. So the ASR start time of a row's first word tells when the line actually begins. When that word starts 0.5s or more before the English `begin`, the word's start time is the better `begin` for the row. The row keeps its English `end`, and the previous row's `end` moves back to the new `begin`, because rows must not overlap.
 
