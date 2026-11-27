@@ -142,7 +142,7 @@ test("a session's track that the list lacks shows as an option", async ({
   await expect(selects.nth(0)).toBeEnabled();
   await expect(selects.nth(1)).toHaveValue(".ko.t.en");
   await expect(selects.nth(1).locator("option:checked")).toHaveText(
-    "en (translated)",
+    "English (translated)",
   );
 });
 
@@ -286,12 +286,8 @@ test("saved session keeps the track dropdowns while tracks load", async ({
   await expect(host.locator("[data-index='0']")).toBeVisible();
   const selects = host.getByTestId("track-picker").locator("select");
   await expect(selects.nth(0)).toBeDisabled();
-  await expect(selects.nth(0).locator("option:checked")).toHaveText(
-    "Korean [ko]",
-  );
-  await expect(selects.nth(1).locator("option:checked")).toHaveText(
-    "English [en]",
-  );
+  await expect(selects.nth(0).locator("option:checked")).toHaveText("Korean");
+  await expect(selects.nth(1).locator("option:checked")).toHaveText("English");
   await expect(host.getByText("Korean · English")).toHaveCount(0);
 
   releaseRequest();
