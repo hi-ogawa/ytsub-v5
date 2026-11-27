@@ -116,8 +116,6 @@ Turn each track into a list of cues with `begin` and `end` in seconds, such as `
 
 A json3 file has an `events` array. An event's text is its `segs[].utf8` joined together, and its time is `tStartMs` and `dDurationMs` in milliseconds. Skip events with no `segs` or no text. Some tracks show two lines at a time, so each event repeats the previous line before the new one, separated by `\n`. Take only the new line, because otherwise the same line lands in two cues and the rows stop pairing.
 
-Other tracks build each line word by word, so each event repeats the previous event's text and adds a few words to it. Merge such an event into the previous cue when its text starts with the previous text and it begins where the previous one ends. Keep the earlier `begin` and the later `end` and text, because otherwise each partial line becomes a cue of its own.
-
 A manual track times only whole cues, so an event looks like this:
 
 ```json
@@ -127,6 +125,17 @@ A manual track times only whole cues, so an event looks like this:
   "segs": [{ "utf8": "Nice weather today." }]
 }
 ```
+
+Some manual tracks build each line word by word instead, so each event repeats the previous event's text and adds a few words to it:
+
+| `tStartMs` | `dDurationMs` | text                        |
+| ---------- | ------------- | --------------------------- |
+| 13500      | 600           | `Wait,`                     |
+| 14100      | 500           | `Wait, where`               |
+| 14600      | 900           | `Wait, where are we going?` |
+| 15500      | 1200          | `To the beach.`             |
+
+Merge such an event into the previous cue when its text starts with the previous text and it begins where the previous one ends. Keep the earlier `begin` and the later `end` and text, so the first three events become one cue, `{ "begin": 13.5, "end": 15.5, "text": "Wait, where are we going?" }`, and `To the beach.` starts the next one. Without the merge, each partial line becomes a cue of its own.
 
 An ASR track also times each word, because its segs are words with their own offsets:
 
