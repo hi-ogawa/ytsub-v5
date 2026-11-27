@@ -36,7 +36,7 @@ The commands below shorten this to `uv run scripts/...`. Outputs go to the folde
 - `source` is `picture` for an entry read from a caption, and `asr` for a spoken line that no caption shows, taken from the ASR and fixed as [step 6](#6-fill-in-the-speech-from-the-asr) describes. Every `other` entry comes from the picture.
 - `text` of a `picture` entry is exactly what the picture shows, including nonstandard spelling, censored words such as ㅅㄲ, and spelled-out laughter. Of an `asr` entry, it is what is said.
 - `position` is the caption's box `[x, y, w, h]` in the 1280×720 frame, on `picture` entries only.
-- `omitted` is a short reason, set on a caption whose text a reader declined to reproduce, such as copyrighted text. Its `text` is empty, and it keeps its time and position, so a user can fill it in by hand. Text that is only hard to read is not omitted, so mark it with `{?}` or read it again. Never put a placeholder label in `text` instead, because the transcript would then hold words that are neither on screen nor said.
+- `omitted` is a short reason, set on a caption whose text a reader declined to reproduce, such as copyrighted text. Its `text` is empty, and it keeps its time and position, so a user can fill it in by hand. When it is speech, step 6 still adds the spoken line from the ASR. Text that is only hard to read is not omitted, so mark it with `{?}` or read it again. Never put a placeholder label in `text` instead, because the transcript would then hold words that are neither on screen nor said.
 
 ## Read the Picture
 
@@ -205,7 +205,7 @@ Once the corrections settle, the ASR lines that no caption matches are speech th
 - Use the captions as evidence. They spell this video's names, slang, and recurring words, so settle each such word once and spell it the same way in every entry. Leave a fix out when nothing supports it, and list the guesses in the report.
 - Where an `other` caption stands in for a line someone says, such as editor text over the speaker, keep the caption and add the spoken line from the ASR too.
 
-An `asr` entry doesn't overlap a `picture` speech entry, so trim it where they meet. A stretch with no captions at all, such as an outtake after the edited part, becomes `asr` entries throughout.
+An omitted `speech` caption shows a line without its text, so fill its range from the ASR like a line with no caption, and keep the omitted entry next to it. Elsewhere, an `asr` entry doesn't overlap a `picture` speech entry, so trim it where they meet. A stretch with no captions at all, such as an outtake after the edited part, becomes `asr` entries throughout.
 
 ### 7. Record
 

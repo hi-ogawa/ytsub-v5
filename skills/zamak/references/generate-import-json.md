@@ -192,7 +192,7 @@ The translators worked from the Korean and can misread it, so audit `text2` as i
 
 ### Use Burned-In Captions (Scenario G)
 
-The burned-in captions skill returns a transcript of the video. Its `speech` entries are every spoken line, with the caption's text where the picture shows the line and the fixed ASR elsewhere, and its `other` entries are the editor's on-screen text that nobody says. Use each `speech` entry as a row's Korean, because the transcript has already reconciled the picture with the ASR. An entry with `omitted` has no text, because a reader declined to reproduce it, so take the Korean in its range from the ASR and fix it as in Scenario B.
+The burned-in captions skill returns a transcript of the video. Its `speech` entries are every spoken line, with the caption's text where the picture shows the line and the fixed ASR elsewhere, and its `other` entries are the editor's on-screen text that nobody says. Use each `speech` entry as a row's Korean, because the transcript has already reconciled the picture with the ASR. Skip an entry with `omitted`, which has no text, because the `asr` entries in its range carry its line.
 
 An `other` entry has Korean that only the picture has, and a learner can pick from it. Rows must not overlap, because the caption list neither scrolls nor highlights overlapping rows well, so place each `other` entry by the speech it overlaps:
 
