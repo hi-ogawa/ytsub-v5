@@ -81,11 +81,7 @@ function formatTracks({
   return vssIds
     .map((vssId) => {
       const lang = getLangCodeFromVssId(vssId);
-      const source = {
-        manual: "manual",
-        asr: "ASR",
-        translated: "translated",
-      }[getTrackSourceFromVssId(vssId)];
+      const source = getTrackSourceFromVssId(vssId);
       const use =
         vssId === vssId1
           ? ", current text1"
