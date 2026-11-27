@@ -27,7 +27,12 @@ export function langFromVssId(vssId: string): string {
   return vssId.split(".").pop()!;
 }
 
-const displayNames = new Intl.DisplayNames(["en"], { type: "language" });
+// "standard" names regional variants the way YouTube does, such as
+// "English (United States)" rather than "American English".
+const displayNames = new Intl.DisplayNames(["en"], {
+  type: "language",
+  languageDisplay: "standard",
+});
 
 export function getLangName(vssId: string): string {
   const code = langFromVssId(vssId);
