@@ -39,6 +39,21 @@ export function getLangName(vssId: string): string {
   return displayNames.of(code) ?? code;
 }
 
+/** An id starting with "a." is auto-generated, and one with ".t.<lang>" is translated. */
+export function getTrackSource(vssId: string): "manual" | "asr" | "translated" {
+  if (vssId.includes(".t.")) {
+    return "translated";
+  }
+  return vssId.startsWith("a.") ? "asr" : "manual";
+}
+
+export function getTrackLabel(track: YouTubeCaptionTrack): string {
+  if (getTrackSource(track.vssId) === "translated") {
+    return `${getLangName(track.vssId)} (translated)`;
+  }
+  return track.name;
+}
+
 export interface YouTubeExtractionResult {
   video: YouTubeVideoData;
   captionTracks: YouTubeCaptionTrack[];
