@@ -52,9 +52,19 @@ export function getTrackSourceFromVssId(
 
 export function getTrackLabel(track: YouTubeCaptionTrack): string {
   if (getTrackSourceFromVssId(track.vssId) === "translated") {
-    return `${getLangNameFromVssId(track.vssId)} (translated)`;
+    return getVssIdLabel(track.vssId);
   }
   return track.name;
+}
+
+/** Label a track known only by its id the way YouTube names a listed one. */
+export function getVssIdLabel(vssId: string): string {
+  const suffix = {
+    manual: "",
+    asr: " (auto-generated)",
+    translated: " (translated)",
+  }[getTrackSourceFromVssId(vssId)];
+  return `${getLangNameFromVssId(vssId)}${suffix}`;
 }
 
 export interface YouTubeExtractionResult {

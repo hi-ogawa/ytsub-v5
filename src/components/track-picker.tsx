@@ -1,7 +1,7 @@
 import {
   type YouTubeCaptionTrack,
-  getLangNameFromVssId,
   getTrackLabel,
+  getVssIdLabel,
 } from "../lib/youtube.ts";
 
 export function TrackPicker({
@@ -17,8 +17,8 @@ export function TrackPicker({
   selectedVssId2?: string;
   onSelect: (vssId1?: string, vssId2?: string) => void;
   disabled?: boolean;
-  // While the tracks load, each select shows only its selected track, by
-  // language name, so the header keeps its shape until the full list arrives.
+  // While the tracks load, each select shows only its selected track, so the
+  // header keeps its shape until the full list arrives.
   loading?: boolean;
 }) {
   const selectDisabled = disabled || loading;
@@ -70,16 +70,21 @@ function TrackOptions({
   selectedVssId?: string;
   loading?: boolean;
 }) {
-  if (loading) {
-    return selectedVssId ? (
-      <option value={selectedVssId}>
-        {getLangNameFromVssId(selectedVssId)}
-      </option>
-    ) : null;
-  }
-  return tracks.map((t) => (
-    <option key={t.vssId} value={t.vssId}>
-      {getTrackLabel(t)}
-    </option>
-  ));
+  const listedTracks = loading ? [] : tracks;
+  // A session can hold a track the list lacks, such as a translation into a
+  // language the list doesn't build, so the select adds it.
+  const showSelected =
+    selectedVssId && !listedTracks.some((t) => t.vssId === selectedVssId);
+  return (
+    <>
+      {showSelected && (
+        <option value={selectedVssId}>{getVssIdLabel(selectedVssId)}</option>
+      )}
+      {listedTracks.map((t) => (
+        <option key={t.vssId} value={t.vssId}>
+          {getTrackLabel(t)}
+        </option>
+      ))}
+    </>
+  );
 }
