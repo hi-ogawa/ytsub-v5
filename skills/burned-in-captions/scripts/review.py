@@ -1,4 +1,4 @@
-# Build a local review page for the items of a caption track the run wasn't sure of.
+# Build a local review page for the items of a transcript the run wasn't sure of.
 import argparse
 import json
 import os
@@ -11,16 +11,16 @@ TEMPLATE = os.path.join(os.path.dirname(__file__), "review.html")
 
 
 def main():
-    p = argparse.ArgumentParser(description="Build a review page of the doubtful items in a caption track.")
+    p = argparse.ArgumentParser(description="Build a review page of the doubtful items in a transcript.")
     p.add_argument("video")
     p.add_argument("--video-id", required=True, help="YouTube ID, for the page's player")
-    p.add_argument("--captions", default="captions.json")
+    p.add_argument("--transcript", default="transcript.json")
     p.add_argument("--doubts", default="doubts.json", help="the groups and items to review")
-    p.add_argument("--asr", help="a json3 subtitle track shown next to the captions")
+    p.add_argument("--asr", help="a json3 subtitle track shown next to the transcript")
     p.add_argument("--out", default="review", help="directory for the page and its frames")
     a = p.parse_args()
-    with open(a.captions) as f:
-        captions = [{"begin": c["begin"], "end": c["end"], "kind": c["kind"], "text": c["text"], "pos": c["position"]}
+    with open(a.transcript) as f:
+        captions = [{"begin": c["begin"], "end": c["end"], "kind": c["kind"], "source": c["source"], "text": c["text"], "pos": c.get("position")}
                     for c in json.load(f)]
     with open(a.doubts) as f:
         doubts = json.load(f)

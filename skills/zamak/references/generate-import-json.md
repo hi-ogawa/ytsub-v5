@@ -154,7 +154,7 @@ After fetching and parsing, determine which scenario applies:
 | D: Ko auto only | auto      | —         | Fix ko text, then LLM translate                      |
 | E: Neither      | —         | —         | Stop                                                 |
 | F: Lyrics + En  | lyrics    | manual    | Pair lyric lines with en cues, audit en              |
-| G: Burned-in    | picture   | either    | Captions are the ko text where they render speech    |
+| G: Burned-in    | picture   | either    | The transcript's speech is the ko text               |
 
 For a song with official lyrics, use Scenario F even when a Korean track exists, because fixing auto-generated lyrics only guesses at what the lyrics already say. If auto-generated quality looks unsalvageable and there are no official lyrics, flag it, because a different video may be the better choice.
 
@@ -234,9 +234,9 @@ The translators worked from the Korean and can misread it, especially a word tha
 
 ### Use Burned-In Captions (Scenario G)
 
-The burned-in captions skill returns the captions as the viewer sees them, with their times, each tagged `speech` or `other`. Where a `speech` caption renders a spoken line, use its text as that line's Korean, because the ASR is the weaker source. Fix the remaining lines from the ASR as usual. A caption with `omitted` has no text, because a reader declined to reproduce it, so keep the ASR lines in its range and fix them from the ASR as usual.
+The burned-in captions skill returns a transcript of the video. Its `speech` entries are every spoken line, with the caption's text where the picture shows the line and the fixed ASR elsewhere, and its `other` entries are the editor's on-screen text that nobody says. Use each `speech` entry as a row's Korean, because the transcript has already reconciled the picture with the ASR. Skip an entry with `omitted`, which has no text, because the `asr` entries in its range carry its line.
 
-An `other` caption has Korean that only the picture has, and a learner can pick from it. Rows must not overlap, because the caption list neither scrolls nor highlights overlapping rows well, so place each `other` caption by the speech it overlaps:
+An `other` entry has Korean that only the picture has, and a learner can pick from it. Rows must not overlap, because the caption list neither scrolls nor highlights overlapping rows well, so place each `other` entry by the speech it overlaps:
 
 - Put it in the row of the speech it overlaps, in brackets after the speech.
 - When it spans two or more speech rows, join those rows into one if they read as one thought. Otherwise put it on the row it comments on.
@@ -245,9 +245,7 @@ An `other` caption has Korean that only the picture has, and a learner can pick 
 
 Make each row read as what it is. A `speech` row holds only what is said, and anything else is in brackets so it doesn't read as a spoken line. Leave out rows a learner gains nothing from, and settle each case by these two rules.
 
-Then read the rows through in order against the ASR, and fix any row that doesn't match what is said, such as editor text standing in for a line someone reads aloud. Read the frames again where the rows and the ASR disagree.
-
-Continue as in Scenario B when there is a manual English track, or as in Scenario D when there isn't, which translates each row into English for `text2`.
+The rows keep the transcript's lines and times, because those come from the picture. When there is a manual English track, give each row the English of the cues that overlap it, and audit it against the Korean as in Scenario A. Where a cue spans two rows, split its English between them or translate the rows yourself. When there is no English track, translate each row into English for `text2` as in Scenario D.
 
 ### Output Format
 
