@@ -36,7 +36,7 @@ The commands below shorten this to `uv run scripts/...`. Outputs go to the folde
 - `source` is `picture` for an entry read from a caption, and `asr` for a spoken line that no caption shows, taken from the ASR and fixed as [step 6](#6-fill-in-the-speech-from-the-asr) describes. Every `other` entry comes from the picture.
 - `text` of a `picture` entry is exactly what the picture shows, including nonstandard spelling, censored words such as ㅅㄲ, and spelled-out laughter. Of an `asr` entry, it is what is said.
 - `position` is the caption's box `[x, y, w, h]` in the 1280×720 frame, on `picture` entries only.
-- `omitted` is a short reason, set on a caption whose text a reader declined to reproduce, such as copyrighted text. Its `text` is empty, and it keeps its time and position, so a user can fill it in by hand. When it is speech, step 6 still adds the spoken line from the ASR. Text that is only hard to read is not omitted, so mark it with `{?}` or read it again. Never put a placeholder label in `text` instead, because the transcript would then hold words that are neither on screen nor said.
+- `omitted` is a short reason, set on a caption whose text a reader declined to reproduce, such as copyrighted text. Its `text` is empty, and it keeps its time and position, so the transcript still shows that a caption was on screen there, and the report and a review can find the gap. When it is speech, step 6 still adds the spoken line from the ASR. Text that is only hard to read is not omitted, so mark it with `{?}` or read it again. Never put a placeholder label in `text` instead, because the transcript would then hold words that are neither on screen nor said.
 
 ## Read the Picture
 
