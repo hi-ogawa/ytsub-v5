@@ -163,7 +163,6 @@ Reads with a `note` or a `{?}` need judgment. Judge each one together with the r
 - Text from other footage stays only if it belongs in this video's track.
 - A graphic that stays on screen while the dialogue line reads its items aloud one by one keeps its own `other` caption, because the track records the picture. The speech captions carry its content, so Fix & Align ASR leaves it out of the rows.
 - A dense graphic, such as a card with three reviews, star ratings, and a summary, isn't worth a caption for each element. Drop it, and list it in the report. A letter or memo read aloud isn't dense in this sense, because its text is the speech.
-- A caption with no letters, such as a line of dots or an editor's `[???]`, stays out of the track, and the report lists it. As `speech` it would replace the ASR's words with punctuation, and as `other` it would become a row with nothing to read. A read that is all `{?}` is different, because its text is unclear rather than missing, so read it again.
 - The note is the reader's own description of what it saw, so let it decide over how similar two texts look, because two different lines can differ by a single word. Fall back to text similarity only where neither a note nor identical text links two reads.
 
 A merge keeps the fuller read's text and spans both runs, so a fade-in read merged into its steady caption gets the right begin. Timing always comes from the runs, never from the judgment. Give the reads to do again to a new reader as described below, and treat the new reads the same way.
