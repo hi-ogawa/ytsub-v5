@@ -255,7 +255,7 @@ export class CaptionPanelRuntime {
     bookmarks: ExtensionBookmark[];
     vssId1?: string;
     vssId2?: string;
-    pulledEditedAt?: string;
+    editedAt?: string;
   }): Promise<void> {
     const session = this.getSession();
     await this.updateSession(
@@ -265,7 +265,7 @@ export class CaptionPanelRuntime {
         vssId1: options.vssId1 ?? session.vssId1,
         vssId2: options.vssId2 ?? session.vssId2,
       },
-      { pulledEditedAt: options.pulledEditedAt },
+      { editedAt: options.editedAt },
     );
   }
 
@@ -295,7 +295,7 @@ export class CaptionPanelRuntime {
 
   private async updateSession(
     update: Partial<CaptionSession>,
-    options?: { pulledEditedAt?: string },
+    options?: { editedAt?: string },
   ): Promise<void> {
     const session = { ...this.getSession(), ...update };
     this.store.update({ session });
@@ -304,7 +304,7 @@ export class CaptionPanelRuntime {
 
   private async saveSession(
     session: CaptionSession,
-    options?: { pulledEditedAt?: string },
+    options?: { editedAt?: string },
   ): Promise<void> {
     await this.storage.saveSession(
       {
@@ -316,7 +316,7 @@ export class CaptionPanelRuntime {
         captions: session.rows,
         bookmarks: session.bookmarks,
       },
-      options,
+      { pulledEditedAt: options?.editedAt },
     );
   }
 

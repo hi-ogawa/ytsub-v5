@@ -60,7 +60,7 @@ export function useWebSync({
           vssId2: session.vssId2,
           captions: session.captions,
           bookmarks: session.bookmarks,
-          pulledEditedAt: data.video.editedAt,
+          editedAt: data.video.editedAt,
         });
       }
     },

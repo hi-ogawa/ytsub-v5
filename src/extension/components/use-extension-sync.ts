@@ -47,7 +47,7 @@ export function useExtensionSync({
           vssId2: session.vssId2,
           captions: session.captions,
           bookmarks: session.bookmarks,
-          pulledEditedAt: editedAt,
+          editedAt,
         });
       }
     },
