@@ -8,7 +8,7 @@ import type {
   CaptionSession,
 } from "../lib/caption-panel-runtime.ts";
 import type { UseSync } from "../lib/sync.ts";
-import { getLangName } from "../lib/youtube.ts";
+import { getLangNameFromVssId } from "../lib/youtube.ts";
 import { CaptionPanelContent } from "./caption-panel-content.tsx";
 import {
   SettingsDropdown,
@@ -186,7 +186,8 @@ function CaptionPanelWithSession({
           </div>
         ) : (
           <span className="flex-1 px-2 py-1 text-sm text-muted-foreground lg:py-1.5">
-            {getLangName(session.vssId1)} · {getLangName(session.vssId2)}
+            {getLangNameFromVssId(session.vssId1)} ·{" "}
+            {getLangNameFromVssId(session.vssId2)}
           </span>
         )}
         <SettingsDropdown

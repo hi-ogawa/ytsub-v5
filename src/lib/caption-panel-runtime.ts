@@ -19,7 +19,7 @@ import {
   type YouTubeCaptionTrack,
   type YouTubeExtractionResult,
   type YouTubeVideoData,
-  getLangCode,
+  getLangCodeFromVssId,
 } from "./youtube.ts";
 
 /** Where a new session's captions come from */
@@ -274,8 +274,8 @@ export class CaptionPanelRuntime {
     return sessionToExportData(
       {
         ...session.video,
-        language1: getLangCode(session.vssId1),
-        language2: getLangCode(session.vssId2),
+        language1: getLangCodeFromVssId(session.vssId1),
+        language2: getLangCodeFromVssId(session.vssId2),
         vssId1: session.vssId1,
         vssId2: session.vssId2,
         captions: session.rows,
@@ -311,8 +311,8 @@ export class CaptionPanelRuntime {
         ...session.video,
         vssId1: session.vssId1,
         vssId2: session.vssId2,
-        language1: getLangCode(session.vssId1),
-        language2: getLangCode(session.vssId2),
+        language1: getLangCodeFromVssId(session.vssId1),
+        language2: getLangCodeFromVssId(session.vssId2),
         captions: session.rows,
         bookmarks: session.bookmarks,
       },

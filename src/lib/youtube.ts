@@ -23,7 +23,7 @@ export interface YouTubeCaptionTrack {
   vssId: string;
 }
 
-export function getLangCode(vssId: string): string {
+export function getLangCodeFromVssId(vssId: string): string {
   return vssId.split(".").pop()!;
 }
 
@@ -34,13 +34,15 @@ const displayNames = new Intl.DisplayNames(["en"], {
   languageDisplay: "standard",
 });
 
-export function getLangName(vssId: string): string {
-  const code = getLangCode(vssId);
+export function getLangNameFromVssId(vssId: string): string {
+  const code = getLangCodeFromVssId(vssId);
   return displayNames.of(code) ?? code;
 }
 
 /** An id starting with "a." is auto-generated, and one with ".t.<lang>" is translated. */
-export function getTrackSource(vssId: string): "manual" | "asr" | "translated" {
+export function getTrackSourceFromVssId(
+  vssId: string,
+): "manual" | "asr" | "translated" {
   if (vssId.includes(".t.")) {
     return "translated";
   }
@@ -48,8 +50,8 @@ export function getTrackSource(vssId: string): "manual" | "asr" | "translated" {
 }
 
 export function getTrackLabel(track: YouTubeCaptionTrack): string {
-  if (getTrackSource(track.vssId) === "translated") {
-    return `${getLangName(track.vssId)} (translated)`;
+  if (getTrackSourceFromVssId(track.vssId) === "translated") {
+    return `${getLangNameFromVssId(track.vssId)} (translated)`;
   }
   return track.name;
 }
