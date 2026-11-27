@@ -176,8 +176,8 @@ So keep the rows the English cues give, and start each row at the ASR time of it
 
 Some rows find no match or a wrong one:
 
-- A short first word, such as 와, 아, or 네, matches too many places, and the ASR sometimes joins two words into one seg, such as `그 말은`. Match these rows by their first two or three words together.
-- A first word the ASR misheard, such as 정정당당하게 heard as 장난하게, no longer matches the fixed text. Match against the original ASR text of the row instead.
+- A short first word matches too many places, and the ASR sometimes joins two words into one seg. Match these rows by their first two or three words together.
+- A first word the ASR misheard no longer matches the fixed text. Match against the original ASR text of the row instead.
 - When people talk over each other, a match can land before the previous row's start. Keep the English start for that row, so the rows stay in order.
 - A line the ASR missed entirely keeps its English start.
 
