@@ -35,6 +35,13 @@ export type StorageNotice = { type: "videoIndex"; entries: VideoIndexEntry[] };
 
 export type StorageListener = (notice: StorageNotice) => void;
 
+/**
+ * Keeps two records per video: its caption session, saved for every video
+ * opened with captions, and its video index entry, which lists the video and
+ * records its sync. Only some videos have an entry, so videos that were only
+ * watched stay out of the list. `saveSession` adds one as its rules say, and
+ * `ensureVideoIndexEntry` adds one on request.
+ */
 export interface CaptionStorage {
   getSession(youtubeId: string): Promise<PersistedCaptionSession | undefined>;
   /**
@@ -47,6 +54,7 @@ export interface CaptionStorage {
     session: PersistedCaptionSession,
     options?: { syncedEditedAt?: string },
   ): Promise<void>;
+  ensureVideoIndexEntry(youtubeId: string): Promise<void>;
   deleteVideo(youtubeId: string): Promise<void>;
   markSynced(options: { youtubeId: string; editedAt: string }): Promise<void>;
   getVideoIndexEntry(youtubeId: string): Promise<VideoIndexEntry | undefined>;

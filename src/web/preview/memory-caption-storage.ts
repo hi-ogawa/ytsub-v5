@@ -17,6 +17,9 @@ export class MemoryCaptionStorage implements CaptionStorage {
     this.sessions.set(session.youtubeId, session);
   };
 
+  ensureVideoIndexEntry: CaptionStorage["ensureVideoIndexEntry"] =
+    async () => {};
+
   deleteVideo: CaptionStorage["deleteVideo"] = async (youtubeId) => {
     this.sessions.delete(youtubeId);
   };

@@ -50,6 +50,33 @@ test("push from the sync menu, then open the bookmarks page", async ({
   ).toHaveAttribute("data-sync-status", "synced");
 });
 
+test("push a video without bookmarks from the sync menu", async ({
+  context,
+  page,
+  extensionId,
+}) => {
+  await setupDb({ seed: true });
+  await gotoBookmarks(page, extensionId);
+  await login(page, { username: "dev-empty" });
+
+  const { host } = await openPanelWithTracks(context, SEED_YOUTUBE_ID);
+
+  const status = await openSyncMenu(host);
+  await expect(status).toHaveAttribute("data-sync-state", "empty");
+  const checkpoint = createCheckpoint();
+  await status.click();
+  await expect(status).toHaveAttribute("data-sync-state", "synced");
+  checkpoint("push synced");
+
+  // Pushing added the video to the list
+  await page.reload();
+  await expect(
+    page
+      .getByTestId(`video-card-${SEED_YOUTUBE_ID}`)
+      .getByTestId("video-sync-badge"),
+  ).toHaveAttribute("data-sync-status", "synced");
+});
+
 test("pull from the sync menu replaces captions and bookmarks in place", async ({
   context,
   page,
