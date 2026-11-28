@@ -85,7 +85,7 @@ class IdbCaptionStorage implements CaptionStorage {
           return;
         }
         videos.put(
-          toIndexEntry(session, {
+          toVideoIndexEntry(session, {
             editedAt: syncedEditedAt ?? new Date().toISOString(),
             syncedEditedAt: syncedEditedAt ?? existing?.syncedEditedAt,
           }),
@@ -126,7 +126,10 @@ class IdbCaptionStorage implements CaptionStorage {
           const session = await sessions.get(youtubeId);
           if (session) {
             videos.put(
-              toIndexEntry(session, { editedAt, syncedEditedAt: editedAt }),
+              toVideoIndexEntry(session, {
+                editedAt,
+                syncedEditedAt: editedAt,
+              }),
             );
           }
         }
@@ -158,7 +161,7 @@ class IdbCaptionStorage implements CaptionStorage {
 
 export const idbCaptionStorage = new IdbCaptionStorage();
 
-function toIndexEntry(
+function toVideoIndexEntry(
   session: PersistedCaptionSession,
   times: { editedAt: string; syncedEditedAt?: string },
 ): VideoIndexEntry {
