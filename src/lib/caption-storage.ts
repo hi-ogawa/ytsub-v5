@@ -32,7 +32,7 @@ export type VideoIndexEntry = {
 };
 
 /**
- * Every saved session has an index entry, but a video is listed only once it
+ * Every saved session has a video index entry, but a video is listed only once it
  * has a bookmark or has been synced, so videos that were only watched stay
  * out of the list.
  */
@@ -63,7 +63,7 @@ export interface CaptionStorage {
 }
 
 /**
- * In-memory copy of the listed entries in the stored index, for components
+ * In-memory copy of the listed entries in the stored video index, for components
  * that read it as they render.
  */
 export const videoIndexStore = createVideoIndexStore();
