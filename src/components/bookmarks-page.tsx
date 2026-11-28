@@ -121,8 +121,10 @@ export function BookmarksPage({
   );
 }
 
-// The last edit anywhere, so a video edited elsewhere moves up before it is
-// pulled
+/**
+ * The last edit anywhere, so a video edited elsewhere moves up before it is
+ * pulled
+ */
 function getLatestEditedAt(entry: VideoListEntry) {
   return entry.serverEditedAt && entry.serverEditedAt > entry.editedAt
     ? entry.serverEditedAt

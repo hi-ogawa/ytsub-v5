@@ -1,9 +1,9 @@
 import { chromeStorage } from "./chrome-storage.ts";
 
-declare const __SERVER_URL__: string | undefined;
+declare const __SERVER_URL__: string;
 
-/** Runtime-overridable server URL. Checks chrome.storage.local first, then globalThis, then build-time constant. */
+/** Server URL from the chrome.storage.local override, falling back to the build-time default. */
 export async function getServerUrl(): Promise<string> {
   const stored = await chromeStorage.get<string>("serverUrl");
-  return stored ?? (globalThis as any).__zamakServerUrl ?? __SERVER_URL__;
+  return stored ?? __SERVER_URL__;
 }

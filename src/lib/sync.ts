@@ -18,9 +18,11 @@ export type ComputedSyncState =
   | "conflict"
   | "empty";
 
-// Each side's edit time changes with every edit and is copied unchanged by
-// push and pull, so comparing it for equality with its value at the last sync
-// tells whether that side changed, whatever the clocks say.
+/**
+ * Each side's edit time changes with every edit and is copied unchanged by
+ * push and pull, so comparing it for equality with its value at the last sync
+ * tells whether that side changed, whatever the clocks say.
+ */
 export function computeSyncState(params: {
   localEditedAt?: string;
   syncedEditedAt?: string;

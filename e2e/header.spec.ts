@@ -51,13 +51,10 @@ test("theme toggle: cycle, persist, and system default", async ({ page }) => {
   const menu = page.getByTestId("header-menu");
   const theme = page.getByTestId("theme-toggle");
 
-  // Open menu — initial: system (no localStorage)
+  // Open menu — initial: system
   await menu.click();
   await expect(theme).toHaveAttribute("data-theme", "system");
   await expect(theme).toHaveText(/system/i);
-  expect(
-    await page.evaluate(() => localStorage.getItem("zamak:theme")),
-  ).toBeNull();
 
   // system → light → dark (dropdown stays open)
   await theme.click();
@@ -70,11 +67,11 @@ test("theme toggle: cycle, persist, and system default", async ({ page }) => {
   await page.reload();
   await expect(page.locator("html")).toHaveClass(/dark/);
 
-  // dark → system clears localStorage
+  // dark → system, which also persists across reload
   await menu.click();
   await theme.click();
   await expect(theme).toHaveAttribute("data-theme", "system");
-  expect(
-    await page.evaluate(() => localStorage.getItem("zamak:theme")),
-  ).toBeNull();
+  await page.reload();
+  await menu.click();
+  await expect(theme).toHaveAttribute("data-theme", "system");
 });

@@ -53,8 +53,10 @@ export interface CaptionPanelState {
   buildError?: unknown;
 }
 
-// Apart from the panel's state, because it changes with every caption while
-// the video plays, and only the caption list shows it.
+/**
+ * Apart from the panel's state, because it changes with every caption while
+ * the video plays, and only the caption list shows it.
+ */
 interface PlaybackState {
   /** Index of the caption row at the playback position */
   currentIndex?: number;
@@ -104,7 +106,10 @@ export class CaptionPanelRuntime {
     this.startTime = options.startTime;
   }
 
-  /** Show the saved session, or build one from the tracks picked last time. */
+  /**
+   * Show the saved session, or build one from the best tracks for the
+   * languages picked last.
+   */
   async restore(): Promise<void> {
     const saved = await this.storage.getSession(this.youtubeId);
     const session = saved && toCaptionSession(saved);
@@ -119,13 +124,15 @@ export class CaptionPanelRuntime {
     this.store.update({ restoring: false, session });
     const tracks = await this.loadTracks();
     if (tracks && !saved) {
-      await this.buildSession(getInitialTracks(tracks, this.youtubeId));
+      await this.buildSession(getInitialTracks(tracks));
     }
   }
 
-  // Resolves the tracks, or undefined without a source or on failure. A failure
-  // stays in `tracksError` instead of rejecting, so it never hides a saved
-  // session.
+  /**
+   * Resolves the tracks, or undefined without a source or on failure. A failure
+   * stays in `tracksError` instead of rejecting, so it never hides a saved
+   * session.
+   */
   private async loadTracks(): Promise<YouTubeCaptionTrack[] | undefined> {
     if (!this.trackSource) {
       return undefined;
@@ -154,7 +161,6 @@ export class CaptionPanelRuntime {
         tracks: this.store.get().tracks,
         vssId1,
         vssId2,
-        youtubeId: this.youtubeId,
       });
     }
     this.store.update({ session: undefined });
@@ -436,8 +442,10 @@ export class CaptionPanelRuntime {
     return bookmark;
   }
 
-  // The playback loop only follows the player while it plays, so a paused seek
-  // sets the current caption itself.
+  /**
+   * The playback loop only follows the player while it plays, so a paused seek
+   * sets the current caption itself.
+   */
   private seekToBookmark(bookmark: ExtensionBookmark): void {
     this.player?.seekTo(bookmark.timestamp);
     this.playbackStore.update({

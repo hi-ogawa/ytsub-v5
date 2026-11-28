@@ -24,7 +24,9 @@ export function CaptionPanel({
 }: {
   runtime: CaptionPanelRuntime;
   player?: YTPlayer;
-  // Called by the sync menu each time it opens, so its queries refetch then.
+  /**
+   * Called by the sync menu each time it opens, so its queries refetch then.
+   */
   useSync: UseSync;
 }) {
   const restoreQuery = useQuery({

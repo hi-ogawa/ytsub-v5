@@ -22,10 +22,12 @@ export type VideoIndexEntry = {
   title: string;
   channelName: string;
   bookmarkCount: number;
-  // When the content was last edited, on whichever device or server made the
-  // edit. Push and pull copy it unchanged.
+  /**
+   * When the content was last edited, on whichever device or server made the
+   * edit. Push and pull copy it unchanged.
+   */
   editedAt: string;
-  // editedAt at the last push or pull
+  /** editedAt at the last push or pull */
   syncedEditedAt?: string;
 };
 
@@ -35,16 +37,20 @@ export type StorageListener = (notice: StorageNotice) => void;
 
 export interface CaptionStorage {
   getSession(youtubeId: string): Promise<PersistedCaptionSession | undefined>;
-  // Also updates the video's index entry when the session has bookmarks, is
-  // already indexed, or is saved as synced. `syncedEditedAt` marks the session
-  // as the copy synced at that edit time, as after a pull, so it is recorded as
-  // both the entry's edit time and its last sync.
+  /**
+   * Also updates the video's index entry when the session has bookmarks, is
+   * already indexed, or is saved as synced. `syncedEditedAt` marks the session
+   * as the copy synced at that edit time, as after a pull, so it is recorded as
+   * both the entry's edit time and its last sync.
+   */
   saveSession(
     session: PersistedCaptionSession,
     options?: { syncedEditedAt?: string },
   ): Promise<void>;
-  // Gives a stored session an index entry, even with no bookmarks, unless it
-  // already has one.
+  /**
+   * Gives a stored session an index entry, even with no bookmarks, unless it
+   * already has one.
+   */
   addToIndex(youtubeId: string): Promise<void>;
   deleteVideo(youtubeId: string): Promise<void>;
   markSynced(options: { youtubeId: string; editedAt: string }): Promise<void>;
@@ -53,8 +59,10 @@ export interface CaptionStorage {
   subscribe(listener: StorageListener): () => void;
 }
 
-// In-memory copy of the stored index, for components that read it as they
-// render.
+/**
+ * In-memory copy of the stored index, for components that read it as they
+ * render.
+ */
 export const videoIndexStore = createVideoIndexStore();
 
 function createVideoIndexStore() {

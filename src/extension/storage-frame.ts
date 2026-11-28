@@ -8,7 +8,7 @@ import { YOUTUBE_ORIGIN } from "./lib/storage-bridge.ts";
 
 const storage = idbCaptionStorage;
 
-// Everything the watch page may do with storage.
+/** Everything the watch page may do with storage. */
 const storageFrameHandlers = {
   getSession: storage.getSession.bind(storage),
   saveSession: storage.saveSession.bind(storage),

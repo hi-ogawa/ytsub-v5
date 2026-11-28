@@ -6,6 +6,7 @@ import {
 } from "../../components/caption-panel-fab.tsx";
 import { CaptionPanel } from "../../components/caption-panel.tsx";
 import { ResizablePanel } from "../../components/resizable-panel.tsx";
+import { captionPanelPreferences } from "../../lib/caption-panel-preferences.ts";
 import { CaptionPanelRuntime } from "../../lib/caption-panel-runtime.ts";
 import type { CaptionStorage } from "../../lib/caption-storage.ts";
 import type { UseSync } from "../../lib/sync.ts";
@@ -22,11 +23,15 @@ export function CaptionOverlay({
   useSync: UseSync;
 }) {
   const [open, toggleOpen] = useFabOpen(youtubeId);
+  const [panelWidth, setPanelWidth] =
+    captionPanelPreferences.useValue("panelWidth");
 
   return (
     <div>
       {open && (
         <ResizablePanel
+          width={panelWidth}
+          onWidthChange={setPanelWidth}
           id="zamak-root"
           style={{
             position: "fixed",
@@ -81,18 +86,8 @@ function ExtensionViewer({
 }
 
 function getUserLangs(): string[] {
-  const langs = [...navigator.languages];
-  try {
-    const pref = localStorage.getItem("zamak:preferred-langs");
-    if (pref) {
-      const { lang1, lang2 } = JSON.parse(pref);
-      if (lang1 && !langs.includes(lang1)) {
-        langs.push(lang1);
-      }
-      if (lang2 && !langs.includes(lang2)) {
-        langs.push(lang2);
-      }
-    }
-  } catch {}
-  return langs;
+  const { language1, language2 } = captionPanelPreferences.get();
+  return [...new Set([...navigator.languages, language1, language2])].filter(
+    (language) => language !== undefined,
+  );
 }

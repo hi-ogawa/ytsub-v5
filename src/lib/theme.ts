@@ -1,12 +1,24 @@
 import { Monitor, Moon, Sun } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
+import { z } from "zod";
+import { withUseValue } from "../components/use-store-value.ts";
+import { createLocalStorageStore } from "../utils/local-storage-store.ts";
 
-type Theme = "light" | "dark" | "system";
+const THEMES = ["light", "dark", "system"] as const;
+type Theme = (typeof THEMES)[number];
 
 const THEME_ICON = { light: Sun, dark: Moon, system: Monitor } as const;
 
-const THEME_KEY = "zamak:theme";
-const THEMES: Theme[] = ["light", "dark", "system"];
+const preferencesSchema = z
+  .object({ theme: z.enum(THEMES).catch("system") })
+  .catch({ theme: "system" });
+
+const themePreferences = withUseValue(
+  createLocalStorageStore({
+    key: "zamak:theme",
+    parse: (stored) => preferencesSchema.parse(stored),
+  }),
+);
 
 function resolveTheme(theme: Theme): boolean {
   if (theme === "system") {
@@ -25,21 +37,10 @@ function applyDarkClass(dark: boolean) {
 }
 
 export function useTheme() {
-  const [theme, setTheme] = useState<Theme>(() => {
-    const stored = localStorage.getItem(THEME_KEY);
-    if (stored === "light" || stored === "dark") {
-      return stored;
-    }
-    return "system";
-  });
+  const [theme, setTheme] = themePreferences.useValue("theme");
 
   useEffect(() => {
     applyDarkClass(resolveTheme(theme));
-    if (theme === "system") {
-      localStorage.removeItem(THEME_KEY);
-    } else {
-      localStorage.setItem(THEME_KEY, theme);
-    }
   }, [theme]);
 
   useEffect(() => {
