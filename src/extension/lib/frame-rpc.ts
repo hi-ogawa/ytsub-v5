@@ -157,15 +157,11 @@ function waitForFrame(options: ConnectOptions): Promise<Connection> {
 
 // --- Frame side ---
 
-/** Answers only `parentOrigin`, and only the listed `methods` of `target`. */
-export function serveFrameRpc<Target, Event>(
-  target: Target,
-  options: {
-    methods: readonly (keyof Target & string)[];
-    parentOrigin: string;
-  },
+/** Answers only `parentOrigin`, by calling the requested method of `target`. */
+export function serveFrameRpc<Event>(
+  target: object,
+  options: { parentOrigin: string },
 ) {
-  const methods: readonly string[] = options.methods;
   const parent = { frame: window.parent, origin: options.parentOrigin };
 
   listenFrom(parent, async (message) => {
@@ -178,11 +174,11 @@ export function serveFrameRpc<Target, Event>(
     }
     const { id, method, params } = message;
     try {
-      if (!methods.includes(method)) {
+      const handlers = target as FrameHandlers;
+      if (typeof handlers[method] !== "function") {
         throw new Error(`Unknown method: ${method}`);
       }
-      const handlers = target as FrameHandlers;
-      const result = await handlers[method]!(...params);
+      const result = await handlers[method](...params);
       postTo(parent, { type: "zamak-frame:response", id, result });
     } catch (error) {
       console.error(`[zamak frame] ${method}:`, error);
