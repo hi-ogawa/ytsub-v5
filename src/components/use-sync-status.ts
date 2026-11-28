@@ -69,7 +69,7 @@ export function useSyncStatus({
         const latestSyncState = await transport.checkServer();
         queryClient.setQueryData(serverQueryKey, latestSyncState);
         if (!latestSyncState.authenticated) {
-          return false;
+          throw new Error("signed out");
         }
         const localEntry = await storage.getVideoIndexEntry(youtubeId);
         const latestState = computeSyncState({
@@ -78,7 +78,7 @@ export function useSyncStatus({
           serverEditedAt: latestSyncState.serverEditedAt,
         });
         if (latestState !== "push" && latestState !== "empty") {
-          return false;
+          throw new Error("the server copy changed on another device");
         }
         await storage.ensureVideoIndexEntry(youtubeId);
         const { editedAt } = await transport.push(action.runtime);
@@ -95,13 +95,8 @@ export function useSyncStatus({
           { syncedEditedAt: editedAt },
         );
       }
-      return true;
     },
-    onSuccess: (didSync) => {
-      if (didSync) {
-        serverQuery.refetch();
-      }
-    },
+    onSuccess: () => serverQuery.refetch(),
   });
 
   const getState = (): SyncState => {

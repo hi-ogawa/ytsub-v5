@@ -176,10 +176,13 @@ test("an upload clicked from a stale status stops at conflict", async ({
   await status.click();
   await expect(status).toHaveAttribute("data-sync-state", "synced");
 
-  // Another device pushes while this panel's last check is still fresh
+  // Another device pushes while this tab keeps focus, so nothing re-checks
   await editOnServer(SEED_YOUTUBE_ID);
   await createBookmarkAt(host, { index: 1, start: 0, end: 3 });
   await expect(status).toHaveAttribute("data-sync-state", "push");
   await status.click();
   await expect(status).toHaveAttribute("data-sync-state", "conflict");
+  await expect(host.getByTestId("sync-error")).toHaveText(
+    "Upload failed: the server copy changed on another device",
+  );
 });
