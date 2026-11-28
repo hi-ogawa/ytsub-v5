@@ -57,7 +57,7 @@ export function syncStateDisplay(state: SyncState): {
     case "empty":
       return {
         icon: <ArrowUpFromLine className="size-4 text-muted-foreground" />,
-        label: "Sync: upload captions",
+        label: "Sync: upload",
       };
     default: {
       return state satisfies never;
