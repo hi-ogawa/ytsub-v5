@@ -12,7 +12,6 @@ import {
 import type {
   CaptionStorage,
   PersistedCaptionSession,
-  SaveSessionOptions,
 } from "./caption-storage.ts";
 import type { ExtensionBookmark } from "./extension-bookmarks.ts";
 import {
@@ -278,11 +277,6 @@ export class CaptionPanelRuntime {
     );
   }
 
-  /** Give the session an index entry even without bookmarks, so it can be pushed. */
-  async addToIndex(): Promise<void> {
-    await this.saveSession(this.getSession(), { index: true });
-  }
-
   toExportData(options?: { editedAt?: string }): ExportData {
     const session = this.getSession();
     return sessionToExportData(
@@ -318,7 +312,7 @@ export class CaptionPanelRuntime {
 
   private async saveSession(
     session: CaptionSession,
-    options?: SaveSessionOptions,
+    options?: { syncedEditedAt?: string },
   ): Promise<void> {
     await this.storage.saveSession(
       {

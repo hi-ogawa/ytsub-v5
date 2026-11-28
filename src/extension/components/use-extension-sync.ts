@@ -1,7 +1,10 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useVideoIndexEntry } from "../../components/use-video-index-entry.ts";
 import type { CaptionPanelRuntime } from "../../lib/caption-panel-runtime.ts";
-import type { CaptionStorage } from "../../lib/caption-storage.ts";
+import {
+  type CaptionStorage,
+  saveSessionAsListed,
+} from "../../lib/caption-storage.ts";
 import {
   type SyncState,
   type SyncStatus,
@@ -10,10 +13,9 @@ import {
 import type { bgRpcHandlers } from "../background.ts";
 import type { RpcClient } from "../lib/extension-rpc.ts";
 
-type SyncAction = {
-  direction: "push" | "pull";
-  runtime: CaptionPanelRuntime;
-};
+type SyncAction =
+  | { direction: "push" }
+  | { direction: "pull"; runtime: CaptionPanelRuntime };
 
 /**
  * Per-video sync for the caption panel on YouTube. The content script never
@@ -40,7 +42,7 @@ export function useExtensionSync({
     mutationFn: async (action: SyncAction) => {
       if (action.direction === "push") {
         if (!entryQuery.data) {
-          await action.runtime.addToIndex();
+          await saveSessionAsListed({ storage, youtubeId });
         }
         const { editedAt } = await bgRpc.pushSession({ youtubeId });
         await storage.markSynced({ youtubeId, editedAt });
@@ -92,7 +94,7 @@ export function useExtensionSync({
       ? `${variables?.direction === "pull" ? "Download" : "Upload"} failed: ${error.message}`
       : undefined,
     onNavigate: () => bgRpc.openBookmarks(),
-    onPush: (runtime) => syncMutation.mutate({ direction: "push", runtime }),
+    onPush: () => syncMutation.mutate({ direction: "push" }),
     onPull: (runtime) => syncMutation.mutate({ direction: "pull", runtime }),
   };
 }

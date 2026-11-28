@@ -33,28 +33,41 @@ export type VideoIndexEntry = {
 
 export type StorageNotice = { type: "videoIndex"; entries: VideoIndexEntry[] };
 
-export type SaveSessionOptions = { syncedEditedAt?: string; index?: boolean };
-
 export type StorageListener = (notice: StorageNotice) => void;
 
 export interface CaptionStorage {
   getSession(youtubeId: string): Promise<PersistedCaptionSession | undefined>;
   /**
-   * Also updates the video's index entry when the session has bookmarks, is
-   * already indexed, is saved as synced, or is saved with `index`.
+   * Also updates the video's index entry when the session has bookmarks,
+   * already has an entry, or is saved as synced or as listed.
    * `syncedEditedAt` marks the session as the copy synced at that edit time, as
    * after a pull, so it is recorded as both the entry's edit time and its last
-   * sync.
+   * sync. `listed` gives a video without bookmarks an entry, as before a push.
    */
   saveSession(
     session: PersistedCaptionSession,
-    options?: SaveSessionOptions,
+    options?: { syncedEditedAt?: string; listed?: boolean },
   ): Promise<void>;
   deleteVideo(youtubeId: string): Promise<void>;
   markSynced(options: { youtubeId: string; editedAt: string }): Promise<void>;
   getVideoIndexEntry(youtubeId: string): Promise<VideoIndexEntry | undefined>;
   listVideoIndex(): Promise<VideoIndexEntry[]>;
   subscribe(listener: StorageListener): () => void;
+}
+
+/** Save the stored session as listed, so a video without bookmarks can be pushed. */
+export async function saveSessionAsListed({
+  storage,
+  youtubeId,
+}: {
+  storage: CaptionStorage;
+  youtubeId: string;
+}): Promise<void> {
+  const session = await storage.getSession(youtubeId);
+  if (!session) {
+    throw new Error("No local session found");
+  }
+  await storage.saveSession(session, { listed: true });
 }
 
 /**
