@@ -1,5 +1,8 @@
 (function () {
-  var t = localStorage.getItem("zamak:theme");
+  var t;
+  try {
+    t = JSON.parse(localStorage.getItem("zamak:theme")).theme;
+  } catch {}
   var dark =
     t === "dark" ||
     (t !== "light" && matchMedia("(prefers-color-scheme: dark)").matches);
