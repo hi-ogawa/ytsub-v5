@@ -1,5 +1,5 @@
 import type { CaptionPanelRuntime } from "../lib/caption-panel-runtime.ts";
-import type { SyncState, SyncStatus } from "../lib/sync.ts";
+import type { SyncStatus } from "../lib/sync.ts";
 import { syncStateDisplay } from "./sync-state.tsx";
 import { Tooltip } from "./ui/tooltip.tsx";
 
@@ -16,10 +16,9 @@ export function SyncIndicator({
   runtime: CaptionPanelRuntime;
 }) {
   const { state } = sync;
-  const { icon, label } = syncStateDisplay(state);
-  const action = getSyncAction(sync, runtime);
-  const tone = getSyncTone(state);
-  const description = action ? `${label}: ${action.hint}` : label;
+  const { icon, label, tone, hint } = syncStateDisplay(state);
+  const run = getSyncAction(sync, runtime);
+  const description = run && hint ? `${label}: ${hint}` : label;
 
   // Icon only, so the track picker beside it keeps its width as the state
   // changes.
@@ -36,13 +35,13 @@ export function SyncIndicator({
             : tone === "error"
               ? "border-destructive/40 bg-destructive/10 hover:bg-destructive/20"
               : "border-transparent",
-          tone === "quiet" && action ? "hover:bg-muted" : "",
-          action ? "" : "cursor-default",
+          tone === "quiet" && run ? "hover:bg-muted" : "",
+          run ? "" : "cursor-default",
         ].join(" ")}
         aria-label={description}
         // Not `disabled`, which would also block the tooltip's hover.
-        aria-disabled={!action}
-        onClick={action?.run}
+        aria-disabled={!run}
+        onClick={run}
         data-testid="sync-status"
         data-sync-state={state}
       >
@@ -52,50 +51,27 @@ export function SyncIndicator({
   );
 }
 
-function getSyncTone(state: SyncState): "quiet" | "action" | "error" {
-  switch (state) {
-    case "push":
-    case "pull":
-    case "conflict": {
-      return "action";
-    }
-    case "error": {
-      return "error";
-    }
-    default: {
-      return "quiet";
-    }
-  }
-}
-
 function getSyncAction(
   sync: SyncStatus,
   runtime: CaptionPanelRuntime,
-): { run: () => void; hint: string } | undefined {
+): (() => void) | undefined {
   const { onCheck, onPush, onPull, onNavigate } = sync;
   switch (sync.state) {
     case "push":
     case "empty": {
-      return { run: () => onPush(runtime), hint: "click to upload" };
+      return () => onPush(runtime);
     }
     case "pull": {
-      return { run: () => onPull(runtime), hint: "click to download" };
+      return () => onPull(runtime);
     }
-    case "conflict": {
-      return {
-        run: onNavigate,
-        hint: "click to resolve on the bookmarks page",
-      };
-    }
+    // The bookmarks page resolves conflicts and holds sign-in.
+    case "conflict":
     case "unauthenticated": {
-      return {
-        run: onNavigate,
-        hint: "click to sign in on the bookmarks page",
-      };
+      return onNavigate;
     }
     case "synced":
     case "error": {
-      return { run: onCheck, hint: "click to check again" };
+      return onCheck;
     }
     default: {
       return undefined;
