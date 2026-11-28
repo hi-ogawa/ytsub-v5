@@ -267,12 +267,6 @@ export class CaptionPanelRuntime {
     await this.updateSession({ bookmarks: [] });
   }
 
-  async updateSession(update: Partial<CaptionSession>): Promise<void> {
-    const session = { ...this.getSession(), ...update };
-    this.store.update({ session });
-    await this.saveSession(session);
-  }
-
   toExportData(options?: { editedAt?: string }): ExportData {
     const session = this.getSession();
     return sessionToExportData(
@@ -295,6 +289,12 @@ export class CaptionPanelRuntime {
       throw new Error("No caption session");
     }
     return session;
+  }
+
+  async updateSession(update: Partial<CaptionSession>): Promise<void> {
+    const session = { ...this.getSession(), ...update };
+    this.store.update({ session });
+    await this.saveSession(session);
   }
 
   private async saveSession(session: CaptionSession): Promise<void> {
