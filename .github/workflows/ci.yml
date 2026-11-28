@@ -94,7 +94,7 @@ jobs:
             });
 
   # Point the rolling pre-release at the latest main build, so
-  # releases/download/extension-latest/zamak-extension.zip stays a stable link.
+  # releases/download/extension-canary/zamak-extension.zip stays a stable link.
   # The release is edited in place rather than recreated, because only
   # publishing notifies watchers and posts to followers' feeds.
   # Write permission stays out of the job that runs install and build code.
@@ -112,12 +112,12 @@ jobs:
       - run: cd extension && zip -r "$GITHUB_WORKSPACE/zamak-extension.zip" .
       - run: |
           notes="Built from $GITHUB_SHA by $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID. Unzip it and load the folder with Load unpacked in chrome://extensions."
-          if gh release view extension-latest > /dev/null; then
-            gh api --method PATCH "repos/$GH_REPO/git/refs/tags/extension-latest" -f sha="$GITHUB_SHA" -F force=true
-            gh release upload extension-latest zamak-extension.zip --clobber
-            gh release edit extension-latest --notes "$notes"
+          if gh release view extension-canary > /dev/null; then
+            gh api --method PATCH "repos/$GH_REPO/git/refs/tags/extension-canary" -f sha="$GITHUB_SHA" -F force=true
+            gh release upload extension-canary zamak-extension.zip --clobber
+            gh release edit extension-canary --notes "$notes"
           else
-            gh release create extension-latest zamak-extension.zip \
+            gh release create extension-canary zamak-extension.zip \
               --prerelease \
               --target "$GITHUB_SHA" \
               --title "Zamak extension canary" \

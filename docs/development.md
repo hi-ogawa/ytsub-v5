@@ -35,7 +35,7 @@ The dev build is named `Zamak-dev [<branch> <commit> <time>]`, so the extension 
 
 ## Try a CI Build
 
-CI builds the extension on every push. The latest build from `main` is always at [zamak-extension.zip](https://github.com/hi-ogawa/ytsub-v5/releases/download/extension-latest/zamak-extension.zip), on the `extension-latest` pre-release that each push to `main` updates, and a PR's build is linked at the end of its description. Unzip it and load the folder with Load unpacked. CI builds are named `Zamak [<commit>]` or `Zamak [PR#<number> <commit>]`.
+CI builds the extension on every push. The latest build from `main` is always at [zamak-extension.zip](https://github.com/hi-ogawa/ytsub-v5/releases/download/extension-canary/zamak-extension.zip), on the `extension-canary` pre-release that each push to `main` updates, and a PR's build is linked at the end of its description. Unzip it and load the folder with Load unpacked. CI builds are named `Zamak [<commit>]` or `Zamak [PR#<number> <commit>]`.
 
 ## Check a Change Without Reloading
 
