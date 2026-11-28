@@ -18,7 +18,8 @@ export interface YouTubeVideoData {
 export interface YouTubeCaptionTrack {
   baseUrl: string;
   languageCode: string;
-  kind?: string; // "asr" = auto-generated, absent = manual
+  /** "asr" for auto-generated, absent for manual */
+  kind?: string;
   name: string;
   vssId: string;
 }
@@ -429,7 +430,7 @@ export function pickBestTrack(
   tracks: YouTubeCaptionTrack[],
   lang: string,
 ): YouTubeCaptionTrack | undefined {
-  // Prefer manual (kind absent) over auto-generated (kind: "asr")
+  /** Prefer manual (kind absent) over auto-generated (kind: "asr") */
   function bestOfKind(list: YouTubeCaptionTrack[]) {
     return list.find((t) => !t.kind) ?? list.find((t) => t.kind === "asr");
   }

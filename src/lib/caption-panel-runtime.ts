@@ -53,8 +53,10 @@ export interface CaptionPanelState {
   buildError?: unknown;
 }
 
-// Apart from the panel's state, because it changes with every caption while
-// the video plays, and only the caption list shows it.
+/**
+ * Apart from the panel's state, because it changes with every caption while
+ * the video plays, and only the caption list shows it.
+ */
 interface PlaybackState {
   /** Index of the caption row at the playback position */
   currentIndex?: number;
@@ -126,9 +128,11 @@ export class CaptionPanelRuntime {
     }
   }
 
-  // Resolves the tracks, or undefined without a source or on failure. A failure
-  // stays in `tracksError` instead of rejecting, so it never hides a saved
-  // session.
+  /**
+   * Resolves the tracks, or undefined without a source or on failure. A failure
+   * stays in `tracksError` instead of rejecting, so it never hides a saved
+   * session.
+   */
   private async loadTracks(): Promise<YouTubeCaptionTrack[] | undefined> {
     if (!this.trackSource) {
       return undefined;
@@ -439,8 +443,10 @@ export class CaptionPanelRuntime {
     return bookmark;
   }
 
-  // The playback loop only follows the player while it plays, so a paused seek
-  // sets the current caption itself.
+  /**
+   * The playback loop only follows the player while it plays, so a paused seek
+   * sets the current caption itself.
+   */
   private seekToBookmark(bookmark: ExtensionBookmark): void {
     this.player?.seekTo(bookmark.timestamp);
     this.playbackStore.update({

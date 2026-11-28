@@ -7,9 +7,11 @@ export type Store<T> = {
 
 export type StoreMap<S, K extends keyof S> = { [P in K]: Store<S[P]> };
 
-// Returns a `transact` function over a database whose object stores are
-// described by `S`, keyed by the names in `storeNames`. The database opens on
-// the first transaction.
+/**
+ * Returns a `transact` function over a database whose object stores are
+ * described by `S`, keyed by the names in `storeNames`. The database opens on
+ * the first transaction.
+ */
 export function createTransact<S>(options: {
   name: string;
   version: number;

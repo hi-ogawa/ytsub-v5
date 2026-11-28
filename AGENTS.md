@@ -32,6 +32,7 @@
 - Functions are ordered by reading flow, with primary entry points and callers before their implementation helpers.
 - A `useEffect` has a comment only when it carries its own block of logic, and the comment describes the mechanism it maintains across renders. Effects that only set up and clean up have none.
 - Comments say only what the code can't, such as a non-obvious reason or a constraint the types don't show. They don't restate a name or type or describe other files, and a rationale appears once, where it is enforced.
+- A comment that describes a declaration, such as a function, method, class, type, type member, or module-level constant, is JSDoc (`/** ... */`), so editors show it on hover. Comments on statements, local variables, and object literal properties use `//`.
 - How parts work together, such as a message flow across contexts or files, is explained in a doc under `docs/` with a diagram. The code points to that doc in one line rather than writing the flow out as ASCII art or a list in a comment.
 - `undefined` is preferred over `null`, and optional properties (`{ x?: T }`) over explicit undefined (`{ x: T | undefined }`).
 - Props and params are required when all call sites always pass them.
