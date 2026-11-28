@@ -11,16 +11,16 @@ import { DropdownMenuItem } from "./ui/dropdown-menu.tsx";
 export function SyncMenuItem({
   useSync,
   runtime,
-  onOpenBookmarks,
+  onOpenBookmarksPage,
 }: {
   useSync: UseSync;
   runtime: CaptionPanelRuntime;
-  onOpenBookmarks: () => void;
+  onOpenBookmarksPage: () => void;
 }) {
   const sync = useSync({ youtubeId: runtime.youtubeId });
   const { state, error } = sync;
   const { icon, label } = syncStateDisplay(state);
-  const action = getSyncMenuAction({ sync, runtime, onOpenBookmarks });
+  const action = getSyncMenuAction({ sync, runtime, onOpenBookmarksPage });
 
   const content = (
     <>
@@ -61,7 +61,7 @@ export function SyncMenuItem({
         <div className="shrink-0">
           <DropdownMenuItem
             className="px-1.5 text-muted-foreground"
-            onSelect={onOpenBookmarks}
+            onSelect={onOpenBookmarksPage}
             title="Open bookmarks page"
             aria-label="Open bookmarks page"
           >
@@ -90,11 +90,11 @@ export function SyncMenuItem({
 function getSyncMenuAction({
   sync,
   runtime,
-  onOpenBookmarks,
+  onOpenBookmarksPage,
 }: {
   sync: SyncStatus;
   runtime: CaptionPanelRuntime;
-  onOpenBookmarks: () => void;
+  onOpenBookmarksPage: () => void;
 }): { run: () => void; keepOpen: boolean } | undefined {
   const { onPush, onPull } = sync;
   switch (sync.state) {
@@ -107,7 +107,7 @@ function getSyncMenuAction({
     }
     case "conflict":
     case "unauthenticated": {
-      return { run: onOpenBookmarks, keepOpen: false };
+      return { run: onOpenBookmarksPage, keepOpen: false };
     }
     default: {
       return undefined;

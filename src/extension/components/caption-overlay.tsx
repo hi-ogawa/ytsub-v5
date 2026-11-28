@@ -17,12 +17,12 @@ export function CaptionOverlay({
   storage,
   youtubeId,
   useSync,
-  onOpenBookmarks,
+  onOpenBookmarksPage,
 }: {
   storage: CaptionStorage;
   youtubeId: string;
   useSync: UseSync;
-  onOpenBookmarks: () => void;
+  onOpenBookmarksPage: () => void;
 }) {
   const [open, toggleOpen] = useFabOpen(youtubeId);
   const [panelWidth, setPanelWidth] =
@@ -47,7 +47,7 @@ export function CaptionOverlay({
             storage={storage}
             youtubeId={youtubeId}
             useSync={useSync}
-            onOpenBookmarks={onOpenBookmarks}
+            onOpenBookmarksPage={onOpenBookmarksPage}
           />
         </ResizablePanel>
       )}
@@ -60,12 +60,12 @@ function ExtensionViewer({
   storage,
   youtubeId,
   useSync,
-  onOpenBookmarks,
+  onOpenBookmarksPage,
 }: {
   storage: CaptionStorage;
   youtubeId: string;
   useSync: UseSync;
-  onOpenBookmarks: () => void;
+  onOpenBookmarksPage: () => void;
 }) {
   const queryClient = useQueryClient();
   const [player] = useState(() => getVideoPlayer());
@@ -92,7 +92,7 @@ function ExtensionViewer({
       runtime={runtime}
       player={player}
       useSync={useSync}
-      onOpenBookmarks={onOpenBookmarks}
+      onOpenBookmarksPage={onOpenBookmarksPage}
     />
   );
 }

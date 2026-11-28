@@ -29,7 +29,7 @@ export function VideoViewerPage({ storage }: { storage: CaptionStorage }) {
       youtubeId={youtubeId}
       startTime={getStartTime(searchParams)}
       useSync={({ youtubeId }) => useWebSync({ storage, youtubeId })}
-      onOpenBookmarks={() => navigate("/")}
+      onOpenBookmarksPage={() => navigate("/")}
     />
   );
 }
@@ -39,13 +39,13 @@ export function VideoViewer({
   youtubeId,
   startTime,
   useSync,
-  onOpenBookmarks,
+  onOpenBookmarksPage,
 }: {
   storage: CaptionStorage;
   youtubeId: string;
   startTime?: number;
   useSync: UseSync;
-  onOpenBookmarks: () => void;
+  onOpenBookmarksPage: () => void;
 }) {
   // Where a browser blocks autoplay, as mobile browsers do on a page opened
   // from a link, the player waits paused there until the first tap.
@@ -75,7 +75,7 @@ export function VideoViewer({
           startTime={startTime}
           player={player}
           useSync={useSync}
-          onOpenBookmarks={onOpenBookmarks}
+          onOpenBookmarksPage={onOpenBookmarksPage}
         />
       </div>
     </div>
@@ -95,14 +95,14 @@ function ViewerCaptionPanel({
   startTime,
   player,
   useSync,
-  onOpenBookmarks,
+  onOpenBookmarksPage,
 }: {
   storage: CaptionStorage;
   youtubeId: string;
   startTime?: number;
   player?: YTPlayer;
   useSync: UseSync;
-  onOpenBookmarks: () => void;
+  onOpenBookmarksPage: () => void;
 }) {
   const [runtime] = useState(
     () => new CaptionPanelRuntime({ storage, youtubeId, startTime }),
@@ -112,7 +112,7 @@ function ViewerCaptionPanel({
       runtime={runtime}
       player={player}
       useSync={useSync}
-      onOpenBookmarks={onOpenBookmarks}
+      onOpenBookmarksPage={onOpenBookmarksPage}
     />
   );
 }

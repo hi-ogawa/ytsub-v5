@@ -97,7 +97,7 @@ function WatchPreview({
       storage={storage}
       youtubeId={youtubeId}
       useSync={() => sync}
-      onOpenBookmarks={() => navigate(listHref)}
+      onOpenBookmarksPage={() => navigate(listHref)}
     />
   );
 }
