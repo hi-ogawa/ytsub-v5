@@ -1,24 +1,19 @@
 // Background service worker. docs/extension-runtime.md explains its role.
 
 import { sessionToExportData } from "../lib/caption-session.ts";
-import { serverSessionToLocal } from "../lib/caption-session.ts";
 import { idbCaptionStorage } from "../lib/caption-storage-idb.ts";
 import { orpc, setRpcConfig } from "../lib/rpc-client.ts";
+import {
+  checkServerSyncState,
+  fetchServerSession,
+} from "../lib/sync-server.ts";
 import { chromeStorage } from "./lib/chrome-storage.ts";
 import { registerRpcHandlers } from "./lib/extension-rpc.ts";
 import { getServerUrl } from "./lib/server-url.ts";
 
 export const bgRpcHandlers = {
   async getSyncState({ youtubeId }: { youtubeId: string }) {
-    const { authenticated } = await orpc.auth.check.call({});
-    if (!authenticated) {
-      return { authenticated: false as const };
-    }
-    const data = await orpc.videos.getVideoEditedAt.call({ youtubeId });
-    return {
-      authenticated: true as const,
-      serverEditedAt: data?.editedAt,
-    };
+    return checkServerSyncState(youtubeId);
   },
 
   async openBookmarks() {
@@ -47,14 +42,7 @@ export const bgRpcHandlers = {
    * The caption panel pulls with this. docs/extension-runtime.md explains why.
    */
   async fetchSession({ youtubeId }: { youtubeId: string }) {
-    const data = await orpc.videos.getFullSession.call({ youtubeId });
-    if (!data) {
-      throw new Error("Video not found on server");
-    }
-    return {
-      session: serverSessionToLocal(data),
-      editedAt: data.video.editedAt,
-    };
+    return fetchServerSession(youtubeId);
   },
 };
 

@@ -1,4 +1,5 @@
 import type { CaptionPanelRuntime } from "./caption-panel-runtime.ts";
+import type { PersistedCaptionSession } from "./caption-storage.ts";
 
 export type SyncState =
   | "unauthenticated"
@@ -74,6 +75,24 @@ export function canPushWithoutOverwriting(params: {
   const state = computeSyncState(params);
   return state === "push" || state === "empty";
 }
+
+/**
+ * How a client reaches the server for one video's sync. The extension goes
+ * through its background, which holds the session token
+ * (docs/extension-runtime.md), and the web app calls the server directly.
+ */
+export type SyncTransport = {
+  checkServer: () => Promise<{
+    authenticated: boolean;
+    serverEditedAt?: string;
+  }>;
+  push: (runtime: CaptionPanelRuntime) => Promise<{ editedAt: string }>;
+  fetchSession: () => Promise<{
+    session: PersistedCaptionSession;
+    editedAt: string;
+  }>;
+  openBookmarks: () => void;
+};
 
 export type SyncStatus = {
   state: SyncState;
