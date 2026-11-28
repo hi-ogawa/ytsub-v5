@@ -256,14 +256,10 @@ export class CaptionPanelRuntime {
     await this.updateSession({ bookmarks: [] });
   }
 
-  async replace(content: {
-    captions: MergedCaption[];
-    bookmarks: ExtensionBookmark[];
-  }): Promise<void> {
-    await this.updateSession({
-      rows: content.captions,
-      bookmarks: content.bookmarks,
-    });
+  async updateSession(update: Partial<CaptionSession>): Promise<void> {
+    const session = { ...this.getSession(), ...update };
+    this.store.update({ session });
+    await this.saveSession(session);
   }
 
   /**
@@ -303,12 +299,6 @@ export class CaptionPanelRuntime {
       throw new Error("No caption session");
     }
     return session;
-  }
-
-  private async updateSession(update: Partial<CaptionSession>): Promise<void> {
-    const session = { ...this.getSession(), ...update };
-    this.store.update({ session });
-    await this.saveSession(session);
   }
 
   private async saveSession(session: CaptionSession): Promise<void> {
