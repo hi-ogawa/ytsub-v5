@@ -11,13 +11,15 @@ import { Tooltip } from "./ui/tooltip.tsx";
 export function SyncIndicator({
   sync,
   runtime,
+  onOpenBookmarksPage,
 }: {
   sync: SyncStatus;
   runtime: CaptionPanelRuntime;
+  onOpenBookmarksPage: () => void;
 }) {
   const { state } = sync;
   const { icon, label, tone, hint } = syncStateDisplay(state);
-  const onClick = getSyncClickHandler(sync, runtime);
+  const onClick = getSyncClickHandler({ sync, runtime, onOpenBookmarksPage });
   const description = onClick && hint ? `${label}: ${hint}` : label;
 
   // Icon only, so the track picker beside it keeps its width as the state
@@ -51,11 +53,16 @@ export function SyncIndicator({
   );
 }
 
-function getSyncClickHandler(
-  sync: SyncStatus,
-  runtime: CaptionPanelRuntime,
-): (() => void) | undefined {
-  const { onCheck, onPush, onPull, onNavigate } = sync;
+function getSyncClickHandler({
+  sync,
+  runtime,
+  onOpenBookmarksPage,
+}: {
+  sync: SyncStatus;
+  runtime: CaptionPanelRuntime;
+  onOpenBookmarksPage: () => void;
+}): (() => void) | undefined {
+  const { onCheck, onPush, onPull } = sync;
   switch (sync.state) {
     case "push":
     case "empty": {
@@ -67,7 +74,7 @@ function getSyncClickHandler(
     // The bookmarks page resolves conflicts and holds sign-in.
     case "conflict":
     case "unauthenticated": {
-      return onNavigate;
+      return onOpenBookmarksPage;
     }
     case "synced":
     case "error": {

@@ -32,7 +32,7 @@ export function SettingsDropdown({
   onSetAutoScroll,
   textSize,
   onSetTextSize,
-  onOpenBookmarks,
+  onOpenBookmarksPage,
 }: {
   runtime: CaptionPanelRuntime;
   session: CaptionSession;
@@ -41,7 +41,7 @@ export function SettingsDropdown({
   onSetAutoScroll: (value: boolean | ((prev: boolean) => boolean)) => void;
   textSize: number;
   onSetTextSize: (value: number) => void;
-  onOpenBookmarks: () => void;
+  onOpenBookmarksPage: () => void;
 }) {
   const hasBookmarks = session.bookmarks.length > 0;
 
@@ -96,7 +96,7 @@ export function SettingsDropdown({
           Clear bookmarks
         </DropdownMenuItem>
         <div className="my-1 h-px bg-border" />
-        <DropdownMenuItem onSelect={onOpenBookmarks}>
+        <DropdownMenuItem onSelect={onOpenBookmarksPage}>
           <ExternalLink className="mr-2 size-4" />
           Open bookmarks page
         </DropdownMenuItem>

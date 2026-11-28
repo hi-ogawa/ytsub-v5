@@ -89,7 +89,6 @@ function WatchPreview({
   const sync: SyncStatus = {
     state: "synced",
     onCheck: () => {},
-    onNavigate: () => navigate(listHref),
     onPush: () => {},
     onPull: () => {},
   };
@@ -99,6 +98,7 @@ function WatchPreview({
       storage={storage}
       youtubeId={youtubeId}
       useSync={() => sync}
+      onOpenBookmarksPage={() => navigate(listHref)}
     />
   );
 }
