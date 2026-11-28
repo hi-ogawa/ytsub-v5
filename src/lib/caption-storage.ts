@@ -38,42 +38,26 @@ export type StorageListener = (notice: StorageNotice) => void;
 export interface CaptionStorage {
   getSession(youtubeId: string): Promise<PersistedCaptionSession | undefined>;
   /**
-   * Also updates the video's index entry when the session has bookmarks,
-   * already has an entry, is saved as synced, or is saved with
-   * `addToVideoIndex`. `syncedEditedAt` marks the session as the copy synced at
-   * that edit time, as after a pull, so it is recorded as both the entry's edit
-   * time and its last sync.
+   * Also updates the video's index entry when the session has bookmarks, is
+   * already indexed, or is saved as synced. `syncedEditedAt` marks the session
+   * as the copy synced at that edit time, as after a pull, so it is recorded as
+   * both the entry's edit time and its last sync.
    */
   saveSession(
     session: PersistedCaptionSession,
-    options?: { syncedEditedAt?: string; addToVideoIndex?: boolean },
+    options?: { syncedEditedAt?: string },
   ): Promise<void>;
+  /**
+   * Give a stored session a video index entry, even without bookmarks, as
+   * before a push. An existing entry is left alone, because a push copies its
+   * edit time unchanged.
+   */
+  ensureVideoIndexEntry(youtubeId: string): Promise<void>;
   deleteVideo(youtubeId: string): Promise<void>;
   markSynced(options: { youtubeId: string; editedAt: string }): Promise<void>;
   getVideoIndexEntry(youtubeId: string): Promise<VideoIndexEntry | undefined>;
   listVideoIndex(): Promise<VideoIndexEntry[]>;
   subscribe(listener: StorageListener): () => void;
-}
-
-/**
- * Give a video without bookmarks a video index entry before a push. An
- * existing entry is left alone, because a push copies its edit time unchanged.
- */
-export async function ensureVideoIndexEntry({
-  storage,
-  youtubeId,
-}: {
-  storage: CaptionStorage;
-  youtubeId: string;
-}): Promise<void> {
-  if (await storage.getVideoIndexEntry(youtubeId)) {
-    return;
-  }
-  const session = await storage.getSession(youtubeId);
-  if (!session) {
-    throw new Error("No local session found");
-  }
-  await storage.saveSession(session, { addToVideoIndex: true });
 }
 
 /**

@@ -1,10 +1,7 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useVideoIndexEntry } from "../../components/use-video-index-entry.ts";
 import type { CaptionPanelRuntime } from "../../lib/caption-panel-runtime.ts";
-import {
-  type CaptionStorage,
-  ensureVideoIndexEntry,
-} from "../../lib/caption-storage.ts";
+import type { CaptionStorage } from "../../lib/caption-storage.ts";
 import {
   type SyncState,
   type SyncStatus,
@@ -41,7 +38,7 @@ export function useExtensionSync({
   const syncMutation = useMutation({
     mutationFn: async (action: SyncAction) => {
       if (action.direction === "push") {
-        await ensureVideoIndexEntry({ storage, youtubeId });
+        await storage.ensureVideoIndexEntry(youtubeId);
         const { editedAt } = await bgRpc.pushSession({ youtubeId });
         await storage.markSynced({ youtubeId, editedAt });
       } else {

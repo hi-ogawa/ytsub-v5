@@ -81,22 +81,40 @@ class IdbCaptionStorage implements CaptionStorage {
         sessions.put(session);
         const existing = await videos.get(session.youtubeId);
         const syncedEditedAt = options?.syncedEditedAt;
-        if (
-          !existing &&
-          !syncedEditedAt &&
-          !options?.addToVideoIndex &&
-          !session.bookmarks.length
-        ) {
+        if (!existing && !syncedEditedAt && !session.bookmarks.length) {
           return;
         }
-        videos.put({
-          youtubeId: session.youtubeId,
-          title: session.title,
-          channelName: session.channelName,
-          bookmarkCount: session.bookmarks.length,
-          editedAt: syncedEditedAt ?? new Date().toISOString(),
-          syncedEditedAt: syncedEditedAt ?? existing?.syncedEditedAt,
-        });
+        videos.put(
+          toVideoIndexEntry(session, {
+            editedAt: syncedEditedAt ?? new Date().toISOString(),
+            syncedEditedAt: syncedEditedAt ?? existing?.syncedEditedAt,
+          }),
+        );
+        return videos.getAll();
+      },
+    );
+    if (entries) {
+      this.notify({ type: "videoIndex", entries });
+    }
+  };
+
+  ensureVideoIndexEntry: CaptionStorage["ensureVideoIndexEntry"] = async (
+    youtubeId,
+  ) => {
+    const entries = await transact(
+      ["sessions", "videos"],
+      "readwrite",
+      async ({ sessions, videos }) => {
+        if (await videos.get(youtubeId)) {
+          return;
+        }
+        const session = await sessions.get(youtubeId);
+        if (!session) {
+          throw new Error("No local session found");
+        }
+        videos.put(
+          toVideoIndexEntry(session, { editedAt: new Date().toISOString() }),
+        );
         return videos.getAll();
       },
     );
@@ -160,3 +178,16 @@ class IdbCaptionStorage implements CaptionStorage {
 }
 
 export const idbCaptionStorage = new IdbCaptionStorage();
+
+function toVideoIndexEntry(
+  session: PersistedCaptionSession,
+  times: { editedAt: string; syncedEditedAt?: string },
+): VideoIndexEntry {
+  return {
+    youtubeId: session.youtubeId,
+    title: session.title,
+    channelName: session.channelName,
+    bookmarkCount: session.bookmarks.length,
+    ...times,
+  };
+}
