@@ -20,8 +20,10 @@ export class RestartableTask {
   }
 }
 
-// The awaited work itself still runs to the end. Only what follows the step is
-// skipped.
+/**
+ * The awaited work itself still runs to the end. Only what follows the step is
+ * skipped.
+ */
 function createAbortableStep(signal: AbortSignal) {
   return async <T>(promise: Promise<T>): Promise<T> => {
     const value = await promise;

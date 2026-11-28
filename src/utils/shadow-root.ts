@@ -1,5 +1,7 @@
-// Creates a host element with an open shadow root holding the given CSS, and
-// returns the container to render into.
+/**
+ * Creates a host element with an open shadow root holding the given CSS, and
+ * returns the container to render into.
+ */
 export function createShadowHost({
   id,
   css,
@@ -27,9 +29,11 @@ export function createShadowHost({
   return { host, container };
 }
 
-// Inject CSS into shadow root, hoisting @property declarations to document head
-// because @property doesn't work inside Shadow DOM <style> elements.
-// https://github.com/tailwindlabs/tailwindcss/issues/15005#issuecomment-3891099776
+/**
+ * Inject CSS into shadow root, hoisting @property declarations to document head
+ * because @property doesn't work inside Shadow DOM <style> elements.
+ * https://github.com/tailwindlabs/tailwindcss/issues/15005#issuecomment-3891099776
+ */
 function addShadowStyle(shadow: ShadowRoot, css: string) {
   const processed = css.replaceAll(":root", ":host");
 

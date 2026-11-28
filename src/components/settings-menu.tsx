@@ -102,8 +102,10 @@ export function SettingsDropdown({
   );
 }
 
-// Each button keeps the menu open, so the captions behind it resize live
-// while stepping.
+/**
+ * Each button keeps the menu open, so the captions behind it resize live
+ * while stepping.
+ */
 function TextSizeStepper({
   textSize,
   onSetTextSize,

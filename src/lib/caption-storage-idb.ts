@@ -17,7 +17,7 @@ const STORE_NAMES: { [K in keyof Stores]: string } = {
   videos: "videos",
 };
 
-// A video index entry as stored before version 3
+/** A video index entry as stored before version 3 */
 type VideoIndexEntryV2 = {
   youtubeId: string;
   title: string;

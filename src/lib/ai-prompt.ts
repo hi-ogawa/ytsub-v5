@@ -55,8 +55,10 @@ function formatBookmarks(
   return JSON.stringify(summaries, null, 2);
 }
 
-// Only what the agent needs to re-anchor each bookmark, so translations and
-// notes never pass through it.
+/**
+ * Only what the agent needs to re-anchor each bookmark, so translations and
+ * notes never pass through it.
+ */
 function formatAnchorBookmarks(bookmarks: ExtensionBookmark[]): string {
   const summaries = bookmarks.map((b) => ({
     id: b.id,
@@ -122,8 +124,10 @@ type AiImportAlignCaption = {
   text2: string;
 };
 
-// An entry with an id moves an existing bookmark, and one without adds a new
-// bookmark.
+/**
+ * An entry with an id moves an existing bookmark, and one without adds a new
+ * bookmark.
+ */
 type AiImportAlignBookmark = {
   id?: string;
   captionIndex: number;

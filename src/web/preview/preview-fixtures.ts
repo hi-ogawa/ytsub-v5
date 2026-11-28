@@ -5,7 +5,7 @@ import {
 } from "../../lib/caption-session.ts";
 import { MemoryCaptionStorage } from "./memory-caption-storage.ts";
 
-// The videos the e2e database is seeded with
+/** The videos the e2e database is seeded with */
 const seedVideos = Object.values(
   import.meta.glob<ExportData>("/scripts/db-seed-json/*/import.json", {
     eager: true,
@@ -23,8 +23,10 @@ export async function createPreviewStorage() {
   return storage;
 }
 
-// One card per sync badge the list can show. The last one exists only on the
-// server, so it has no session and no bookmark count.
+/**
+ * One card per sync badge the list can show. The last one exists only on the
+ * server, so it has no session and no bookmark count.
+ */
 export function createPreviewListEntries(): VideoListEntry[] {
   const statuses = ["synced", "push", "conflict"] as const;
   const localEntries = seedVideos.map((data, index) => ({

@@ -1,8 +1,10 @@
 import type { YTPlayer } from "../../components/youtube-player.tsx";
 
-// YouTube navigates as a single-page app, so the content script runs once and
-// follows its navigation events. onEnter returns the cleanup to run when the
-// page is left.
+/**
+ * YouTube navigates as a single-page app, so the content script runs once and
+ * follows its navigation events. onEnter returns the cleanup to run when the
+ * page is left.
+ */
 export function subscribeWatchPage({
   onEnter,
 }: {
@@ -31,7 +33,7 @@ function getYoutubeId() {
   return new URL(window.location.href).searchParams.get("v");
 }
 
-// Calls onChange with the current theme right away, then on each change.
+/** Calls onChange with the current theme right away, then on each change. */
 export function subscribeYouTubeTheme(onChange: (dark: boolean) => void) {
   const notify = () => onChange(document.documentElement.hasAttribute("dark"));
   notify();
@@ -43,7 +45,7 @@ export function subscribeYouTubeTheme(onChange: (dark: boolean) => void) {
   return () => observer.disconnect();
 }
 
-// Adapter: wrap the page's <video> element as YTPlayer
+/** Adapter: wrap the page's <video> element as YTPlayer */
 export function getVideoPlayer(): YTPlayer | undefined {
   const video = document.querySelector("video");
   if (!video) {
