@@ -84,16 +84,7 @@ export function useSyncStatus({
         const { editedAt } = await transport.push(action.runtime);
         await storage.markSynced({ youtubeId, editedAt });
       } else {
-        const { session, editedAt } = await transport.fetchSession();
-        await action.runtime.replace(
-          {
-            vssId1: session.vssId1,
-            vssId2: session.vssId2,
-            captions: session.captions,
-            bookmarks: session.bookmarks,
-          },
-          { syncedEditedAt: editedAt },
-        );
+        await action.runtime.applyPulledSession(await transport.fetchSession());
       }
     },
     onSuccess: () => serverQuery.refetch(),

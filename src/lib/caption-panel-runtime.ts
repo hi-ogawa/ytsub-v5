@@ -72,7 +72,7 @@ interface PlaybackState {
  *
  * The saved session needs nothing from YouTube, so it shows whether or not the
  * tracks load. Without a track source, as in the web app, the runtime only
- * shows the saved session.
+ * shows the saved session or one pulled from the server.
  *
  * Read state from `store`, and change it only through the methods, because
  * they also save the session.
@@ -256,25 +256,29 @@ export class CaptionPanelRuntime {
     await this.updateSession({ bookmarks: [] });
   }
 
-  async replace(
-    content: {
-      captions: MergedCaption[];
-      bookmarks: ExtensionBookmark[];
-      vssId1?: string;
-      vssId2?: string;
-    },
-    options?: { syncedEditedAt?: string },
-  ): Promise<void> {
-    const session = this.getSession();
-    await this.updateSession(
-      {
-        rows: content.captions,
-        bookmarks: content.bookmarks,
-        vssId1: content.vssId1 ?? session.vssId1,
-        vssId2: content.vssId2 ?? session.vssId2,
-      },
-      options,
-    );
+  async replace(content: {
+    captions: MergedCaption[];
+    bookmarks: ExtensionBookmark[];
+  }): Promise<void> {
+    await this.updateSession({
+      rows: content.captions,
+      bookmarks: content.bookmarks,
+    });
+  }
+
+  /**
+   * Show and save the server's copy of the session as synced at its edit time.
+   * It is complete, so it needs no current session, as in the web app before
+   * the video's first pull.
+   */
+  async applyPulledSession(pulled: {
+    session: PersistedCaptionSession;
+    editedAt: string;
+  }): Promise<void> {
+    await this.storage.saveSession(pulled.session, {
+      syncedEditedAt: pulled.editedAt,
+    });
+    this.store.update({ session: toCaptionSession(pulled.session) });
   }
 
   toExportData(options?: { editedAt?: string }): ExportData {
@@ -301,31 +305,22 @@ export class CaptionPanelRuntime {
     return session;
   }
 
-  private async updateSession(
-    update: Partial<CaptionSession>,
-    options?: { syncedEditedAt?: string },
-  ): Promise<void> {
+  private async updateSession(update: Partial<CaptionSession>): Promise<void> {
     const session = { ...this.getSession(), ...update };
     this.store.update({ session });
-    await this.saveSession(session, options);
+    await this.saveSession(session);
   }
 
-  private async saveSession(
-    session: CaptionSession,
-    options?: { syncedEditedAt?: string },
-  ): Promise<void> {
-    await this.storage.saveSession(
-      {
-        ...session.video,
-        vssId1: session.vssId1,
-        vssId2: session.vssId2,
-        language1: getLangCodeFromVssId(session.vssId1),
-        language2: getLangCodeFromVssId(session.vssId2),
-        captions: session.rows,
-        bookmarks: session.bookmarks,
-      },
-      options,
-    );
+  private async saveSession(session: CaptionSession): Promise<void> {
+    await this.storage.saveSession({
+      ...session.video,
+      vssId1: session.vssId1,
+      vssId2: session.vssId2,
+      language1: getLangCodeFromVssId(session.vssId1),
+      language2: getLangCodeFromVssId(session.vssId2),
+      captions: session.rows,
+      bookmarks: session.bookmarks,
+    });
   }
 
   // --- Playback ---

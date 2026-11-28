@@ -46,22 +46,20 @@ test("?t link marks and shows its caption before the player plays", async ({
   await expect(page.locator("[data-index='0']")).not.toBeInViewport();
 });
 
-test("server-only video links to the bookmarks page to pull it", async ({
-  page,
-}) => {
+test("server-only video downloads in the viewer", async ({ page }) => {
   await page.route("https://www.youtube.com/**", (route) => route.abort());
   await login(page);
   await page.getByTestId(`video-card-${SEED_YOUTUBE_ID}`).click();
   await expect(page).toHaveURL(`/videos/${SEED_YOUTUBE_ID}`);
 
   await expect(
-    page.getByText("This video isn't on this device yet."),
+    page.getByText("This video is on the server but not on this device yet."),
   ).toBeVisible();
-  await page.getByRole("link", { name: "bookmarks page" }).click();
-  await expect(page).toHaveURL("/");
-  await expect(
-    page
-      .getByTestId(`video-card-${SEED_YOUTUBE_ID}`)
-      .getByTestId("video-sync-badge"),
-  ).toBeVisible();
+  await page.getByRole("button", { name: "Download" }).click();
+
+  await expect(page.getByRole("tab", { name: "Bookmarks (15)" })).toBeVisible();
+  await expect(page.getByTestId("sync-status")).toHaveAttribute(
+    "data-sync-state",
+    "synced",
+  );
 });
