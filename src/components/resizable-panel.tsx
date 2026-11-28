@@ -1,9 +1,21 @@
 import { useCallback, useRef, useState } from "react";
+import { z } from "zod";
+import { createLocalStorageStore } from "../utils/local-storage-store.ts";
 
-const WIDTH_KEY = "zamak:panel-width";
 const DEFAULT_WIDTH = 400;
 const MIN_WIDTH = 280;
 const MAX_WIDTH = 800;
+
+const preferencesSchema = z
+  .object({
+    width: z.number().min(MIN_WIDTH).max(MAX_WIDTH).catch(DEFAULT_WIDTH),
+  })
+  .catch({ width: DEFAULT_WIDTH });
+
+const panelPreferences = createLocalStorageStore({
+  key: "zamak:panel-width",
+  parse: (stored) => preferencesSchema.parse(stored),
+});
 
 export function ResizablePanel({
   children,
@@ -16,7 +28,7 @@ export function ResizablePanel({
   className?: string;
   style?: React.CSSProperties;
 }) {
-  const [width, setWidth] = useState(getPanelWidth);
+  const [width, setWidth] = useState(() => panelPreferences.get().width);
   const widthRef = useRef(width);
   widthRef.current = width;
 
@@ -50,7 +62,7 @@ export function ResizablePanel({
       }
       target.removeEventListener("pointermove", onPointerMove);
       target.removeEventListener("pointerup", onPointerUp);
-      localStorage.setItem(WIDTH_KEY, String(widthRef.current));
+      panelPreferences.update({ width: widthRef.current });
     };
 
     target.addEventListener("pointermove", onPointerMove);
@@ -72,17 +84,4 @@ export function ResizablePanel({
       {children}
     </div>
   );
-}
-
-function getPanelWidth(): number {
-  try {
-    const stored = localStorage.getItem(WIDTH_KEY);
-    if (stored) {
-      const n = Number(stored);
-      if (n >= MIN_WIDTH && n <= MAX_WIDTH) {
-        return n;
-      }
-    }
-  } catch {}
-  return DEFAULT_WIDTH;
 }

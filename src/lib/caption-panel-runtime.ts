@@ -119,7 +119,7 @@ export class CaptionPanelRuntime {
     this.store.update({ restoring: false, session });
     const tracks = await this.loadTracks();
     if (tracks && !saved) {
-      await this.buildSession(getInitialTracks(tracks, this.youtubeId));
+      await this.buildSession(getInitialTracks(tracks));
     }
   }
 
@@ -154,7 +154,6 @@ export class CaptionPanelRuntime {
         tracks: this.store.get().tracks,
         vssId1,
         vssId2,
-        youtubeId: this.youtubeId,
       });
     }
     this.store.update({ session: undefined });

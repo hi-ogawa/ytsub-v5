@@ -1,5 +1,6 @@
 import type { InferRouterInputs, InferRouterOutputs } from "@orpc/server";
 import type { Router } from "../server/rpc.ts";
+import { captionLanguagePreferences } from "./caption-language-preferences.ts";
 import type { MergedCaption } from "./caption-merge.ts";
 import type {
   CaptionStorage,
@@ -15,57 +16,36 @@ type GetFullSessionOutput = NonNullable<
 
 // --- Track preference persistence ---
 
-const TRACKS_KEY = "zamak:selected-tracks";
-const LANGS_KEY = "zamak:preferred-langs";
-
-export function getInitialTracks(
-  tracks: YouTubeCaptionTrack[],
-  youtubeId: string,
-): { vssId1?: string; vssId2?: string } {
-  try {
-    const perVideo = localStorage.getItem(`${TRACKS_KEY}:${youtubeId}`);
-    if (perVideo) {
-      const { vssId1, vssId2 } = JSON.parse(perVideo);
-      const valid1 = tracks.some((t) => t.vssId === vssId1);
-      const valid2 = tracks.some((t) => t.vssId === vssId2);
-      if (valid1 && valid2) {
-        return { vssId1, vssId2 };
-      }
-    }
-    const globalPref = localStorage.getItem(LANGS_KEY);
-    if (globalPref) {
-      const { lang1, lang2 } = JSON.parse(globalPref);
-      return {
-        vssId1: pickBestTrack(tracks, lang1)?.vssId,
-        vssId2: pickBestTrack(tracks, lang2)?.vssId,
-      };
-    }
-  } catch {}
-  return {};
+export function getInitialTracks(tracks: YouTubeCaptionTrack[]): {
+  vssId1?: string;
+  vssId2?: string;
+} {
+  const { lang1, lang2 } = captionLanguagePreferences.get();
+  if (!lang1 || !lang2) {
+    return {};
+  }
+  return {
+    vssId1: pickBestTrack(tracks, lang1)?.vssId,
+    vssId2: pickBestTrack(tracks, lang2)?.vssId,
+  };
 }
 
 export function saveSelectedTracks({
   tracks,
   vssId1,
   vssId2,
-  youtubeId,
 }: {
   tracks: YouTubeCaptionTrack[];
   vssId1: string;
   vssId2: string;
-  youtubeId: string;
 }) {
-  localStorage.setItem(
-    `${TRACKS_KEY}:${youtubeId}`,
-    JSON.stringify({ vssId1, vssId2 }),
-  );
-  const t1 = tracks.find((t) => t.vssId === vssId1);
-  const t2 = tracks.find((t) => t.vssId === vssId2);
-  if (t1 && t2) {
-    localStorage.setItem(
-      LANGS_KEY,
-      JSON.stringify({ lang1: t1.languageCode, lang2: t2.languageCode }),
-    );
+  const track1 = tracks.find((t) => t.vssId === vssId1);
+  const track2 = tracks.find((t) => t.vssId === vssId2);
+  if (track1 && track2) {
+    captionLanguagePreferences.update({
+      lang1: track1.languageCode,
+      lang2: track2.languageCode,
+    });
   }
 }
 
