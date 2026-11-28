@@ -100,6 +100,30 @@ class IdbCaptionStorage implements CaptionStorage {
     }
   };
 
+  addToIndex: CaptionStorage["addToIndex"] = async (youtubeId) => {
+    const entries = await transact(
+      ["sessions", "videos"],
+      "readwrite",
+      async ({ sessions, videos }) => {
+        const session = await sessions.get(youtubeId);
+        if (!session || (await videos.get(youtubeId))) {
+          return;
+        }
+        videos.put({
+          youtubeId,
+          title: session.title,
+          channelName: session.channelName,
+          bookmarkCount: session.bookmarks.length,
+          editedAt: new Date().toISOString(),
+        });
+        return videos.getAll();
+      },
+    );
+    if (entries) {
+      this.notify({ type: "videoIndex", entries });
+    }
+  };
+
   deleteVideo: CaptionStorage["deleteVideo"] = async (youtubeId) => {
     const entries = await transact(
       ["sessions", "videos"],

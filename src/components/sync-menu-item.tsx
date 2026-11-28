@@ -80,14 +80,16 @@ export function SyncMenuItem({
 
 // A row is clickable only when clicking it does something. Push and pull run
 // in place, with the menu kept open to show progress, and states whose next
-// step lives on the bookmarks page open it.
+// step lives on the bookmarks page open it. A video without bookmarks has no
+// index entry, and pushing it adds one, so it joins the list only when asked.
 function getSyncMenuAction(
   sync: SyncStatus,
   runtime: CaptionPanelRuntime,
 ): { run: () => void; keepOpen: boolean } | undefined {
   const { onPush, onPull, onNavigate } = sync;
   switch (sync.state) {
-    case "push": {
+    case "push":
+    case "empty": {
       return { run: () => onPush(runtime), keepOpen: true };
     }
     case "pull": {

@@ -12,6 +12,7 @@ const storage = idbCaptionStorage;
 const storageFrameHandlers = {
   getSession: storage.getSession.bind(storage),
   saveSession: storage.saveSession.bind(storage),
+  addToIndex: storage.addToIndex.bind(storage),
   markSynced: storage.markSynced.bind(storage),
   getVideoIndexEntry: storage.getVideoIndexEntry.bind(storage),
   listVideoIndex: storage.listVideoIndex.bind(storage),
