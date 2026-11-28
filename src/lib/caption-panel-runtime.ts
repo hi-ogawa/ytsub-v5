@@ -107,8 +107,8 @@ export class CaptionPanelRuntime {
   }
 
   /**
-   * Show the saved session, or build one from the tracks picked for this video
-   * before, or else the best tracks for the languages picked last.
+   * Show the saved session, or build one from the best tracks for the
+   * languages picked last.
    */
   async restore(): Promise<void> {
     const saved = await this.storage.getSession(this.youtubeId);
@@ -124,7 +124,7 @@ export class CaptionPanelRuntime {
     this.store.update({ restoring: false, session });
     const tracks = await this.loadTracks();
     if (tracks && !saved) {
-      await this.buildSession(getInitialTracks(tracks, this.youtubeId));
+      await this.buildSession(getInitialTracks(tracks));
     }
   }
 
@@ -161,7 +161,6 @@ export class CaptionPanelRuntime {
         tracks: this.store.get().tracks,
         vssId1,
         vssId2,
-        youtubeId: this.youtubeId,
       });
     }
     this.store.update({ session: undefined });
