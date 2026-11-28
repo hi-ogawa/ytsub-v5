@@ -86,12 +86,8 @@ function ExtensionViewer({
 }
 
 function getUserLangs(): string[] {
-  const langs = [...navigator.languages];
   const { language1, language2 } = captionPanelPreferences.get();
-  for (const language of [language1, language2]) {
-    if (language && !langs.includes(language)) {
-      langs.push(language);
-    }
-  }
-  return langs;
+  return [...new Set([...navigator.languages, language1, language2])].filter(
+    (language) => language !== undefined,
+  );
 }
