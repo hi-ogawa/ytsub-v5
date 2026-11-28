@@ -44,7 +44,7 @@ export function SyncIndicator({
     // Below and right-aligned, like the settings menu beside it, so the
     // tooltip stays over the panel instead of the page around it.
     <Tooltip content={description} side="bottom" align="end">
-      {action && "href" in action ? (
+      {action?.type === "link" ? (
         <Link
           to={action.href}
           className={className}
@@ -78,26 +78,29 @@ function getSyncAction({
   sync: SyncStatus;
   runtime: CaptionPanelRuntime;
   bookmarksPageTarget: BookmarksPageTarget;
-}): { onClick: () => void } | { href: string } | undefined {
+}):
+  | { type: "handler"; onClick: () => void }
+  | { type: "link"; href: string }
+  | undefined {
   const { onCheck, onPush, onPull } = sync;
   switch (sync.state) {
     case "push":
     case "empty": {
-      return { onClick: () => onPush(runtime) };
+      return { type: "handler", onClick: () => onPush(runtime) };
     }
     case "pull": {
-      return { onClick: () => onPull(runtime) };
+      return { type: "handler", onClick: () => onPull(runtime) };
     }
     // The bookmarks page resolves conflicts and holds sign-in.
     case "conflict":
     case "unauthenticated": {
       return bookmarksPageTarget.type === "link"
-        ? { href: bookmarksPageTarget.href }
-        : { onClick: bookmarksPageTarget.onOpen };
+        ? bookmarksPageTarget
+        : { type: "handler", onClick: bookmarksPageTarget.onOpen };
     }
     case "synced":
     case "error": {
-      return { onClick: onCheck };
+      return { type: "handler", onClick: onCheck };
     }
     default: {
       return undefined;
