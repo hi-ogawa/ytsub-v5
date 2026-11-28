@@ -24,7 +24,9 @@ export function SyncIndicator({
   // Icon only, so the track picker beside it keeps its width as the state
   // changes.
   return (
-    <Tooltip content={description}>
+    // Below and right-aligned, like the settings menu beside it, so the
+    // tooltip stays over the panel instead of the page around it.
+    <Tooltip content={description} side="bottom" align="end">
       <button
         type="button"
         className={[

@@ -1,4 +1,5 @@
 import { Tooltip as TooltipPrimitive } from "radix-ui";
+import type { ComponentProps } from "react";
 import { usePortalContainer } from "./portal-container.tsx";
 
 /**
@@ -8,9 +9,13 @@ import { usePortalContainer } from "./portal-container.tsx";
  */
 export function Tooltip({
   content,
+  side,
+  align,
   children,
 }: {
   content: React.ReactNode;
+  side: ComponentProps<typeof TooltipPrimitive.Content>["side"];
+  align: ComponentProps<typeof TooltipPrimitive.Content>["align"];
   children: React.ReactElement;
 }) {
   const container = usePortalContainer();
@@ -20,6 +25,8 @@ export function Tooltip({
         <TooltipPrimitive.Trigger asChild>{children}</TooltipPrimitive.Trigger>
         <TooltipPrimitive.Portal container={container}>
           <TooltipPrimitive.Content
+            side={side}
+            align={align}
             sideOffset={4}
             className="z-50 rounded bg-foreground px-2 py-1 text-xs text-background shadow-lg"
           >
