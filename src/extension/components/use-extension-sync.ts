@@ -38,7 +38,6 @@ export function useExtensionSync({
   const syncMutation = useMutation({
     mutationFn: async (action: SyncAction) => {
       if (action.direction === "push") {
-        await storage.addToIndex(youtubeId);
         const { editedAt } = await bgRpc.pushSession({ youtubeId });
         await storage.markSynced({ youtubeId, editedAt });
       } else {

@@ -25,7 +25,6 @@ export function createBridgeStorage(): CaptionStorage {
   return {
     getSession: client.getSession,
     saveSession: client.saveSession,
-    addToIndex: client.addToIndex,
     markSynced: client.markSynced,
     getVideoIndexEntry: client.getVideoIndexEntry,
     listVideoIndex: client.listVideoIndex,

@@ -43,10 +43,9 @@ export interface CaptionStorage {
     session: PersistedCaptionSession,
     options?: { syncedEditedAt?: string },
   ): Promise<void>;
-  // Gives a stored session an index entry, even with no bookmarks, unless it
-  // already has one.
-  addToIndex(youtubeId: string): Promise<void>;
   deleteVideo(youtubeId: string): Promise<void>;
+  // Records a push or pull at this edit time. A video synced for the first
+  // time, such as one pushed without bookmarks, gets its index entry here.
   markSynced(options: { youtubeId: string; editedAt: string }): Promise<void>;
   getVideoIndexEntry(youtubeId: string): Promise<VideoIndexEntry | undefined>;
   listVideoIndex(): Promise<VideoIndexEntry[]>;

@@ -18,7 +18,7 @@ Browser storage belongs to an origin. The extension keeps its sessions on its ow
 
 Opening every session just to draw the bookmarks page would be slow, so the same database also keeps a video index, one entry per video. An entry holds a video's title, channel, and bookmark count, the time its content was last edited, and what that time was at its last push or pull.
 
-Saving a session updates its index entry in the same transaction, so the two never disagree. A video gets an entry once it has a bookmark, and keeps it at zero bookmarks so that deleting the last one can still be pushed. Until then, its session is stored but the video isn't listed anywhere. A pull adds the entry even with no bookmarks, so the pulled video shows up in the list. So does a push from the caption panel, which lets captions reach the server before any bookmarks are picked, such as right after fixing them. Each entry is its own record, so two pages that change different videos at once never overwrite each other.
+Saving a session updates its index entry in the same transaction, so the two never disagree. A video gets an entry once it has a bookmark or a copy on the server, and keeps it from then on, so deleting the last bookmark can still be pushed. Until then, its session is stored but the video isn't listed anywhere. So a pull lists a video even with no bookmarks, and so does a push from the caption panel, which lets captions reach the server before any bookmarks are picked, such as right after fixing them. Each entry is its own record, so two pages that change different videos at once never overwrite each other.
 
 ## Give Each Video an Edit Time That Travels With It
 

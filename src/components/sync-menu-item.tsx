@@ -80,8 +80,7 @@ export function SyncMenuItem({
 
 // A row is clickable only when clicking it does something. Push and pull run
 // in place, with the menu kept open to show progress, and states whose next
-// step lives on the bookmarks page open it. A video without bookmarks has no
-// index entry, and pushing it adds one, so it joins the list only when asked.
+// step lives on the bookmarks page open it.
 function getSyncMenuAction(
   sync: SyncStatus,
   runtime: CaptionPanelRuntime,

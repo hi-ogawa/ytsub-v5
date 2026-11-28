@@ -41,13 +41,9 @@ export function useWebSync({
       runtime: CaptionPanelRuntime;
     }) => {
       if (action.direction === "push") {
-        await storage.addToIndex(youtubeId);
         const entry = await storage.getVideoIndexEntry(youtubeId);
-        if (!entry) {
-          throw new Error("No local index entry found");
-        }
         const result = await orpc.videos.importVideo.call(
-          action.runtime.toExportData({ editedAt: entry.editedAt }),
+          action.runtime.toExportData({ editedAt: entry?.editedAt }),
         );
         await storage.markSynced({ youtubeId, editedAt: result.editedAt });
       } else {

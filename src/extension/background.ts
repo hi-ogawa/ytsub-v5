@@ -32,11 +32,8 @@ export const bgRpcHandlers = {
       throw new Error("No local session found");
     }
     const entry = await idbCaptionStorage.getVideoIndexEntry(youtubeId);
-    if (!entry) {
-      throw new Error("No local index entry found");
-    }
     const result = await orpc.videos.importVideo.call(
-      sessionToExportData(session, { editedAt: entry.editedAt }),
+      sessionToExportData(session, { editedAt: entry?.editedAt }),
     );
     return { editedAt: result.editedAt };
   },

@@ -84,38 +84,12 @@ class IdbCaptionStorage implements CaptionStorage {
         if (!existing && !syncedEditedAt && !session.bookmarks.length) {
           return;
         }
-        videos.put({
-          youtubeId: session.youtubeId,
-          title: session.title,
-          channelName: session.channelName,
-          bookmarkCount: session.bookmarks.length,
-          editedAt: syncedEditedAt ?? new Date().toISOString(),
-          syncedEditedAt: syncedEditedAt ?? existing?.syncedEditedAt,
-        });
-        return videos.getAll();
-      },
-    );
-    if (entries) {
-      this.notify({ type: "videoIndex", entries });
-    }
-  };
-
-  addToIndex: CaptionStorage["addToIndex"] = async (youtubeId) => {
-    const entries = await transact(
-      ["sessions", "videos"],
-      "readwrite",
-      async ({ sessions, videos }) => {
-        const session = await sessions.get(youtubeId);
-        if (!session || (await videos.get(youtubeId))) {
-          return;
-        }
-        videos.put({
-          youtubeId,
-          title: session.title,
-          channelName: session.channelName,
-          bookmarkCount: session.bookmarks.length,
-          editedAt: new Date().toISOString(),
-        });
+        videos.put(
+          toIndexEntry(session, {
+            editedAt: syncedEditedAt ?? new Date().toISOString(),
+            syncedEditedAt: syncedEditedAt ?? existing?.syncedEditedAt,
+          }),
+        );
         return videos.getAll();
       },
     );
@@ -142,15 +116,19 @@ class IdbCaptionStorage implements CaptionStorage {
     editedAt,
   }) => {
     const entries = await transact(
-      ["videos"],
+      ["sessions", "videos"],
       "readwrite",
-      async ({ videos }) => {
+      async ({ sessions, videos }) => {
         const existing = await videos.get(youtubeId);
         if (existing) {
-          videos.put({
-            ...existing,
-            syncedEditedAt: editedAt,
-          });
+          videos.put({ ...existing, syncedEditedAt: editedAt });
+        } else {
+          const session = await sessions.get(youtubeId);
+          if (session) {
+            videos.put(
+              toIndexEntry(session, { editedAt, syncedEditedAt: editedAt }),
+            );
+          }
         }
         return videos.getAll();
       },
@@ -179,3 +157,16 @@ class IdbCaptionStorage implements CaptionStorage {
 }
 
 export const idbCaptionStorage = new IdbCaptionStorage();
+
+function toIndexEntry(
+  session: PersistedCaptionSession,
+  times: { editedAt: string; syncedEditedAt?: string },
+): VideoIndexEntry {
+  return {
+    youtubeId: session.youtubeId,
+    title: session.title,
+    channelName: session.channelName,
+    bookmarkCount: session.bookmarks.length,
+    ...times,
+  };
+}
