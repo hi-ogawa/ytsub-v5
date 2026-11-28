@@ -23,8 +23,10 @@ export type VideoListEntry = {
   youtubeId: string;
   title: string;
   channelName: string;
-  // Absent for a video that exists only on the server, whose video list has
-  // no bookmark count
+  /**
+   * Absent for a video that exists only on the server, whose video list has
+   * no bookmark count
+   */
   bookmarkCount?: number;
   editedAt: string;
   syncStatus?: ComputedSyncState;
@@ -99,8 +101,10 @@ export function useVideoListSync(storage: CaptionStorage) {
 
   const deleteMutation = useMutation(orpc.videos.deleteVideo.mutationOptions());
 
-  // Local data goes only after the server delete succeeds, so a failed delete
-  // keeps any unpushed local changes
+  /**
+   * Local data goes only after the server delete succeeds, so a failed delete
+   * keeps any unpushed local changes
+   */
   const onDelete = async (entry: VideoListEntry) => {
     if (entry.serverId) {
       try {

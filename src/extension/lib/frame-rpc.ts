@@ -104,9 +104,11 @@ export function connectFrameRpc<Handlers extends FrameHandlers, Event>(
   return { client, onEvent };
 }
 
-// The page mounts the frame through another script, and either may load
-// first. The frame announces itself when it starts, and answers a hello sent
-// after that.
+/**
+ * The page mounts the frame through another script, and either may load
+ * first. The frame announces itself when it starts, and answers a hello sent
+ * after that.
+ */
 function waitForFrame(options: ConnectOptions): Promise<Connection> {
   return new Promise((resolve, reject) => {
     const controller = new AbortController();
@@ -149,7 +151,7 @@ function waitForFrame(options: ConnectOptions): Promise<Connection> {
 
 // --- Frame side ---
 
-// Answers only `parentOrigin`, and only the methods in `handlers`.
+/** Answers only `parentOrigin`, and only the methods in `handlers`. */
 export function serveFrameRpc<Event>(
   handlers: FrameHandlers,
   options: { parentOrigin: string },

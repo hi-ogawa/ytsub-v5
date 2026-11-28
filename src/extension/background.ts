@@ -25,7 +25,9 @@ export const bgRpcHandlers = {
     chrome.tabs.create({ url: "bookmarks.html" });
   },
 
-  // The caption panel pushes with this, because the session token stays here.
+  /**
+   * The caption panel pushes with this, because the session token stays here.
+   */
   async pushSession({ youtubeId }: { youtubeId: string }) {
     const session = await idbCaptionStorage.getSession(youtubeId);
     if (!session) {
@@ -38,7 +40,9 @@ export const bgRpcHandlers = {
     return { editedAt: result.editedAt };
   },
 
-  // The caption panel pulls with this. docs/extension-runtime.md explains why.
+  /**
+   * The caption panel pulls with this. docs/extension-runtime.md explains why.
+   */
   async fetchSession({ youtubeId }: { youtubeId: string }) {
     const data = await orpc.videos.getFullSession.call({ youtubeId });
     if (!data) {

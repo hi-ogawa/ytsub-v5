@@ -77,7 +77,7 @@ export function VideoViewer({
   );
 }
 
-// `?t=<seconds>` opens the video at a scene, as Anki cards link to it.
+/** `?t=<seconds>` opens the video at a scene, as Anki cards link to it. */
 function getStartTime(searchParams: URLSearchParams): number | undefined {
   const value = searchParams.get("t");
   const time = value ? Number(value) : NaN;

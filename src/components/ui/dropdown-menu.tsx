@@ -35,16 +35,18 @@ function DropdownMenu({
   );
 }
 
-// Radix toggles the menu on pointerdown, before the browser knows whether a
-// touch is a tap or a scroll. A modal menu that opens then locks the page, so
-// the scroll never happens. The trigger toggles on click instead, which the
-// browser fires only for a tap.
-//
-// A press on the trigger of an open menu closes the menu on pointerdown, as a
-// press outside its content, before the click arrives. So the click toggles
-// from the state the menu had when the press started, and only for a press
-// that started on the trigger. A modal menu blocks pointer events outside it,
-// so that pointerdown never reaches the trigger.
+/**
+ * Radix toggles the menu on pointerdown, before the browser knows whether a
+ * touch is a tap or a scroll. A modal menu that opens then locks the page, so
+ * the scroll never happens. The trigger toggles on click instead, which the
+ * browser fires only for a tap.
+ *
+ * A press on the trigger of an open menu closes the menu on pointerdown, as a
+ * press outside its content, before the click arrives. So the click toggles
+ * from the state the menu had when the press started, and only for a press
+ * that started on the trigger. A modal menu blocks pointer events outside it,
+ * so that pointerdown never reaches the trigger.
+ */
 function DropdownMenuTrigger({
   onPointerDown,
   onClick,

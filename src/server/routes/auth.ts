@@ -14,6 +14,9 @@ import { users } from "../schema.ts";
 
 const SESSION_MAX_AGE = 30 * 86400;
 
+// A well-formed "salt:hash" with real sizes, so verifyPassword runs the full PBKDF2
+const DUMMY_PASSWORD_HASH = `${"0".repeat(32)}:${"0".repeat(64)}`;
+
 export const authRouter = pub.router({
   register: pub
     .input(
@@ -67,7 +70,7 @@ export const authRouter = pub.router({
       // Always hash to prevent timing-based user enumeration
       const valid = await verifyPassword(
         input.password,
-        user?.passwordHash ?? "$dummy$",
+        user?.passwordHash ?? DUMMY_PASSWORD_HASH,
       );
       if (!user || !valid) {
         throw new ORPCError("UNAUTHORIZED");

@@ -4,8 +4,10 @@ import type { SyncStatus, UseSync } from "../lib/sync.ts";
 import { syncStateDisplay } from "./sync-state.tsx";
 import { DropdownMenuItem } from "./ui/dropdown-menu.tsx";
 
-// The menu content mounts each time the menu opens, so the sync hook's
-// queries refetch then.
+/**
+ * The menu content mounts each time the menu opens, so the sync hook's
+ * queries refetch then.
+ */
 export function SyncMenuItem({
   useSync,
   runtime,
@@ -78,9 +80,11 @@ export function SyncMenuItem({
   );
 }
 
-// A row is clickable only when clicking it does something. Push and pull run
-// in place, with the menu kept open to show progress, and states whose next
-// step lives on the bookmarks page open it.
+/**
+ * A row is clickable only when clicking it does something. Push and pull run
+ * in place, with the menu kept open to show progress, and states whose next
+ * step lives on the bookmarks page open it.
+ */
 function getSyncMenuAction(
   sync: SyncStatus,
   runtime: CaptionPanelRuntime,
