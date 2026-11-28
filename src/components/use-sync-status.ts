@@ -1,4 +1,4 @@
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { CaptionPanelRuntime } from "../lib/caption-panel-runtime.ts";
 import type {
   CaptionStorage,
@@ -38,11 +38,22 @@ export function useSyncStatus({
   youtubeId: string;
   transport: SyncTransport;
 }): SyncStatus {
+  const queryClient = useQueryClient();
   const entryQuery = useVideoIndexEntry({ storage, youtubeId });
 
+  const serverQueryKey = ["sync-server-state", youtubeId];
   const serverQuery = useQuery({
-    queryKey: ["sync-server-state", youtubeId],
+    queryKey: serverQueryKey,
     queryFn: () => transport.checkServer(),
+    // The extension's content script turns focus refetching off by default.
+    refetchOnWindowFocus: true,
+  });
+
+  // Tracks only checks the user clicks for, so they show the spinner.
+  // `isRefetching` would also cover focus refetches, which keep the last
+  // state on screen instead.
+  const checkMutation = useMutation({
+    mutationFn: () => serverQuery.refetch(),
   });
 
   const syncMutation = useMutation({
@@ -51,6 +62,24 @@ export function useSyncStatus({
       runtime: CaptionPanelRuntime;
     }) => {
       if (action.direction === "push") {
+        // Push replaces the server copy wholesale, so a push clicked from a
+        // stale status would drop edits made on another device since the last
+        // check. Pull needs no such check, because local edits recompute the
+        // status at once.
+        const latestSyncState = await transport.checkServer();
+        queryClient.setQueryData(serverQueryKey, latestSyncState);
+        if (!latestSyncState.authenticated) {
+          throw new Error("signed out");
+        }
+        const localEntry = await storage.getVideoIndexEntry(youtubeId);
+        const latestState = computeSyncState({
+          localEditedAt: localEntry?.editedAt,
+          syncedEditedAt: localEntry?.syncedEditedAt,
+          serverEditedAt: latestSyncState.serverEditedAt,
+        });
+        if (latestState !== "push" && latestState !== "empty") {
+          throw new Error("the server copy changed on another device");
+        }
         await storage.ensureVideoIndexEntry(youtubeId);
         const { editedAt } = await transport.push(action.runtime);
         await storage.markSynced({ youtubeId, editedAt });
@@ -74,7 +103,7 @@ export function useSyncStatus({
     if (syncMutation.isPending) {
       return "syncing";
     }
-    if (serverQuery.isPending) {
+    if (serverQuery.isPending || checkMutation.isPending) {
       return "checking";
     }
     if (serverQuery.isError) {
@@ -101,6 +130,7 @@ export function useSyncStatus({
     error: error
       ? `${variables?.direction === "pull" ? "Download" : "Upload"} failed: ${error.message}`
       : undefined,
+    onCheck: () => checkMutation.mutate(),
     onPush: (runtime) => syncMutation.mutate({ direction: "push", runtime }),
     onPull: (runtime) => syncMutation.mutate({ direction: "pull", runtime }),
   };

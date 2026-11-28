@@ -268,17 +268,13 @@ function SyncBadge({
 }) {
   const [conflictOpen, setConflictOpen] = useState(false);
   const displayState = syncing ? "syncing" : status;
-  const { icon, label } = syncStateDisplay(displayState);
+  const { icon, label, tone, hint } = syncStateDisplay(displayState);
   const testAttrs = {
     "data-testid": "video-sync-badge",
     "data-sync-status": displayState,
   };
 
-  if (
-    displayState === "synced" ||
-    displayState === "syncing" ||
-    displayState === "empty"
-  ) {
+  if (tone === "quiet") {
     return (
       <span className="inline-flex p-1.5" title={label} {...testAttrs}>
         {icon}
@@ -304,8 +300,8 @@ function SyncBadge({
         type="button"
         title={
           displayState === "pull" && serverEditedAt
-            ? `${label}: server copy edited ${formatRelativeTime(serverEditedAt)}`
-            : label
+            ? `${label}: server copy edited ${formatRelativeTime(serverEditedAt)}, ${hint}`
+            : `${label}: ${hint}`
         }
         className="rounded p-1.5 hover:bg-muted"
         onClick={onClick}

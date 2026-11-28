@@ -56,6 +56,8 @@ The bookmarks page pushes and pulls directly, in both the extension and the web 
 
 In both clients, a pull from the caption panel replaces the captions and bookmarks it shows, so you see the pulled copy without a reload. A conflict in the panel opens the bookmarks page, where you pick which copy to keep.
 
+The caption panel shows the sync status in its header. A local edit updates it at once from the stored edit times. The panel asks the server when it opens, each time its tab regains focus, after a push or pull, and when you click Synced. It never polls on a timer. So the status can miss a server edit made while the tab stays focused, and a push from the panel checks the server again first. If the server changed, the push stops instead of replacing the other device's edits. The panel says why under its header, and the status turns into a conflict.
+
 Data can also enter the web app from an `import.json` file, through Import in the header menu. Import writes a session to the web app's storage, and a push then uploads it. [Generate import.json](../skills/zamak/references/generate-import-json.md) describes how to build one without the extension.
 
 ## Know Where an Open Page Can Fall Behind

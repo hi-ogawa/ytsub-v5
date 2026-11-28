@@ -199,18 +199,6 @@ export async function createBookmarkAt(
   );
 }
 
-/** Open the panel's settings menu and return its sync status item */
-export async function openSyncMenu(host: Locator) {
-  return await test.step(
-    "Open sync menu",
-    async () => {
-      await host.getByTitle("Settings").click();
-      return host.getByTestId("sync-status");
-    },
-    { box: true },
-  );
-}
-
 /** Log in via the extension bookmarks page UI */
 export async function login(page: Page, options?: { username?: string }) {
   await test.step(

@@ -3,6 +3,7 @@ import {
   ClipboardPaste,
   Download,
   EllipsisVertical,
+  ExternalLink,
   Minus,
   Plus,
   Trash2,
@@ -13,11 +14,9 @@ import type {
   CaptionPanelRuntime,
   CaptionSession,
 } from "../lib/caption-panel-runtime.ts";
-import type { UseSync } from "../lib/sync.ts";
 import type { YouTubeCaptionTrack } from "../lib/youtube.ts";
 import { downloadText } from "../utils/download-text.ts";
 import { AiPromptCopy, importAiResult } from "./ai-prompt-menu.tsx";
-import { SyncMenuItem } from "./sync-menu-item.tsx";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -33,7 +32,6 @@ export function SettingsDropdown({
   onSetAutoScroll,
   textSize,
   onSetTextSize,
-  useSync,
   onOpenBookmarksPage,
 }: {
   runtime: CaptionPanelRuntime;
@@ -43,7 +41,6 @@ export function SettingsDropdown({
   onSetAutoScroll: (value: boolean | ((prev: boolean) => boolean)) => void;
   textSize: number;
   onSetTextSize: (value: number) => void;
-  useSync: UseSync;
   onOpenBookmarksPage: () => void;
 }) {
   const hasBookmarks = session.bookmarks.length > 0;
@@ -57,11 +54,6 @@ export function SettingsDropdown({
         <EllipsisVertical className="size-4" />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        <SyncMenuItem
-          useSync={useSync}
-          runtime={runtime}
-          onOpenBookmarksPage={onOpenBookmarksPage}
-        />
         <DropdownMenuItem
           data-checked={autoScroll}
           onSelect={(event) => {
@@ -102,6 +94,11 @@ export function SettingsDropdown({
         >
           <Trash2 className="mr-2 size-4" />
           Clear bookmarks
+        </DropdownMenuItem>
+        <div className="my-1 h-px bg-border" />
+        <DropdownMenuItem onSelect={onOpenBookmarksPage}>
+          <ExternalLink className="mr-2 size-4" />
+          Open bookmarks page
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
