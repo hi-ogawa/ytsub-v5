@@ -1,6 +1,7 @@
 import type { CaptionPanelRuntime } from "../lib/caption-panel-runtime.ts";
 import type { SyncState, SyncStatus } from "../lib/sync.ts";
 import { syncStateDisplay } from "./sync-state.tsx";
+import { Tooltip } from "./ui/tooltip.tsx";
 
 /**
  * The caption panel's sync status, shown like a document's save status.
@@ -23,26 +24,29 @@ export function SyncIndicator({
   // Icon only, so the track picker beside it keeps its width as the state
   // changes.
   return (
-    <button
-      type="button"
-      className={[
-        "flex shrink-0 rounded border p-0.5",
-        tone === "action"
-          ? "border-yellow-500/40 bg-yellow-500/10 hover:bg-yellow-500/20"
-          : tone === "error"
-            ? "border-destructive/40 bg-destructive/10 hover:bg-destructive/20"
-            : "border-transparent",
-        tone === "quiet" && action ? "hover:bg-muted" : "",
-      ].join(" ")}
-      title={description}
-      aria-label={description}
-      disabled={!action}
-      onClick={action?.run}
-      data-testid="sync-status"
-      data-sync-state={state}
-    >
-      {icon}
-    </button>
+    <Tooltip content={description}>
+      <button
+        type="button"
+        className={[
+          "flex shrink-0 rounded border p-0.5",
+          tone === "action"
+            ? "border-yellow-500/40 bg-yellow-500/10 hover:bg-yellow-500/20"
+            : tone === "error"
+              ? "border-destructive/40 bg-destructive/10 hover:bg-destructive/20"
+              : "border-transparent",
+          tone === "quiet" && action ? "hover:bg-muted" : "",
+          action ? "" : "cursor-default",
+        ].join(" ")}
+        aria-label={description}
+        // Not `disabled`, which would also block the tooltip's hover.
+        aria-disabled={!action}
+        onClick={action?.run}
+        data-testid="sync-status"
+        data-sync-state={state}
+      >
+        {icon}
+      </button>
+    </Tooltip>
   );
 }
 

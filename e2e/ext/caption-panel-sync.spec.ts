@@ -33,6 +33,8 @@ test("upload from the panel header, then open the bookmarks page", async ({
   // A local edit turns the status into upload without a server check
   await createBookmarkAt(host, { index: 0, start: 0, end: 3 });
   await expect(status).toHaveAttribute("data-sync-state", "push");
+  await status.hover();
+  await expect(host.getByRole("tooltip")).toHaveText("Upload: click to upload");
   const checkpoint = createCheckpoint();
   await status.click();
   await expect(status).toHaveAttribute("data-sync-state", "synced");
