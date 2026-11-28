@@ -55,14 +55,15 @@ export function useWebSync({
           throw new Error("Video not found on server");
         }
         const session = serverSessionToLocal(data);
-        await action.runtime.replace({
-          vssId1: session.vssId1,
-          vssId2: session.vssId2,
-          captions: session.captions,
-          bookmarks: session.bookmarks,
-          editedAt: data.video.editedAt,
-        });
-        await storage.markSynced({ youtubeId, editedAt: data.video.editedAt });
+        await action.runtime.replace(
+          {
+            vssId1: session.vssId1,
+            vssId2: session.vssId2,
+            captions: session.captions,
+            bookmarks: session.bookmarks,
+          },
+          { syncedEditedAt: data.video.editedAt },
+        );
       }
     },
     onSuccess: () => serverQuery.refetch(),

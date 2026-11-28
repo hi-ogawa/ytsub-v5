@@ -250,22 +250,24 @@ export class CaptionPanelRuntime {
     await this.updateSession({ bookmarks: [] });
   }
 
-  async replace(options: {
-    captions: MergedCaption[];
-    bookmarks: ExtensionBookmark[];
-    vssId1?: string;
-    vssId2?: string;
-    editedAt?: string;
-  }): Promise<void> {
+  async replace(
+    content: {
+      captions: MergedCaption[];
+      bookmarks: ExtensionBookmark[];
+      vssId1?: string;
+      vssId2?: string;
+    },
+    options?: { syncedEditedAt?: string },
+  ): Promise<void> {
     const session = this.getSession();
     await this.updateSession(
       {
-        rows: options.captions,
-        bookmarks: options.bookmarks,
-        vssId1: options.vssId1 ?? session.vssId1,
-        vssId2: options.vssId2 ?? session.vssId2,
+        rows: content.captions,
+        bookmarks: content.bookmarks,
+        vssId1: content.vssId1 ?? session.vssId1,
+        vssId2: content.vssId2 ?? session.vssId2,
       },
-      { editedAt: options.editedAt },
+      options,
     );
   }
 
@@ -295,7 +297,7 @@ export class CaptionPanelRuntime {
 
   private async updateSession(
     update: Partial<CaptionSession>,
-    options?: { editedAt?: string },
+    options?: { syncedEditedAt?: string },
   ): Promise<void> {
     const session = { ...this.getSession(), ...update };
     this.store.update({ session });
@@ -304,7 +306,7 @@ export class CaptionPanelRuntime {
 
   private async saveSession(
     session: CaptionSession,
-    options?: { editedAt?: string },
+    options?: { syncedEditedAt?: string },
   ): Promise<void> {
     await this.storage.saveSession(
       {

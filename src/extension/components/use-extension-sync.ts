@@ -42,14 +42,15 @@ export function useExtensionSync({
         await storage.markSynced({ youtubeId, editedAt });
       } else {
         const { session, editedAt } = await bgRpc.fetchSession({ youtubeId });
-        await action.runtime.replace({
-          vssId1: session.vssId1,
-          vssId2: session.vssId2,
-          captions: session.captions,
-          bookmarks: session.bookmarks,
-          editedAt,
-        });
-        await storage.markSynced({ youtubeId, editedAt });
+        await action.runtime.replace(
+          {
+            vssId1: session.vssId1,
+            vssId2: session.vssId2,
+            captions: session.captions,
+            bookmarks: session.bookmarks,
+          },
+          { syncedEditedAt: editedAt },
+        );
       }
     },
     onSuccess: () => serverQuery.refetch(),

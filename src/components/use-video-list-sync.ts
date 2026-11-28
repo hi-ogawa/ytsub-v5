@@ -92,10 +92,8 @@ export function useVideoListSync(storage: CaptionStorage) {
         throw new Error("Video not found on server");
       }
       await storage.saveSession(serverSessionToLocal(data), {
-        forceIndex: true,
-        editedAt: data.video.editedAt,
+        syncedEditedAt: data.video.editedAt,
       });
-      await storage.markSynced({ youtubeId, editedAt: data.video.editedAt });
     });
   };
 

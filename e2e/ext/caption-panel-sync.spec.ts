@@ -1,5 +1,10 @@
 import { expect } from "@playwright/test";
-import { createCheckpoint, SEED_YOUTUBE_ID, setupDb } from "../helper";
+import {
+  clearServerBookmarks,
+  createCheckpoint,
+  SEED_YOUTUBE_ID,
+  setupDb,
+} from "../helper";
 import {
   createBookmarkAt,
   gotoBookmarks,
@@ -68,6 +73,29 @@ test("pull from the sync menu replaces captions and bookmarks in place", async (
 
   await ytPage.keyboard.press("Escape");
   await expect(host.getByRole("tab", { name: "Bookmarks (15)" })).toBeVisible();
+});
+
+test("a bookmark added after pulling a video without bookmarks is ready to push", async ({
+  context,
+  page,
+  extensionId,
+}) => {
+  await setupDb({ seed: true });
+  await clearServerBookmarks(SEED_YOUTUBE_ID);
+  await gotoBookmarks(page, extensionId);
+  await login(page);
+
+  const { ytPage, host } = await openPanelWithTracks(context, SEED_YOUTUBE_ID);
+
+  let status = await openSyncMenu(host);
+  await expect(status).toHaveAttribute("data-sync-state", "pull");
+  await status.click();
+  await expect(status).toHaveAttribute("data-sync-state", "synced");
+  await ytPage.keyboard.press("Escape");
+
+  await createBookmarkAt(host, { index: 0, start: 0, end: 3 });
+  status = await openSyncMenu(host);
+  await expect(status).toHaveAttribute("data-sync-state", "push");
 });
 
 test("shows conflict when local bookmarks and server data both exist", async ({
