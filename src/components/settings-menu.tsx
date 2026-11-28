@@ -10,6 +10,8 @@ import {
   Trash2,
   Type,
 } from "lucide-react";
+import type { ReactNode } from "react";
+import { Link } from "react-router";
 import { TEXT_SIZE } from "../lib/caption-panel-preferences.ts";
 import type {
   CaptionPanelRuntime,
@@ -18,6 +20,7 @@ import type {
 import type { YouTubeCaptionTrack } from "../lib/youtube.ts";
 import { downloadText } from "../utils/download-text.ts";
 import { AiPromptCopy, importAiResult } from "./ai-prompt-menu.tsx";
+import type { BookmarksPageTarget } from "./caption-panel.tsx";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -33,7 +36,7 @@ export function SettingsDropdown({
   onSetAutoScroll,
   textSize,
   onSetTextSize,
-  onOpenBookmarksPage,
+  bookmarksPageTarget,
 }: {
   runtime: CaptionPanelRuntime;
   session: CaptionSession;
@@ -42,7 +45,7 @@ export function SettingsDropdown({
   onSetAutoScroll: (value: boolean | ((prev: boolean) => boolean)) => void;
   textSize: number;
   onSetTextSize: (value: number) => void;
-  onOpenBookmarksPage: () => void;
+  bookmarksPageTarget: BookmarksPageTarget;
 }) {
   const hasBookmarks = session.bookmarks.length > 0;
 
@@ -113,13 +116,42 @@ export function SettingsDropdown({
           Clear bookmarks
         </DropdownMenuItem>
         <div className="my-1 h-px bg-border" />
-        <DropdownMenuItem onSelect={onOpenBookmarksPage}>
+        <BookmarksPageItem bookmarksPageTarget={bookmarksPageTarget}>
           <ExternalLink className="mr-2 size-4" />
           Open bookmarks page
-        </DropdownMenuItem>
+        </BookmarksPageItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );
+}
+
+/**
+ * A link when the host has a URL for the bookmarks page, so middle-click,
+ * modifier-click, and the hover URL work.
+ */
+function BookmarksPageItem({
+  bookmarksPageTarget,
+  children,
+}: {
+  bookmarksPageTarget: BookmarksPageTarget;
+  children: ReactNode;
+}) {
+  switch (bookmarksPageTarget.type) {
+    case "link": {
+      return (
+        <DropdownMenuItem asChild>
+          <Link to={bookmarksPageTarget.href}>{children}</Link>
+        </DropdownMenuItem>
+      );
+    }
+    case "handler": {
+      return (
+        <DropdownMenuItem onSelect={bookmarksPageTarget.onOpen}>
+          {children}
+        </DropdownMenuItem>
+      );
+    }
+  }
 }
 
 /**

@@ -18,16 +18,25 @@ import { SyncIndicator } from "./sync-indicator.tsx";
 import { TrackPicker } from "./track-picker.tsx";
 import type { YTPlayer } from "./youtube-player.tsx";
 
+/**
+ * How the caption panel opens the bookmarks page. The web app links to its
+ * own route, while a YouTube page can't link to the extension's page, so the
+ * extension opens it through a handler.
+ */
+export type BookmarksPageTarget =
+  | { type: "link"; href: string }
+  | { type: "handler"; onOpen: () => void };
+
 export function CaptionPanel({
   runtime,
   player,
   useSync,
-  onOpenBookmarksPage,
+  bookmarksPageTarget,
 }: {
   runtime: CaptionPanelRuntime;
   player?: YTPlayer;
   useSync: UseSync;
-  onOpenBookmarksPage: () => void;
+  bookmarksPageTarget: BookmarksPageTarget;
 }) {
   const restoreQuery = useQuery({
     queryKey: ["caption-panel-restore", runtime.youtubeId],
@@ -74,7 +83,7 @@ export function CaptionPanel({
         state={state}
         session={state.session}
         useSync={useSync}
-        onOpenBookmarksPage={onOpenBookmarksPage}
+        bookmarksPageTarget={bookmarksPageTarget}
       />
     );
   }
@@ -199,13 +208,13 @@ function CaptionPanelWithSession({
   state,
   session,
   useSync,
-  onOpenBookmarksPage,
+  bookmarksPageTarget,
 }: {
   runtime: CaptionPanelRuntime;
   state: CaptionPanelState;
   session: CaptionSession;
   useSync: UseSync;
-  onOpenBookmarksPage: () => void;
+  bookmarksPageTarget: BookmarksPageTarget;
 }) {
   const [autoScroll, setAutoScroll] =
     captionPanelPreferences.useValue("autoScroll");
@@ -241,7 +250,7 @@ function CaptionPanelWithSession({
         <SyncIndicator
           sync={sync}
           runtime={runtime}
-          onOpenBookmarksPage={onOpenBookmarksPage}
+          bookmarksPageTarget={bookmarksPageTarget}
         />
         <SettingsDropdown
           runtime={runtime}
@@ -251,7 +260,7 @@ function CaptionPanelWithSession({
           onSetAutoScroll={setAutoScroll}
           textSize={textSize}
           onSetTextSize={setTextSize}
-          onOpenBookmarksPage={onOpenBookmarksPage}
+          bookmarksPageTarget={bookmarksPageTarget}
         />
       </div>
       {sync.error ? (
