@@ -104,7 +104,10 @@ export class CaptionPanelRuntime {
     this.startTime = options.startTime;
   }
 
-  /** Show the saved session, or build one from the tracks picked last time. */
+  /**
+   * Show the saved session, or build one from the tracks picked for this video
+   * before, or else the best tracks for the languages picked last.
+   */
   async restore(): Promise<void> {
     const saved = await this.storage.getSession(this.youtubeId);
     const session = saved && toCaptionSession(saved);
