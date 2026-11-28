@@ -1,13 +1,13 @@
-import type {
+import {
   CaptionStorage,
-  PersistedCaptionSession,
+  type PersistedCaptionSession,
 } from "../../lib/caption-storage.ts";
 
 /**
  * Keeps sessions until the page reloads. The preview's list page takes its
  * entries from fixtures, so this storage keeps no video index.
  */
-export class MemoryCaptionStorage implements CaptionStorage {
+export class MemoryCaptionStorage extends CaptionStorage {
   private sessions = new Map<string, PersistedCaptionSession>();
 
   getSession: CaptionStorage["getSession"] = async (youtubeId) =>

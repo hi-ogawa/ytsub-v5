@@ -1,10 +1,10 @@
 import { createTransact } from "../utils/idb.ts";
-import type {
+import {
   CaptionStorage,
-  PersistedCaptionSession,
-  StorageListener,
-  StorageNotice,
-  VideoIndexEntry,
+  type PersistedCaptionSession,
+  type StorageListener,
+  type StorageNotice,
+  type VideoIndexEntry,
 } from "./caption-storage.ts";
 
 const DB_NAME = "zamak";
@@ -65,7 +65,7 @@ const transact = createTransact<Stores>({
   },
 });
 
-class IdbCaptionStorage implements CaptionStorage {
+class IdbCaptionStorage extends CaptionStorage {
   listeners = new Set<StorageListener>();
 
   getSession: CaptionStorage["getSession"] = (youtubeId) =>

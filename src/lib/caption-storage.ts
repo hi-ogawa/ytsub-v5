@@ -35,23 +35,35 @@ export type StorageNotice = { type: "videoIndex"; entries: VideoIndexEntry[] };
 
 export type StorageListener = (notice: StorageNotice) => void;
 
-export interface CaptionStorage {
-  getSession(youtubeId: string): Promise<PersistedCaptionSession | undefined>;
+/**
+ * Each storage implements the primitive operations. Operations built from
+ * them are written once here, so the watch page's storage bridge forwards only
+ * the primitives.
+ */
+export abstract class CaptionStorage {
+  abstract getSession(
+    youtubeId: string,
+  ): Promise<PersistedCaptionSession | undefined>;
   /**
    * Also updates the video's index entry when the session has bookmarks, is
    * already indexed, or is saved as synced. `syncedEditedAt` marks the session
    * as the copy synced at that edit time, as after a pull, so it is recorded as
    * both the entry's edit time and its last sync.
    */
-  saveSession(
+  abstract saveSession(
     session: PersistedCaptionSession,
     options?: { syncedEditedAt?: string },
   ): Promise<void>;
-  deleteVideo(youtubeId: string): Promise<void>;
-  markSynced(options: { youtubeId: string; editedAt: string }): Promise<void>;
-  getVideoIndexEntry(youtubeId: string): Promise<VideoIndexEntry | undefined>;
-  listVideoIndex(): Promise<VideoIndexEntry[]>;
-  subscribe(listener: StorageListener): () => void;
+  abstract deleteVideo(youtubeId: string): Promise<void>;
+  abstract markSynced(options: {
+    youtubeId: string;
+    editedAt: string;
+  }): Promise<void>;
+  abstract getVideoIndexEntry(
+    youtubeId: string,
+  ): Promise<VideoIndexEntry | undefined>;
+  abstract listVideoIndex(): Promise<VideoIndexEntry[]>;
+  abstract subscribe(listener: StorageListener): () => void;
 }
 
 /**
