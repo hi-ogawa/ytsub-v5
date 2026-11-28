@@ -4,7 +4,7 @@ import type { CaptionPanelRuntime } from "../../lib/caption-panel-runtime.ts";
 import { serverSessionToLocal } from "../../lib/caption-session.ts";
 import {
   type CaptionStorage,
-  saveSessionAsListed,
+  ensureVideoIndexEntry,
 } from "../../lib/caption-storage.ts";
 import { orpc } from "../../lib/rpc-client.ts";
 import {
@@ -44,9 +44,7 @@ export function useWebSync({
       runtime: CaptionPanelRuntime;
     }) => {
       if (action.direction === "push") {
-        if (!entryQuery.data) {
-          await saveSessionAsListed({ storage, youtubeId });
-        }
+        await ensureVideoIndexEntry({ storage, youtubeId });
         const entry = await storage.getVideoIndexEntry(youtubeId);
         if (!entry) {
           throw new Error("No local index entry found");

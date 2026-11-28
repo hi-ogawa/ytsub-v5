@@ -3,7 +3,7 @@ import { useVideoIndexEntry } from "../../components/use-video-index-entry.ts";
 import type { CaptionPanelRuntime } from "../../lib/caption-panel-runtime.ts";
 import {
   type CaptionStorage,
-  saveSessionAsListed,
+  ensureVideoIndexEntry,
 } from "../../lib/caption-storage.ts";
 import {
   type SyncState,
@@ -41,9 +41,7 @@ export function useExtensionSync({
   const syncMutation = useMutation({
     mutationFn: async (action: SyncAction) => {
       if (action.direction === "push") {
-        if (!entryQuery.data) {
-          await saveSessionAsListed({ storage, youtubeId });
-        }
+        await ensureVideoIndexEntry({ storage, youtubeId });
         const { editedAt } = await bgRpc.pushSession({ youtubeId });
         await storage.markSynced({ youtubeId, editedAt });
       } else {

@@ -84,7 +84,7 @@ class IdbCaptionStorage implements CaptionStorage {
         if (
           !existing &&
           !syncedEditedAt &&
-          !options?.listed &&
+          !options?.addToVideoIndex &&
           !session.bookmarks.length
         ) {
           return;
