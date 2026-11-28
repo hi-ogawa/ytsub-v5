@@ -6,24 +6,11 @@ import type { StorageNotice } from "../lib/caption-storage.ts";
 import { serveFrameRpc } from "./lib/frame-rpc.ts";
 import { YOUTUBE_ORIGIN } from "./lib/storage-bridge.ts";
 
-const storage = idbCaptionStorage;
-
-/** Everything the watch page may do with storage. */
-const storageFrameHandlers = {
-  getSession: storage.getSession.bind(storage),
-  saveSession: storage.saveSession.bind(storage),
-  markSynced: storage.markSynced.bind(storage),
-  getVideoIndexEntry: storage.getVideoIndexEntry.bind(storage),
-  listVideoIndex: storage.listVideoIndex.bind(storage),
-};
-
-export type StorageFrameHandlers = typeof storageFrameHandlers;
-
 function main() {
-  const rpc = serveFrameRpc<StorageNotice>(storageFrameHandlers, {
+  const rpc = serveFrameRpc<StorageNotice>(idbCaptionStorage, {
     parentOrigin: YOUTUBE_ORIGIN,
   });
-  storage.subscribe((notice) => rpc.emit(notice));
+  idbCaptionStorage.subscribe((notice) => rpc.emit(notice));
 }
 
 main();
