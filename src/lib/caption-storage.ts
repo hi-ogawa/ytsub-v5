@@ -31,6 +31,15 @@ export type VideoIndexEntry = {
   syncedEditedAt?: string;
 };
 
+/**
+ * Every saved session has an index entry, but a video is listed only once it
+ * has a bookmark or has been synced, so videos that were only watched stay
+ * out of the list.
+ */
+export function isVideoListed(entry: VideoIndexEntry): boolean {
+  return entry.bookmarkCount > 0 || entry.syncedEditedAt !== undefined;
+}
+
 export type StorageNotice = { type: "videoIndex"; entries: VideoIndexEntry[] };
 
 export type StorageListener = (notice: StorageNotice) => void;
@@ -38,8 +47,7 @@ export type StorageListener = (notice: StorageNotice) => void;
 export interface CaptionStorage {
   getSession(youtubeId: string): Promise<PersistedCaptionSession | undefined>;
   /**
-   * Also updates the video's index entry when the session has bookmarks, is
-   * already indexed, or is saved as synced. `syncedEditedAt` marks the session
+   * Also updates the video's index entry. `syncedEditedAt` marks the session
    * as the copy synced at that edit time, as after a pull, so it is recorded as
    * both the entry's edit time and its last sync.
    */
@@ -55,8 +63,8 @@ export interface CaptionStorage {
 }
 
 /**
- * In-memory copy of the stored index, for components that read it as they
- * render.
+ * In-memory copy of the listed entries in the stored index, for components
+ * that read it as they render.
  */
 export const videoIndexStore = createVideoIndexStore();
 
@@ -69,10 +77,11 @@ function createVideoIndexStore() {
     // Subscribe before loading so a change made during the load isn't lost.
     storage.subscribe((notice) => {
       if (notice.type === "videoIndex") {
-        store.update({ entries: notice.entries });
+        store.update({ entries: notice.entries.filter(isVideoListed) });
       }
     });
-    store.update({ entries: await storage.listVideoIndex() });
+    const entries = await storage.listVideoIndex();
+    store.update({ entries: entries.filter(isVideoListed) });
   };
 
   return { ...store, connect };

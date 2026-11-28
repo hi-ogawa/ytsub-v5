@@ -8,7 +8,7 @@ import type {
 } from "./caption-storage.ts";
 
 const DB_NAME = "zamak";
-const DB_VERSION = 3;
+const DB_VERSION = 4;
 
 type Stores = { sessions: PersistedCaptionSession; videos: VideoIndexEntry };
 
@@ -62,6 +62,33 @@ const transact = createTransact<Stores>({
         cursor.continue();
       };
     }
+    if (oldVersion < 4) {
+      // Sessions saved before every session got an entry get one now. They
+      // have no bookmarks, or they would have one already, so they stay
+      // unlisted.
+      const sessions = transaction.objectStore(STORE_NAMES.sessions);
+      const videos = transaction.objectStore(STORE_NAMES.videos);
+      sessions.openCursor().onsuccess = (event) => {
+        const cursor = (event.target as IDBRequest<IDBCursorWithValue>).result;
+        if (!cursor) {
+          return;
+        }
+        const session = cursor.value as PersistedCaptionSession;
+        videos.get(session.youtubeId).onsuccess = (getEvent) => {
+          if ((getEvent.target as IDBRequest<VideoIndexEntry>).result) {
+            return;
+          }
+          videos.put({
+            youtubeId: session.youtubeId,
+            title: session.title,
+            channelName: session.channelName,
+            bookmarkCount: session.bookmarks.length,
+            editedAt: new Date().toISOString(),
+          } satisfies VideoIndexEntry);
+        };
+        cursor.continue();
+      };
+    }
   },
 });
 
@@ -81,9 +108,6 @@ class IdbCaptionStorage implements CaptionStorage {
         sessions.put(session);
         const existing = await videos.get(session.youtubeId);
         const syncedEditedAt = options?.syncedEditedAt;
-        if (!existing && !syncedEditedAt && !session.bookmarks.length) {
-          return;
-        }
         videos.put({
           youtubeId: session.youtubeId,
           title: session.title,
@@ -95,9 +119,7 @@ class IdbCaptionStorage implements CaptionStorage {
         return videos.getAll();
       },
     );
-    if (entries) {
-      this.notify({ type: "videoIndex", entries });
-    }
+    this.notify({ type: "videoIndex", entries });
   };
 
   deleteVideo: CaptionStorage["deleteVideo"] = async (youtubeId) => {

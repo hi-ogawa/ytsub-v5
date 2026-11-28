@@ -2,7 +2,6 @@ import {
   AlertTriangle,
   ArrowDownToLine,
   ArrowUpFromLine,
-  Bookmark,
   CheckCircle2,
   Loader2,
   LogIn,
@@ -57,8 +56,8 @@ export function syncStateDisplay(state: SyncState): {
       };
     case "empty":
       return {
-        icon: <Bookmark className="size-4 text-muted-foreground" />,
-        label: "No bookmarks to sync",
+        icon: <ArrowUpFromLine className="size-4 text-muted-foreground" />,
+        label: "Sync: upload captions",
       };
     default: {
       return state satisfies never;

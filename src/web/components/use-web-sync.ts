@@ -2,7 +2,10 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { useVideoIndexEntry } from "../../components/use-video-index-entry.ts";
 import type { CaptionPanelRuntime } from "../../lib/caption-panel-runtime.ts";
 import { serverSessionToLocal } from "../../lib/caption-session.ts";
-import type { CaptionStorage } from "../../lib/caption-storage.ts";
+import {
+  type CaptionStorage,
+  isVideoListed,
+} from "../../lib/caption-storage.ts";
 import { orpc } from "../../lib/rpc-client.ts";
 import {
   type SyncState,
@@ -88,7 +91,10 @@ export function useWebSync({
     if (entryQuery.isPending) {
       return "checking";
     }
-    const localEntry = entryQuery.data ?? undefined;
+    const localEntry =
+      entryQuery.data && isVideoListed(entryQuery.data)
+        ? entryQuery.data
+        : undefined;
     return computeSyncState({
       localEditedAt: localEntry?.editedAt,
       syncedEditedAt: localEntry?.syncedEditedAt,
