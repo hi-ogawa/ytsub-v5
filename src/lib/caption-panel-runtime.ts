@@ -112,20 +112,31 @@ export class CaptionPanelRuntime {
    */
   async restore(): Promise<void> {
     const saved = await this.storage.getSession(this.youtubeId);
-    const session = saved && toCaptionSession(saved);
+    if (saved) {
+      this.loadSession(saved);
+    }
+    this.store.update({ restoring: false });
+    const tracks = await this.loadTracks();
+    if (tracks && !saved) {
+      await this.buildSession(getInitialTracks(tracks));
+    }
+  }
+
+  /**
+   * Show a complete session as stored, such as the saved one or a copy pulled
+   * from the server, with or without a session on screen.
+   */
+  loadSession(saved: PersistedCaptionSession): void {
+    const session = toCaptionSession(saved);
     // The playback loop marks a caption only once the player plays, which a
     // page opened from a link waits a tap for.
-    if (session && this.startTime !== undefined) {
+    if (this.startTime !== undefined) {
       const index = findRowIndexAt(session.rows, this.startTime);
       if (index >= 0) {
         this.playbackStore.update({ currentIndex: index });
       }
     }
-    this.store.update({ restoring: false, session });
-    const tracks = await this.loadTracks();
-    if (tracks && !saved) {
-      await this.buildSession(getInitialTracks(tracks));
-    }
+    this.store.update({ session });
   }
 
   /**
@@ -260,21 +271,6 @@ export class CaptionPanelRuntime {
     const session = { ...this.getSession(), ...update };
     this.store.update({ session });
     await this.saveSession(session);
-  }
-
-  /**
-   * Show and save the server's copy of the session as synced at its edit time.
-   * It is complete, so it needs no current session, as in the web app before
-   * the video's first pull.
-   */
-  async applyPulledSession(pulled: {
-    session: PersistedCaptionSession;
-    editedAt: string;
-  }): Promise<void> {
-    await this.storage.saveSession(pulled.session, {
-      syncedEditedAt: pulled.editedAt,
-    });
-    this.store.update({ session: toCaptionSession(pulled.session) });
   }
 
   toExportData(options?: { editedAt?: string }): ExportData {
