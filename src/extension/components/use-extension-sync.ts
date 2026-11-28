@@ -5,7 +5,6 @@ import type { CaptionStorage } from "../../lib/caption-storage.ts";
 import {
   type SyncState,
   type SyncStatus,
-  SYNC_CHECK_STALE_TIME,
   computeSyncState,
   canPushWithoutOverwriting,
 } from "../../lib/sync.ts";
@@ -37,7 +36,6 @@ export function useExtensionSync({
   const serverQuery = useQuery({
     queryKey: serverQueryKey,
     queryFn: () => bgRpc.getSyncState({ youtubeId }),
-    staleTime: SYNC_CHECK_STALE_TIME,
     // The content script's query client turns focus refetching off.
     refetchOnWindowFocus: true,
   });

@@ -7,7 +7,6 @@ import { orpc } from "../../lib/rpc-client.ts";
 import {
   type SyncState,
   type SyncStatus,
-  SYNC_CHECK_STALE_TIME,
   computeSyncState,
   canPushWithoutOverwriting,
 } from "../../lib/sync.ts";
@@ -36,7 +35,6 @@ export function useWebSync({
       input: { youtubeId },
     }),
     enabled: authenticated,
-    staleTime: SYNC_CHECK_STALE_TIME,
   });
 
   // Tracks only checks the user clicks for, so they show the spinner.

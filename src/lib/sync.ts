@@ -60,12 +60,6 @@ export function computeSyncState(params: {
 }
 
 /**
- * How long a server check counts as fresh, so regaining focus re-checks only
- * after this. Each check is a D1 read, so the status never polls.
- */
-export const SYNC_CHECK_STALE_TIME = 60_000;
-
-/**
  * Whether pushing, given edit times from a fresh server check, leaves no
  * server edit unseen. Push replaces the server copy wholesale, so a push
  * clicked from a stale status would drop edits made on another device since
