@@ -42,6 +42,9 @@ export function useExtensionSync({
     refetchOnWindowFocus: true,
   });
 
+  // Tracks only checks the user clicks for, so they show the spinner.
+  // `isRefetching` would also cover focus refetches, which keep the last
+  // state on screen instead.
   const checkMutation = useMutation({
     mutationFn: () => serverQuery.refetch(),
   });
