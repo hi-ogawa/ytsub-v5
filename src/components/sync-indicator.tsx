@@ -18,27 +18,30 @@ export function SyncIndicator({
   const { icon, label } = syncStateDisplay(state);
   const action = getSyncAction(sync, runtime);
   const tone = getSyncTone(state);
+  const description = action ? `${label}: ${action.hint}` : label;
 
+  // Icon only, so the track picker beside it keeps its width as the state
+  // changes.
   return (
     <button
       type="button"
       className={[
-        "flex shrink-0 items-center gap-1 rounded border px-1 py-0.5 text-xs whitespace-nowrap",
+        "flex shrink-0 rounded border p-0.5",
         tone === "action"
-          ? "border-yellow-500/40 bg-yellow-500/10 font-medium text-yellow-600 hover:bg-yellow-500/20"
+          ? "border-yellow-500/40 bg-yellow-500/10 hover:bg-yellow-500/20"
           : tone === "error"
-            ? "border-destructive/40 bg-destructive/10 font-medium text-destructive hover:bg-destructive/20"
-            : "border-transparent text-muted-foreground",
+            ? "border-destructive/40 bg-destructive/10 hover:bg-destructive/20"
+            : "border-transparent",
         tone === "quiet" && action ? "hover:bg-muted" : "",
       ].join(" ")}
-      title={action ? `${label}: ${action.hint}` : label}
+      title={description}
+      aria-label={description}
       disabled={!action}
       onClick={action?.run}
       data-testid="sync-status"
       data-sync-state={state}
     >
       {icon}
-      {label}
     </button>
   );
 }
