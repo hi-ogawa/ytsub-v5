@@ -31,12 +31,12 @@ export function CaptionPanel({
   runtime,
   player,
   useSync,
-  bookmarksPage,
+  bookmarksPageTarget,
 }: {
   runtime: CaptionPanelRuntime;
   player?: YTPlayer;
   useSync: UseSync;
-  bookmarksPage: BookmarksPageTarget;
+  bookmarksPageTarget: BookmarksPageTarget;
 }) {
   const restoreQuery = useQuery({
     queryKey: ["caption-panel-restore", runtime.youtubeId],
@@ -83,7 +83,7 @@ export function CaptionPanel({
         state={state}
         session={state.session}
         useSync={useSync}
-        bookmarksPage={bookmarksPage}
+        bookmarksPageTarget={bookmarksPageTarget}
       />
     );
   }
@@ -166,13 +166,13 @@ function CaptionPanelWithSession({
   state,
   session,
   useSync,
-  bookmarksPage,
+  bookmarksPageTarget,
 }: {
   runtime: CaptionPanelRuntime;
   state: CaptionPanelState;
   session: CaptionSession;
   useSync: UseSync;
-  bookmarksPage: BookmarksPageTarget;
+  bookmarksPageTarget: BookmarksPageTarget;
 }) {
   const [autoScroll, setAutoScroll] =
     captionPanelPreferences.useValue("autoScroll");
@@ -208,7 +208,7 @@ function CaptionPanelWithSession({
         <SyncIndicator
           sync={sync}
           runtime={runtime}
-          bookmarksPage={bookmarksPage}
+          bookmarksPageTarget={bookmarksPageTarget}
         />
         <SettingsDropdown
           runtime={runtime}
@@ -218,7 +218,7 @@ function CaptionPanelWithSession({
           onSetAutoScroll={setAutoScroll}
           textSize={textSize}
           onSetTextSize={setTextSize}
-          bookmarksPage={bookmarksPage}
+          bookmarksPageTarget={bookmarksPageTarget}
         />
       </div>
       {sync.error ? (

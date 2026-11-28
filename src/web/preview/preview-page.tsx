@@ -97,7 +97,7 @@ function WatchPreview({
       storage={storage}
       youtubeId={youtubeId}
       useSync={() => sync}
-      bookmarksPage={{ type: "link", href: listHref }}
+      bookmarksPageTarget={{ type: "link", href: listHref }}
     />
   );
 }

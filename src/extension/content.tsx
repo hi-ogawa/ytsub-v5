@@ -72,7 +72,7 @@ function mountOverlay({
             useSync={({ youtubeId }) =>
               useExtensionSync({ storage, bgRpc, youtubeId })
             }
-            bookmarksPage={{
+            bookmarksPageTarget={{
               type: "handler",
               onOpen: () => bgRpc.openBookmarks(),
             }}

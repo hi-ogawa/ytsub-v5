@@ -35,7 +35,7 @@ export function SettingsDropdown({
   onSetAutoScroll,
   textSize,
   onSetTextSize,
-  bookmarksPage,
+  bookmarksPageTarget,
 }: {
   runtime: CaptionPanelRuntime;
   session: CaptionSession;
@@ -44,7 +44,7 @@ export function SettingsDropdown({
   onSetAutoScroll: (value: boolean | ((prev: boolean) => boolean)) => void;
   textSize: number;
   onSetTextSize: (value: number) => void;
-  bookmarksPage: BookmarksPageTarget;
+  bookmarksPageTarget: BookmarksPageTarget;
 }) {
   const hasBookmarks = session.bookmarks.length > 0;
 
@@ -99,7 +99,7 @@ export function SettingsDropdown({
           Clear bookmarks
         </DropdownMenuItem>
         <div className="my-1 h-px bg-border" />
-        <BookmarksPageItem bookmarksPage={bookmarksPage}>
+        <BookmarksPageItem bookmarksPageTarget={bookmarksPageTarget}>
           <ExternalLink className="mr-2 size-4" />
           Open bookmarks page
         </BookmarksPageItem>
@@ -113,23 +113,23 @@ export function SettingsDropdown({
  * modifier-click, and the hover URL work.
  */
 function BookmarksPageItem({
-  bookmarksPage,
+  bookmarksPageTarget,
   children,
 }: {
-  bookmarksPage: BookmarksPageTarget;
+  bookmarksPageTarget: BookmarksPageTarget;
   children: ReactNode;
 }) {
-  switch (bookmarksPage.type) {
+  switch (bookmarksPageTarget.type) {
     case "link": {
       return (
         <DropdownMenuItem asChild>
-          <Link to={bookmarksPage.href}>{children}</Link>
+          <Link to={bookmarksPageTarget.href}>{children}</Link>
         </DropdownMenuItem>
       );
     }
     case "handler": {
       return (
-        <DropdownMenuItem onSelect={bookmarksPage.onOpen}>
+        <DropdownMenuItem onSelect={bookmarksPageTarget.onOpen}>
           {children}
         </DropdownMenuItem>
       );

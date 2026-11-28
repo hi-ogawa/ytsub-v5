@@ -13,15 +13,15 @@ import { Tooltip } from "./ui/tooltip.tsx";
 export function SyncIndicator({
   sync,
   runtime,
-  bookmarksPage,
+  bookmarksPageTarget,
 }: {
   sync: SyncStatus;
   runtime: CaptionPanelRuntime;
-  bookmarksPage: BookmarksPageTarget;
+  bookmarksPageTarget: BookmarksPageTarget;
 }) {
   const { state } = sync;
   const { icon, label, tone, hint } = syncStateDisplay(state);
-  const action = getSyncAction({ sync, runtime, bookmarksPage });
+  const action = getSyncAction({ sync, runtime, bookmarksPageTarget });
   const description = action && hint ? `${label}: ${hint}` : label;
   const className = [
     "flex shrink-0 rounded border p-0.5",
@@ -73,11 +73,11 @@ export function SyncIndicator({
 function getSyncAction({
   sync,
   runtime,
-  bookmarksPage,
+  bookmarksPageTarget,
 }: {
   sync: SyncStatus;
   runtime: CaptionPanelRuntime;
-  bookmarksPage: BookmarksPageTarget;
+  bookmarksPageTarget: BookmarksPageTarget;
 }): { onClick: () => void } | { href: string } | undefined {
   const { onCheck, onPush, onPull } = sync;
   switch (sync.state) {
@@ -91,9 +91,9 @@ function getSyncAction({
     // The bookmarks page resolves conflicts and holds sign-in.
     case "conflict":
     case "unauthenticated": {
-      return bookmarksPage.type === "link"
-        ? { href: bookmarksPage.href }
-        : { onClick: bookmarksPage.onOpen };
+      return bookmarksPageTarget.type === "link"
+        ? { href: bookmarksPageTarget.href }
+        : { onClick: bookmarksPageTarget.onOpen };
     }
     case "synced":
     case "error": {
