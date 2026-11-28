@@ -21,6 +21,7 @@ export function CaptionPanel({
   runtime,
   player,
   useSync,
+  onOpenBookmarksPage,
 }: {
   runtime: CaptionPanelRuntime;
   player?: YTPlayer;
@@ -28,6 +29,7 @@ export function CaptionPanel({
    * Called by the sync menu each time it opens, so its queries refetch then.
    */
   useSync: UseSync;
+  onOpenBookmarksPage: () => void;
 }) {
   const restoreQuery = useQuery({
     queryKey: ["caption-panel-restore", runtime.youtubeId],
@@ -74,6 +76,7 @@ export function CaptionPanel({
         state={state}
         session={state.session}
         useSync={useSync}
+        onOpenBookmarksPage={onOpenBookmarksPage}
       />
     );
   }
@@ -156,11 +159,13 @@ function CaptionPanelWithSession({
   state,
   session,
   useSync,
+  onOpenBookmarksPage,
 }: {
   runtime: CaptionPanelRuntime;
   state: CaptionPanelState;
   session: CaptionSession;
   useSync: UseSync;
+  onOpenBookmarksPage: () => void;
 }) {
   const [autoScroll, setAutoScroll] =
     captionPanelPreferences.useValue("autoScroll");
@@ -201,6 +206,7 @@ function CaptionPanelWithSession({
           textSize={textSize}
           onSetTextSize={setTextSize}
           useSync={useSync}
+          onOpenBookmarksPage={onOpenBookmarksPage}
         />
       </div>
       {tracksError ? (

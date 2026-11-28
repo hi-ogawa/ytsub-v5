@@ -34,6 +34,7 @@ export function SettingsDropdown({
   textSize,
   onSetTextSize,
   useSync,
+  onOpenBookmarksPage,
 }: {
   runtime: CaptionPanelRuntime;
   session: CaptionSession;
@@ -43,6 +44,7 @@ export function SettingsDropdown({
   textSize: number;
   onSetTextSize: (value: number) => void;
   useSync: UseSync;
+  onOpenBookmarksPage: () => void;
 }) {
   const hasBookmarks = session.bookmarks.length > 0;
 
@@ -55,7 +57,11 @@ export function SettingsDropdown({
         <EllipsisVertical className="size-4" />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        <SyncMenuItem useSync={useSync} runtime={runtime} />
+        <SyncMenuItem
+          useSync={useSync}
+          runtime={runtime}
+          onOpenBookmarksPage={onOpenBookmarksPage}
+        />
         <DropdownMenuItem
           data-checked={autoScroll}
           onSelect={(event) => {
