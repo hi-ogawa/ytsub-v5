@@ -156,7 +156,7 @@ export function importAiResult({
           break;
         }
         const moved = session.bookmarks.length;
-        runtime.replace({ captions, bookmarks });
+        runtime.updateSession({ rows: captions, bookmarks });
         alert(
           `Replaced captions with ${captions.length} rows, moved ${moved} bookmarks, and added ${bookmarks.length - moved}`,
         );
