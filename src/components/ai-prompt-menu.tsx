@@ -110,60 +110,53 @@ export function AiPromptCopy({
   );
 }
 
-export function importAiResult({
+/**
+ * Applies a pasted AI result to the session and returns a summary for the
+ * user. Throws when nothing was imported.
+ */
+export async function importAiResult({
+  raw,
   runtime,
   session,
 }: {
+  raw: string;
   runtime: CaptionPanelRuntime;
   session: CaptionSession;
-}): void {
-  const raw = window.prompt("Paste AI result JSON");
-  if (!raw) {
-    return;
-  }
-  try {
-    const result = parseAiResult(raw);
-    switch (result.type) {
-      case "pick-fill": {
-        const { bookmarks, warnings } = pickFillToBookmarks(
-          result.entries,
-          session.rows,
-        );
-        if (bookmarks.length > 0) {
-          runtime.createBookmarks(bookmarks);
-        }
-        alert(
-          `Created ${bookmarks.length} bookmarks` +
-            (warnings.length > 0
-              ? `\n\n${warnings.length} skipped:\n${warnings.join("\n")}`
-              : ""),
-        );
-        break;
+}): Promise<string> {
+  const result = parseAiResult(raw);
+  switch (result.type) {
+    case "pick-fill": {
+      const { bookmarks, warnings } = pickFillToBookmarks(
+        result.entries,
+        session.rows,
+      );
+      if (bookmarks.length > 0) {
+        await runtime.createBookmarks(bookmarks);
       }
-      case "fill":
-        runtime.updateBookmarks(result.entries);
-        alert(`Filled ${result.entries.length} bookmarks`);
-        break;
-      case "fix-asr": {
-        const { captions, bookmarks, errors } = alignResultToSession(
-          result,
-          session.bookmarks,
-        );
-        if (errors.length > 0) {
-          alert(
-            `Nothing imported. ${errors.length} bookmark problems:\n${errors.join("\n")}`,
-          );
-          break;
-        }
-        const moved = session.bookmarks.length;
-        runtime.replace({ captions, bookmarks });
-        alert(
-          `Replaced captions with ${captions.length} rows, moved ${moved} bookmarks, and added ${bookmarks.length - moved}`,
-        );
-        break;
-      }
+      return (
+        `Created ${bookmarks.length} bookmarks` +
+        (warnings.length > 0
+          ? `\n\n${warnings.length} skipped:\n${warnings.join("\n")}`
+          : "")
+      );
     }
-  } catch (error) {
-    alert(error instanceof Error ? error.message : "Invalid JSON");
+    case "fill": {
+      await runtime.updateBookmarks(result.entries);
+      return `Filled ${result.entries.length} bookmarks`;
+    }
+    case "fix-asr": {
+      const { captions, bookmarks, errors } = alignResultToSession(
+        result,
+        session.bookmarks,
+      );
+      if (errors.length > 0) {
+        throw new Error(
+          `Nothing imported. ${errors.length} bookmark problems:\n${errors.join("\n")}`,
+        );
+      }
+      const moved = session.bookmarks.length;
+      await runtime.replace({ captions, bookmarks });
+      return `Replaced captions with ${captions.length} rows, moved ${moved} bookmarks, and added ${bookmarks.length - moved}`;
+    }
   }
 }

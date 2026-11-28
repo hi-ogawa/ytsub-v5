@@ -1,3 +1,4 @@
+import { useMutation } from "@tanstack/react-query";
 import {
   Check,
   ClipboardPaste,
@@ -45,6 +46,15 @@ export function SettingsDropdown({
 }) {
   const hasBookmarks = session.bookmarks.length > 0;
 
+  // Feedback goes through alert, since the extension's query client has no
+  // toaster.
+  const importMutation = useMutation({
+    mutationFn: importAiResult,
+    onSuccess: (summary) => alert(summary),
+    onError: (error) => alert(error.message),
+    meta: { toastOnError: false },
+  });
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
@@ -68,7 +78,14 @@ export function SettingsDropdown({
         </DropdownMenuItem>
         <TextSizeStepper textSize={textSize} onSetTextSize={onSetTextSize} />
         <AiPromptCopy session={session} tracks={tracks} />
-        <DropdownMenuItem onSelect={() => importAiResult({ runtime, session })}>
+        <DropdownMenuItem
+          onSelect={() => {
+            const raw = window.prompt("Paste AI result JSON");
+            if (raw) {
+              importMutation.mutate({ raw, runtime, session });
+            }
+          }}
+        >
           <ClipboardPaste className="mr-2 size-4" />
           Import AI result
         </DropdownMenuItem>
