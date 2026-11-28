@@ -88,6 +88,7 @@ function WatchPreview({
   const navigate = useNavigate();
   const sync: SyncStatus = {
     state: "synced",
+    onCheck: () => {},
     onNavigate: () => navigate(listHref),
     onPush: () => {},
     onPull: () => {},

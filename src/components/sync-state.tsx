@@ -3,6 +3,7 @@ import {
   ArrowDownToLine,
   ArrowUpFromLine,
   CheckCircle2,
+  CloudOff,
   Loader2,
   LogIn,
   RefreshCw,
@@ -17,36 +18,38 @@ export function syncStateDisplay(state: SyncState): {
     case "unauthenticated":
       return {
         icon: <LogIn className="size-4 text-muted-foreground" />,
-        label: "Sign in to sync",
+        label: "Sign in",
       };
     case "checking":
       return {
-        icon: <Loader2 className="size-4 animate-spin" />,
-        label: "Sync: checking…",
+        icon: <Loader2 className="size-4 animate-spin text-muted-foreground" />,
+        label: "Checking…",
       };
     case "synced":
       return {
-        icon: <CheckCircle2 className="size-4 text-green-500" />,
+        icon: <CheckCircle2 className="size-4 text-muted-foreground" />,
         label: "Synced",
       };
     case "push":
       return {
         icon: <ArrowUpFromLine className="size-4 text-yellow-500" />,
-        label: "Sync: upload",
+        label: "Upload",
       };
     case "pull":
       return {
         icon: <ArrowDownToLine className="size-4 text-yellow-500" />,
-        label: "Sync: download",
+        label: "Download",
       };
     case "conflict":
       return {
         icon: <AlertTriangle className="size-4 text-yellow-500" />,
-        label: "Sync conflict",
+        label: "Conflict",
       };
     case "syncing":
       return {
-        icon: <RefreshCw className="size-4 animate-spin" />,
+        icon: (
+          <RefreshCw className="size-4 animate-spin text-muted-foreground" />
+        ),
         label: "Syncing…",
       };
     case "error":
@@ -56,8 +59,8 @@ export function syncStateDisplay(state: SyncState): {
       };
     case "empty":
       return {
-        icon: <ArrowUpFromLine className="size-4 text-muted-foreground" />,
-        label: "Sync: upload",
+        icon: <CloudOff className="size-4 text-muted-foreground" />,
+        label: "Not uploaded",
       };
     default: {
       return state satisfies never;

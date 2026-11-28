@@ -59,9 +59,32 @@ export function computeSyncState(params: {
   return "conflict";
 }
 
+/**
+ * How long a server check counts as fresh, so regaining focus re-checks only
+ * after this. Each check is a D1 read, so the status never polls.
+ */
+export const SYNC_CHECK_STALE_TIME = 60_000;
+
+/**
+ * Whether a push clicked from a possibly stale status still matches the
+ * status recomputed from a fresh server check. Push replaces the server copy
+ * wholesale, so pushing from a stale status would drop edits made on another
+ * device since the last check. Pull needs no such check, because local edits
+ * recompute the status at once.
+ */
+export function isPushCurrent(params: {
+  localEditedAt?: string;
+  syncedEditedAt?: string;
+  serverEditedAt?: string;
+}): boolean {
+  const state = computeSyncState(params);
+  return state === "push" || state === "empty";
+}
+
 export type SyncStatus = {
   state: SyncState;
   error?: string;
+  onCheck: () => void;
   onNavigate: () => void;
   onPush: (runtime: CaptionPanelRuntime) => void;
   onPull: (runtime: CaptionPanelRuntime) => void;

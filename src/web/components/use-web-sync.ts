@@ -1,4 +1,4 @@
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useVideoIndexEntry } from "../../components/use-video-index-entry.ts";
 import type { CaptionPanelRuntime } from "../../lib/caption-panel-runtime.ts";
 import { serverSessionToLocal } from "../../lib/caption-session.ts";
@@ -7,7 +7,9 @@ import { orpc } from "../../lib/rpc-client.ts";
 import {
   type SyncState,
   type SyncStatus,
+  SYNC_CHECK_STALE_TIME,
   computeSyncState,
+  isPushCurrent,
 } from "../../lib/sync.ts";
 
 /**
@@ -23,6 +25,7 @@ export function useWebSync({
   youtubeId: string;
   onNavigate: () => void;
 }): SyncStatus {
+  const queryClient = useQueryClient();
   const entryQuery = useVideoIndexEntry({ storage, youtubeId });
 
   const authQuery = useQuery(orpc.auth.check.queryOptions());
@@ -33,6 +36,11 @@ export function useWebSync({
       input: { youtubeId },
     }),
     enabled: authenticated,
+    staleTime: SYNC_CHECK_STALE_TIME,
+  });
+
+  const checkMutation = useMutation({
+    mutationFn: () => serverQuery.refetch(),
   });
 
   const syncMutation = useMutation({
@@ -41,6 +49,21 @@ export function useWebSync({
       runtime: CaptionPanelRuntime;
     }) => {
       if (action.direction === "push") {
+        const server = await orpc.videos.getVideoEditedAt.call({ youtubeId });
+        queryClient.setQueryData(
+          orpc.videos.getVideoEditedAt.queryKey({ input: { youtubeId } }),
+          server,
+        );
+        const localEntry = await storage.getVideoIndexEntry(youtubeId);
+        if (
+          !isPushCurrent({
+            localEditedAt: localEntry?.editedAt,
+            syncedEditedAt: localEntry?.syncedEditedAt,
+            serverEditedAt: server?.editedAt,
+          })
+        ) {
+          return false;
+        }
         await storage.ensureVideoIndexEntry(youtubeId);
         const entry = await storage.getVideoIndexEntry(youtubeId);
         if (!entry) {
@@ -66,21 +89,26 @@ export function useWebSync({
           { syncedEditedAt: data.video.editedAt },
         );
       }
+      return true;
     },
-    onSuccess: () => serverQuery.refetch(),
+    onSuccess: (ran) => {
+      if (ran) {
+        serverQuery.refetch();
+      }
+    },
   });
 
   const getState = (): SyncState => {
     if (syncMutation.isPending) {
       return "syncing";
     }
-    if (authQuery.isFetching) {
+    if (authQuery.isPending) {
       return "checking";
     }
     if (!authenticated) {
       return "unauthenticated";
     }
-    if (serverQuery.isLoading) {
+    if (serverQuery.isLoading || checkMutation.isPending) {
       return "checking";
     }
     if (serverQuery.isError) {
@@ -104,6 +132,7 @@ export function useWebSync({
     error: error
       ? `${variables?.direction === "pull" ? "Download" : "Upload"} failed: ${error.message}`
       : undefined,
+    onCheck: () => checkMutation.mutate(),
     onNavigate,
     onPush: (runtime) => syncMutation.mutate({ direction: "push", runtime }),
     onPull: (runtime) => syncMutation.mutate({ direction: "pull", runtime }),

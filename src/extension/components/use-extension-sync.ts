@@ -1,11 +1,13 @@
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useVideoIndexEntry } from "../../components/use-video-index-entry.ts";
 import type { CaptionPanelRuntime } from "../../lib/caption-panel-runtime.ts";
 import type { CaptionStorage } from "../../lib/caption-storage.ts";
 import {
   type SyncState,
   type SyncStatus,
+  SYNC_CHECK_STALE_TIME,
   computeSyncState,
+  isPushCurrent,
 } from "../../lib/sync.ts";
 import type { bgRpcHandlers } from "../background.ts";
 import type { RpcClient } from "../lib/extension-rpc.ts";
@@ -28,16 +30,38 @@ export function useExtensionSync({
   bgRpc: RpcClient<typeof bgRpcHandlers>;
   youtubeId: string;
 }): SyncStatus {
+  const queryClient = useQueryClient();
   const entryQuery = useVideoIndexEntry({ storage, youtubeId });
 
+  const serverQueryKey = ["extension-sync-state", youtubeId];
   const serverQuery = useQuery({
-    queryKey: ["extension-sync-state", youtubeId],
+    queryKey: serverQueryKey,
     queryFn: () => bgRpc.getSyncState({ youtubeId }),
+    staleTime: SYNC_CHECK_STALE_TIME,
+    // The content script's query client turns focus refetching off.
+    refetchOnWindowFocus: true,
+  });
+
+  const checkMutation = useMutation({
+    mutationFn: () => serverQuery.refetch(),
   });
 
   const syncMutation = useMutation({
     mutationFn: async (action: SyncAction) => {
       if (action.direction === "push") {
+        const server = await bgRpc.getSyncState({ youtubeId });
+        queryClient.setQueryData(serverQueryKey, server);
+        const localEntry = await storage.getVideoIndexEntry(youtubeId);
+        if (
+          !server.authenticated ||
+          !isPushCurrent({
+            localEditedAt: localEntry?.editedAt,
+            syncedEditedAt: localEntry?.syncedEditedAt,
+            serverEditedAt: server.serverEditedAt,
+          })
+        ) {
+          return false;
+        }
         await storage.ensureVideoIndexEntry(youtubeId);
         const { editedAt } = await bgRpc.pushSession({ youtubeId });
         await storage.markSynced({ youtubeId, editedAt });
@@ -53,15 +77,20 @@ export function useExtensionSync({
           { syncedEditedAt: editedAt },
         );
       }
+      return true;
     },
-    onSuccess: () => serverQuery.refetch(),
+    onSuccess: (ran) => {
+      if (ran) {
+        serverQuery.refetch();
+      }
+    },
   });
 
   const getState = (): SyncState => {
     if (syncMutation.isPending) {
       return "syncing";
     }
-    if (serverQuery.isPending) {
+    if (serverQuery.isPending || checkMutation.isPending) {
       return "checking";
     }
     if (serverQuery.isError) {
@@ -88,6 +117,7 @@ export function useExtensionSync({
     error: error
       ? `${variables?.direction === "pull" ? "Download" : "Upload"} failed: ${error.message}`
       : undefined,
+    onCheck: () => checkMutation.mutate(),
     onNavigate: () => bgRpc.openBookmarks(),
     onPush: () => syncMutation.mutate({ direction: "push" }),
     onPull: (runtime) => syncMutation.mutate({ direction: "pull", runtime }),
