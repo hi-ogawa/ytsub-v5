@@ -17,6 +17,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     outputs:
+      artifact-id: ${{ steps.upload-extension.outputs.artifact-id }}
       artifact-url: ${{ steps.upload-extension.outputs.artifact-url }}
     steps:
       - uses: actions/checkout@v6
@@ -91,6 +92,32 @@ jobs:
               pull_number,
               body: [text, text && "---", ...sections].filter(Boolean).join("\n\n"),
             });
+
+  # Replace the rolling pre-release with the latest main build, so
+  # releases/download/extension-latest/zamak-extension.zip stays a stable link.
+  # Write permission stays out of the job that runs install and build code.
+  release-extension:
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          artifact-ids: ${{ needs.build.outputs.artifact-id }}
+          path: extension
+      - run: cd extension && zip -r "$GITHUB_WORKSPACE/zamak-extension.zip" .
+      - run: |
+          gh release delete extension-latest --cleanup-tag --yes || true
+          gh release create extension-latest zamak-extension.zip \
+            --prerelease \
+            --target "$GITHUB_SHA" \
+            --title "Extension build from main" \
+            --notes "Built from $GITHUB_SHA by $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID. Unzip it and load the folder with Load unpacked in chrome://extensions."
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
 
   e2e:
     runs-on: ubuntu-latest

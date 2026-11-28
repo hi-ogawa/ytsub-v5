@@ -33,6 +33,10 @@ The viewer only opens pulled videos, so it shows "No session available" until st
 
 The dev build is named `Zamak-dev [<branch> <commit> <time>]`, so the extension card shows when it was last built. To sync, sign in from the bookmarks page, which opens when you click the extension's icon.
 
+## Try a CI Build
+
+CI builds the extension on every push. The latest build from `main` is always at [zamak-extension.zip](https://github.com/hi-ogawa/ytsub-v5/releases/download/extension-latest/zamak-extension.zip), on the `extension-latest` pre-release that each push to `main` replaces, and a PR's build is linked at the end of its description. Unzip it and load the folder with Load unpacked. CI builds are named `Zamak [<commit>]` or `Zamak [PR#<number> <commit>]`.
+
 ## Check a Change Without Reloading
 
 An e2e spec loads the built extension into Chromium on a mocked YouTube page, so it can show a panel change without reloading anything by hand. Run one spec, such as `pnpm test-e2e e2e/ext/caption-panel.spec.ts -g "<pattern>"`, and open its trace in `test-results/trace-pack.html`. [E2E tests](e2e.md) covers running and writing specs.
