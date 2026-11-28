@@ -6,7 +6,6 @@ import {
 } from "../../components/caption-panel-fab.tsx";
 import { CaptionPanel } from "../../components/caption-panel.tsx";
 import { ResizablePanel } from "../../components/resizable-panel.tsx";
-import { captionLanguagePreferences } from "../../lib/caption-language-preferences.ts";
 import { captionPanelPreferences } from "../../lib/caption-panel-preferences.ts";
 import { CaptionPanelRuntime } from "../../lib/caption-panel-runtime.ts";
 import type { CaptionStorage } from "../../lib/caption-storage.ts";
@@ -88,10 +87,10 @@ function ExtensionViewer({
 
 function getUserLangs(): string[] {
   const langs = [...navigator.languages];
-  const { lang1, lang2 } = captionLanguagePreferences.get();
-  for (const lang of [lang1, lang2]) {
-    if (lang && !langs.includes(lang)) {
-      langs.push(lang);
+  const { language1, language2 } = captionPanelPreferences.get();
+  for (const language of [language1, language2]) {
+    if (language && !langs.includes(language)) {
+      langs.push(language);
     }
   }
   return langs;

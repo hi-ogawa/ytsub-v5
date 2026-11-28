@@ -1,7 +1,7 @@
 import type { InferRouterInputs, InferRouterOutputs } from "@orpc/server";
 import type { Router } from "../server/rpc.ts";
-import { captionLanguagePreferences } from "./caption-language-preferences.ts";
 import type { MergedCaption } from "./caption-merge.ts";
+import { captionPanelPreferences } from "./caption-panel-preferences.ts";
 import type {
   CaptionStorage,
   PersistedCaptionSession,
@@ -20,13 +20,13 @@ export function getInitialTracks(tracks: YouTubeCaptionTrack[]): {
   vssId1?: string;
   vssId2?: string;
 } {
-  const { lang1, lang2 } = captionLanguagePreferences.get();
-  if (!lang1 || !lang2) {
+  const { language1, language2 } = captionPanelPreferences.get();
+  if (!language1 || !language2) {
     return {};
   }
   return {
-    vssId1: pickBestTrack(tracks, lang1)?.vssId,
-    vssId2: pickBestTrack(tracks, lang2)?.vssId,
+    vssId1: pickBestTrack(tracks, language1)?.vssId,
+    vssId2: pickBestTrack(tracks, language2)?.vssId,
   };
 }
 
@@ -42,9 +42,9 @@ export function saveSelectedTracks({
   const track1 = tracks.find((t) => t.vssId === vssId1);
   const track2 = tracks.find((t) => t.vssId === vssId2);
   if (track1 && track2) {
-    captionLanguagePreferences.update({
-      lang1: track1.languageCode,
-      lang2: track2.languageCode,
+    captionPanelPreferences.update({
+      language1: track1.languageCode,
+      language2: track2.languageCode,
     });
   }
 }

@@ -18,6 +18,9 @@ const preferencesSchema = z
     fabOpen: z
       .record(z.string(), z.boolean())
       .catch(DEFAULT_PREFERENCES.fabOpen),
+    // The languages of the last picked track pair, which seed the next video.
+    language1: z.string().optional().catch(undefined),
+    language2: z.string().optional().catch(undefined),
     panelWidth: z
       .number()
       .min(PANEL_WIDTH.min)
