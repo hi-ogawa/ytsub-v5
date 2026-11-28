@@ -34,7 +34,7 @@ We care about the clients that need no JS player:
 
 | Client       | clientName   | Why                              |
 | ------------ | ------------ | -------------------------------- |
-| `ios`        | `IOS`        | Our fallback client              |
+| `ios`        | `IOS`        | Known-working alternative        |
 | `android`    | `ANDROID`    | Alternative mobile client        |
 | `android_vr` | `ANDROID_VR` | yt-dlp's current primary default |
 

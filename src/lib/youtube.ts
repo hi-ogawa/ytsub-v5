@@ -18,7 +18,8 @@ export interface YouTubeVideoData {
 export interface YouTubeCaptionTrack {
   baseUrl: string;
   languageCode: string;
-  kind?: string; // "asr" = auto-generated, absent = manual
+  /** "asr" for auto-generated, absent for manual */
+  kind?: string;
   name: string;
   vssId: string;
 }
@@ -192,7 +193,8 @@ export async function fetchPlayerApi(options: {
   userLangs?: string[];
 }): Promise<YouTubeExtractionResult> {
   const { youtubeId, userLangs } = options;
-  // Mobile clients that don't require JS player or SUBS POT
+  // Mobile clients that don't require JS player or SUBS POT. Only android_vr is
+  // sent; ios is kept as a known-working alternative.
   const clients = {
     // yt-dlp's current default — simplest client, no POT policies at all
     android_vr: {
@@ -209,7 +211,7 @@ export async function fetchPlayerApi(options: {
         osVersion: "12L",
       },
     },
-    // Fallback — proven in ytsub-v4
+    // Proven in ytsub-v4
     ios: {
       clientId: "5",
       userAgent:
@@ -428,7 +430,7 @@ export function pickBestTrack(
   tracks: YouTubeCaptionTrack[],
   lang: string,
 ): YouTubeCaptionTrack | undefined {
-  // Prefer manual (kind absent) over auto-generated (kind: "asr")
+  /** Prefer manual (kind absent) over auto-generated (kind: "asr") */
   function bestOfKind(list: YouTubeCaptionTrack[]) {
     return list.find((t) => !t.kind) ?? list.find((t) => t.kind === "asr");
   }

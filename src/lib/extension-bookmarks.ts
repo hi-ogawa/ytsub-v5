@@ -15,7 +15,9 @@ export type ExtensionBookmark = BookmarkSelection & {
   createdAt: string;
 };
 
-// Walk up: text node → span[data-offset] → div[data-side] → div(flex) → div[data-index]
+/**
+ * Walk up: text node → span[data-offset] → div[data-side] → div(flex) → div[data-index]
+ */
 export function extractBookmarkSelection(
   selection: Selection,
 ): BookmarkSelection | undefined {

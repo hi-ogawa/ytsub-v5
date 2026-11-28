@@ -17,8 +17,10 @@ export function TrackPicker({
   selectedVssId2?: string;
   onSelect: (vssId1?: string, vssId2?: string) => void;
   disabled?: boolean;
-  // While the tracks load, each select shows only its selected track, so the
-  // header keeps its shape until the full list arrives.
+  /**
+   * While the tracks load, each select shows only its selected track, so the
+   * header keeps its shape until the full list arrives.
+   */
   loading?: boolean;
 }) {
   const selectDisabled = disabled || loading;

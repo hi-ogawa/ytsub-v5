@@ -132,8 +132,10 @@ export function CaptionList({
     }
   }, [currentIndex]);
 
-  // A click that ends a text selection is for bookmarking, not playback.
-  // Any other click resumes auto-scroll.
+  /**
+   * A click that ends a text selection is for bookmarking, not playback.
+   * Any other click resumes auto-scroll.
+   */
   function onClickRow(index: number) {
     if (getSelectionAt(scrollRef.current)?.toString()) {
       return;
@@ -179,9 +181,11 @@ export function CaptionList({
   );
 }
 
-// The rows share one callback each and see `isPlaying` only when current, so
-// with React Compiler a row whose own state didn't change returns its cached
-// output.
+/**
+ * The rows share one callback each and see `isPlaying` only when current, so
+ * with React Compiler a row whose own state didn't change returns its cached
+ * output.
+ */
 function CaptionRow({
   row,
   languages,

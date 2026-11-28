@@ -276,7 +276,6 @@ export const videosRouter = authed.router({
         .orderBy(captions.idx);
       let captionRows: { idx: number; id: number }[] = storedCaptions;
       if (!isSameCaptions(storedCaptions, input.captions)) {
-        // Delete existing captions (cascade deletes bookmark caption refs)
         await db.delete(captions).where(eq(captions.videoId, video.id));
 
         // Insert captions in batches to avoid D1 SQL variable limit
