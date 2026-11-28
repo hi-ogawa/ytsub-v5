@@ -66,13 +66,13 @@ export function computeSyncState(params: {
 export const SYNC_CHECK_STALE_TIME = 60_000;
 
 /**
- * Whether a push clicked from a possibly stale status still matches the
- * status recomputed from a fresh server check. Push replaces the server copy
- * wholesale, so pushing from a stale status would drop edits made on another
- * device since the last check. Pull needs no such check, because local edits
- * recompute the status at once.
+ * Whether pushing, given edit times from a fresh server check, leaves no
+ * server edit unseen. Push replaces the server copy wholesale, so a push
+ * clicked from a stale status would drop edits made on another device since
+ * the last check. Pull needs no such check, because local edits recompute
+ * the status at once.
  */
-export function isPushCurrent(params: {
+export function canPushWithoutOverwriting(params: {
   localEditedAt?: string;
   syncedEditedAt?: string;
   serverEditedAt?: string;

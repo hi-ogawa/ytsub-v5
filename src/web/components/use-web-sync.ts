@@ -9,7 +9,7 @@ import {
   type SyncStatus,
   SYNC_CHECK_STALE_TIME,
   computeSyncState,
-  isPushCurrent,
+  canPushWithoutOverwriting,
 } from "../../lib/sync.ts";
 
 /**
@@ -59,7 +59,7 @@ export function useWebSync({
         );
         const localEntry = await storage.getVideoIndexEntry(youtubeId);
         if (
-          !isPushCurrent({
+          !canPushWithoutOverwriting({
             localEditedAt: localEntry?.editedAt,
             syncedEditedAt: localEntry?.syncedEditedAt,
             serverEditedAt: server?.editedAt,

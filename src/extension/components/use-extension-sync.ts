@@ -7,7 +7,7 @@ import {
   type SyncStatus,
   SYNC_CHECK_STALE_TIME,
   computeSyncState,
-  isPushCurrent,
+  canPushWithoutOverwriting,
 } from "../../lib/sync.ts";
 import type { bgRpcHandlers } from "../background.ts";
 import type { RpcClient } from "../lib/extension-rpc.ts";
@@ -57,7 +57,7 @@ export function useExtensionSync({
         const localEntry = await storage.getVideoIndexEntry(youtubeId);
         if (
           !server.authenticated ||
-          !isPushCurrent({
+          !canPushWithoutOverwriting({
             localEditedAt: localEntry?.editedAt,
             syncedEditedAt: localEntry?.syncedEditedAt,
             serverEditedAt: server.serverEditedAt,
