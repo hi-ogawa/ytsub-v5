@@ -81,7 +81,12 @@ class IdbCaptionStorage implements CaptionStorage {
         sessions.put(session);
         const existing = await videos.get(session.youtubeId);
         const syncedEditedAt = options?.syncedEditedAt;
-        if (!existing && !syncedEditedAt && !session.bookmarks.length) {
+        if (
+          !existing &&
+          !syncedEditedAt &&
+          !options?.index &&
+          !session.bookmarks.length
+        ) {
           return;
         }
         videos.put({

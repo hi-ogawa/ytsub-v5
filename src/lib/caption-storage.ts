@@ -33,19 +33,22 @@ export type VideoIndexEntry = {
 
 export type StorageNotice = { type: "videoIndex"; entries: VideoIndexEntry[] };
 
+export type SaveSessionOptions = { syncedEditedAt?: string; index?: boolean };
+
 export type StorageListener = (notice: StorageNotice) => void;
 
 export interface CaptionStorage {
   getSession(youtubeId: string): Promise<PersistedCaptionSession | undefined>;
   /**
    * Also updates the video's index entry when the session has bookmarks, is
-   * already indexed, or is saved as synced. `syncedEditedAt` marks the session
-   * as the copy synced at that edit time, as after a pull, so it is recorded as
-   * both the entry's edit time and its last sync.
+   * already indexed, is saved as synced, or is saved with `index`.
+   * `syncedEditedAt` marks the session as the copy synced at that edit time, as
+   * after a pull, so it is recorded as both the entry's edit time and its last
+   * sync.
    */
   saveSession(
     session: PersistedCaptionSession,
-    options?: { syncedEditedAt?: string },
+    options?: SaveSessionOptions,
   ): Promise<void>;
   deleteVideo(youtubeId: string): Promise<void>;
   markSynced(options: { youtubeId: string; editedAt: string }): Promise<void>;

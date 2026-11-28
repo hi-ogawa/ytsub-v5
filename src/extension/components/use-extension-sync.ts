@@ -10,9 +10,10 @@ import {
 import type { bgRpcHandlers } from "../background.ts";
 import type { RpcClient } from "../lib/extension-rpc.ts";
 
-type SyncAction =
-  | { direction: "push" }
-  | { direction: "pull"; runtime: CaptionPanelRuntime };
+type SyncAction = {
+  direction: "push" | "pull";
+  runtime: CaptionPanelRuntime;
+};
 
 /**
  * Per-video sync for the caption panel on YouTube. The content script never
@@ -38,6 +39,9 @@ export function useExtensionSync({
   const syncMutation = useMutation({
     mutationFn: async (action: SyncAction) => {
       if (action.direction === "push") {
+        if (!entryQuery.data) {
+          await action.runtime.addToIndex();
+        }
         const { editedAt } = await bgRpc.pushSession({ youtubeId });
         await storage.markSynced({ youtubeId, editedAt });
       } else {
@@ -88,7 +92,7 @@ export function useExtensionSync({
       ? `${variables?.direction === "pull" ? "Download" : "Upload"} failed: ${error.message}`
       : undefined,
     onNavigate: () => bgRpc.openBookmarks(),
-    onPush: () => syncMutation.mutate({ direction: "push" }),
+    onPush: (runtime) => syncMutation.mutate({ direction: "push", runtime }),
     onPull: (runtime) => syncMutation.mutate({ direction: "pull", runtime }),
   };
 }
