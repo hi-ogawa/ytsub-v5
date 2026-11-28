@@ -54,16 +54,6 @@ export interface CaptionStorage {
   subscribe(listener: StorageListener): () => void;
 }
 
-/** The part of `CaptionStorage` the caption panel uses */
-export type CaptionPanelStorage = Pick<
-  CaptionStorage,
-  | "getSession"
-  | "saveSession"
-  | "markSynced"
-  | "getVideoIndexEntry"
-  | "subscribe"
->;
-
 /**
  * In-memory copy of the stored index, for components that read it as they
  * render.

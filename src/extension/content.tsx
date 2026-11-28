@@ -2,7 +2,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { PortalContainerProvider } from "../components/ui/portal-container.tsx";
-import type { CaptionPanelStorage } from "../lib/caption-storage.ts";
+import type { CaptionStorage } from "../lib/caption-storage.ts";
 import { createShadowHost } from "../utils/shadow-root.ts";
 import type { bgRpcHandlers } from "./background.ts";
 import { CaptionOverlay } from "./components/caption-overlay.tsx";
@@ -41,7 +41,7 @@ function mountOverlay({
   storage,
   youtubeId,
 }: {
-  storage: CaptionPanelStorage;
+  storage: CaptionStorage;
   youtubeId: string;
 }) {
   const { host, container } = createShadowHost({

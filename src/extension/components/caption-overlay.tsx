@@ -8,7 +8,7 @@ import { CaptionPanel } from "../../components/caption-panel.tsx";
 import { ResizablePanel } from "../../components/resizable-panel.tsx";
 import { captionPanelPreferences } from "../../lib/caption-panel-preferences.ts";
 import { CaptionPanelRuntime } from "../../lib/caption-panel-runtime.ts";
-import type { CaptionPanelStorage } from "../../lib/caption-storage.ts";
+import type { CaptionStorage } from "../../lib/caption-storage.ts";
 import type { UseSync } from "../../lib/sync.ts";
 import { fetchPlayerApi, fetchTrackJson3 } from "../../lib/youtube.ts";
 import { getVideoPlayer } from "../lib/youtube-page.ts";
@@ -18,7 +18,7 @@ export function CaptionOverlay({
   youtubeId,
   useSync,
 }: {
-  storage: CaptionPanelStorage;
+  storage: CaptionStorage;
   youtubeId: string;
   useSync: UseSync;
 }) {
@@ -58,7 +58,7 @@ function ExtensionViewer({
   youtubeId,
   useSync,
 }: {
-  storage: CaptionPanelStorage;
+  storage: CaptionStorage;
   youtubeId: string;
   useSync: UseSync;
 }) {
