@@ -10,7 +10,7 @@ import {
   sessionToExportData,
 } from "./caption-session.ts";
 import type {
-  CaptionStorage,
+  CaptionPanelStorage,
   PersistedCaptionSession,
 } from "./caption-storage.ts";
 import type { ExtensionBookmark } from "./extension-bookmarks.ts";
@@ -86,7 +86,7 @@ export class CaptionPanelRuntime {
   });
   readonly playbackStore = createStore<PlaybackState>({ isPlaying: false });
 
-  readonly storage: CaptionStorage;
+  readonly storage: CaptionPanelStorage;
   readonly youtubeId: string;
   readonly trackSource?: CaptionTrackSource;
   private readonly startTime?: number;
@@ -94,7 +94,7 @@ export class CaptionPanelRuntime {
   private player?: YTPlayer;
 
   constructor(options: {
-    storage: CaptionStorage;
+    storage: CaptionPanelStorage;
     youtubeId: string;
     trackSource?: CaptionTrackSource;
     /** Where the player starts, whose caption is current before playback */

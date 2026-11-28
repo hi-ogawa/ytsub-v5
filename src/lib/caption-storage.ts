@@ -55,6 +55,23 @@ export interface CaptionStorage {
 }
 
 /**
+ * The storage methods the caption panel calls, apart from `subscribe`. On the
+ * watch page, the storage frame serves only these.
+ */
+export const captionPanelStorageMethods = [
+  "getSession",
+  "saveSession",
+  "markSynced",
+  "getVideoIndexEntry",
+] as const satisfies readonly (keyof CaptionStorage)[];
+
+/** The part of `CaptionStorage` the caption panel uses */
+export type CaptionPanelStorage = Pick<
+  CaptionStorage,
+  (typeof captionPanelStorageMethods)[number] | "subscribe"
+>;
+
+/**
  * In-memory copy of the stored index, for components that read it as they
  * render.
  */

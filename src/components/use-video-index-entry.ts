@@ -1,12 +1,12 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
-import type { CaptionStorage } from "../lib/caption-storage.ts";
+import type { CaptionPanelStorage } from "../lib/caption-storage.ts";
 
 export function useVideoIndexEntry({
   storage,
   youtubeId,
 }: {
-  storage: CaptionStorage;
+  storage: CaptionPanelStorage;
   youtubeId: string;
 }) {
   const queryClient = useQueryClient();

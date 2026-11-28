@@ -1,7 +1,7 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useVideoIndexEntry } from "../../components/use-video-index-entry.ts";
 import type { CaptionPanelRuntime } from "../../lib/caption-panel-runtime.ts";
-import type { CaptionStorage } from "../../lib/caption-storage.ts";
+import type { CaptionPanelStorage } from "../../lib/caption-storage.ts";
 import {
   type SyncState,
   type SyncStatus,
@@ -24,7 +24,7 @@ export function useExtensionSync({
   bgRpc,
   youtubeId,
 }: {
-  storage: CaptionStorage;
+  storage: CaptionPanelStorage;
   bgRpc: RpcClient<typeof bgRpcHandlers>;
   youtubeId: string;
 }): SyncStatus {

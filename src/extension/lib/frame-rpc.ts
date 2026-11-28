@@ -21,11 +21,12 @@ type FrameMessage =
 
 type FrameHandlers = Record<string, (...params: any[]) => Promise<unknown>>;
 
-type FrameRpcClient<Handlers extends FrameHandlers> = {
+/** The frame's methods, plus `subscribe` for its events */
+type FrameRpcClient<Handlers extends FrameHandlers, Event> = {
   [M in keyof Handlers]: (
     ...params: Parameters<Handlers[M]>
   ) => Promise<Awaited<ReturnType<Handlers[M]>>>;
-};
+} & { subscribe(listener: (event: Event) => void): () => void };
 
 type Connection = { frame: Window; origin: string };
 
@@ -39,7 +40,7 @@ type ConnectOptions = {
 
 export function connectFrameRpc<Handlers extends FrameHandlers, Event>(
   options: ConnectOptions,
-) {
+): FrameRpcClient<Handlers, Event> {
   const listeners = new Set<(event: Event) => void>();
   let connectionPromise: Promise<Connection> | undefined;
 
@@ -87,13 +88,7 @@ export function connectFrameRpc<Handlers extends FrameHandlers, Event>(
     });
   }
 
-  const client = new Proxy({} as FrameRpcClient<Handlers>, {
-    get(_target, method: string) {
-      return (...params: unknown[]) => call(method, params);
-    },
-  });
-
-  function onEvent(listener: (event: Event) => void) {
+  function subscribe(listener: (event: Event) => void) {
     connect().catch(() => {});
     listeners.add(listener);
     return () => {
@@ -101,7 +96,18 @@ export function connectFrameRpc<Handlers extends FrameHandlers, Event>(
     };
   }
 
-  return { client, onEvent };
+  return new Proxy({} as FrameRpcClient<Handlers, Event>, {
+    get(_target, method) {
+      if (method === "subscribe") {
+        return subscribe;
+      }
+      // `then` stays undefined so the client never looks like a promise.
+      if (typeof method !== "string" || method === "then") {
+        return undefined;
+      }
+      return (...params: unknown[]) => call(method, params);
+    },
+  });
 }
 
 /**
@@ -151,11 +157,15 @@ function waitForFrame(options: ConnectOptions): Promise<Connection> {
 
 // --- Frame side ---
 
-/** Answers only `parentOrigin`, and only the methods in `handlers`. */
-export function serveFrameRpc<Event>(
-  handlers: FrameHandlers,
-  options: { parentOrigin: string },
+/** Answers only `parentOrigin`, and only the listed `methods` of `target`. */
+export function serveFrameRpc<Target, Event>(
+  target: Target,
+  options: {
+    methods: readonly (keyof Target & string)[];
+    parentOrigin: string;
+  },
 ) {
+  const methods: readonly string[] = options.methods;
   const parent = { frame: window.parent, origin: options.parentOrigin };
 
   listenFrom(parent, async (message) => {
@@ -168,9 +178,10 @@ export function serveFrameRpc<Event>(
     }
     const { id, method, params } = message;
     try {
-      if (!Object.hasOwn(handlers, method)) {
+      if (!methods.includes(method)) {
         throw new Error(`Unknown method: ${method}`);
       }
+      const handlers = target as FrameHandlers;
       const result = await handlers[method]!(...params);
       postTo(parent, { type: "zamak-frame:response", id, result });
     } catch (error) {
