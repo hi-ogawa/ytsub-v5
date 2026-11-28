@@ -50,17 +50,19 @@ export function useWebSync({
       runtime: CaptionPanelRuntime;
     }) => {
       if (action.direction === "push") {
-        const server = await orpc.videos.getVideoEditedAt.call({ youtubeId });
+        const latestServerVideo = await orpc.videos.getVideoEditedAt.call({
+          youtubeId,
+        });
         queryClient.setQueryData(
           orpc.videos.getVideoEditedAt.queryKey({ input: { youtubeId } }),
-          server,
+          latestServerVideo,
         );
         const localEntry = await storage.getVideoIndexEntry(youtubeId);
         if (
           !canPushWithoutOverwriting({
             localEditedAt: localEntry?.editedAt,
             syncedEditedAt: localEntry?.syncedEditedAt,
-            serverEditedAt: server?.editedAt,
+            serverEditedAt: latestServerVideo?.editedAt,
           })
         ) {
           return false;

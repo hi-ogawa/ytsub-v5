@@ -50,15 +50,15 @@ export function useExtensionSync({
   const syncMutation = useMutation({
     mutationFn: async (action: SyncAction) => {
       if (action.direction === "push") {
-        const server = await bgRpc.getSyncState({ youtubeId });
-        queryClient.setQueryData(serverQueryKey, server);
+        const latestSyncState = await bgRpc.getSyncState({ youtubeId });
+        queryClient.setQueryData(serverQueryKey, latestSyncState);
         const localEntry = await storage.getVideoIndexEntry(youtubeId);
         if (
-          !server.authenticated ||
+          !latestSyncState.authenticated ||
           !canPushWithoutOverwriting({
             localEditedAt: localEntry?.editedAt,
             syncedEditedAt: localEntry?.syncedEditedAt,
-            serverEditedAt: server.serverEditedAt,
+            serverEditedAt: latestSyncState.serverEditedAt,
           })
         ) {
           return false;
