@@ -8,11 +8,9 @@ import type { SyncStatus } from "../../lib/sync.ts";
 export function useWebSync({
   storage,
   youtubeId,
-  onNavigate,
 }: {
   storage: CaptionStorage;
   youtubeId: string;
-  onNavigate: () => void;
 }): SyncStatus {
   return useSyncStatus({
     storage,
@@ -45,7 +43,6 @@ export function useWebSync({
           editedAt: data.video.editedAt,
         };
       },
-      onNavigate,
     },
   });
 }

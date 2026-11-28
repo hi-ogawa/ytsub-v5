@@ -26,7 +26,6 @@ export type SyncTransport = {
     session: PersistedCaptionSession;
     editedAt: string;
   }>;
-  onNavigate: () => void;
 };
 
 /** Per-video sync for the caption panel, over a client's transport. */
@@ -102,7 +101,6 @@ export function useSyncStatus({
     error: error
       ? `${variables?.direction === "pull" ? "Download" : "Upload"} failed: ${error.message}`
       : undefined,
-    onNavigate: transport.onNavigate,
     onPush: (runtime) => syncMutation.mutate({ direction: "push", runtime }),
     onPull: (runtime) => syncMutation.mutate({ direction: "pull", runtime }),
   };

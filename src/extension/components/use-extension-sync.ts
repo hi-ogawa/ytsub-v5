@@ -26,7 +26,6 @@ export function useExtensionSync({
       // The background reads the session from the database itself.
       push: () => bgRpc.pushSession({ youtubeId }),
       fetchSession: () => bgRpc.fetchSession({ youtubeId }),
-      onNavigate: () => bgRpc.openBookmarks(),
     },
   });
 }

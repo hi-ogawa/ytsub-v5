@@ -13,6 +13,7 @@ import { useWebSync } from "../components/use-web-sync.ts";
 export function VideoViewerPage({ storage }: { storage: CaptionStorage }) {
   const { youtubeId } = useParams<"youtubeId">();
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
 
   if (!youtubeId) {
     return (
@@ -27,7 +28,8 @@ export function VideoViewerPage({ storage }: { storage: CaptionStorage }) {
       storage={storage}
       youtubeId={youtubeId}
       startTime={getStartTime(searchParams)}
-      useSync={({ youtubeId }) => useViewerSync({ storage, youtubeId })}
+      useSync={({ youtubeId }) => useWebSync({ storage, youtubeId })}
+      onOpenBookmarksPage={() => navigate("/")}
     />
   );
 }
@@ -37,11 +39,13 @@ export function VideoViewer({
   youtubeId,
   startTime,
   useSync,
+  onOpenBookmarksPage,
 }: {
   storage: CaptionStorage;
   youtubeId: string;
   startTime?: number;
   useSync: UseSync;
+  onOpenBookmarksPage: () => void;
 }) {
   // Where a browser blocks autoplay, as mobile browsers do on a page opened
   // from a link, the player waits paused there until the first tap.
@@ -71,6 +75,7 @@ export function VideoViewer({
           startTime={startTime}
           player={player}
           useSync={useSync}
+          onOpenBookmarksPage={onOpenBookmarksPage}
         />
       </div>
     </div>
@@ -90,30 +95,24 @@ function ViewerCaptionPanel({
   startTime,
   player,
   useSync,
+  onOpenBookmarksPage,
 }: {
   storage: CaptionStorage;
   youtubeId: string;
   startTime?: number;
   player?: YTPlayer;
   useSync: UseSync;
+  onOpenBookmarksPage: () => void;
 }) {
   const [runtime] = useState(
     () => new CaptionPanelRuntime({ storage, youtubeId, startTime }),
   );
-  return <CaptionPanel runtime={runtime} player={player} useSync={useSync} />;
-}
-
-function useViewerSync({
-  storage,
-  youtubeId,
-}: {
-  storage: CaptionStorage;
-  youtubeId: string;
-}) {
-  const navigate = useNavigate();
-  return useWebSync({
-    storage,
-    youtubeId,
-    onNavigate: () => navigate("/"),
-  });
+  return (
+    <CaptionPanel
+      runtime={runtime}
+      player={player}
+      useSync={useSync}
+      onOpenBookmarksPage={onOpenBookmarksPage}
+    />
+  );
 }

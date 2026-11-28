@@ -17,10 +17,12 @@ export function CaptionOverlay({
   storage,
   youtubeId,
   useSync,
+  onOpenBookmarksPage,
 }: {
   storage: CaptionStorage;
   youtubeId: string;
   useSync: UseSync;
+  onOpenBookmarksPage: () => void;
 }) {
   const [open, toggleOpen] = useFabOpen(youtubeId);
   const [panelWidth, setPanelWidth] =
@@ -45,6 +47,7 @@ export function CaptionOverlay({
             storage={storage}
             youtubeId={youtubeId}
             useSync={useSync}
+            onOpenBookmarksPage={onOpenBookmarksPage}
           />
         </ResizablePanel>
       )}
@@ -57,10 +60,12 @@ function ExtensionViewer({
   storage,
   youtubeId,
   useSync,
+  onOpenBookmarksPage,
 }: {
   storage: CaptionStorage;
   youtubeId: string;
   useSync: UseSync;
+  onOpenBookmarksPage: () => void;
 }) {
   const queryClient = useQueryClient();
   const [player] = useState(() => getVideoPlayer());
@@ -82,7 +87,14 @@ function ExtensionViewer({
       }),
   );
 
-  return <CaptionPanel runtime={runtime} player={player} useSync={useSync} />;
+  return (
+    <CaptionPanel
+      runtime={runtime}
+      player={player}
+      useSync={useSync}
+      onOpenBookmarksPage={onOpenBookmarksPage}
+    />
+  );
 }
 
 function getUserLangs(): string[] {
