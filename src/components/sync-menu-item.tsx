@@ -91,7 +91,8 @@ function getSyncMenuAction(
 ): { run: () => void; keepOpen: boolean } | undefined {
   const { onPush, onPull, onNavigate } = sync;
   switch (sync.state) {
-    case "push": {
+    case "push":
+    case "empty": {
       return { run: () => onPush(runtime), keepOpen: true };
     }
     case "pull": {

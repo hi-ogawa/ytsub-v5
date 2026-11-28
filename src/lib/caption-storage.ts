@@ -45,14 +45,15 @@ export abstract class CaptionStorage {
     youtubeId: string,
   ): Promise<PersistedCaptionSession | undefined>;
   /**
-   * Also updates the video's index entry when the session has bookmarks, is
-   * already indexed, or is saved as synced. `syncedEditedAt` marks the session
-   * as the copy synced at that edit time, as after a pull, so it is recorded as
-   * both the entry's edit time and its last sync.
+   * Also updates the video's index entry when the session has bookmarks,
+   * already has an entry, is saved as synced, or is saved with
+   * `addToVideoIndex`. `syncedEditedAt` marks the session as the copy synced at
+   * that edit time, as after a pull, so it is recorded as both the entry's edit
+   * time and its last sync.
    */
   abstract saveSession(
     session: PersistedCaptionSession,
-    options?: { syncedEditedAt?: string },
+    options?: { syncedEditedAt?: string; addToVideoIndex?: boolean },
   ): Promise<void>;
   abstract deleteVideo(youtubeId: string): Promise<void>;
   abstract markSynced(options: {
@@ -64,6 +65,22 @@ export abstract class CaptionStorage {
   ): Promise<VideoIndexEntry | undefined>;
   abstract listVideoIndex(): Promise<VideoIndexEntry[]>;
   abstract subscribe(listener: StorageListener): () => void;
+
+  /**
+   * Give a video without bookmarks a video index entry before a push. An
+   * existing entry is left alone, because a push copies its edit time
+   * unchanged.
+   */
+  async ensureVideoIndexEntry(youtubeId: string): Promise<void> {
+    if (await this.getVideoIndexEntry(youtubeId)) {
+      return;
+    }
+    const session = await this.getSession(youtubeId);
+    if (!session) {
+      throw new Error("No local session found");
+    }
+    await this.saveSession(session, { addToVideoIndex: true });
+  }
 }
 
 /**
