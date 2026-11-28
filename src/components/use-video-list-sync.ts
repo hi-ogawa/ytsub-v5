@@ -92,7 +92,7 @@ export function useVideoListSync(storage: CaptionStorage) {
         throw new Error("Video not found on server");
       }
       await storage.saveSession(serverSessionToLocal(data), {
-        pulledEditedAt: data.video.editedAt,
+        syncedEditedAt: data.video.editedAt,
       });
     });
   };

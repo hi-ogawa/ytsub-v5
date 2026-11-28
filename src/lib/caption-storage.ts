@@ -36,12 +36,12 @@ export type StorageListener = (notice: StorageNotice) => void;
 export interface CaptionStorage {
   getSession(youtubeId: string): Promise<PersistedCaptionSession | undefined>;
   // Also updates the video's index entry when the session has bookmarks, is
-  // already indexed, or comes from a pull. `pulledEditedAt` is the server's
-  // edit time for a pull, and it is recorded as both the entry's edit time and
-  // its last sync.
+  // already indexed, or is saved as synced. `syncedEditedAt` marks the session
+  // as the copy synced at that edit time, as after a pull, so it is recorded as
+  // both the entry's edit time and its last sync.
   saveSession(
     session: PersistedCaptionSession,
-    options?: { pulledEditedAt?: string },
+    options?: { syncedEditedAt?: string },
   ): Promise<void>;
   deleteVideo(youtubeId: string): Promise<void>;
   markSynced(options: { youtubeId: string; editedAt: string }): Promise<void>;
