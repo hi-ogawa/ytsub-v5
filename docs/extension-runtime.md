@@ -36,7 +36,7 @@ Every write to the database posts a notice with the new index to listeners on th
 
 The background service worker holds no UI. It handles calls from the content script and talks to the server.
 
-When the caption panel opens, and again each time you open its menu, the content script asks the background for the video's sync status. The background reads the session token from `chrome.storage.local`, calls the server, and returns whether you're signed in and when the server last changed the video. The token stays out of the content script, which shares its world with YouTube's own scripts. A push from the panel also goes through the background, which reads the session from the database and sends it to the server. A pull from the panel only fetches the session through the background, and the panel applies it to the session it holds. [Data and sync](data-and-sync.md) describes what push and pull do with the data.
+When the caption panel opens, and again when [its sync status](data-and-sync.md#push-and-pull-whole-videos) needs a fresh check, the content script asks the background for the video's sync status. The background reads the session token from `chrome.storage.local`, calls the server, and returns whether you're signed in and when the server last changed the video. The token stays out of the content script, which shares its world with YouTube's own scripts. A push from the panel also goes through the background, which reads the session from the database and sends it to the server. A pull from the panel only fetches the session through the background, and the panel applies it to the session it holds. [Data and sync](data-and-sync.md) describes what push and pull do with the data.
 
 ## Run the Bookmarks Page as an Extension Page
 

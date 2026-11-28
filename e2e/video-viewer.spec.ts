@@ -24,13 +24,12 @@ test("pulled video opens in the viewer with its bookmarks and session-only setti
   await page.reload();
   await expect(page.getByRole("tab", { name: "Bookmarks (15)" })).toBeVisible();
 
-  // Settings has auto-scroll and sync
-  await page.getByTitle("Settings").click();
-  await expect(page.getByText("Auto-scroll")).toBeVisible();
   await expect(page.getByTestId("sync-status")).toHaveAttribute(
     "data-sync-state",
     "synced",
   );
+  await page.getByTitle("Settings").click();
+  await expect(page.getByText("Auto-scroll")).toBeVisible();
 
   // The bookmarks page entry is a link, so it can open in a new tab
   const bookmarksPage = page.getByRole("menuitem", {

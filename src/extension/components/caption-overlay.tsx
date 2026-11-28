@@ -1,12 +1,12 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
+import type { BookmarksPageTarget } from "../../components/bookmarks-page-target.ts";
 import {
   CaptionPanelFab,
   useFabOpen,
 } from "../../components/caption-panel-fab.tsx";
 import { CaptionPanel } from "../../components/caption-panel.tsx";
 import { ResizablePanel } from "../../components/resizable-panel.tsx";
-import type { BookmarksPage } from "../../components/sync-menu-item.tsx";
 import { captionPanelPreferences } from "../../lib/caption-panel-preferences.ts";
 import { CaptionPanelRuntime } from "../../lib/caption-panel-runtime.ts";
 import type { CaptionStorage } from "../../lib/caption-storage.ts";
@@ -23,7 +23,7 @@ export function CaptionOverlay({
   storage: CaptionStorage;
   youtubeId: string;
   useSync: UseSync;
-  bookmarksPage: BookmarksPage;
+  bookmarksPage: BookmarksPageTarget;
 }) {
   const [open, toggleOpen] = useFabOpen(youtubeId);
   const [panelWidth, setPanelWidth] =
@@ -66,7 +66,7 @@ function ExtensionViewer({
   storage: CaptionStorage;
   youtubeId: string;
   useSync: UseSync;
-  bookmarksPage: BookmarksPage;
+  bookmarksPage: BookmarksPageTarget;
 }) {
   const queryClient = useQueryClient();
   const [player] = useState(() => getVideoPlayer());

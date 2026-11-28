@@ -87,6 +87,7 @@ function WatchPreview({
 }) {
   const sync: SyncStatus = {
     state: "synced",
+    onCheck: () => {},
     onPush: () => {},
     onPull: () => {},
   };

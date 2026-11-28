@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useParams, useSearchParams } from "react-router";
+import type { BookmarksPageTarget } from "../../components/bookmarks-page-target.ts";
 import { CaptionPanel } from "../../components/caption-panel.tsx";
-import type { BookmarksPage } from "../../components/sync-menu-item.tsx";
 import {
   type YTPlayer,
   useYouTubePlayer,
@@ -45,7 +45,7 @@ export function VideoViewer({
   youtubeId: string;
   startTime?: number;
   useSync: UseSync;
-  bookmarksPage: BookmarksPage;
+  bookmarksPage: BookmarksPageTarget;
 }) {
   // Where a browser blocks autoplay, as mobile browsers do on a page opened
   // from a link, the player waits paused there until the first tap.
@@ -102,7 +102,7 @@ function ViewerCaptionPanel({
   startTime?: number;
   player?: YTPlayer;
   useSync: UseSync;
-  bookmarksPage: BookmarksPage;
+  bookmarksPage: BookmarksPageTarget;
 }) {
   const [runtime] = useState(
     () => new CaptionPanelRuntime({ storage, youtubeId, startTime }),

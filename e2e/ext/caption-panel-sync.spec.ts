@@ -2,6 +2,7 @@ import { expect } from "@playwright/test";
 import {
   clearServerBookmarks,
   createCheckpoint,
+  editOnServer,
   SEED_YOUTUBE_ID,
   setupDb,
 } from "../helper";
@@ -10,47 +11,11 @@ import {
   gotoBookmarks,
   login,
   openPanelWithTracks,
-  openSyncMenu,
   seedChromeStorage,
   test,
 } from "./helper";
 
-test("push from the sync menu, then open the bookmarks page", async ({
-  context,
-  page,
-  extensionId,
-}) => {
-  await setupDb({ seed: true });
-  await gotoBookmarks(page, extensionId);
-  await login(page, { username: "dev-empty" });
-
-  const { ytPage, host } = await openPanelWithTracks(context, SEED_YOUTUBE_ID);
-
-  // A video without bookmarks isn't in the video index yet
-  let status = await openSyncMenu(host);
-  await expect(status).toHaveAttribute("data-sync-state", "empty");
-  await ytPage.keyboard.press("Escape");
-
-  await createBookmarkAt(host, { index: 0, start: 0, end: 3 });
-  status = await openSyncMenu(host);
-  await expect(status).toHaveAttribute("data-sync-state", "push");
-  const checkpoint = createCheckpoint();
-  await status.click();
-  // The menu stays open through the push
-  await expect(status).toHaveAttribute("data-sync-state", "synced");
-  checkpoint("push synced");
-
-  const bookmarksPagePromise = context.waitForEvent("page");
-  await host.getByRole("menuitem", { name: "Open bookmarks page" }).click();
-  const bookmarksPage = await bookmarksPagePromise;
-  await expect(
-    bookmarksPage
-      .getByTestId(`video-card-${SEED_YOUTUBE_ID}`)
-      .getByTestId("video-sync-badge"),
-  ).toHaveAttribute("data-sync-status", "synced");
-});
-
-test("push a video without bookmarks from the sync menu", async ({
+test("upload from the panel header, then open the bookmarks page", async ({
   context,
   page,
   extensionId,
@@ -61,7 +26,43 @@ test("push a video without bookmarks from the sync menu", async ({
 
   const { host } = await openPanelWithTracks(context, SEED_YOUTUBE_ID);
 
-  const status = await openSyncMenu(host);
+  // A video without bookmarks isn't in the video index yet
+  const status = host.getByTestId("sync-status");
+  await expect(status).toHaveAttribute("data-sync-state", "empty");
+
+  // A local edit turns the status into upload without a server check
+  await createBookmarkAt(host, { index: 0, start: 0, end: 3 });
+  await expect(status).toHaveAttribute("data-sync-state", "push");
+  await status.hover();
+  await expect(host.getByRole("tooltip")).toHaveText("Upload: click to upload");
+  const checkpoint = createCheckpoint();
+  await status.click();
+  await expect(status).toHaveAttribute("data-sync-state", "synced");
+  checkpoint("push synced");
+
+  const bookmarksPagePromise = context.waitForEvent("page");
+  await host.getByTitle("Settings").click();
+  await host.getByRole("menuitem", { name: "Open bookmarks page" }).click();
+  const bookmarksPage = await bookmarksPagePromise;
+  await expect(
+    bookmarksPage
+      .getByTestId(`video-card-${SEED_YOUTUBE_ID}`)
+      .getByTestId("video-sync-badge"),
+  ).toHaveAttribute("data-sync-status", "synced");
+});
+
+test("upload a video without bookmarks from the panel header", async ({
+  context,
+  page,
+  extensionId,
+}) => {
+  await setupDb({ seed: true });
+  await gotoBookmarks(page, extensionId);
+  await login(page, { username: "dev-empty" });
+
+  const { host } = await openPanelWithTracks(context, SEED_YOUTUBE_ID);
+
+  const status = host.getByTestId("sync-status");
   await expect(status).toHaveAttribute("data-sync-state", "empty");
   const checkpoint = createCheckpoint();
   await status.click();
@@ -77,7 +78,7 @@ test("push a video without bookmarks from the sync menu", async ({
   ).toHaveAttribute("data-sync-status", "synced");
 });
 
-test("pull from the sync menu replaces captions and bookmarks in place", async ({
+test("download from the panel header replaces captions and bookmarks in place", async ({
   context,
   page,
   extensionId,
@@ -86,19 +87,18 @@ test("pull from the sync menu replaces captions and bookmarks in place", async (
   await gotoBookmarks(page, extensionId);
   await login(page);
 
-  const { ytPage, host } = await openPanelWithTracks(context, SEED_YOUTUBE_ID);
+  const { host } = await openPanelWithTracks(context, SEED_YOUTUBE_ID);
   await expect(
     host.getByRole("tab", { name: "Bookmarks", exact: true }),
   ).toBeVisible();
 
-  const status = await openSyncMenu(host);
+  const status = host.getByTestId("sync-status");
   await expect(status).toHaveAttribute("data-sync-state", "pull");
   const checkpoint = createCheckpoint();
   await status.click();
   await expect(status).toHaveAttribute("data-sync-state", "synced");
   checkpoint("pull synced");
 
-  await ytPage.keyboard.press("Escape");
   await expect(host.getByRole("tab", { name: "Bookmarks (15)" })).toBeVisible();
 });
 
@@ -112,16 +112,14 @@ test("a bookmark added after pulling a video without bookmarks is ready to push"
   await gotoBookmarks(page, extensionId);
   await login(page);
 
-  const { ytPage, host } = await openPanelWithTracks(context, SEED_YOUTUBE_ID);
+  const { host } = await openPanelWithTracks(context, SEED_YOUTUBE_ID);
 
-  let status = await openSyncMenu(host);
+  const status = host.getByTestId("sync-status");
   await expect(status).toHaveAttribute("data-sync-state", "pull");
   await status.click();
   await expect(status).toHaveAttribute("data-sync-state", "synced");
-  await ytPage.keyboard.press("Escape");
 
   await createBookmarkAt(host, { index: 0, start: 0, end: 3 });
-  status = await openSyncMenu(host);
   await expect(status).toHaveAttribute("data-sync-state", "push");
 });
 
@@ -137,11 +135,36 @@ test("shows conflict when local bookmarks and server data both exist", async ({
   const { host } = await openPanelWithTracks(context, SEED_YOUTUBE_ID);
   await createBookmarkAt(host, { index: 0, start: 0, end: 3 });
 
-  const status = await openSyncMenu(host);
+  const status = host.getByTestId("sync-status");
   await expect(status).toHaveAttribute("data-sync-state", "conflict");
+
+  // The bookmarks page resolves the conflict
+  const bookmarksPagePromise = context.waitForEvent("page");
+  await status.click();
+  const bookmarksPage = await bookmarksPagePromise;
+  await expect(
+    bookmarksPage
+      .getByTestId(`video-card-${SEED_YOUTUBE_ID}`)
+      .getByTestId("video-sync-badge"),
+  ).toHaveAttribute("data-sync-status", "conflict");
 });
 
-test("a failed push shows its error in the sync menu", async ({
+test("signed out, the panel's sync status opens the bookmarks page to sign in", async ({
+  context,
+}) => {
+  await setupDb({ seed: true });
+
+  const { host } = await openPanelWithTracks(context, SEED_YOUTUBE_ID);
+  const status = host.getByTestId("sync-status");
+  await expect(status).toHaveAttribute("data-sync-state", "unauthenticated");
+
+  const bookmarksPagePromise = context.waitForEvent("page");
+  await status.click();
+  const bookmarksPage = await bookmarksPagePromise;
+  await expect(bookmarksPage.getByTestId("sign-in")).toBeVisible();
+});
+
+test("a failed push shows its error under the panel header", async ({
   context,
   page,
   extensionId,
@@ -153,7 +176,7 @@ test("a failed push shows its error in the sync menu", async ({
   const { host } = await openPanelWithTracks(context, SEED_YOUTUBE_ID);
   await createBookmarkAt(host, { index: 0, start: 0, end: 3 });
 
-  const status = await openSyncMenu(host);
+  const status = host.getByTestId("sync-status");
   await expect(status).toHaveAttribute("data-sync-state", "push");
 
   // The background reads the server URL on each call, so the push can't reach the server
@@ -161,4 +184,30 @@ test("a failed push shows its error in the sync menu", async ({
   await status.click();
   await expect(host.getByTestId("sync-error")).toContainText("Upload failed");
   await expect(status).toHaveAttribute("data-sync-state", "push");
+});
+
+test("an upload clicked from a stale status stops at conflict", async ({
+  context,
+  page,
+  extensionId,
+}) => {
+  await setupDb({ seed: true });
+  await gotoBookmarks(page, extensionId);
+  await login(page, { username: "dev-empty" });
+
+  const { host } = await openPanelWithTracks(context, SEED_YOUTUBE_ID);
+  await createBookmarkAt(host, { index: 0, start: 0, end: 3 });
+  const status = host.getByTestId("sync-status");
+  await status.click();
+  await expect(status).toHaveAttribute("data-sync-state", "synced");
+
+  // Another device pushes while this tab keeps focus, so nothing re-checks
+  await editOnServer(SEED_YOUTUBE_ID);
+  await createBookmarkAt(host, { index: 1, start: 0, end: 3 });
+  await expect(status).toHaveAttribute("data-sync-state", "push");
+  await status.click();
+  await expect(status).toHaveAttribute("data-sync-state", "conflict");
+  await expect(host.getByTestId("sync-error")).toHaveText(
+    "Upload failed: the server copy changed on another device",
+  );
 });

@@ -3,21 +3,23 @@ import {
   ClipboardPaste,
   Download,
   EllipsisVertical,
+  ExternalLink,
   Minus,
   Plus,
   Trash2,
   Type,
 } from "lucide-react";
+import type { ReactNode } from "react";
+import { Link } from "react-router";
 import { TEXT_SIZE } from "../lib/caption-panel-preferences.ts";
 import type {
   CaptionPanelRuntime,
   CaptionSession,
 } from "../lib/caption-panel-runtime.ts";
-import type { UseSync } from "../lib/sync.ts";
 import type { YouTubeCaptionTrack } from "../lib/youtube.ts";
 import { downloadText } from "../utils/download-text.ts";
 import { AiPromptCopy, importAiResult } from "./ai-prompt-menu.tsx";
-import { type BookmarksPage, SyncMenuItem } from "./sync-menu-item.tsx";
+import type { BookmarksPageTarget } from "./bookmarks-page-target.ts";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -33,7 +35,6 @@ export function SettingsDropdown({
   onSetAutoScroll,
   textSize,
   onSetTextSize,
-  useSync,
   bookmarksPage,
 }: {
   runtime: CaptionPanelRuntime;
@@ -43,8 +44,7 @@ export function SettingsDropdown({
   onSetAutoScroll: (value: boolean | ((prev: boolean) => boolean)) => void;
   textSize: number;
   onSetTextSize: (value: number) => void;
-  useSync: UseSync;
-  bookmarksPage: BookmarksPage;
+  bookmarksPage: BookmarksPageTarget;
 }) {
   const hasBookmarks = session.bookmarks.length > 0;
 
@@ -57,11 +57,6 @@ export function SettingsDropdown({
         <EllipsisVertical className="size-4" />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        <SyncMenuItem
-          useSync={useSync}
-          runtime={runtime}
-          bookmarksPage={bookmarksPage}
-        />
         <DropdownMenuItem
           data-checked={autoScroll}
           onSelect={(event) => {
@@ -103,8 +98,38 @@ export function SettingsDropdown({
           <Trash2 className="mr-2 size-4" />
           Clear bookmarks
         </DropdownMenuItem>
+        <div className="my-1 h-px bg-border" />
+        <BookmarksPageItem bookmarksPage={bookmarksPage}>
+          <ExternalLink className="mr-2 size-4" />
+          Open bookmarks page
+        </BookmarksPageItem>
       </DropdownMenuContent>
     </DropdownMenu>
+  );
+}
+
+/**
+ * A link when the host has a URL for the bookmarks page, so middle-click,
+ * modifier-click, and the hover URL work.
+ */
+function BookmarksPageItem({
+  bookmarksPage,
+  children,
+}: {
+  bookmarksPage: BookmarksPageTarget;
+  children: ReactNode;
+}) {
+  if ("href" in bookmarksPage) {
+    return (
+      <DropdownMenuItem asChild>
+        <Link to={bookmarksPage.href}>{children}</Link>
+      </DropdownMenuItem>
+    );
+  }
+  return (
+    <DropdownMenuItem onSelect={bookmarksPage.onOpen}>
+      {children}
+    </DropdownMenuItem>
   );
 }
 

@@ -9,12 +9,13 @@ import type {
 } from "../lib/caption-panel-runtime.ts";
 import type { UseSync } from "../lib/sync.ts";
 import { getLangNameFromVssId } from "../lib/youtube.ts";
+import type { BookmarksPageTarget } from "./bookmarks-page-target.ts";
 import { CaptionPanelContent } from "./caption-panel-content.tsx";
 import {
   SettingsDropdown,
   SettingsDropdownSkeleton,
 } from "./settings-menu.tsx";
-import type { BookmarksPage } from "./sync-menu-item.tsx";
+import { SyncIndicator } from "./sync-indicator.tsx";
 import { TrackPicker } from "./track-picker.tsx";
 import type { YTPlayer } from "./youtube-player.tsx";
 
@@ -26,11 +27,8 @@ export function CaptionPanel({
 }: {
   runtime: CaptionPanelRuntime;
   player?: YTPlayer;
-  /**
-   * Called by the sync menu each time it opens, so its queries refetch then.
-   */
   useSync: UseSync;
-  bookmarksPage: BookmarksPage;
+  bookmarksPage: BookmarksPageTarget;
 }) {
   const restoreQuery = useQuery({
     queryKey: ["caption-panel-restore", runtime.youtubeId],
@@ -166,12 +164,13 @@ function CaptionPanelWithSession({
   state: CaptionPanelState;
   session: CaptionSession;
   useSync: UseSync;
-  bookmarksPage: BookmarksPage;
+  bookmarksPage: BookmarksPageTarget;
 }) {
   const [autoScroll, setAutoScroll] =
     captionPanelPreferences.useValue("autoScroll");
   const [textSize, setTextSize] = captionPanelPreferences.useValue("textSize");
   const { tracks, loadingTracks, tracksError } = state;
+  const sync = useSync({ youtubeId: runtime.youtubeId });
 
   return (
     <div
@@ -198,6 +197,11 @@ function CaptionPanelWithSession({
             {getLangNameFromVssId(session.vssId2)}
           </span>
         )}
+        <SyncIndicator
+          sync={sync}
+          runtime={runtime}
+          bookmarksPage={bookmarksPage}
+        />
         <SettingsDropdown
           runtime={runtime}
           session={session}
@@ -206,10 +210,17 @@ function CaptionPanelWithSession({
           onSetAutoScroll={setAutoScroll}
           textSize={textSize}
           onSetTextSize={setTextSize}
-          useSync={useSync}
           bookmarksPage={bookmarksPage}
         />
       </div>
+      {sync.error ? (
+        <div
+          className="border-b px-2 py-1 text-xs text-destructive"
+          data-testid="sync-error"
+        >
+          {sync.error}
+        </div>
+      ) : null}
       {tracksError ? (
         <div
           className="border-b px-2 py-1 text-xs text-destructive"

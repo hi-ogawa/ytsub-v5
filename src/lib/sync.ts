@@ -62,6 +62,7 @@ export function computeSyncState(params: {
 export type SyncStatus = {
   state: SyncState;
   error?: string;
+  onCheck: () => void;
   onPush: (runtime: CaptionPanelRuntime) => void;
   onPull: (runtime: CaptionPanelRuntime) => void;
 };
