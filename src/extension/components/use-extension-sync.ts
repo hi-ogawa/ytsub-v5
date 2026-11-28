@@ -88,7 +88,6 @@ export function useExtensionSync({
     error: error
       ? `${variables?.direction === "pull" ? "Download" : "Upload"} failed: ${error.message}`
       : undefined,
-    onNavigate: () => bgRpc.openBookmarks(),
     onPush: () => syncMutation.mutate({ direction: "push" }),
     onPull: (runtime) => syncMutation.mutate({ direction: "pull", runtime }),
   };

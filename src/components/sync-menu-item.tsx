@@ -11,14 +11,16 @@ import { DropdownMenuItem } from "./ui/dropdown-menu.tsx";
 export function SyncMenuItem({
   useSync,
   runtime,
+  onOpenBookmarks,
 }: {
   useSync: UseSync;
   runtime: CaptionPanelRuntime;
+  onOpenBookmarks: () => void;
 }) {
   const sync = useSync({ youtubeId: runtime.youtubeId });
-  const { state, error, onNavigate } = sync;
+  const { state, error } = sync;
   const { icon, label } = syncStateDisplay(state);
-  const action = getSyncMenuAction(sync, runtime);
+  const action = getSyncMenuAction({ sync, runtime, onOpenBookmarks });
 
   const content = (
     <>
@@ -59,7 +61,7 @@ export function SyncMenuItem({
         <div className="shrink-0">
           <DropdownMenuItem
             className="px-1.5 text-muted-foreground"
-            onSelect={onNavigate}
+            onSelect={onOpenBookmarks}
             title="Open bookmarks page"
             aria-label="Open bookmarks page"
           >
@@ -85,11 +87,16 @@ export function SyncMenuItem({
  * in place, with the menu kept open to show progress, and states whose next
  * step lives on the bookmarks page open it.
  */
-function getSyncMenuAction(
-  sync: SyncStatus,
-  runtime: CaptionPanelRuntime,
-): { run: () => void; keepOpen: boolean } | undefined {
-  const { onPush, onPull, onNavigate } = sync;
+function getSyncMenuAction({
+  sync,
+  runtime,
+  onOpenBookmarks,
+}: {
+  sync: SyncStatus;
+  runtime: CaptionPanelRuntime;
+  onOpenBookmarks: () => void;
+}): { run: () => void; keepOpen: boolean } | undefined {
+  const { onPush, onPull } = sync;
   switch (sync.state) {
     case "push":
     case "empty": {
@@ -100,7 +107,7 @@ function getSyncMenuAction(
     }
     case "conflict":
     case "unauthenticated": {
-      return { run: onNavigate, keepOpen: false };
+      return { run: onOpenBookmarks, keepOpen: false };
     }
     default: {
       return undefined;

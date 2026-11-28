@@ -17,11 +17,9 @@ import {
 export function useWebSync({
   storage,
   youtubeId,
-  onNavigate,
 }: {
   storage: CaptionStorage;
   youtubeId: string;
-  onNavigate: () => void;
 }): SyncStatus {
   const entryQuery = useVideoIndexEntry({ storage, youtubeId });
 
@@ -104,7 +102,6 @@ export function useWebSync({
     error: error
       ? `${variables?.direction === "pull" ? "Download" : "Upload"} failed: ${error.message}`
       : undefined,
-    onNavigate,
     onPush: (runtime) => syncMutation.mutate({ direction: "push", runtime }),
     onPull: (runtime) => syncMutation.mutate({ direction: "pull", runtime }),
   };
