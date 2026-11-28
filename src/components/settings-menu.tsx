@@ -119,18 +119,22 @@ function BookmarksPageItem({
   bookmarksPage: BookmarksPageTarget;
   children: ReactNode;
 }) {
-  if ("href" in bookmarksPage) {
-    return (
-      <DropdownMenuItem asChild>
-        <Link to={bookmarksPage.href}>{children}</Link>
-      </DropdownMenuItem>
-    );
+  switch (bookmarksPage.type) {
+    case "link": {
+      return (
+        <DropdownMenuItem asChild>
+          <Link to={bookmarksPage.href}>{children}</Link>
+        </DropdownMenuItem>
+      );
+    }
+    case "handler": {
+      return (
+        <DropdownMenuItem onSelect={bookmarksPage.onOpen}>
+          {children}
+        </DropdownMenuItem>
+      );
+    }
   }
-  return (
-    <DropdownMenuItem onSelect={bookmarksPage.onOpen}>
-      {children}
-    </DropdownMenuItem>
-  );
 }
 
 /**

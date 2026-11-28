@@ -91,7 +91,7 @@ function getSyncAction({
     // The bookmarks page resolves conflicts and holds sign-in.
     case "conflict":
     case "unauthenticated": {
-      return "href" in bookmarksPage
+      return bookmarksPage.type === "link"
         ? { href: bookmarksPage.href }
         : { onClick: bookmarksPage.onOpen };
     }

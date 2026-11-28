@@ -23,7 +23,9 @@ import type { YTPlayer } from "./youtube-player.tsx";
  * own route, while a YouTube page can't link to the extension's page, so the
  * extension opens it through a handler.
  */
-export type BookmarksPageTarget = { href: string } | { onOpen: () => void };
+export type BookmarksPageTarget =
+  | { type: "link"; href: string }
+  | { type: "handler"; onOpen: () => void };
 
 export function CaptionPanel({
   runtime,

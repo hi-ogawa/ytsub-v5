@@ -31,7 +31,7 @@ export function VideoViewerPage({ storage }: { storage: CaptionStorage }) {
       youtubeId={youtubeId}
       startTime={getStartTime(searchParams)}
       useSync={({ youtubeId }) => useWebSync({ storage, youtubeId })}
-      bookmarksPage={{ href: "/" }}
+      bookmarksPage={{ type: "link", href: "/" }}
     />
   );
 }
