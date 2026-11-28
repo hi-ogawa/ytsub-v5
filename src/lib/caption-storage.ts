@@ -48,10 +48,10 @@ export interface CaptionStorage {
     options?: { syncedEditedAt?: string },
   ): Promise<void>;
   /**
-   * Gives a stored session an index entry, even with no bookmarks, unless it
+   * Gives a stored session a video index entry, even with no bookmarks, unless it
    * already has one.
    */
-  addToIndex(youtubeId: string): Promise<void>;
+  addToVideoIndex(youtubeId: string): Promise<void>;
   deleteVideo(youtubeId: string): Promise<void>;
   markSynced(options: { youtubeId: string; editedAt: string }): Promise<void>;
   getVideoIndexEntry(youtubeId: string): Promise<VideoIndexEntry | undefined>;

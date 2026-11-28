@@ -41,7 +41,7 @@ export function useWebSync({
       runtime: CaptionPanelRuntime;
     }) => {
       if (action.direction === "push") {
-        await storage.addToIndex(youtubeId);
+        await storage.addToVideoIndex(youtubeId);
         const entry = await storage.getVideoIndexEntry(youtubeId);
         if (!entry) {
           throw new Error("No local index entry found");

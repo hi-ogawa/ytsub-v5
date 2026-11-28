@@ -100,7 +100,7 @@ class IdbCaptionStorage implements CaptionStorage {
     }
   };
 
-  addToIndex: CaptionStorage["addToIndex"] = async (youtubeId) => {
+  addToVideoIndex: CaptionStorage["addToVideoIndex"] = async (youtubeId) => {
     const entries = await transact(
       ["sessions", "videos"],
       "readwrite",
