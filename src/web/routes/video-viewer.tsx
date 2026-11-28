@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { useParams, useSearchParams } from "react-router";
-import type { BookmarksPageTarget } from "../../components/bookmarks-page-target.ts";
-import { CaptionPanel } from "../../components/caption-panel.tsx";
+import {
+  type BookmarksPageTarget,
+  CaptionPanel,
+} from "../../components/caption-panel.tsx";
 import {
   type YTPlayer,
   useYouTubePlayer,

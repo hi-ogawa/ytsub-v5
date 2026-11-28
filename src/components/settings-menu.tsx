@@ -19,7 +19,7 @@ import type {
 import type { YouTubeCaptionTrack } from "../lib/youtube.ts";
 import { downloadText } from "../utils/download-text.ts";
 import { AiPromptCopy, importAiResult } from "./ai-prompt-menu.tsx";
-import type { BookmarksPageTarget } from "./bookmarks-page-target.ts";
+import type { BookmarksPageTarget } from "./caption-panel.tsx";
 import {
   DropdownMenu,
   DropdownMenuContent,

@@ -9,7 +9,6 @@ import type {
 } from "../lib/caption-panel-runtime.ts";
 import type { UseSync } from "../lib/sync.ts";
 import { getLangNameFromVssId } from "../lib/youtube.ts";
-import type { BookmarksPageTarget } from "./bookmarks-page-target.ts";
 import { CaptionPanelContent } from "./caption-panel-content.tsx";
 import {
   SettingsDropdown,
@@ -18,6 +17,13 @@ import {
 import { SyncIndicator } from "./sync-indicator.tsx";
 import { TrackPicker } from "./track-picker.tsx";
 import type { YTPlayer } from "./youtube-player.tsx";
+
+/**
+ * How the caption panel opens the bookmarks page. The web app links to its
+ * own route, while a YouTube page can't link to the extension's page, so the
+ * extension opens it through a handler.
+ */
+export type BookmarksPageTarget = { href: string } | { onOpen: () => void };
 
 export function CaptionPanel({
   runtime,

@@ -1,7 +1,7 @@
 import { Link } from "react-router";
 import type { CaptionPanelRuntime } from "../lib/caption-panel-runtime.ts";
 import type { SyncStatus } from "../lib/sync.ts";
-import type { BookmarksPageTarget } from "./bookmarks-page-target.ts";
+import type { BookmarksPageTarget } from "./caption-panel.tsx";
 import { syncStateDisplay } from "./sync-state.tsx";
 import { Tooltip } from "./ui/tooltip.tsx";
 

@@ -1,11 +1,13 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import type { BookmarksPageTarget } from "../../components/bookmarks-page-target.ts";
 import {
   CaptionPanelFab,
   useFabOpen,
 } from "../../components/caption-panel-fab.tsx";
-import { CaptionPanel } from "../../components/caption-panel.tsx";
+import {
+  type BookmarksPageTarget,
+  CaptionPanel,
+} from "../../components/caption-panel.tsx";
 import { ResizablePanel } from "../../components/resizable-panel.tsx";
 import { captionPanelPreferences } from "../../lib/caption-panel-preferences.ts";
 import { CaptionPanelRuntime } from "../../lib/caption-panel-runtime.ts";
