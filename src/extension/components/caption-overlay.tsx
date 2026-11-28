@@ -6,6 +6,7 @@ import {
 } from "../../components/caption-panel-fab.tsx";
 import { CaptionPanel } from "../../components/caption-panel.tsx";
 import { ResizablePanel } from "../../components/resizable-panel.tsx";
+import type { BookmarksPage } from "../../components/sync-menu-item.tsx";
 import { captionPanelPreferences } from "../../lib/caption-panel-preferences.ts";
 import { CaptionPanelRuntime } from "../../lib/caption-panel-runtime.ts";
 import type { CaptionStorage } from "../../lib/caption-storage.ts";
@@ -17,12 +18,12 @@ export function CaptionOverlay({
   storage,
   youtubeId,
   useSync,
-  onOpenBookmarksPage,
+  bookmarksPage,
 }: {
   storage: CaptionStorage;
   youtubeId: string;
   useSync: UseSync;
-  onOpenBookmarksPage: () => void;
+  bookmarksPage: BookmarksPage;
 }) {
   const [open, toggleOpen] = useFabOpen(youtubeId);
   const [panelWidth, setPanelWidth] =
@@ -47,7 +48,7 @@ export function CaptionOverlay({
             storage={storage}
             youtubeId={youtubeId}
             useSync={useSync}
-            onOpenBookmarksPage={onOpenBookmarksPage}
+            bookmarksPage={bookmarksPage}
           />
         </ResizablePanel>
       )}
@@ -60,12 +61,12 @@ function ExtensionViewer({
   storage,
   youtubeId,
   useSync,
-  onOpenBookmarksPage,
+  bookmarksPage,
 }: {
   storage: CaptionStorage;
   youtubeId: string;
   useSync: UseSync;
-  onOpenBookmarksPage: () => void;
+  bookmarksPage: BookmarksPage;
 }) {
   const queryClient = useQueryClient();
   const [player] = useState(() => getVideoPlayer());
@@ -92,7 +93,7 @@ function ExtensionViewer({
       runtime={runtime}
       player={player}
       useSync={useSync}
-      onOpenBookmarksPage={onOpenBookmarksPage}
+      bookmarksPage={bookmarksPage}
     />
   );
 }

@@ -14,6 +14,7 @@ import {
   SettingsDropdown,
   SettingsDropdownSkeleton,
 } from "./settings-menu.tsx";
+import type { BookmarksPage } from "./sync-menu-item.tsx";
 import { TrackPicker } from "./track-picker.tsx";
 import type { YTPlayer } from "./youtube-player.tsx";
 
@@ -21,7 +22,7 @@ export function CaptionPanel({
   runtime,
   player,
   useSync,
-  onOpenBookmarksPage,
+  bookmarksPage,
 }: {
   runtime: CaptionPanelRuntime;
   player?: YTPlayer;
@@ -29,7 +30,7 @@ export function CaptionPanel({
    * Called by the sync menu each time it opens, so its queries refetch then.
    */
   useSync: UseSync;
-  onOpenBookmarksPage: () => void;
+  bookmarksPage: BookmarksPage;
 }) {
   const restoreQuery = useQuery({
     queryKey: ["caption-panel-restore", runtime.youtubeId],
@@ -76,7 +77,7 @@ export function CaptionPanel({
         state={state}
         session={state.session}
         useSync={useSync}
-        onOpenBookmarksPage={onOpenBookmarksPage}
+        bookmarksPage={bookmarksPage}
       />
     );
   }
@@ -159,13 +160,13 @@ function CaptionPanelWithSession({
   state,
   session,
   useSync,
-  onOpenBookmarksPage,
+  bookmarksPage,
 }: {
   runtime: CaptionPanelRuntime;
   state: CaptionPanelState;
   session: CaptionSession;
   useSync: UseSync;
-  onOpenBookmarksPage: () => void;
+  bookmarksPage: BookmarksPage;
 }) {
   const [autoScroll, setAutoScroll] =
     captionPanelPreferences.useValue("autoScroll");
@@ -206,7 +207,7 @@ function CaptionPanelWithSession({
           textSize={textSize}
           onSetTextSize={setTextSize}
           useSync={useSync}
-          onOpenBookmarksPage={onOpenBookmarksPage}
+          bookmarksPage={bookmarksPage}
         />
       </div>
       {tracksError ? (

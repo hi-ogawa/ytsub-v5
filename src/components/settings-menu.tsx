@@ -17,7 +17,7 @@ import type { UseSync } from "../lib/sync.ts";
 import type { YouTubeCaptionTrack } from "../lib/youtube.ts";
 import { downloadText } from "../utils/download-text.ts";
 import { AiPromptCopy, importAiResult } from "./ai-prompt-menu.tsx";
-import { SyncMenuItem } from "./sync-menu-item.tsx";
+import { type BookmarksPage, SyncMenuItem } from "./sync-menu-item.tsx";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -34,7 +34,7 @@ export function SettingsDropdown({
   textSize,
   onSetTextSize,
   useSync,
-  onOpenBookmarksPage,
+  bookmarksPage,
 }: {
   runtime: CaptionPanelRuntime;
   session: CaptionSession;
@@ -44,7 +44,7 @@ export function SettingsDropdown({
   textSize: number;
   onSetTextSize: (value: number) => void;
   useSync: UseSync;
-  onOpenBookmarksPage: () => void;
+  bookmarksPage: BookmarksPage;
 }) {
   const hasBookmarks = session.bookmarks.length > 0;
 
@@ -60,7 +60,7 @@ export function SettingsDropdown({
         <SyncMenuItem
           useSync={useSync}
           runtime={runtime}
-          onOpenBookmarksPage={onOpenBookmarksPage}
+          bookmarksPage={bookmarksPage}
         />
         <DropdownMenuItem
           data-checked={autoScroll}

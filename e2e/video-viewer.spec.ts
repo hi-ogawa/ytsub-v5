@@ -31,6 +31,14 @@ test("pulled video opens in the viewer with its bookmarks and session-only setti
     "data-sync-state",
     "synced",
   );
+
+  // The bookmarks page entry is a link, so it can open in a new tab
+  const bookmarksPage = page.getByRole("menuitem", {
+    name: "Open bookmarks page",
+  });
+  await expect(bookmarksPage).toHaveAttribute("href", "/");
+  await bookmarksPage.click();
+  await expect(page).toHaveURL("/");
 });
 
 test("?t link marks and shows its caption before the player plays", async ({

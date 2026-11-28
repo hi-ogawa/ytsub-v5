@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useLoaderData, useNavigate, useSearchParams } from "react-router";
+import { useLoaderData, useSearchParams } from "react-router";
 import { BookmarksPage } from "../../components/bookmarks-page.tsx";
 import type { VideoListSync } from "../../components/use-video-list-sync.ts";
 import type { CaptionStorage } from "../../lib/caption-storage.ts";
@@ -85,7 +85,6 @@ function WatchPreview({
   youtubeId: string;
   listHref: string;
 }) {
-  const navigate = useNavigate();
   const sync: SyncStatus = {
     state: "synced",
     onPush: () => {},
@@ -97,7 +96,7 @@ function WatchPreview({
       storage={storage}
       youtubeId={youtubeId}
       useSync={() => sync}
-      onOpenBookmarksPage={() => navigate(listHref)}
+      bookmarksPage={{ href: listHref }}
     />
   );
 }

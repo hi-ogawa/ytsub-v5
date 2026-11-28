@@ -1,8 +1,17 @@
 import { ExternalLink } from "lucide-react";
+import type { ComponentProps } from "react";
+import { Link } from "react-router";
 import type { CaptionPanelRuntime } from "../lib/caption-panel-runtime.ts";
 import type { SyncStatus, UseSync } from "../lib/sync.ts";
 import { syncStateDisplay } from "./sync-state.tsx";
 import { DropdownMenuItem } from "./ui/dropdown-menu.tsx";
+
+/**
+ * Where the bookmarks page lives for the host. The web app links to its own
+ * route, while a YouTube page can't link to the extension's page, so the
+ * extension opens it through a handler.
+ */
+export type BookmarksPage = { href: string } | { onOpen: () => void };
 
 /**
  * The menu content mounts each time the menu opens, so the sync hook's
@@ -11,16 +20,16 @@ import { DropdownMenuItem } from "./ui/dropdown-menu.tsx";
 export function SyncMenuItem({
   useSync,
   runtime,
-  onOpenBookmarksPage,
+  bookmarksPage,
 }: {
   useSync: UseSync;
   runtime: CaptionPanelRuntime;
-  onOpenBookmarksPage: () => void;
+  bookmarksPage: BookmarksPage;
 }) {
   const sync = useSync({ youtubeId: runtime.youtubeId });
   const { state, error } = sync;
   const { icon, label } = syncStateDisplay(state);
-  const action = getSyncMenuAction({ sync, runtime, onOpenBookmarksPage });
+  const action = getSyncMenuAction({ sync, runtime });
 
   const content = (
     <>
@@ -37,7 +46,15 @@ export function SyncMenuItem({
     <>
       {/* min-w-52 keeps the menu from resizing as the label changes. */}
       <div className="flex min-w-52">
-        {action ? (
+        {action === "openBookmarksPage" ? (
+          <BookmarksPageItem
+            bookmarksPage={bookmarksPage}
+            className="min-w-0 flex-1"
+            {...testAttrs}
+          >
+            {content}
+          </BookmarksPageItem>
+        ) : action ? (
           <DropdownMenuItem
             className="min-w-0 flex-1"
             onSelect={(event) => {
@@ -59,14 +76,14 @@ export function SyncMenuItem({
           </div>
         )}
         <div className="shrink-0">
-          <DropdownMenuItem
+          <BookmarksPageItem
+            bookmarksPage={bookmarksPage}
             className="px-1.5 text-muted-foreground"
-            onSelect={onOpenBookmarksPage}
             title="Open bookmarks page"
             aria-label="Open bookmarks page"
           >
             <ExternalLink className="size-4" />
-          </DropdownMenuItem>
+          </BookmarksPageItem>
         </div>
       </div>
       {error && (
@@ -83,6 +100,29 @@ export function SyncMenuItem({
 }
 
 /**
+ * A link when the host has a URL for the bookmarks page, so middle-click,
+ * modifier-click, and the hover URL work, and a plain item otherwise.
+ */
+function BookmarksPageItem({
+  bookmarksPage,
+  children,
+  ...props
+}: { bookmarksPage: BookmarksPage } & ComponentProps<typeof DropdownMenuItem>) {
+  if ("href" in bookmarksPage) {
+    return (
+      <DropdownMenuItem asChild {...props}>
+        <Link to={bookmarksPage.href}>{children}</Link>
+      </DropdownMenuItem>
+    );
+  }
+  return (
+    <DropdownMenuItem onSelect={bookmarksPage.onOpen} {...props}>
+      {children}
+    </DropdownMenuItem>
+  );
+}
+
+/**
  * A row is clickable only when clicking it does something. Push and pull run
  * in place, with the menu kept open to show progress, and states whose next
  * step lives on the bookmarks page open it.
@@ -90,12 +130,10 @@ export function SyncMenuItem({
 function getSyncMenuAction({
   sync,
   runtime,
-  onOpenBookmarksPage,
 }: {
   sync: SyncStatus;
   runtime: CaptionPanelRuntime;
-  onOpenBookmarksPage: () => void;
-}): { run: () => void; keepOpen: boolean } | undefined {
+}): { run: () => void; keepOpen: boolean } | "openBookmarksPage" | undefined {
   const { onPush, onPull } = sync;
   switch (sync.state) {
     case "push":
@@ -107,7 +145,7 @@ function getSyncMenuAction({
     }
     case "conflict":
     case "unauthenticated": {
-      return { run: onOpenBookmarksPage, keepOpen: false };
+      return "openBookmarksPage";
     }
     default: {
       return undefined;

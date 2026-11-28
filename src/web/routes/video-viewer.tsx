@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { useNavigate, useParams, useSearchParams } from "react-router";
+import { useParams, useSearchParams } from "react-router";
 import { CaptionPanel } from "../../components/caption-panel.tsx";
+import type { BookmarksPage } from "../../components/sync-menu-item.tsx";
 import {
   type YTPlayer,
   useYouTubePlayer,
@@ -13,7 +14,6 @@ import { useWebSync } from "../components/use-web-sync.ts";
 export function VideoViewerPage({ storage }: { storage: CaptionStorage }) {
   const { youtubeId } = useParams<"youtubeId">();
   const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
 
   if (!youtubeId) {
     return (
@@ -29,7 +29,7 @@ export function VideoViewerPage({ storage }: { storage: CaptionStorage }) {
       youtubeId={youtubeId}
       startTime={getStartTime(searchParams)}
       useSync={({ youtubeId }) => useWebSync({ storage, youtubeId })}
-      onOpenBookmarksPage={() => navigate("/")}
+      bookmarksPage={{ href: "/" }}
     />
   );
 }
@@ -39,13 +39,13 @@ export function VideoViewer({
   youtubeId,
   startTime,
   useSync,
-  onOpenBookmarksPage,
+  bookmarksPage,
 }: {
   storage: CaptionStorage;
   youtubeId: string;
   startTime?: number;
   useSync: UseSync;
-  onOpenBookmarksPage: () => void;
+  bookmarksPage: BookmarksPage;
 }) {
   // Where a browser blocks autoplay, as mobile browsers do on a page opened
   // from a link, the player waits paused there until the first tap.
@@ -75,7 +75,7 @@ export function VideoViewer({
           startTime={startTime}
           player={player}
           useSync={useSync}
-          onOpenBookmarksPage={onOpenBookmarksPage}
+          bookmarksPage={bookmarksPage}
         />
       </div>
     </div>
@@ -95,14 +95,14 @@ function ViewerCaptionPanel({
   startTime,
   player,
   useSync,
-  onOpenBookmarksPage,
+  bookmarksPage,
 }: {
   storage: CaptionStorage;
   youtubeId: string;
   startTime?: number;
   player?: YTPlayer;
   useSync: UseSync;
-  onOpenBookmarksPage: () => void;
+  bookmarksPage: BookmarksPage;
 }) {
   const [runtime] = useState(
     () => new CaptionPanelRuntime({ storage, youtubeId, startTime }),
@@ -112,7 +112,7 @@ function ViewerCaptionPanel({
       runtime={runtime}
       player={player}
       useSync={useSync}
-      onOpenBookmarksPage={onOpenBookmarksPage}
+      bookmarksPage={bookmarksPage}
     />
   );
 }
