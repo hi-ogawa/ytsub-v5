@@ -9,7 +9,7 @@ const rpcConfig = {
   fetch: globalThis.fetch.bind(globalThis),
 };
 
-/** Override the RPC URL and/or fetch function. Call before any API requests. */
+/** Override the RPC URL and fetch function. Call before any API requests. */
 export function setRpcConfig(options: typeof rpcConfig) {
   Object.assign(rpcConfig, options);
 }

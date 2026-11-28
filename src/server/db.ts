@@ -19,4 +19,4 @@ export async function touchVideo(videoId: number) {
 // D1 has a 100 SQL variable limit per query.
 // Use sql.raw() for number literals to reduce bind param count.
 export const CAPTION_BATCH_SIZE = 10; // 2 bind params per row (text1, text2)
-export const BOOKMARK_BATCH_SIZE = 10; // 6 bind params per row (text, translation, context, etymology, notes, createdAt)
+export const BOOKMARK_BATCH_SIZE = 10; // 5 bind params per row (text, translation, context, etymology, notes)
