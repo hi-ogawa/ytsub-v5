@@ -93,8 +93,10 @@ jobs:
               body: [text, text && "---", ...sections].filter(Boolean).join("\n\n"),
             });
 
-  # Replace the rolling pre-release with the latest main build, so
+  # Point the rolling pre-release at the latest main build, so
   # releases/download/extension-latest/zamak-extension.zip stays a stable link.
+  # The release is edited in place rather than recreated, because only
+  # publishing notifies watchers and posts to followers' feeds.
   # Write permission stays out of the job that runs install and build code.
   release-extension:
     needs: build
@@ -109,12 +111,18 @@ jobs:
           path: extension
       - run: cd extension && zip -r "$GITHUB_WORKSPACE/zamak-extension.zip" .
       - run: |
-          gh release delete extension-latest --cleanup-tag --yes || true
-          gh release create extension-latest zamak-extension.zip \
-            --prerelease \
-            --target "$GITHUB_SHA" \
-            --title "Extension build from main" \
-            --notes "Built from $GITHUB_SHA by $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID. Unzip it and load the folder with Load unpacked in chrome://extensions."
+          notes="Built from $GITHUB_SHA by $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID. Unzip it and load the folder with Load unpacked in chrome://extensions."
+          if gh release view extension-latest > /dev/null; then
+            gh api --method PATCH "repos/$GH_REPO/git/refs/tags/extension-latest" -f sha="$GITHUB_SHA" -F force=true
+            gh release upload extension-latest zamak-extension.zip --clobber
+            gh release edit extension-latest --notes "$notes"
+          else
+            gh release create extension-latest zamak-extension.zip \
+              --prerelease \
+              --target "$GITHUB_SHA" \
+              --title "Extension build from main" \
+              --notes "$notes"
+          fi
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
