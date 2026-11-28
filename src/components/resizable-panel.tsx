@@ -1,43 +1,26 @@
-import { useCallback, useRef, useState } from "react";
-import { z } from "zod";
-import { createLocalStorageStore } from "../utils/local-storage-store.ts";
-
-const DEFAULT_WIDTH = 400;
-const MIN_WIDTH = 280;
-const MAX_WIDTH = 800;
-
-const preferencesSchema = z
-  .object({
-    width: z.number().min(MIN_WIDTH).max(MAX_WIDTH).catch(DEFAULT_WIDTH),
-  })
-  .catch({ width: DEFAULT_WIDTH });
-
-const panelPreferences = createLocalStorageStore({
-  key: "zamak:panel-width",
-  parse: (stored) => preferencesSchema.parse(stored),
-});
+import { PANEL_WIDTH } from "../lib/caption-panel-preferences.ts";
 
 export function ResizablePanel({
   children,
+  width,
+  onWidthChange,
   id,
   className,
   style,
 }: {
   children: React.ReactNode;
+  width: number;
+  onWidthChange: (width: number) => void;
   id?: string;
   className?: string;
   style?: React.CSSProperties;
 }) {
-  const [width, setWidth] = useState(() => panelPreferences.get().width);
-  const widthRef = useRef(width);
-  widthRef.current = width;
-
-  const onPointerDown = useCallback((event: React.PointerEvent) => {
+  const onPointerDown = (event: React.PointerEvent) => {
     event.preventDefault();
     const target = event.currentTarget as HTMLElement;
     target.setPointerCapture(event.pointerId);
     const startX = event.clientX;
-    const startWidth = widthRef.current;
+    const startWidth = width;
 
     // A cross-origin iframe (the YouTube player) can take the pointer events
     // when the drag passes over it, even with pointer capture.
@@ -49,10 +32,10 @@ export function ResizablePanel({
     const onPointerMove = (event: PointerEvent) => {
       // Dragging left = wider (panel is right-aligned)
       const newWidth = Math.max(
-        MIN_WIDTH,
-        Math.min(MAX_WIDTH, startWidth + (startX - event.clientX)),
+        PANEL_WIDTH.min,
+        Math.min(PANEL_WIDTH.max, startWidth + (startX - event.clientX)),
       );
-      setWidth(newWidth);
+      onWidthChange(newWidth);
     };
 
     const onPointerUp = () => {
@@ -62,12 +45,11 @@ export function ResizablePanel({
       }
       target.removeEventListener("pointermove", onPointerMove);
       target.removeEventListener("pointerup", onPointerUp);
-      panelPreferences.update({ width: widthRef.current });
     };
 
     target.addEventListener("pointermove", onPointerMove);
     target.addEventListener("pointerup", onPointerUp);
-  }, []);
+  };
 
   return (
     <div

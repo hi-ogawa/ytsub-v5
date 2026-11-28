@@ -7,6 +7,7 @@ import {
 import { CaptionPanel } from "../../components/caption-panel.tsx";
 import { ResizablePanel } from "../../components/resizable-panel.tsx";
 import { captionLanguagePreferences } from "../../lib/caption-language-preferences.ts";
+import { captionPanelPreferences } from "../../lib/caption-panel-preferences.ts";
 import { CaptionPanelRuntime } from "../../lib/caption-panel-runtime.ts";
 import type { CaptionStorage } from "../../lib/caption-storage.ts";
 import type { UseSync } from "../../lib/sync.ts";
@@ -23,11 +24,15 @@ export function CaptionOverlay({
   useSync: UseSync;
 }) {
   const [open, toggleOpen] = useFabOpen(youtubeId);
+  const [panelWidth, setPanelWidth] =
+    captionPanelPreferences.useValue("panelWidth");
 
   return (
     <div>
       {open && (
         <ResizablePanel
+          width={panelWidth}
+          onWidthChange={setPanelWidth}
           id="zamak-root"
           style={{
             position: "fixed",
