@@ -72,7 +72,7 @@ interface PlaybackState {
  *
  * The saved session needs nothing from YouTube, so it shows whether or not the
  * tracks load. Without a track source, as in the web app, the runtime only
- * shows the saved session.
+ * shows the saved session or one pulled from the server.
  *
  * Read state from `store`, and change it only through the methods, because
  * they also save the session.
@@ -112,20 +112,31 @@ export class CaptionPanelRuntime {
    */
   async restore(): Promise<void> {
     const saved = await this.storage.getSession(this.youtubeId);
-    const session = saved && toCaptionSession(saved);
+    if (saved) {
+      this.loadSession(saved);
+    }
+    this.store.update({ restoring: false });
+    const tracks = await this.loadTracks();
+    if (tracks && !saved) {
+      await this.buildSession(getInitialTracks(tracks));
+    }
+  }
+
+  /**
+   * Show a complete session as stored, such as the saved one or a copy pulled
+   * from the server, with or without a session on screen.
+   */
+  loadSession(saved: PersistedCaptionSession): void {
+    const session = toCaptionSession(saved);
     // The playback loop marks a caption only once the player plays, which a
     // page opened from a link waits a tap for.
-    if (session && this.startTime !== undefined) {
+    if (this.startTime !== undefined) {
       const index = findRowIndexAt(session.rows, this.startTime);
       if (index >= 0) {
         this.playbackStore.update({ currentIndex: index });
       }
     }
-    this.store.update({ restoring: false, session });
-    const tracks = await this.loadTracks();
-    if (tracks && !saved) {
-      await this.buildSession(getInitialTracks(tracks));
-    }
+    this.store.update({ session });
   }
 
   /**
@@ -256,27 +267,6 @@ export class CaptionPanelRuntime {
     await this.updateSession({ bookmarks: [] });
   }
 
-  async replace(
-    content: {
-      captions: MergedCaption[];
-      bookmarks: ExtensionBookmark[];
-      vssId1?: string;
-      vssId2?: string;
-    },
-    options?: { syncedEditedAt?: string },
-  ): Promise<void> {
-    const session = this.getSession();
-    await this.updateSession(
-      {
-        rows: content.captions,
-        bookmarks: content.bookmarks,
-        vssId1: content.vssId1 ?? session.vssId1,
-        vssId2: content.vssId2 ?? session.vssId2,
-      },
-      options,
-    );
-  }
-
   toExportData(options?: { editedAt?: string }): ExportData {
     const session = this.getSession();
     return sessionToExportData(
@@ -301,31 +291,22 @@ export class CaptionPanelRuntime {
     return session;
   }
 
-  private async updateSession(
-    update: Partial<CaptionSession>,
-    options?: { syncedEditedAt?: string },
-  ): Promise<void> {
+  async updateSession(update: Partial<CaptionSession>): Promise<void> {
     const session = { ...this.getSession(), ...update };
     this.store.update({ session });
-    await this.saveSession(session, options);
+    await this.saveSession(session);
   }
 
-  private async saveSession(
-    session: CaptionSession,
-    options?: { syncedEditedAt?: string },
-  ): Promise<void> {
-    await this.storage.saveSession(
-      {
-        ...session.video,
-        vssId1: session.vssId1,
-        vssId2: session.vssId2,
-        language1: getLangCodeFromVssId(session.vssId1),
-        language2: getLangCodeFromVssId(session.vssId2),
-        captions: session.rows,
-        bookmarks: session.bookmarks,
-      },
-      options,
-    );
+  private async saveSession(session: CaptionSession): Promise<void> {
+    await this.storage.saveSession({
+      ...session.video,
+      vssId1: session.vssId1,
+      vssId2: session.vssId2,
+      language1: getLangCodeFromVssId(session.vssId1),
+      language2: getLangCodeFromVssId(session.vssId2),
+      captions: session.rows,
+      bookmarks: session.bookmarks,
+    });
   }
 
   // --- Playback ---

@@ -80,17 +80,7 @@ export function CaptionPanel({
   }
 
   if (!runtime.trackSource) {
-    return (
-      <PanelMessage>
-        <p className="px-4 text-center">
-          This video isn't on this device yet. Pull it from its card on the{" "}
-          <Link to="/" className="text-primary underline">
-            bookmarks page
-          </Link>
-          .
-        </p>
-      </PanelMessage>
-    );
+    return <CaptionPanelNotStored runtime={runtime} useSync={useSync} />;
   }
   if (state.loadingTracks) {
     return <PanelMessage>Loading subtitles…</PanelMessage>;
@@ -114,6 +104,58 @@ function PanelMessage({
     >
       {children}
     </div>
+  );
+}
+
+/** Without a track source, the session can only come from the server. */
+function CaptionPanelNotStored({
+  runtime,
+  useSync,
+}: {
+  runtime: CaptionPanelRuntime;
+  useSync: UseSync;
+}) {
+  const sync = useSync({ youtubeId: runtime.youtubeId });
+
+  if (sync.state === "checking") {
+    return <PanelMessage>Loading…</PanelMessage>;
+  }
+
+  if (sync.state === "pull" || sync.state === "syncing") {
+    return (
+      <PanelMessage>
+        <div className="flex flex-col items-center gap-3 px-4 text-center">
+          <p>This video is on the server but not on this device yet.</p>
+          <button
+            type="button"
+            className="rounded bg-primary px-3 py-1.5 text-sm text-primary-foreground hover:bg-primary-hover disabled:opacity-50"
+            disabled={sync.state === "syncing"}
+            onClick={() => sync.onPull(runtime)}
+          >
+            {sync.state === "syncing" ? "Downloading…" : "Download"}
+          </button>
+          {sync.error ? (
+            <p className="text-xs text-destructive" data-testid="sync-error">
+              {sync.error}
+            </p>
+          ) : null}
+        </div>
+      </PanelMessage>
+    );
+  }
+
+  // Signed out, not on the server, or the server unreachable. The bookmarks
+  // page holds sign-in and lists what can be pulled.
+  return (
+    <PanelMessage>
+      <p className="px-4 text-center">
+        This video isn't on this device yet. Pull it from its card on the{" "}
+        <Link to="/" className="text-primary underline">
+          bookmarks page
+        </Link>
+        .
+      </p>
+    </PanelMessage>
   );
 }
 
