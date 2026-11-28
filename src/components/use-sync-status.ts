@@ -7,7 +7,6 @@ import type {
 import {
   type SyncState,
   type SyncStatus,
-  canPushWithoutOverwriting,
   computeSyncState,
 } from "../lib/sync.ts";
 import { useVideoIndexEntry } from "./use-video-index-entry.ts";
@@ -63,17 +62,22 @@ export function useSyncStatus({
       runtime: CaptionPanelRuntime;
     }) => {
       if (action.direction === "push") {
+        // Push replaces the server copy wholesale, so a push clicked from a
+        // stale status would drop edits made on another device since the last
+        // check. Pull needs no such check, because local edits recompute the
+        // status at once.
         const latestSyncState = await transport.checkServer();
         queryClient.setQueryData(serverQueryKey, latestSyncState);
+        if (!latestSyncState.authenticated) {
+          return false;
+        }
         const localEntry = await storage.getVideoIndexEntry(youtubeId);
-        if (
-          !latestSyncState.authenticated ||
-          !canPushWithoutOverwriting({
-            localEditedAt: localEntry?.editedAt,
-            syncedEditedAt: localEntry?.syncedEditedAt,
-            serverEditedAt: latestSyncState.serverEditedAt,
-          })
-        ) {
+        const latestState = computeSyncState({
+          localEditedAt: localEntry?.editedAt,
+          syncedEditedAt: localEntry?.syncedEditedAt,
+          serverEditedAt: latestSyncState.serverEditedAt,
+        });
+        if (latestState !== "push" && latestState !== "empty") {
           return false;
         }
         await storage.ensureVideoIndexEntry(youtubeId);

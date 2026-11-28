@@ -59,22 +59,6 @@ export function computeSyncState(params: {
   return "conflict";
 }
 
-/**
- * Whether pushing, given edit times from a fresh server check, leaves no
- * server edit unseen. Push replaces the server copy wholesale, so a push
- * clicked from a stale status would drop edits made on another device since
- * the last check. Pull needs no such check, because local edits recompute
- * the status at once.
- */
-export function canPushWithoutOverwriting(params: {
-  localEditedAt?: string;
-  syncedEditedAt?: string;
-  serverEditedAt?: string;
-}): boolean {
-  const state = computeSyncState(params);
-  return state === "push" || state === "empty";
-}
-
 export type SyncStatus = {
   state: SyncState;
   error?: string;
