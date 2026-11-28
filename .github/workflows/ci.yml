@@ -120,7 +120,7 @@ jobs:
             gh release create extension-latest zamak-extension.zip \
               --prerelease \
               --target "$GITHUB_SHA" \
-              --title "Extension build from main" \
+              --title "Zamak extension canary" \
               --notes "$notes"
           fi
         env:
