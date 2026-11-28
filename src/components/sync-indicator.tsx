@@ -17,8 +17,8 @@ export function SyncIndicator({
 }) {
   const { state } = sync;
   const { icon, label, tone, hint } = syncStateDisplay(state);
-  const run = getSyncAction(sync, runtime);
-  const description = run && hint ? `${label}: ${hint}` : label;
+  const onClick = getSyncClickHandler(sync, runtime);
+  const description = onClick && hint ? `${label}: ${hint}` : label;
 
   // Icon only, so the track picker beside it keeps its width as the state
   // changes.
@@ -35,13 +35,13 @@ export function SyncIndicator({
             : tone === "error"
               ? "border-destructive/40 bg-destructive/10 hover:bg-destructive/20"
               : "border-transparent",
-          tone === "quiet" && run ? "hover:bg-muted" : "",
-          run ? "" : "cursor-default",
+          tone === "quiet" && onClick ? "hover:bg-muted" : "",
+          onClick ? "" : "cursor-default",
         ].join(" ")}
         aria-label={description}
         // Not `disabled`, which would also block the tooltip's hover.
-        aria-disabled={!run}
-        onClick={run}
+        aria-disabled={!onClick}
+        onClick={onClick}
         data-testid="sync-status"
         data-sync-state={state}
       >
@@ -51,7 +51,7 @@ export function SyncIndicator({
   );
 }
 
-function getSyncAction(
+function getSyncClickHandler(
   sync: SyncStatus,
   runtime: CaptionPanelRuntime,
 ): (() => void) | undefined {

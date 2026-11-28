@@ -92,8 +92,8 @@ export function useWebSync({
       }
       return true;
     },
-    onSuccess: (ran) => {
-      if (ran) {
+    onSuccess: (didSync) => {
+      if (didSync) {
         serverQuery.refetch();
       }
     },
