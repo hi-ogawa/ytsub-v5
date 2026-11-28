@@ -93,10 +93,10 @@ jobs:
               body: [text, text && "---", ...sections].filter(Boolean).join("\n\n"),
             });
 
-  # Point the rolling pre-release at the latest main build, so
+  # Point the extension-canary pre-release at the latest main build, so
   # releases/download/extension-canary/zamak-extension.zip stays a stable link.
-  # The release is edited in place rather than recreated, because only
-  # publishing notifies watchers and posts to followers' feeds.
+  # The release was published once by hand and is only edited here, because
+  # each publish notifies watchers and posts to followers' feeds.
   # Write permission stays out of the job that runs install and build code.
   release-extension:
     needs: build
@@ -111,18 +111,9 @@ jobs:
           path: extension
       - run: cd extension && zip -r "$GITHUB_WORKSPACE/zamak-extension.zip" .
       - run: |
-          notes="Built from $GITHUB_SHA by $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID. Unzip it and load the folder with Load unpacked in chrome://extensions."
-          if gh release view extension-canary > /dev/null; then
-            gh api --method PATCH "repos/$GH_REPO/git/refs/tags/extension-canary" -f sha="$GITHUB_SHA" -F force=true
-            gh release upload extension-canary zamak-extension.zip --clobber
-            gh release edit extension-canary --notes "$notes"
-          else
-            gh release create extension-canary zamak-extension.zip \
-              --prerelease \
-              --target "$GITHUB_SHA" \
-              --title "Zamak extension canary" \
-              --notes "$notes"
-          fi
+          gh api --method PATCH "repos/$GH_REPO/git/refs/tags/extension-canary" -f sha="$GITHUB_SHA" -F force=true
+          gh release upload extension-canary zamak-extension.zip --clobber
+          gh release edit extension-canary --notes "Built from $GITHUB_SHA by $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID. Unzip it and load the folder with Load unpacked in chrome://extensions."
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
