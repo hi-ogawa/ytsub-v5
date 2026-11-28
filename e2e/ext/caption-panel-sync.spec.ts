@@ -137,6 +137,31 @@ test("shows conflict when local bookmarks and server data both exist", async ({
 
   const status = host.getByTestId("sync-status");
   await expect(status).toHaveAttribute("data-sync-state", "conflict");
+
+  // The bookmarks page resolves the conflict
+  const bookmarksPagePromise = context.waitForEvent("page");
+  await status.click();
+  const bookmarksPage = await bookmarksPagePromise;
+  await expect(
+    bookmarksPage
+      .getByTestId(`video-card-${SEED_YOUTUBE_ID}`)
+      .getByTestId("video-sync-badge"),
+  ).toHaveAttribute("data-sync-status", "conflict");
+});
+
+test("signed out, the panel's sync status opens the bookmarks page to sign in", async ({
+  context,
+}) => {
+  await setupDb({ seed: true });
+
+  const { host } = await openPanelWithTracks(context, SEED_YOUTUBE_ID);
+  const status = host.getByTestId("sync-status");
+  await expect(status).toHaveAttribute("data-sync-state", "unauthenticated");
+
+  const bookmarksPagePromise = context.waitForEvent("page");
+  await status.click();
+  const bookmarksPage = await bookmarksPagePromise;
+  await expect(bookmarksPage.getByTestId("sign-in")).toBeVisible();
 });
 
 test("a failed push shows its error under the panel header", async ({
